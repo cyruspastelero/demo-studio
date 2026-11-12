@@ -1,9 +1,9 @@
 {
   "name": "demo-studio-app",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
-  "license": "UNLICENSED",
+  "license": "Apache-2.0",
   "bin": {
     "demo-studio": "bin/demo-studio.mjs"
   },

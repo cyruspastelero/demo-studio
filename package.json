@@ -1,9 +1,9 @@
 {
   "name": "demo-studio",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Product demo video pipeline packaged as a Claude Code plugin.",
-  "license": "UNLICENSED",
+  "license": "Apache-2.0",
   "engines": { "node": ">=20" },
   "workspaces": ["app"],
   "bin": { "demo-studio": "app/bin/demo-studio.mjs" },
