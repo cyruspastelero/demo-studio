@@ -118,6 +118,11 @@ describe('demo overview', () => {
     expect(demoOverview(demo).attention).toContain('Recorded frames still on disk');
   });
 
+  it('does not count the header of an empty throwaways table, whatever its wording', () => {
+    put('THROWAWAYS.md', '| Item | Where | Id | Created | Status |\n| --- | --- | --- | --- | --- |\n');
+    expect(demoOverview(demo).attention).toEqual([]);
+  });
+
   it('lists the planning documents that exist', () => {
     put('README.md');
     put('SHOT-LIST.md');

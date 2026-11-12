@@ -19,7 +19,7 @@ DEFAULT_MIN_FREE_GB = 10
 STATUSES = ("Planning", "Prepping", "Recording", "Review", "With editor", "Delivered", "Archived")
 REVIEWED_TAKE_STATUSES = {"keep", "alt", "reject"}
 CLOSED_THROWAWAY_PREFIXES = ("deleted", "kept", "keep")
-THROWAWAY_HEADER_CELLS = {"what", "created"}
+MIN_REPORTED_GB = 0.05  # a duplicated handoff smaller than this is not worth a line
 INDEX_ROW = re.compile(r"^\|\s*\[([^\]]+)\]\(")
 SKIPPED_DIRS = {"node_modules", ".git", ".next", ".venv"}
 
@@ -57,20 +57,32 @@ def unreviewed_takes(demo: Path) -> int:
         )
 
 
+def table_rows(text: str) -> list[list[str]]:
+    """Data rows of every markdown table in the text: no header rows, no divider rows."""
+    rows, previous = [], None
+    for line in text.splitlines():
+        if not line.startswith("|"):
+            previous = None
+            continue
+        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        if all(cell and set(cell) <= set("-: ") for cell in cells):
+            if previous is not None and rows and rows[-1] is previous:
+                rows.pop()  # the row above a divider is the header
+            previous = None
+            continue
+        rows.append(cells)
+        previous = cells
+    return rows
+
+
 def open_throwaways(demo: Path) -> int:
     path = demo / "THROWAWAYS.md"
     if not path.exists():
         return 0
-    count = 0
-    for line in path.read_text().splitlines():
-        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
-        is_table_row = line.startswith("|") and len(cells) > 1
-        is_divider = set(cells[0]) <= set("-: ")
-        is_header = cells[0].lower() in THROWAWAY_HEADER_CELLS
-        if is_table_row and not is_divider and not is_header:
-            if not cells[-1].lower().startswith(CLOSED_THROWAWAY_PREFIXES):
-                count += 1
-    return count
+    return sum(
+        1 for cells in table_rows(path.read_text())
+        if len(cells) > 1 and any(cells) and not cells[-1].lower().startswith(CLOSED_THROWAWAY_PREFIXES)
+    )
 
 
 def stray_env_files(demo: Path) -> list[str]:
@@ -119,6 +131,8 @@ def check_demo(root: Path, demo: Path, index: dict[str, dict]) -> list[str]:
     for path in stray_env_files(demo):
         issues.append(f"secrets file outside app/: {path}")
     for folder in duplicated_handoffs(demo):
+        if dir_size_gb(folder) < MIN_REPORTED_GB:
+            continue
         issues.append(
             f"editor-handoff folder and its zip both kept ({dir_size_gb(folder):.1f} GB could be freed "
             "once the zip is sent)"

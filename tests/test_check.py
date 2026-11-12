@@ -84,6 +84,13 @@ class WorkspaceCheck(unittest.TestCase):
         )
         self.assertTrue(any("1 open throwaway" in i for i in self.issues()["acme"]))
 
+    def test_a_throwaways_table_with_any_header_wording_and_no_rows_is_clean(self):
+        demo = make_workspace(self.root)
+        (demo / "THROWAWAYS.md").write_text(
+            "# Throwaways\n\n| Item | Where | Id | Created | Status |\n| --- | --- | --- | --- | --- |\n"
+        )
+        self.assertEqual(self.issues()["acme"], [])
+
     def test_leftover_frames_are_reported(self):
         demo = make_workspace(self.root)
         frames = demo / "recordings" / "frames"
@@ -109,6 +116,8 @@ class WorkspaceCheck(unittest.TestCase):
         demo = make_workspace(self.root)
         rec = demo / "recordings"
         (rec / "editor-handoff").mkdir(parents=True)
+        with (rec / "editor-handoff" / "clip.mp4").open("wb") as handle:
+            handle.truncate(60_000_000)  # sparse: takes no real disk
         (rec / "acme-editor-handoff.zip").write_bytes(b"x")
         self.assertTrue(any("editor-handoff folder and its zip" in i for i in self.issues()["acme"]))
 

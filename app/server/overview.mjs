@@ -7,7 +7,6 @@ import { parseCsv } from './media.mjs';
 export const STATUSES = ['Planning', 'Prepping', 'Recording', 'Review', 'With editor', 'Delivered', 'Archived'];
 const REVIEWED = ['keep', 'alt', 'reject'];
 const CLOSED_THROWAWAY = ['deleted', 'kept', 'keep'];
-const THROWAWAY_HEADERS = ['what', 'created'];
 const VIDEO = /\.(mp4|mov)$/i;
 const DOCS = ['README.md', 'BRIEF.md', 'RUN-SHEET.md', 'SHOT-LIST.md', 'VOICEOVER.md', 'PREP.md', 'THROWAWAYS.md'];
 const INDEX_ROW = /^\|\s*\[([^\]]+)\]\(/;
@@ -69,16 +68,29 @@ function takeCounts(demo) {
   };
 }
 
+// Data rows of every markdown table: the row above a divider is a header, whatever its wording.
+function tableRows(text) {
+  const rows = [];
+  let previous = null;
+  for (const line of text.split('\n')) {
+    if (!line.startsWith('|')) { previous = null; continue; }
+    const cells = line.trim().replace(/^\||\|$/g, '').split('|').map((cell) => cell.trim());
+    if (cells.every((cell) => cell && /^[-: ]+$/.test(cell))) {
+      if (previous && rows[rows.length - 1] === previous) rows.pop();
+      previous = null;
+      continue;
+    }
+    rows.push(cells);
+    previous = cells;
+  }
+  return rows;
+}
+
 function openThrowaways(demo) {
   const text = readText(join(demo, 'THROWAWAYS.md'));
   if (!text) return 0;
-  return text.split('\n').filter((line) => {
-    if (!line.startsWith('|')) return false;
-    const cells = line.trim().replace(/^\||\|$/g, '').split('|').map((cell) => cell.trim());
-    if (cells.length < 2 || /^[-: ]*$/.test(cells[0]) || THROWAWAY_HEADERS.includes(cells[0].toLowerCase())) return false;
-    const last = cells[cells.length - 1].toLowerCase();
-    return !CLOSED_THROWAWAY.some((prefix) => last.startsWith(prefix));
-  }).length;
+  return tableRows(text).filter((cells) => cells.length > 1 && cells.some(Boolean)
+    && !CLOSED_THROWAWAY.some((prefix) => cells[cells.length - 1].toLowerCase().startsWith(prefix))).length;
 }
 
 function prepTicked(demo) {
