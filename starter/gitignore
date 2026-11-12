@@ -1,0 +1,17 @@
+# Recordings are large and may show test data: keep them out of git by default.
+*/recordings/frames/
+*/recordings/raw/
+*/recordings/exports/
+*/recordings/editor-handoff/
+*.zip
+*.mp4
+*.mov
+# Secrets and browser profiles
+.env
+.env.*
+!.env.example
+.browser-*/
+.playwright-mcp/
+node_modules/
+__pycache__/
+.DS_Store
