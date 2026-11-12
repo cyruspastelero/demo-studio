@@ -43,7 +43,7 @@
       "label": "the same story, plus setup and the edge case",
       "title": "ACME INVOICE BOT: HOW-TO",
       "scenes": [
-        { "name": "Intro", "voiceover": "Here's how to send invoices from a chat thread with the Acme Invoice Bot.", "shots": [{ "card": "card-open", "length": 5.0 }] },
+        { "name": "Intro", "voiceover": "Here's how to send invoices from a chat thread with Acme.", "shots": [{ "card": "card-open", "length": 5.0 }] },
         { "name": "Install the bot", "voiceover": "First, install the bot from the app directory and add it to your channel.", "shots": [{ "card": "card-setup", "length": 3.0 }, { "source": "02-install-bot-t1.mp4", "in": 0.8, "out": 10.0, "speed": 1.5, "screen": "App directory: search Acme, Install, pick the channel", "text": "Install once" }] },
         { "name": "Add the key", "voiceover": "Then paste your Acme Billing key into the bot's settings. It stays blurred, and it never lands in the chat.", "shots": [{ "source": "03-add-key-t1.mp4", "in": 0.8, "out": 10.0, "speed": 1, "screen": "Bot settings: paste the billing key (blurred), Save", "text": "Your key stays private" }] },
         { "name": "Ask in the thread", "voiceover": "Now use it. In the thread where the deal was agreed, ask the bot to send an invoice. It drafts it first, so nothing is created until you say so.", "shots": [{ "card": "card-use", "length": 3.0 }, { "ref": "THREAD", "speed": 1.25 }, { "ref": "ASK" }, { "ref": "DRAFT" }] },

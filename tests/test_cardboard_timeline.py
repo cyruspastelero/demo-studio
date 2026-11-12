@@ -61,5 +61,11 @@ class NumberedClips(unittest.TestCase):
                          ["01_scene1_why.mp4", "02_scene2_use.mp4", "10_scene5_end.mp4"])
 
 
+class SiblingModules(unittest.TestCase):
+    def test_the_handoff_builder_loads_with_its_dataclasses(self):
+        handoff = tool.load_sibling("build_handoff", "build-handoff.py")
+        self.assertTrue(hasattr(handoff, "build_videos"))
+
+
 if __name__ == "__main__":
     unittest.main()

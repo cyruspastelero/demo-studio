@@ -36,6 +36,7 @@ class Clip:
 def load_sibling(name: str, file_name: str):
     spec = importlib.util.spec_from_file_location(name, Path(__file__).resolve().parent / file_name)
     module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module  # dataclasses look their module up here while a class is being built
     spec.loader.exec_module(module)
     return module
 
