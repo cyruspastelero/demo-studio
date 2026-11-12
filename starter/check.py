@@ -4,16 +4,18 @@ Checks every demo folder against the playbook in AGENTS.md: the index row, its s
 final-cut paths, the README Status section, takes left unreviewed, open throwaways, leftover
 frames, secrets files outside app/, handoff folders kept next to their zip, and free disk.
 Exits 1 when anything needs attention. Standard library only.
+DEMO_MIN_FREE_GB sets the free disk needed to record (default 10).
 """
 
 import csv
 import glob
+import os
 import re
 import shutil
 import sys
 from pathlib import Path
 
-MIN_FREE_GB = 10
+DEFAULT_MIN_FREE_GB = 10
 STATUSES = ("Planning", "Prepping", "Recording", "Review", "With editor", "Delivered", "Archived")
 REVIEWED_TAKE_STATUSES = {"keep", "alt", "reject"}
 CLOSED_THROWAWAY_PREFIXES = ("deleted", "kept", "keep")
@@ -147,9 +149,14 @@ def main(argv: list[str]) -> int:
         print(f"{'!!' if report[name] else 'ok'} {name}")
         for issue in report[name]:
             print(f"     - {issue}")
+    try:
+        min_free_gb = float(os.environ.get("DEMO_MIN_FREE_GB", DEFAULT_MIN_FREE_GB))
+    except ValueError:
+        print("check: DEMO_MIN_FREE_GB must be a number", file=sys.stderr)
+        return 2
     free_gb = shutil.disk_usage(root).free / 1e9
-    low_disk = free_gb < MIN_FREE_GB
-    print(f"{'!!' if low_disk else 'ok'} disk: {free_gb:.0f} GB free (need {MIN_FREE_GB} GB to record)")
+    low_disk = free_gb < min_free_gb
+    print(f"{'!!' if low_disk else 'ok'} disk: {free_gb:.0f} GB free (need {min_free_gb:g} GB to record)")
     return 1 if low_disk or any(report.values()) else 0
 
 

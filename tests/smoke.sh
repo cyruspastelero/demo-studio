@@ -208,9 +208,9 @@ bash "$S/new-workspace.sh" "$TMP/ws" >/dev/null
 for f in AGENTS.md CLAUDE.md README.md check.py .gitignore; do exists "$TMP/ws/$f"; done
 echo "mine" > "$TMP/ws/AGENTS.md"; bash "$S/new-workspace.sh" "$TMP/ws" >/dev/null
 [ "$(cat "$TMP/ws/AGENTS.md")" = "mine" ] || die "new-workspace overwrote AGENTS.md"; ok "new-workspace keeps existing files"
-python3 -I "$TMP/ws/check.py" >/dev/null || die "check.py fails on a fresh workspace"; ok "check.py passes on a fresh workspace"
+DEMO_MIN_FREE_GB=0 python3 -I "$TMP/ws/check.py" >/dev/null || die "check.py fails on a fresh workspace"; ok "check.py passes on a fresh workspace"
 DEMO_ROOT="$TMP/ws" bash "$S/new-demo.sh" orphan >/dev/null
-if python3 -I "$TMP/ws/check.py" >"$TMP/check.log"; then die "check.py missed a demo that is not in the index"; fi
+if DEMO_MIN_FREE_GB=0 python3 -I "$TMP/ws/check.py" >"$TMP/check.log"; then die "check.py missed a demo that is not in the index"; fi
 grep -q 'missing from the README index' "$TMP/check.log" || die "check.py did not explain the drift"; ok "check.py reports a demo missing from the index"
 
 step "scene wrappers"
