@@ -74,11 +74,18 @@ only when PREP is ticked.
 
 - `demo.json` `sequence`: the scenes plus title cards between parts. Add `browser.timezone` and, for
   multi-person demos, `windows` (see `$P/schemas/demo.schema.json`).
-- `recordings/scenes/_project.js`: `cursor` ('dot' or 'hand'), `maskPatterns` and `maskLabels` for the
+- `recordings/scenes/_project.js`: `cursor` ('arrow' by default, or 'hand'), `maskPatterns` and `maskLabels` for the
   product's secrets, `clutter` for banners and toasts.
 - `handoff.json` is filled after recording (in and out points come from the takes); see demo-edit.
 
-## 9. Show the user
+## 9. Claims and test sweep
+
+Before recording, pass the first two gates in `$P/references/quality-gates.md`: every claim the
+script makes maps to a scene that proves it, and the test sweep (each scene and edge case run off
+camera from a clean state, the hero flow twice, the dead-end hunt) is written as a table in the
+demo README with every row passing.
+
+## 10. Show the user
 
 Post the scene table and a three-line story summary. Continue unless they object.
 See `$P/examples/acme-invoice-bot/` for a filled-in plan.

@@ -44,7 +44,16 @@ For a single keynote cut with no promo/how-to split, use
 - Note the zip size; source footage dominates. Drop unused parts from `parts` if it is too large.
 - Open the folder for the user (`open recordings/editor-handoff`).
 
-## 4. Wrap-up checklist
+- **Cold follow-through** (`$P/references/quality-gates.md` section 4): follow the how-to script
+  literally on a fresh test account. If you get stuck or have to guess, fix the script or re-shoot.
+- Tick every entry in `brief.claims` against the footage.
+
+## 4. When the edit comes back
+
+Save the finished videos to `<demo>/final/`, point the demos index at them, and re-time the
+voiceover to the finished cut rather than to the rough assembly.
+
+## 5. Wrap-up checklist
 
 - [ ] Update the demo README Status section (what was made, where, how to rebuild) and the demos
       index row if there is one.
@@ -54,3 +63,4 @@ For a single keynote cut with no promo/how-to split, use
 - [ ] Ask before deleting `recordings/frames/` (several GB). Never delete raw takes or exports
       without the go-ahead.
 - [ ] Keep `app/.env` out of every zip and commit.
+- [ ] Run the workspace `python3 -I check.py` if there is one; it should report nothing for this demo.

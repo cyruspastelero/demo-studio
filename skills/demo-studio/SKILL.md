@@ -17,6 +17,13 @@ If that placeholder was not filled in (the path does not exist), find the root w
 `ls -d ~/.claude/plugins/cache/*/demo-studio/*/ | tail -1` and use that.
 
 Read `$P/references/learnings.md` before the first take. It is short, and every line cost a re-shoot.
+`$P/references/quality-gates.md` lists the gate between each pair of stages; a stage is done only
+when its gate passes.
+
+If the folder that holds the demos has an `AGENTS.md` (the starter kit's playbook), read it first.
+It holds the team's own rules, and where it disagrees with this skill, it wins. No workspace yet?
+Offer `bash "$P/scripts/new-workspace.sh" ./demos`, which adds the playbook, a demos index and
+`check.py`, a drift report to run at the start and end of every session.
 
 ## Stage 0: health check and goal
 
@@ -46,6 +53,10 @@ Show the user the scene table and the story in a few lines, and continue unless 
 Accounts, a dedicated demo user, seed data, reset scripts, timezone, clutter and secret patterns,
 one instance of every service, then a full smoke run off camera. Do not film until PREP.md is ticked.
 
+Then the **test sweep** (quality-gates.md section 2): run every scene and edge case off camera from
+a clean state, run the hero flow twice, and hunt dead ends (links, commands, setup steps a viewer
+could not repeat). Write the result table in the demo README. Fix failures or cut the scene.
+
 ## Stage 3: record and QA (skill demo-record)
 
 One scene per run: write the body, wrap it, run it, QA the frames, encode, log the take, list
@@ -62,6 +73,15 @@ and show the user the reel (`open recordings/exports/review-reel.mp4`) before an
 - Keynote-style cut from demo.json (optional): floating window, captions, cards, eased zooms.
 - Promo and how-to from handoff.json: in/out points per shot, title cards, voiceover per scene,
   fit check, timing preview.
+
+Two ways to finish, chosen by what is installed and what the user asks for:
+
+| Path | Needs | Gives |
+| --- | --- | --- |
+| Built in (default) | ffmpeg only | Rough assemblies, scripts and a zip for a human editor |
+| Cardboard (optional) | the Cardboard app and its `cb` CLI | A finished video: narration, captions, music, export (skill demo-cardboard) |
+
+Both start from the same `handoff.json`. Never require Cardboard; if `cb` is missing, use the built-in path.
 
 ## Stage 6: handoff and social (skills demo-handoff, demo-edit)
 
@@ -80,8 +100,8 @@ and ask before deleting `recordings/frames/`.
 | Viewport | 1440x810 CSS, DPR 2 (2880x1620 capture) |
 | Raw takes | 1920x1080, 30fps constant, H.264 CRF 14 `-preset slow`, lanczos, silent |
 | Take handles | 1 to 1.5s still at start, 2 to 3s hold at end |
-| Pointer | blue dot; `PROJECT.cursor = 'hand'` for consumer or social videos |
-| Pointer motion | glides 20 to 45 steps, pauses 300 to 600ms before clicks, parks after |
+| Pointer | the normal arrow cursor; `PROJECT.cursor = 'hand'` when a pointing hand suits a consumer app |
+| Pointer motion | eased glides on a slight arc, pauses 300 to 600ms before clicks, parks after |
 | Typing | 45 to 75ms per key; paste anything longer than about 2 lines |
 | Videos | promo about 1:30 and how-to about 3:00 from one shoot |
 | Captions | one short declarative sentence per scene, sentence case, period, no em dashes |
@@ -94,8 +114,9 @@ and ask before deleting `recordings/frames/`.
 
 ## Where things are
 
-- Stage skills: `demo-plan`, `demo-record`, `demo-edit`, `demo-handoff`
-- References: `$P/references/learnings.md`, `scene-patterns.md`, `voiceover.md`, `handoff-spec.md`, `secrets.md`
+- Stage skills: `demo-plan`, `demo-record`, `demo-edit`, `demo-handoff`, `demo-cardboard` (optional)
+- Starter kit: `$P/starter/` (installed by new-workspace.sh)
+- References: `$P/references/quality-gates.md`, `cardboard.md`, `learnings.md`, `scene-patterns.md`, `voiceover.md`, `handoff-spec.md`, `secrets.md`
 - Templates: `$P/templates/` (copied by new-demo.sh)
 - Config shapes: `$P/schemas/demo.schema.json`, `$P/schemas/handoff.schema.json`
 - Worked example: `$P/examples/acme-invoice-bot/`
