@@ -189,6 +189,30 @@ size_is "$TMP/cut-9x16.mp4" 1080x1920
 if python3 -I "$S/social-cut.py" "$CUT" "$TMP/bad.mp4" --aspect 1:1 2>/dev/null; then die "bad aspect accepted"; fi
 ok "bad aspect rejected"
 
+step "cardboard timeline (optional path; the script needs no Cardboard)"
+(cd "$D" && python3 -I "$S/cardboard-timeline.py" handoff.json PROMO > "$TMP/cardboard.log")
+exists "$H/cardboard/PROMO.timeline.tsx"; exists "$H/cardboard/PROMO.narration.json"
+grep -q '01_scene1_the-deal-is-in-chat.mp4' "$H/cardboard/PROMO.timeline.tsx" || die "timeline lacks the first clip"
+if grep -q 'ROUGH-ASSEMBLY' "$H/cardboard/PROMO.timeline.tsx"; then die "timeline includes the rough assembly"; fi
+ok "timeline lists the numbered clips only"
+python3 -I -c 'import json,sys; plan=json.load(open(sys.argv[1])); assert plan and all(e["window"] > 0 and e["text"] for e in plan), plan' \
+  "$H/cardboard/PROMO.narration.json" || die "narration plan is empty or has a line with no room"
+ok "narration plan has a window for every line"
+if (cd "$D" && python3 -I "$S/cardboard-timeline.py" handoff.json NOPE >/dev/null 2>&1); then die "unknown video key accepted"; fi
+ok "cardboard-timeline rejects an unknown video"
+
+step "starter kit"
+python3 -I "$ROOT/tests/test_check.py" 2>/dev/null || die "check.py unit tests"; ok "check.py unit tests"
+python3 -I "$ROOT/tests/test_cardboard_timeline.py" 2>/dev/null || die "cardboard-timeline unit tests"; ok "cardboard-timeline unit tests"
+bash "$S/new-workspace.sh" "$TMP/ws" >/dev/null
+for f in AGENTS.md CLAUDE.md README.md check.py .gitignore; do exists "$TMP/ws/$f"; done
+echo "mine" > "$TMP/ws/AGENTS.md"; bash "$S/new-workspace.sh" "$TMP/ws" >/dev/null
+[ "$(cat "$TMP/ws/AGENTS.md")" = "mine" ] || die "new-workspace overwrote AGENTS.md"; ok "new-workspace keeps existing files"
+python3 -I "$TMP/ws/check.py" >/dev/null || die "check.py fails on a fresh workspace"; ok "check.py passes on a fresh workspace"
+DEMO_ROOT="$TMP/ws" bash "$S/new-demo.sh" orphan >/dev/null
+if python3 -I "$TMP/ws/check.py" >"$TMP/check.log"; then die "check.py missed a demo that is not in the index"; fi
+grep -q 'missing from the README index' "$TMP/check.log" || die "check.py did not explain the drift"; ok "check.py reports a demo missing from the index"
+
 step "scene wrappers"
 export PLAYWRIGHT_MCP_OUT="$TMP/mcp"
 printf 'const p = findTab("example.com");\nreturn { ok: !!p };\n' > "$R/scenes/01-the-thread.body.js"
