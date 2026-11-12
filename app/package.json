@@ -11,7 +11,7 @@
     "dev": "node bin/demo-studio.mjs --dev",
     "build": "tsc --noEmit -p . && vite build",
     "test": "vitest run",
-    "e2e": "node e2e/editor.e2e.mjs",
+    "e2e": "node e2e/home.e2e.mjs && node e2e/editor.e2e.mjs",
     "screenshots": "node e2e/screenshots.mjs"
   },
   "dependencies": {

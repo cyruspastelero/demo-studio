@@ -26,6 +26,18 @@ export interface RenderState {
   error?: string | null;
 }
 
+export interface DemoOverview {
+  stages: { key: string; label: string; done: boolean }[];
+  next: { stage: string; label: string; prompt: string } | null;
+  scenes: number;
+  takes: { total: number; keep: number; alt: number; reject: number; unreviewed: number };
+  attention: string[];
+  videos: { label: string; rel: string }[];
+  poster: string | null;
+  docs: { name: string; rel: string }[];
+  folders: { handoff: string | null };
+}
+
 export interface DemoEntry {
   path: string;
   name: string;
@@ -33,10 +45,24 @@ export interface DemoEntry {
   group: string;
   hasHandoff: boolean;
   hasDemo: boolean;
+  canEdit: boolean;
+  modified: number;
+  status: { status: string; note: string } | null;
+  overview: DemoOverview;
 }
 
+export interface Workspace {
+  root: string;
+  exists: boolean;
+  hasPlaybook: boolean;
+  hasIndex: boolean;
+  hasCheck: boolean;
+}
+
+export type HomeSession = { mode: 'picker'; repo: string; demos: DemoEntry[]; workspace: Workspace };
+
 export type Session =
-  | { mode: 'picker'; repo: string; demos: DemoEntry[] }
+  | HomeSession
   | {
     mode: 'editor'; repo: string; folder: string; name: string; platform: string;
     files: Record<FileKind, FileState | null>; render: RenderState | null;
@@ -61,6 +87,9 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
 
 export const api = {
   session: () => call<Session>('GET', '/api/session'),
+  home: () => call<HomeSession>('GET', '/api/home'),
+  revealInDemo: (demo: string, path: string | null, action: 'reveal' | 'open') =>
+    call('POST', '/api/demo-reveal', { demo, path, action }),
   open: (path: string) => call<Session>('POST', '/api/open', { path }),
   media: () => call<MediaIndex>('GET', '/api/media'),
   save: (kind: FileKind, data: unknown, baseHash: string | null) =>
@@ -69,6 +98,10 @@ export const api = {
   cancel: () => call<{ cancelled: boolean }>('POST', '/api/render/cancel', {}),
   reveal: (path: string, action: 'reveal' | 'open') => call('POST', '/api/reveal', { path, action }),
 };
+
+export function demoThumbUrl(demo: string, path: string, w = 480): string {
+  return `/api/demo-thumb?demo=${encodeURIComponent(demo)}&path=${encodeURIComponent(path)}&t=1&w=${w}`;
+}
 
 export function thumbUrl(path: string, t: number, w = 160): string {
   return `/api/thumb?path=${encodeURIComponent(path)}&t=${t.toFixed(2)}&w=${w}`;

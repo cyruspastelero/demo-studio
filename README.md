@@ -16,7 +16,7 @@ down in [references/learnings.md](references/learnings.md).
 **Contents:** [What it makes](#what-it-makes) · [Requirements](#requirements) · [Install](#install) ·
 [Quickstart](#quickstart-5-minutes-to-the-first-plan) · [Starter kit](#starter-kit) ·
 [Rules](#rules-and-quality-gates) · [Two ways to finish](#two-ways-to-finish) ·
-[Local editor](#local-editor) · [FAQ](#faq) · [Contributing](#contributing)
+[Home screen](#home-screen) · [Local editor](#local-editor) · [FAQ](#faq) · [Contributing](#contributing)
 
 ## What it makes
 
@@ -199,6 +199,25 @@ tests/            smoke.sh (end to end on synthetic footage) and unit tests for 
 docs/             ROADMAP.md, img/ (editor screenshots)
 ```
 
+## Home screen
+
+A local page that shows every demo in your folder and where each one stands. Run it from the folder
+you start Claude Code in (or from inside the demos folder):
+
+```bash
+npm --prefix "$P" run studio        # opens http://127.0.0.1:4317
+```
+
+![The home screen: one card per demo with its stages and next step](docs/img/studio-home-dark-1440.png)
+
+Each card shows the demo's picture (its best video, or the first take), its status from the index,
+the seven stages with the next one outlined, anything that needs attention (takes nobody reviewed,
+throwaways not cleaned up, frames left on disk), and the sentence to give Claude for the next step,
+with a copy button. From a card you can open the editor, play a video, open the planning documents
+or show the folder. With no demos yet, it shows the four steps to make the first one.
+
+It reads your files and never changes them; it runs on your machine only (`127.0.0.1`).
+
 ## Local editor
 
 A local web app for reviewing and tweaking a cut without rendering. Open a demo folder, watch the
@@ -208,7 +227,7 @@ edit play in real time, trim and reorder shots, edit on-screen text and voiceove
 ```bash
 npm install                                   # once, in the repo (or the plugin folder)
 npm run studio demos/acme                     # or: npx demo-studio demos/acme
-npm run studio                                # no folder: pick from $DEMO_ROOT (default ./demos) and examples/
+npm run studio                                # no folder: the home screen, for $DEMO_ROOT (default ./demos) and examples/
 npm run studio demos/acme -- --port 4400 --no-open
 ```
 

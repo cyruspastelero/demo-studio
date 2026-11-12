@@ -17,4 +17,5 @@ copy README.md README.md
 copy check.py check.py
 copy gitignore .gitignore
 echo "Next: cd \"$dir\", start Claude Code there, and ask for a demo."
+echo "See every demo and its next step: npm --prefix \"$here\" run studio (from $dir)"
 echo "OUTPUT $dir"

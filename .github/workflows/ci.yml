@@ -55,3 +55,7 @@ jobs:
       - run: npm ci
       - run: npm run test:app
       - run: npm run build -w app
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Browser tests (home screen and editor, headless Chrome)
+        run: npm run test:e2e

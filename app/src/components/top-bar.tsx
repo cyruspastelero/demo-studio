@@ -1,4 +1,4 @@
-import { Clapperboard, Film, FolderOpen, Gauge, Image, Keyboard, Layers, Moon, Package, Redo2, Smartphone, Sun, Undo2 } from 'lucide-react';
+import { Clapperboard, Film, Gauge, LayoutGrid, Image, Keyboard, Layers, Moon, Package, Redo2, Smartphone, Sun, Undo2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { SaveStatus } from '../state/use-documents';
 import type { Aspect, FileKind } from '../lib/types';
@@ -66,7 +66,7 @@ export function TopBar({
 
   return (
     <header className="topbar">
-      <button className="icon-btn" aria-label="Open another demo" title="Open another demo" onClick={onClose}><FolderOpen size={16} /></button>
+      <button className="icon-btn" aria-label="All demos" title="All demos" onClick={onClose} data-testid="close-demo"><LayoutGrid size={16} /></button>
       <span className="demo-name" title={name}>{name}</span>
       <span className="sep" />
       {fileTabs.length > 1 && (

@@ -21,10 +21,12 @@ export function exampleCopy() {
   return { dir, folder, cleanup: () => rmSync(dir, { recursive: true, force: true }) };
 }
 
-export function startServer(folder, port = 4517) {
+// folder: the demo to open in the editor, or null to start on the home screen.
+export function startServer(folder, port = 4517, env = {}) {
   return new Promise((resolve, reject) => {
-    const child = spawn(process.execPath, [join(APP, 'bin', 'demo-studio.mjs'), folder, '--no-open', '--port', String(port)], {
-      cwd: REPO, stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, INIT_CWD: REPO },
+    const args = [join(APP, 'bin', 'demo-studio.mjs'), ...(folder ? [folder] : []), '--no-open', '--port', String(port)];
+    const child = spawn(process.execPath, args, {
+      cwd: REPO, stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, INIT_CWD: REPO, ...env },
     });
     let log = '';
     const timer = setTimeout(() => {

@@ -1,7 +1,7 @@
 import { Loader2 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { api, type Session } from './api';
-import { Picker } from './components/picker';
+import { Home } from './components/home';
 import { Editor } from './editor';
 
 type Theme = 'dark' | 'light';
@@ -41,17 +41,17 @@ export function App() {
   }, []);
 
   const showPicker = useCallback(() => {
-    api.session().then((s) => {
-      if (s.mode === 'picker') setSession(s);
-      else fetch('/api/demos').then((r) => r.json()).then((demos) => setSession({ mode: 'picker', repo: s.repo, demos }));
-    }).catch((e: Error) => setError(e.message));
+    api.home().then(setSession).catch((e: Error) => setError(e.message));
   }, []);
 
   if (error) return <div className="boot"><div><p>The editor could not load.</p><p className="muted">{error}</p></div></div>;
   if (!session) return <div className="boot"><Loader2 className="spin" size={20} aria-label="Loading" /></div>;
-  if (session.mode === 'picker') return <Picker demos={session.demos} onOpen={open} />;
+  const toggleTheme = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
+  if (session.mode === 'picker') {
+    return <Home session={session} theme={theme} onTheme={toggleTheme} onOpen={open} onRefresh={showPicker} />;
+  }
   return (
     <Editor key={session.folder} session={session} theme={theme}
-      onTheme={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))} onClose={showPicker} />
+      onTheme={toggleTheme} onClose={showPicker} />
   );
 }

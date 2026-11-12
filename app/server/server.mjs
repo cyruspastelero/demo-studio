@@ -4,7 +4,7 @@ import { createServer } from 'node:http';
 import { join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DocumentStore, FILES, readDocument, SaveError } from './documents.mjs';
-import { isDemoFolder, listDemos } from './demos.mjs';
+import { isDemoFolder, listDemos, workspace } from './demos.mjs';
 import { isPassiveMedia, mediaIndex, sendFile, thumbnail } from './media.mjs';
 import { insideAny, PathError, resolveInside } from './paths.mjs';
 import { RenderRunner } from './render.mjs';
@@ -110,7 +110,7 @@ export function createStudio({ repo, cwd, folder: initialFolder, dev = false }) 
   if (initialFolder) openFolder(initialFolder);
 
   function session() {
-    if (!folder) return { mode: 'picker', repo, demos: listDemos({ cwd, repo }) };
+    if (!folder) return { mode: 'picker', repo, demos: listDemos({ cwd, repo }), workspace: workspace({ cwd }) };
     const files = Object.fromEntries(Object.keys(FILES).map((kind) => {
       const doc = readDocument(folder, kind);
       return [kind, doc && { name: doc.name, text: doc.text, hash: doc.hash, data: doc.data, errors: doc.errors }];
@@ -122,6 +122,13 @@ export function createStudio({ repo, cwd, folder: initialFolder, dev = false }) 
     };
   }
 
+  // Home-screen requests name a demo by path; only folders the home screen listed are accepted.
+  const listedDemo = (path) => {
+    const found = listDemos({ cwd, repo }).find((d) => d.path === path);
+    if (!found) throw new HttpError(403, 'not a listed demo folder');
+    return found.path;
+  };
+
   const requireFolder = () => {
     if (!folder) throw new HttpError(409, 'no demo folder is open');
     return folder;
@@ -131,6 +138,26 @@ export function createStudio({ repo, cwd, folder: initialFolder, dev = false }) 
     const route = `${req.method} ${url.pathname}`;
     if (route === 'GET /api/session') return json(res, 200, session());
     if (route === 'GET /api/demos') return json(res, 200, listDemos({ cwd, repo }));
+    if (route === 'GET /api/home') return json(res, 200, { mode: 'picker', repo, demos: listDemos({ cwd, repo }), workspace: workspace({ cwd }) });
+    if (route === 'GET /api/demo-thumb') {
+      const file = resolveInside(listedDemo(url.searchParams.get('demo') ?? ''), url.searchParams.get('path') ?? '');
+      if (!isPassiveMedia(file)) throw new HttpError(400, 'not a video');
+      const w = Math.min(640, Math.max(32, Number(url.searchParams.get('w')) || 480));
+      const image = await thumbnail(file, Math.max(0, Number(url.searchParams.get('t')) || 0), w);
+      res.writeHead(200, { 'Content-Type': 'image/jpeg', 'Cache-Control': 'max-age=300' });
+      return res.end(image);
+    }
+    if (route === 'POST /api/demo-reveal') {
+      const { demo, path, action } = await readBody(req);
+      const dir = listedDemo(String(demo ?? ''));
+      const real = path ? resolveInside(dir, String(path)) : realpathSync(dir);
+      // Folders open in the file manager. Videos, images and text open in their app. Anything else
+      // (scripts, apps) is only shown in its folder, never launched.
+      const isFile = statSync(real).isFile();
+      const viewable = isPassiveMedia(real) || real.endsWith('.md');
+      openWith(real, isFile && (action === 'reveal' || !viewable));
+      return json(res, 200, { ok: true });
+    }
     if (route === 'POST /api/open') {
       const { path } = await readBody(req);
       // Only folders the picker offered, so the page cannot open arbitrary paths.

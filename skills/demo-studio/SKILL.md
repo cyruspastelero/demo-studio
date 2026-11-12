@@ -25,6 +25,14 @@ It holds the team's own rules, and where it disagrees with this skill, it wins. 
 Offer `bash "$P/scripts/new-workspace.sh" ./demos`, which adds the playbook, a demos index and
 `check.py`, a drift report to run at the start and end of every session.
 
+## The home screen
+
+When someone starts out, comes back to a demos folder, or asks what state the demos are in, offer
+the home screen: `npm --prefix "$P" run studio` (first run: `npm install --prefix "$P"`), run in the
+background from the folder that holds the demos. It opens a local page with one card per demo: its
+stages, what needs attention, its videos and documents, and the next thing to ask you for. It only
+reads files. Stop it when the session ends.
+
 ## Stage 0: health check and goal
 
 1. Run `bash "$P/scripts/doctor.sh"`. If anything required fails, show the user the fix commands

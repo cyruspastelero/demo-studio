@@ -25,7 +25,7 @@ claude --plugin-dir "$PWD"      # load your working copy instead of the installe
 | Anything Cardboard | `references/cardboard.md`, `skills/demo-cardboard/`; it must stay optional |
 | A tool | `scripts/`, referenced from skills as `$P/scripts/...` (`P` = `${CLAUDE_PLUGIN_ROOT}`) |
 | A new config field | `schemas/*.schema.json` first, then the script, the template and the example |
-| The local editor | `app/`; run `npm run test:app` and `npm run test:e2e`, and refresh `docs/img/` with `npm run screenshots -w app` after visible changes |
+| The home screen and local editor | `app/`; run `npm run test:app` and `npm run test:e2e`, and refresh `docs/img/` with `npm run screenshots -w app` after visible changes |
 
 Keep skills and scripts product-agnostic: no customer names, account ids, emails, internal team
 names or keychain items. Demo-specific helpers (seed, reset, answer servers) belong in the demo's
