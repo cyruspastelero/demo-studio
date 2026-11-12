@@ -151,11 +151,11 @@ export function createStudio({ repo, cwd, folder: initialFolder, dev = false }) 
       const { demo, path, action } = await readBody(req);
       const dir = listedDemo(String(demo ?? ''));
       const real = path ? resolveInside(dir, String(path)) : realpathSync(dir);
-      // Folders open in the file manager. Videos, images and text open in their app. Anything else
-      // (scripts, apps) is only shown in its folder, never launched.
-      const isFile = statSync(real).isFile();
-      const viewable = isPassiveMedia(real) || real.endsWith('.md');
-      openWith(real, isFile && (action === 'reveal' || !viewable));
+      // Only a regular file that is a video, an image or text is opened in its app. Everything
+      // else is shown in the file manager and never launched: scripts, apps, and folders too,
+      // since a folder can be a bundle (a .app) that `open` would run.
+      const viewable = statSync(real).isFile() && (isPassiveMedia(real) || real.endsWith('.md'));
+      openWith(real, action === 'reveal' || !viewable);
       return json(res, 200, { ok: true });
     }
     if (route === 'POST /api/open') {

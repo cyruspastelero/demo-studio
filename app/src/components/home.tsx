@@ -141,7 +141,7 @@ function DemoCard({ demo, onOpen, onError }: { demo: DemoEntry; onOpen: (path: s
               ))}
             </Menu>
           )}
-          <button className="btn" onClick={() => reveal(null, 'open')}><FolderOpen size={14} />Folder</button>
+          <button className="btn" onClick={() => reveal(null, 'reveal')}><FolderOpen size={14} />Show folder</button>
         </footer>
       </div>
     </article>

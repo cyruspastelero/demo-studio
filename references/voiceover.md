@@ -21,7 +21,7 @@ teaching a colleague, not like a caption.
 - Spell out URLs: "acme dot com slash billing".
 - Spell out amounts and numbers the way they are said: "twelve hundred dollars", "net fourteen",
   "invoice zero zero zero six".
-- Write names as they are pronounced if the voice might trip ("Ashby and Rowe", not "Ashby & Rowe").
+- Write names as they are pronounced if the voice might trip ("Smith and Lowe", not "Smith & Lowe").
 
 ## Timing
 
