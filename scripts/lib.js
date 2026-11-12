@@ -77,11 +77,26 @@ async function blurRect(x, y, w, h, since) {
   await api.post(`${RX}/blur`, { data: JSON.stringify({ x, y, w, h, t: since || now() }) });
 }
 
-// Human-looking pointer: glide to an element, pause, then tap.
+// Human-looking pointer: eased (slow-fast-slow) along a gentle arc, never a straight constant-speed line.
+// The last position lives on ctx because nothing else survives between run_code calls.
+const easeInOut = t => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+async function moveHuman(p, x, y, steps = 30) {
+  const from = ctx._mouse || { x: W * 0.62, y: H * 0.4 };
+  const dist = Math.hypot(x - from.x, y - from.y);
+  const n = Math.max(8, Math.round(steps * Math.min(1.4, 0.6 + dist / 900)));
+  const bend = Math.min(60, dist * 0.08) * (Math.random() < 0.5 ? -1 : 1);
+  const nx = -(y - from.y) / (dist || 1), ny = (x - from.x) / (dist || 1);
+  for (let i = 1; i <= n; i++) {
+    const t = easeInOut(i / n), arc = Math.sin(Math.PI * t) * bend;
+    await p.mouse.move(from.x + (x - from.x) * t + nx * arc, from.y + (y - from.y) * t + ny * arc);
+    await sleep(14);
+  }
+  ctx._mouse = { x, y };
+}
 async function glide(p, loc, dx = 0.5, dy = 0.5, steps = 30) {
   const b = await loc.boundingBox();
   if (!b) throw new Error('glide target not visible');
-  await p.mouse.move(b.x + b.width * dx, b.y + b.height * dy, { steps });
+  await moveHuman(p, b.x + b.width * dx, b.y + b.height * dy, steps);
   return b;
 }
 async function tap(p) { await p.mouse.down(); await sleep(70); await p.mouse.up(); }
@@ -94,11 +109,15 @@ async function scrollIntoCenter(p, loc) {
   await sleep(1200);
 }
 // Moves the pointer off the content so it does not cover what the viewer should read.
-async function park(p, x = W * 0.62, y = H * 0.4) { await p.mouse.move(x, y, { steps: 25 }); }
+async function park(p, x = W * 0.62, y = H * 0.4) { await moveHuman(p, x, y, 25); }
+// Puts the pointer at a resting spot before record() starts (an instant jump, off camera).
+async function placeCursor(p, x = W * 0.62, y = H * 0.4) { await p.mouse.move(x, y); ctx._mouse = { x, y }; }
 
-// Visible cursor (headless screencasts have no OS cursor). PROJECT.cursor: 'dot' (default) or
-// 'hand', a pointing hand whose fingertip is the hotspot and which presses in on click.
-const CURSOR_STYLE = PROJECT.cursor || 'dot';
+// Visible cursor (headless screencasts have no OS cursor). PROJECT.cursor:
+//   'arrow' (default) the normal macOS arrow, tip is the hotspot, a slight press on click
+//   'hand'  a pointing hand whose fingertip is the hotspot (for app/marketing demos)
+//   'dot'   the old blue click dot; avoid, it reads as a screen recorder, not a person
+const CURSOR_STYLE = PROJECT.cursor || 'arrow';
 const CURSOR_FN = style => {
   if (document.getElementById('demo-cursor')) return;
   const c = document.createElement('div'); c.id = 'demo-cursor';
@@ -108,6 +127,11 @@ const CURSOR_FN = style => {
     c.innerHTML = '<svg width="34" height="39" viewBox="0 0 24 28" xmlns="http://www.w3.org/2000/svg"><path d="M8.5 13V3a1.5 1.5 0 0 1 3 0v8.5v-1a1.5 1.5 0 0 1 3 0V12v-.5a1.5 1.5 0 0 1 3 0v1a1.5 1.5 0 0 1 3 0V19c0 3-2 6-5 6h-4.5c-2 0-3-1-4-2.5L3.8 17.8a1.4 1.4 0 0 1 2-2L8.5 18Z" fill="#fff" stroke="#111" stroke-width="1.1" stroke-linejoin="round"/><path d="M11.5 15.5v4M14.5 15.5v4M17.5 15.5v4" stroke="#111" stroke-width="0.9" stroke-linecap="round"/></svg>';
     Object.assign(c.style, base, { width: '34px', height: '39px', marginLeft: '-14.2px', marginTop: '-2.2px', transformOrigin: '14.2px 2.2px', filter: 'drop-shadow(0 1px 1.5px rgba(0,0,0,0.35))' });
     down = 'scale(0.86)';
+  } else if (style === 'arrow') {
+    // macOS arrow proportions; the tip sits 1.5 units (1.8px) inside the box and is the hotspot.
+    c.innerHTML = '<svg width="19" height="27" viewBox="0 0 16 23" xmlns="http://www.w3.org/2000/svg"><path transform="translate(1.5 1.5)" d="M0 0V16.5L4 12.7L6.6 18.9L9.2 17.8L6.6 11.7H12Z" fill="#000" stroke="#fff" stroke-width="1.1" stroke-linejoin="round"/></svg>';
+    Object.assign(c.style, base, { width: '19px', height: '27px', marginLeft: '-1.8px', marginTop: '-1.8px', transformOrigin: '1.8px 1.8px', filter: 'drop-shadow(0 1px 1.5px rgba(0,0,0,0.3))' });
+    down = 'scale(0.92)';
   } else {
     Object.assign(c.style, base, { width: '20px', height: '20px', marginLeft: '-10px', marginTop: '-10px', borderRadius: '50%', background: 'rgba(28,110,246,0.55)', border: '2px solid white', boxShadow: '0 0 0 1px rgba(0,0,0,0.35)' });
   }

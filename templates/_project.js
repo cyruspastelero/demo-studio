@@ -1,7 +1,8 @@
 // Project-specific settings, inlined before lib.js in every scene.
 const PROJECT = {
-  // 'dot' (default) or 'hand', a pointing-hand cursor that presses in on click
-  cursor: 'dot',
+  // 'arrow' (default, the normal macOS arrow), 'hand' (a pointing hand, for consumer apps),
+  // or 'dot' (a blue click dot; reads as a screen recorder, so avoid it)
+  cursor: 'arrow',
   // Extra secret patterns (regex sources) and labels whose neighbouring value gets blurred
   maskPatterns: [],
   maskLabels: [],

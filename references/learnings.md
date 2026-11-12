@@ -54,8 +54,12 @@ reveal; sandbox accounts only; list everything created on camera in THROWAWAYS.m
 ## Making it look human
 
 - Always `glide()` the pointer to a target, pause about 300-600ms, then `tap()`. Never teleport-click.
-- **Pick the cursor per audience.** The default is a blue dot. For consumer and social videos use
-  `PROJECT.cursor = 'hand'`: a pointing hand whose fingertip is the hotspot and which presses in on click.
+- **The cursor is the normal arrow** (the default). A blue click dot reads as a screen recorder, not
+  a person. `PROJECT.cursor = 'hand'` gives a pointing hand whose fingertip is the hotspot, for
+  consumer apps.
+- **Moves are eased on a slight arc** by `moveHuman` (used by `glide`, `click` and `park`). A straight
+  constant-speed `p.mouse.move(..., { steps })` looks robotic, so do not call it on camera. Use
+  `placeCursor(p)` to put the pointer at its resting spot before `record()` starts.
 - Type with `typeHuman` (45-75ms per key). For long text (manifests, code), paste instead of typing.
   Nobody wants 40s of typing.
 - **Check focus before typing in web composers.** Rich text composers (chat apps, AI chat boxes) lose

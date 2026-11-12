@@ -19,7 +19,7 @@ await p.goto('https://example.com/dashboard', { waitUntil: 'domcontentloaded' })
 await prep(p);                       // viewport, cursor, mask, clutter
 await sleep(2500);
 ensure(p, 'example.com/dashboard');  // fail fast if we got redirected (login, wrong page)
-await p.mouse.move(W * 0.6, H * 0.4);
+await placeCursor(p);                // resting spot, set off camera
 stop = await record(p, '_tmp02');
 await sleep(1200);                   // head handle
 await click(p, p.getByRole('button', { name: 'New project' }));

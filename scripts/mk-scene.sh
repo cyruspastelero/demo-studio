@@ -19,7 +19,7 @@ mkdir -p "$out_dir"
   if [ "$mode" = "--use-lib" ]; then
     echo 'const ctx = page.context().browser().contexts().find(c => c !== page.context());'
     echo 'if (!ctx || !ctx._L) throw new Error("helpers missing: run mk-lib.sh and its _lib.run.js first");'
-    echo 'const { PROJECT, sleep, W, H, api, findTab, openTab, tabFor, ensure, prep, hideClutter, record, now, blur, blurRect, glide, tap, click, typeHuman, smoothScroll, scrollIntoCenter, park, maskSecrets, maskedSummary } = ctx._L;'
+    echo 'const { PROJECT, sleep, W, H, api, findTab, openTab, tabFor, ensure, prep, hideClutter, record, now, blur, blurRect, glide, tap, click, typeHuman, smoothScroll, scrollIntoCenter, park, moveHuman, placeCursor, maskSecrets, maskedSummary } = ctx._L;'
   elif [ -n "$mode" ]; then
     echo "mk-scene: unknown option $mode" >&2; exit 1
   else

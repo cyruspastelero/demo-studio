@@ -11,7 +11,7 @@ mkdir -p "$out_dir"
   echo 'async (page) => {'
   cat scenes/_project.js; echo
   cat "$here/lib.js"; echo
-  echo 'ctx._L = { PROJECT, sleep, W, H, api, findTab, openTab, tabFor, ensure, prep, hideClutter, record, now, blur, blurRect, glide, tap, click, typeHuman, smoothScroll, scrollIntoCenter, park, maskSecrets, maskedSummary };'
+  echo 'ctx._L = { PROJECT, sleep, W, H, api, findTab, openTab, tabFor, ensure, prep, hideClutter, record, now, blur, blurRect, glide, tap, click, typeHuman, smoothScroll, scrollIntoCenter, park, moveHuman, placeCursor, maskSecrets, maskedSummary };'
   echo 'return "lib installed";'
   echo '}'
 } > "$out_dir/_lib.run.js"
