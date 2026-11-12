@@ -9,7 +9,7 @@ Take names start with `_tmp`. `encode-take.sh` renames the frames to `<scene>-t<
 
 Helpers from `lib.js`: `sleep, W, H, findTab, openTab, tabFor, ensure, prep, hideClutter, record,
 now, blur, blurRect, glide, tap, click, typeHuman, smoothScroll, scrollIntoCenter, park,
-maskSecrets, maskedSummary`.
+moveHuman, placeCursor, maskSecrets, maskedSummary`.
 
 ## Skeleton
 

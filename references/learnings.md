@@ -31,6 +31,8 @@ reveal; sandbox accounts only; list everything created on camera in THROWAWAYS.m
 
 ## Playwright MCP sandbox
 
+- The tool is `browser_run_code` in older Playwright MCP versions and `browser_run_code_unsafe` in
+  newer ones. They take the same `filename`.
 - `browser_run_code` only loads `filename` scripts from `<session cwd>/.playwright-mcp/`, so
   export `PLAYWRIGHT_MCP_OUT` to that path and let `mk-scene.sh` write there. Start Claude Code in
   the folder that holds your demos so the path is predictable.
@@ -69,6 +71,8 @@ reveal; sandbox accounts only; list everything created on camera in THROWAWAYS.m
 - Start each take with 1-1.5s of stillness and end with 2-3s of hold. Editors need handles.
 - Hide clutter first: notification banners, "enable notifications", cookie bars, unread pills,
   onboarding tours (`PROJECT.clutter`). Close stray popovers before recording.
+- **Clutter patterns must be specific.** Each entry is a regex tested against an element's text, so a
+  short or empty one hides real UI. Use the banner's full wording.
 - **Transient toasts are clutter too.** "Saved", "Syncing", "Copied" notices that flash on every
   action distract on video. Add their text to `PROJECT.clutter`.
 - Wait on real UI signals (`locator.waitFor`) instead of fixed sleeps for async results (bot replies,

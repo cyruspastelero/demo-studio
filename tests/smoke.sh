@@ -49,7 +49,8 @@ spec = importlib.util.spec_from_file_location("demolib", Path(sys.argv[1]) / "de
 lib = importlib.util.module_from_spec(spec); spec.loader.exec_module(lib)
 root = Path(sys.argv[2])
 for name, kind in [("templates/demo.json", "demo"), ("templates/handoff.json", "handoff"),
-                   ("examples/acme-invoice-bot/demo.json", "demo"), ("examples/acme-invoice-bot/handoff.json", "handoff")]:
+                   ("examples/acme-invoice-bot/demo.json", "demo"), ("examples/acme-invoice-bot/handoff.json", "handoff"),
+                   ("examples/todo-sample/demo.json", "demo"), ("examples/todo-sample/handoff.json", "handoff")]:
     errors = lib.validate(json.loads((root / name).read_text()), kind)
     assert not errors, (name, errors)
 bad = {"title": "x", "videos": [{"key": "promo", "scenes": [{"name": "a", "shots": [{"source": "a.mp4", "in": 0}]}]}], "extra": 1}
@@ -204,6 +205,7 @@ ok "cardboard-timeline rejects an unknown video"
 step "starter kit"
 python3 -I "$ROOT/tests/test_check.py" 2>/dev/null || die "check.py unit tests"; ok "check.py unit tests"
 python3 -I "$ROOT/tests/test_cardboard_timeline.py" 2>/dev/null || die "cardboard-timeline unit tests"; ok "cardboard-timeline unit tests"
+node "$ROOT/tests/test_lib.mjs" >/dev/null || die "lib.js unit tests"; ok "lib.js unit tests"
 bash "$S/new-workspace.sh" "$TMP/ws" >/dev/null
 for f in AGENTS.md CLAUDE.md README.md check.py .gitignore; do exists "$TMP/ws/$f"; done
 echo "mine" > "$TMP/ws/AGENTS.md"; bash "$S/new-workspace.sh" "$TMP/ws" >/dev/null

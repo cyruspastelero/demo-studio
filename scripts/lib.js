@@ -26,7 +26,10 @@ async function prep(p) {
 }
 
 // Hides banners/popups whose text matches any of the given regex sources; stays active.
+// An empty list hides nothing: joined into a pattern it would match every element on the page.
 async function hideClutter(p, sources) {
+  const patterns = (sources || []).filter(source => typeof source === 'string' && source.trim());
+  if (!patterns.length) return;
   await p.evaluate(src => {
     const re = new RegExp(src.join('|'));
     const hide = () => {
@@ -39,7 +42,7 @@ async function hideClutter(p, sources) {
     };
     hide();
     if (!window.__demoClutter) { window.__demoClutter = new MutationObserver(hide); window.__demoClutter.observe(document.body, { childList: true, subtree: true }); }
-  }, sources);
+  }, patterns);
 }
 
 // Starts a screencast take; returns stop() which flushes frames and returns the receiver summary.
