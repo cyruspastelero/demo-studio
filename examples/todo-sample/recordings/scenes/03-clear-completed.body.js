@@ -1,0 +1,13 @@
+const p = findTab('todomvc.com/examples/react');
+if (!p) throw new Error('run scenes 01 and 02 first: the todo tab is not open');
+await prep(p);
+if (await p.locator('.todo-list li.completed').count() !== 2) throw new Error('expected 2 completed todos from scene 02');
+await placeCursor(p, W * 0.78, H * 0.42);
+stop = await record(p, '_tmp03');
+await sleep(1200);
+await click(p, p.getByRole('button', { name: 'Clear completed' }));
+await p.locator('.todo-list li').nth(1).waitFor({ state: 'detached' });
+await park(p, W * 0.78, H * 0.42);
+await sleep(2800);
+const r = await stop(); stop = null;
+return { frames: r.frames, items: await p.locator('.todo-list li').count() };

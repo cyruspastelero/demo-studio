@@ -13,6 +13,8 @@ First open-source release.
   hunt before filming, the cold follow-through before sending, and close-out. The skills enforce them.
 - Optional Cardboard finishing path: the `demo-cardboard` skill, `scripts/cardboard-timeline.py`
   and `references/cardboard.md`. Everything still works without Cardboard.
+- `examples/todo-sample`: a real demo recorded and cut with the plugin, shown at the top of the README.
+- Fixed: an empty `clutter` list (the template default) hid most of the page before a take.
 - Home screen: `npm run studio` with no folder opens a page with one card per demo (stages, what
   needs attention, videos, documents, the next thing to ask Claude), and a first-run guide.
 - The default cursor is now the normal arrow, moved with easing on a slight arc (`moveHuman`,

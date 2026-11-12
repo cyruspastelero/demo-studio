@@ -1,0 +1,12 @@
+{
+  "title": "Todo app sample",
+  "logo": "",
+  "_comment": "The sample demo made with demo-studio: a public todo app (TodoMVC, React), three scenes. zoom = [factor, centerX, centerY, startSec, durationSec] in 1920x1080 coords of the output clip; trim = [inSec, outSec] of the raw clip.",
+  "sequence": [
+    { "card": "intro", "title": "A todo list in three moves.", "subtitle": "Recorded and cut with demo-studio.", "duration": 3.0, "voiceover": "A todo list should take seconds. Type what needs doing and press Enter." },
+    { "scene": "01", "stem": "01-add-todos", "take": 1, "caption": "Type it. Press Enter.", "trim": [0.8, 10.2], "speed": 1.5, "zoom": [1.7, 960, 250, 0.2, 0.9] },
+    { "scene": "02", "stem": "02-complete-and-filter", "take": 1, "caption": "Tick things off. Filter what is left.", "trim": [0.8, 12.8], "speed": 1.25, "zoom": [1.7, 960, 250, 0.0, 0.6], "voiceover": "Tick things off as you finish them. Filters show what is still active and what is done." },
+    { "scene": "03", "stem": "03-clear-completed", "take": 1, "caption": "Clear the finished ones in one click.", "trim": [0.5, 5.3], "speed": 1, "zoom": [1.7, 960, 250, 0.0, 0.6], "voiceover": "Clear the finished ones in one click." },
+    { "card": "outro", "title": "Real app. Real clicks.", "subtitle": "github.com/Cyvid7-Darus10/demo-studio", "duration": 3.6 }
+  ]
+}

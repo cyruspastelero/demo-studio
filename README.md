@@ -10,6 +10,11 @@ story, tests that every step works, records the browser, cuts the videos, writes
 packages everything for an editor. The footage is the real product running; nothing on screen is
 AI-generated.
 
+![A thirty second demo of a todo app, recorded and cut with demo-studio](docs/img/sample-todo.gif)
+
+*The sample above was made with the plugin: three scenes of a public todo app, recorded, zoomed,
+captioned and cut. Its plan, scene scripts and configs are in [examples/todo-sample](examples/todo-sample).*
+
 It grew out of a run of partner and product demos, and the gotchas from those shoots are written
 down in [references/learnings.md](references/learnings.md).
 
@@ -129,7 +134,8 @@ bash "$P/scripts/new-workspace.sh" ./demos
 
 Each demo then gets its own folder from `new-demo.sh` (Claude runs it): brief, run sheet, shot list,
 voiceover draft, prep checklist, throwaways list, `demo.json` and `handoff.json`.
-See [examples/acme-invoice-bot](examples/acme-invoice-bot) for one filled in.
+See [examples/acme-invoice-bot](examples/acme-invoice-bot) for a filled-in plan, and
+[examples/todo-sample](examples/todo-sample) for a small demo that was recorded and cut for real.
 
 ## Rules and quality gates
 
@@ -193,7 +199,7 @@ starter/          the workspace kit new-workspace.sh installs: playbook, index, 
 schemas/          demo.schema.json and handoff.schema.json (the config shapes the scripts check)
 templates/        files new-demo.sh copies into a new demo
 references/       learnings, quality gates, scene patterns, voiceover, handoff spec, secrets, cardboard
-examples/         acme-invoice-bot: a small, fully filled fictional demo
+examples/         acme-invoice-bot (a filled-in fictional plan) and todo-sample (a real, recorded demo)
 app/              local editor: React UI (src/), file and render server (server/), tests (e2e/)
 tests/            smoke.sh (end to end on synthetic footage) and unit tests for the Python tools
 docs/             ROADMAP.md, img/ (editor screenshots)
