@@ -5,7 +5,7 @@ Every demo teaches something. Put it back here so the next person does not re-le
 ## Set up
 
 ```bash
-git clone git@github.com:Cyvid7-Darus10/demo-studio.git
+git clone https://github.com/Cyvid7-Darus10/demo-studio.git
 cd demo-studio && npm install
 bash scripts/doctor.sh
 claude --plugin-dir "$PWD"      # load your working copy instead of the installed plugin
@@ -20,6 +20,9 @@ claude --plugin-dir "$PWD"      # load your working copy instead of the installe
 | Voiceover or handoff rules | `references/voiceover.md`, `references/handoff-spec.md` |
 | Secret-handling rules | `references/secrets.md` |
 | When Claude should do or ask something | the stage's `skills/<name>/SKILL.md` |
+| A gate a stage must pass | `references/quality-gates.md`, and the skill that enforces it |
+| Workspace playbook, index or drift checks | `starter/` (`check.py` has tests in `tests/test_check.py`) |
+| Anything Cardboard | `references/cardboard.md`, `skills/demo-cardboard/`; it must stay optional |
 | A tool | `scripts/`, referenced from skills as `$P/scripts/...` (`P` = `${CLAUDE_PLUGIN_ROOT}`) |
 | A new config field | `schemas/*.schema.json` first, then the script, the template and the example |
 | The local editor | `app/`; run `npm run test:app` and `npm run test:e2e`, and refresh `docs/img/` with `npm run screenshots -w app` after visible changes |
@@ -46,6 +49,8 @@ own `tools/` folder, not here.
 
 ```bash
 bash tests/smoke.sh            # KEEP=1 keeps the temp folder to inspect outputs
+python3 -I tests/test_check.py
+python3 -I tests/test_cardboard_timeline.py
 claude plugin validate .
 ```
 
@@ -57,5 +62,7 @@ Add a check to `tests/smoke.sh` for any new script or output.
    `package.json` (semver: patch for fixes and docs, minor for new tools or fields, major when an
    existing `demo.json` or `handoff.json` stops validating).
 2. Commit with a conventional message (`feat:`, `fix:`, `docs:`...) and push to `main`.
-3. Teammates update with `/plugin marketplace update demo-studio`, then re-run
+3. Add the release to `CHANGELOG.md`, tag it (`git tag v0.2.0 && git push --tags`) and publish a
+   GitHub release with the same notes.
+4. Users update with `/plugin marketplace update demo-studio`, then re-run
    `npm install --prefix <new plugin folder>` (each version gets its own folder) and `doctor.sh`.

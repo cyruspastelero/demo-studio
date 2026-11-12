@@ -1,11 +1,22 @@
 # demo-studio
 
-A Claude Code plugin that makes product demo videos. Built for our product demos, so anyone on the
-team can ask Claude "make a demo of X" instead of asking the one person who knows the pipeline.
+[![CI](https://github.com/Cyvid7-Darus10/demo-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/Cyvid7-Darus10/demo-studio/actions/workflows/ci.yml)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
-You give Claude a goal (or a brief from a client), log in to a sandbox account, and it plans the
-story, records the browser, cuts the videos, writes the voiceover and packages everything for an
-editor. All footage is real screen recording; nothing is AI-generated.
+A Claude Code plugin that makes product demo videos from real screen recordings.
+
+You give Claude a goal (or a brief someone sent you) and log in to a sandbox account. It plans the
+story, tests that every step works, records the browser, cuts the videos, writes the voiceover and
+packages everything for an editor. The footage is the real product running; nothing on screen is
+AI-generated.
+
+It grew out of a run of partner and product demos, and the gotchas from those shoots are written
+down in [references/learnings.md](references/learnings.md).
+
+**Contents:** [What it makes](#what-it-makes) · [Requirements](#requirements) · [Install](#install) ·
+[Quickstart](#quickstart-5-minutes-to-the-first-plan) · [Starter kit](#starter-kit) ·
+[Rules](#rules-and-quality-gates) · [Two ways to finish](#two-ways-to-finish) ·
+[Local editor](#local-editor) · [FAQ](#faq) · [Contributing](#contributing)
 
 ## What it makes
 
@@ -28,7 +39,6 @@ We use **Playwright** (the Playwright MCP server and `playwright-core`), not Pup
 | Need | Why | Install |
 | --- | --- | --- |
 | Claude Code with plugin support | Runs the skills | `npm i -g @anthropic-ai/claude-code` |
-| GitHub access to this private repo | The plugin installs from it | Ask the owner for a collaborator invite, then be logged in with `gh auth login` or git credentials that can read the repo |
 | Node.js 20+ (22 LTS recommended) | Frame receiver, recorder, title cards | `brew install node` |
 | Google Chrome | The recorded browser and the title-card renderer | `brew install --cask google-chrome` or google.com/chrome |
 | Playwright MCP | Claude drives and records the browser through it | See below |
@@ -38,7 +48,11 @@ We use **Playwright** (the Playwright MCP server and `playwright-core`), not Pup
 | ffmpeg with libx264 | All encoding | `brew install ffmpeg` |
 | 10 GB+ free disk | Raw frames take several GB per demo | |
 | macOS `say` (optional) | Voiceover fit check and timing preview; estimated from word count elsewhere | Built into macOS |
-| Sandbox or test accounts (optional, per product) | Everything filmed must be safe to show | Per product |
+| Sandbox or test accounts | Everything filmed must be safe to show | Per product |
+| Cardboard and its `cb` CLI (optional) | Lets Claude finish the video itself: narration, captions, music, export | See [Two ways to finish](#two-ways-to-finish) |
+
+It is built and used on macOS. The scripts avoid macOS-only tools (`say` is optional) and CI runs
+the pipeline on Linux, but recording on Linux or Windows has had far less use. Reports are welcome.
 
 ### Playwright MCP
 
@@ -96,6 +110,53 @@ Working on the plugin itself? Clone the repo, run `npm install` there, and start
 The skill also triggers on "record a walkthrough of...", "film a product demo...", or "hand these
 takes to an editor". See `examples/acme-invoice-bot/` for a filled-in plan.
 
+## Starter kit
+
+A demos folder works better with a playbook and an index. One command adds them (it never
+overwrites a file that is already there):
+
+```bash
+bash "$P/scripts/new-workspace.sh" ./demos
+```
+
+| File | What it is |
+| --- | --- |
+| `AGENTS.md` | The playbook Claude reads first: modes, how much to ask, stage gates, house rules, folder layout. Edit it to fit your team; it wins over the plugin's defaults |
+| `CLAUDE.md` | Points Claude at the playbook and the session routine |
+| `README.md` | The index: one row per demo with its status and final cut |
+| `check.py` | A drift report: index rows that point nowhere, takes nobody reviewed, throwaways never deleted, leftover frames, stray secrets files, low disk |
+| `.gitignore` | Keeps recordings, zips, browser profiles and `.env` files out of git |
+
+Each demo then gets its own folder from `new-demo.sh` (Claude runs it): brief, run sheet, shot list,
+voiceover draft, prep checklist, throwaways list, `demo.json` and `handoff.json`.
+See [examples/acme-invoice-bot](examples/acme-invoice-bot) for one filled in.
+
+## Rules and quality gates
+
+A demo that shows something a viewer cannot repeat is worse than no demo. The plugin holds the line
+on a few things, written out in [references/quality-gates.md](references/quality-gates.md):
+
+- **Claims list.** Every claim the video makes maps to a shot that proves it, or it is cut.
+- **Test sweep before any take.** Every scene and edge case run off camera from a clean state, the
+  hero flow twice, and a hunt for dead ends: links, commands and setup steps a viewer could not repeat.
+- **Secrets are masked in the page, never in post**, and every reveal is checked frame by frame
+  ([references/secrets.md](references/secrets.md)). Sandbox or test accounts only.
+- **Real actions, cleaned up.** Things are created for real on camera, listed in THROWAWAYS.md and
+  deleted after sign-off. Nothing is faked.
+- **Cold follow-through.** Before sending, the how-to script is followed literally on a fresh account.
+
+## Two ways to finish
+
+| | Built in (default) | Cardboard (optional) |
+| --- | --- | --- |
+| Needs | ffmpeg | The Cardboard desktop app, signed in, with its `cb` CLI installed |
+| You get | Rough assemblies, scripts, voiceover timing and a zip for a human editor | A finished video with generated narration, synced captions and music |
+| Skills | `demo-edit`, `demo-handoff` | `demo-cardboard`, after `demo-edit` |
+
+Both start from the same `handoff.json`, so you can hand off to an editor and finish a version in
+Cardboard from one shoot. Nothing in the plugin requires Cardboard, and `doctor.sh` only notes
+whether it is there. Details: [references/cardboard.md](references/cardboard.md).
+
 ## Stages
 
 ```
@@ -112,6 +173,7 @@ takes to an editor". See `examples/acme-invoice-bot/` for a filled-in plan.
   [edit]      demo-edit     keynote cut (demo.json) / promo + how-to (handoff.json), title cards,
       |                     voiceover fit check, timing preview
   [handoff]   demo-handoff  editor folder + zip, READ-ME-FIRST, brand sheet
+      |       or demo-cardboard (optional): narration, captions, music, export
       |
   [social]    demo-edit     4:5 and 9:16 versions
       |
@@ -124,15 +186,17 @@ The `demo-studio` skill orchestrates; each stage has its own skill you can also 
 
 ```
 .claude-plugin/   plugin.json, marketplace.json
-skills/           demo-studio (orchestrator), demo-plan, demo-record, demo-edit, demo-handoff
+skills/           demo-studio (orchestrator), demo-plan, demo-record, demo-edit, demo-handoff,
+                  demo-cardboard (optional)
 scripts/          every tool (recorder, QA, encode, edit, handoff, social, scaffold, doctor)
+starter/          the workspace kit new-workspace.sh installs: playbook, index, check.py
 schemas/          demo.schema.json and handoff.schema.json (the config shapes the scripts check)
 templates/        files new-demo.sh copies into a new demo
-references/       learnings, scene patterns, voiceover, handoff spec, secrets
+references/       learnings, quality gates, scene patterns, voiceover, handoff spec, secrets, cardboard
 examples/         acme-invoice-bot: a small, fully filled fictional demo
 app/              local editor: React UI (src/), file and render server (server/), tests (e2e/)
-tests/smoke.sh    end-to-end test on synthetic footage
-docs/             CONTRIBUTING.md, img/ (editor screenshots)
+tests/            smoke.sh (end to end on synthetic footage) and unit tests for the Python tools
+docs/             ROADMAP.md, img/ (editor screenshots)
 ```
 
 ## Local editor
@@ -248,11 +312,20 @@ is checked frame by frame. See `references/secrets.md`.
 
 ```bash
 npm install && bash tests/smoke.sh   # pipeline, on synthetic footage
+python3 -I tests/test_check.py && python3 -I tests/test_cardboard_timeline.py   # Python unit tests
 npm run test:app                     # editor unit tests (vitest)
 npm run test:e2e                     # editor end to end, headless Chrome on a temp copy of the example
 npm run screenshots -w app           # refresh docs/img/
 ```
 
+## Contributing
+
+Every demo teaches something, and the most useful contribution is often one line in
+[references/learnings.md](references/learnings.md). See [CONTRIBUTING.md](CONTRIBUTING.md) for
+setup, where things go and how to test. Security reports: [SECURITY.md](SECURITY.md).
+What is planned: [docs/ROADMAP.md](docs/ROADMAP.md).
+
 ## License
 
-Proprietary, internal use only. See LICENSE.
+Apache License 2.0. If you use or adapt this code, keep the [NOTICE](NOTICE) file, which credits
+Cyrus David Pastelero, as the license requires. See [LICENSE](LICENSE).
