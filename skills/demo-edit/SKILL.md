@@ -93,7 +93,13 @@ python3 -I "$P/scripts/social-cut.py" recordings/exports/<slug>-keynote-cut.mp4 
 Watch every rough assembly end to end, check `voiceover fits`, and view a contact sheet of each social
 version for cropped-off content.
 
-## 7. Let a human review or tweak the cut (local editor)
+## 7. Finish in Cardboard (optional)
+
+If the user has Cardboard and wants a finished video with narration, captions and music rather than
+a handoff to an editor, continue with the `demo-cardboard` skill. It starts from the clips built in
+step 3. Everything above works without it.
+
+## 8. Let a human review or tweak the cut (local editor)
 
 When the user or a coworker wants to watch the cut, nudge in and out points, reorder shots, reword
 on-screen text or voiceover, or check the 4:5 and 9:16 framing themselves, suggest the local editor
