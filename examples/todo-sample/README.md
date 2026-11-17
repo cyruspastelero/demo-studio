@@ -29,7 +29,7 @@ From the folder you started Claude Code in, with the Playwright MCP set up (`P` 
 
 ```bash
 cp -R "$P/examples/todo-sample" demos/todo-sample && cd demos/todo-sample/recordings
-mkdir -p raw frames exports
+mkdir -p raw frames exports && head -1 takes.csv > t && mv t takes.csv   # start a fresh take log
 export PLAYWRIGHT_MCP_OUT="<the folder Claude Code started in>/.playwright-mcp"
 node "$P/scripts/frame-receiver.mjs" .                      # leave running
 bash "$P/scripts/mk-setup.sh" https://todomvc.com/examples/react/dist/
@@ -37,7 +37,7 @@ bash "$P/scripts/mk-scene.sh" 01-add-todos                  # then 02 and 03
 ```
 
 Ask Claude to run each printed `.run.js` file with the Playwright MCP, check the frames, and encode
-each take with `encode-take.sh`. Or just ask: "record the todo-sample demo".
+each take with `encode-take.sh`. Or just ask: "try demo-studio on the todo sample".
 
 Then cut it:
 
@@ -46,6 +46,7 @@ cd .. && python3 -I "$P/scripts/review-reel.py" recordings --config demo.json
 node "$P/scripts/title-cards.mjs" handoff.json && python3 -I "$P/scripts/build-handoff.py" handoff.json
 python3 -I "$P/scripts/mk-assets.py" demo.json              # run the printed file with the MCP
 python3 -I "$P/scripts/build-keynote.py" demo.json
+python3 -I "$P/scripts/narrate.py" demo.json                # adds the voiceover (macOS say by default)
 ```
 
 ## Test sweep

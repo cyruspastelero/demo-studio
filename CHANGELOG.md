@@ -21,6 +21,20 @@ First open-source release.
   `placeCursor`). The blue dot remains as `PROJECT.cursor = 'dot'`.
 - `doctor.sh` reports whether the Cardboard CLI is present (optional).
 - CI on GitHub Actions; contributing guide moved to the repo root; SECURITY.md and issue templates added.
+- Free narration: `scripts/narrate.py` adds the voiceover lines in `demo.json` to the keynote cut,
+  with macOS `say`, your own recordings or (optional) ElevenLabs, an optional ducked music bed and
+  loudness normalising. It is the default finish in the `demo-edit` skill; Cardboard is now an
+  optional extra everywhere.
+- `references/style-guide.md`: one guide to the house look (capture, framing, pointer, typing,
+  pacing, zoom, captions, cards, colour, voiceover, music, social crops, a do and don't table).
+- `samples/`: scene recipes to copy (form with an error, dashboard tour, masked secret, AI reply,
+  dialog, settings toggle, table search and filter, two-person handoff), each with a USE WHEN /
+  CHANGE / VERIFY header, and a full sample plan for a fictional analytics product.
+- Skills rewritten as numbered steps with copy-paste commands, expected output, failure tables,
+  decision tables and "done when" checklists, so smaller models can follow them.
+- README reworked for first-time visitors: a short "Start here", a "First demo in 10 minutes" on
+  the todo sample (also what the orchestrator suggests for "try it"), and a style summary.
+- The starter playbook points at the style guide and samples and sets the narration voice order.
 
 ## 0.1.0 (2026-10-31)
 

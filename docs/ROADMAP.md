@@ -8,8 +8,6 @@ What is planned, roughly in order. Open an issue if you want to pick one up or a
   setup part, a secret that gets masked and an edge case, narrated.
 - **Recording on Linux and Windows.** The pipeline runs on Linux in CI, but recording has mostly
   been used on macOS. Test it, fix what breaks and document the differences.
-- **A voice-agnostic narration step.** Today the built-in path writes a timed script and a
-  placeholder preview. Add a small adapter so any text-to-speech tool can fill the voiceover track.
 - **`check.py` fixes.** Let it fix what is safe to fix (index paths, statuses) instead of only reporting.
 
 ## Later

@@ -17,6 +17,8 @@ claude --plugin-dir "$PWD"      # load your working copy instead of the installe
 | --- | --- |
 | A gotcha that cost a re-shoot | `references/learnings.md`, one bullet, in the right section, saying what to do |
 | A reusable scene technique | `references/scene-patterns.md`, with a short code sample |
+| A scene recipe for a common kind of step | `samples/scenes/<name>.body.js` with the RECIPE / USE WHEN / CHANGE / VERIFY header and `// CHANGE:` markers, plus a row in `samples/README.md` (see "Adding a sample" there) |
+| A rule about how demos look or sound | `references/style-guide.md`; keep it in line with `learnings.md` and the defaults table in `skills/demo-studio/SKILL.md` |
 | Voiceover or handoff rules | `references/voiceover.md`, `references/handoff-spec.md` |
 | Secret-handling rules | `references/secrets.md` |
 | When Claude should do or ask something | the stage's `skills/<name>/SKILL.md` |
@@ -27,7 +29,11 @@ claude --plugin-dir "$PWD"      # load your working copy instead of the installe
 | A new config field | `schemas/*.schema.json` first, then the script, the template and the example |
 | The home screen and local editor | `app/`; run `npm run test:app` and `npm run test:e2e`, and refresh `docs/img/` with `npm run screenshots -w app` after visible changes |
 
-Keep skills and scripts product-agnostic: no customer names, account ids, emails, internal team
+Skills are written so a smaller model can follow them: numbered steps, copy-paste commands with
+`$P` set at the top, the expected output, an "if you see X, do Y" table, and a "done when"
+checklist. Keep each `SKILL.md` under about 200 lines and put detail in `references/`.
+
+Keep skills, samples and scripts product-agnostic: no customer names, account ids, emails, internal team
 names or keychain items. Demo-specific helpers (seed, reset, answer servers) belong in the demo's
 own `tools/` folder, not here.
 
@@ -51,6 +57,7 @@ own `tools/` folder, not here.
 bash tests/smoke.sh            # KEEP=1 keeps the temp folder to inspect outputs
 python3 -I tests/test_check.py
 python3 -I tests/test_cardboard_timeline.py
+python3 -I tests/test_narrate.py
 claude plugin validate .
 ```
 

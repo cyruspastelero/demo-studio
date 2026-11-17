@@ -5,62 +5,74 @@ description: Package a demo for the video editor and wrap the shoot up. Builds t
 
 # Demo handoff
 
-`P` is this plugin's root, `${CLAUDE_PLUGIN_ROOT}` (if unfilled, `ls -d ~/.claude/plugins/cache/*/demo-studio/*/ | tail -1`).
-What the editor receives and why: `$P/references/handoff-spec.md`.
-
-## 1. Fill the brief
-
-In `handoff.json` `brief` (it becomes `1-READ-ME-FIRST.txt`):
-- `summary`: what the videos are and who they are for, in two or three sentences.
-- `people`: everyone on screen, fictional names with roles. `glossary`: words the editor may not know.
-- `edit_notes`: zooms for phones, pacing, style reference (`style_reference`).
-- `fixes`: things to crop or blur (test-mode banners, sandbox names, stray rows).
-- `do_not_say`: claims the footage does not prove, or the client forbids.
-- `claims`: every claim the voiceover makes, each one visible in the footage.
-- `reference_files`: the review reel and any style references to include.
-- `brand`: spelling, colours, font, logo, taglines (becomes `assets/brand/BRAND.txt`).
-
-If a client brief exists, copy its wording into these fields exactly.
-
-## 2. Build
+Run every command from the demo folder (`<demo>`, the one with `handoff.json`). Start each with:
 
 ```bash
-node "$P/scripts/title-cards.mjs" handoff.json --social    # cards and caption bands, if changed
+P="${CLAUDE_PLUGIN_ROOT:-$(ls -d ~/.claude/plugins/cache/*/demo-studio/*/ | tail -1)}"
+```
+
+What the editor receives and why: `$P/references/handoff-spec.md`.
+
+## Step 1: fill the brief in handoff.json
+
+The `brief` object becomes `1-READ-ME-FIRST.txt`. Fill every field:
+
+| Field | What goes in it |
+| --- | --- |
+| `summary` | What the videos are and who they are for, two or three sentences |
+| `people` | Everyone on screen: fictional name and role |
+| `glossary` | Words the editor may not know |
+| `edit_notes` | Zooms for phones, pacing, style reference |
+| `fixes` | Things to crop or blur (test-mode banners, sandbox names, stray rows) |
+| `do_not_say` | Claims the footage does not prove, or the client forbids |
+| `claims` | Every claim the voiceover makes, each visible in the footage |
+| `reference_files` | The review reel and any style references |
+
+And `brand` (becomes `assets/brand/BRAND.txt`): spelling, colours, font, logo, taglines.
+If a client brief exists, copy its wording into these fields exactly.
+
+## Step 2: build
+
+```bash
+node "$P/scripts/title-cards.mjs" handoff.json --social
 python3 -I "$P/scripts/build-handoff.py" handoff.json      # add --no-say when not on macOS
 ```
 
-It cuts both videos, writes scripts and voiceover files, the timing previews, source-footage by
-part, contact sheets, READ-ME-FIRST, BRAND.txt, the social versions, and
-`recordings/<slug>-editor-handoff.zip`. It must print `voiceover fits`; if not, fix the lines (demo-edit).
+Expected: one line per video folder, then `voiceover fits`, then an `OUTPUT` line for
+`recordings/<slug>-editor-handoff.zip`.
 
-For a single keynote cut with no promo/how-to split, use
+| If you see | Do this |
+| --- | --- |
+| `VOICEOVER PROBLEMS: ...` | Fix the lines (skill `demo-edit`, Step 4), then build again |
+| `WARN part '<name>' matched no takes` | Fix that entry in `handoff.json` `parts` |
+| a schema error naming a field | Fix that field in `handoff.json`; compare with `$P/examples/todo-sample/handoff.json` |
+
+For a single keynote cut with no promo and how-to split, run
 `python3 -I "$P/scripts/keynote-handoff.py" demo.json` instead.
 
-## 3. Check before sending
+## Step 3: check before sending
 
-- Open each `00_ROUGH-ASSEMBLY.mp4` and the timing previews; watch them through.
-- Read 1-READ-ME-FIRST.txt as if you were the editor: could you finish without asking anything?
-- Look through `reference/take-contact-sheets/` for secrets, personal data and stray test data.
-- Note the zip size; source footage dominates. Drop unused parts from `parts` if it is too large.
-- Open the folder for the user (`open recordings/editor-handoff`).
+1. Watch each `00_ROUGH-ASSEMBLY.mp4` and timing preview in `recordings/editor-handoff/` end to end.
+2. Read `1-READ-ME-FIRST.txt` as the editor: could you finish without asking anything?
+3. Look through `reference/take-contact-sheets/` for secrets, personal data and stray test data.
+4. Note the zip size. If it is too large, drop unused parts from `parts` and build again.
+5. **Cold follow-through** (`$P/references/quality-gates.md` section 4): follow the how-to script
+   literally on a fresh test account. If you get stuck or have to guess, fix the script or re-shoot.
+6. Tick every entry in `brief.claims` against the footage.
+7. Open the folder for the user: `open recordings/editor-handoff`.
 
-- **Cold follow-through** (`$P/references/quality-gates.md` section 4): follow the how-to script
-  literally on a fresh test account. If you get stuck or have to guess, fix the script or re-shoot.
-- Tick every entry in `brief.claims` against the footage.
-
-## 4. When the edit comes back
+## Step 4: when the edit comes back
 
 Save the finished videos to `<demo>/final/`, point the demos index at them, and re-time the
-voiceover to the finished cut rather than to the rough assembly.
+voiceover to the finished cut, not the rough assembly.
 
-## 5. Wrap-up checklist
+## Step 5: wrap-up (done when every box is ticked)
 
-- [ ] Update the demo README Status section (what was made, where, how to rebuild) and the demos
-      index row if there is one.
-- [ ] List the THROWAWAYS still to delete; delete them only after the user signs off.
-- [ ] Remind the user to rotate any credential shared in chat or shown on screen, even blurred.
-- [ ] Stop demo-only servers (frame receiver, helper servers) and close demo windows.
-- [ ] Ask before deleting `recordings/frames/` (several GB). Never delete raw takes or exports
-      without the go-ahead.
-- [ ] Keep `app/.env` out of every zip and commit.
-- [ ] Run the workspace `python3 -I check.py` if there is one; it should report nothing for this demo.
+- [ ] The demo README.md Status section says what was made, where, and how to rebuild it
+- [ ] The demos index row (`./demos/README.md`) has the status and the final cut's path
+- [ ] THROWAWAYS.md lists what is still to delete; delete only after the user signs off
+- [ ] The user was reminded to rotate any credential shared in chat or shown on screen, even blurred
+- [ ] Demo-only servers (frame receiver, helper servers) are stopped and demo windows closed
+- [ ] The user was asked before deleting `recordings/frames/` (several GB). Raw takes and exports stay
+- [ ] `app/.env` is in no zip and no commit
+- [ ] `python3 -I check.py` in the demos folder (if there is one) reports nothing for this demo

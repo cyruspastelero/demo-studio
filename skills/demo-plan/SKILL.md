@@ -1,91 +1,148 @@
 ---
 name: demo-plan
-description: Plan a product demo video from a goal or a client brief. Scaffolds the demo folder and writes the story arc, BRIEF, RUN-SHEET, SHOT-LIST, VOICEOVER draft, PREP checklist, THROWAWAYS and demo.json from templates. Use at the start of a demo, when a brief arrives, or when the story, scenes or voiceover need rework before recording.
+description: Plan a product demo video from a goal or a client brief. Scaffolds the demo folder and writes the story arc, BRIEF, RUN-SHEET, SHOT-LIST, VOICEOVER draft, PREP checklist, THROWAWAYS and demo.json from templates, then runs the prep and test sweep. Use at the start of a demo, when a brief arrives, or when the story, scenes or voiceover need rework before recording.
 ---
 
 # Demo plan
 
-`P` is this plugin's root, `${CLAUDE_PLUGIN_ROOT}` (if unfilled, `ls -d ~/.claude/plugins/cache/*/demo-studio/*/ | tail -1`).
 Write everything down before touching the browser. A good plan makes recording mechanical.
 
-## 1. Scaffold
+Start every shell command with this line (it finds the plugin folder):
 
 ```bash
-DEMO_ROOT=./demos bash "$P/scripts/new-demo.sh" <name>      # lowercase-with-dashes
+P="${CLAUDE_PLUGIN_ROOT:-$(ls -d ~/.claude/plugins/cache/*/demo-studio/*/ | tail -1)}"
 ```
 
-Creates `README.md, BRIEF.md, RUN-SHEET.md, SHOT-LIST.md, VOICEOVER.md, PREP.md, THROWAWAYS.md,
-demo.json, handoff.json, tools/, assets/, recordings/{raw,frames,scenes,exports}/, takes.csv`.
-If the demo runs our own copy of a product, clone it into `<name>/app/`. Demo-only helpers (seed,
-reset, answer server) go in `<name>/tools/`. The only secrets file is `app/.env` (gitignored).
-If a demos index README exists in `$DEMO_ROOT`, add a row for the new demo.
+**Before you write anything, open the sample plan** at `$P/samples/plan/` (BRIEF.md, SHOT-LIST.md,
+RUN-SHEET.md, VOICEOVER.md, demo.json). Match its level of detail. The look and copy rules are in
+`$P/references/style-guide.md`.
 
-## 2. Brief (BRIEF.md)
+## Step 1: scaffold
 
-- **A client or another team sent a brief:** paste it verbatim under "Their brief" and never change
-  their wording. Their scene names, on-screen text, voiceover lines, product names and taglines are
-  used exactly as written, including in demo.json and handoff.json. Our interpretation and open
-  questions go under "Our reading". If the footage cannot prove one of their claims, or a line does
-  not fit its time, tell the user and suggest a change; do not edit silently.
-- **No brief:** write "Our reading" from the goal: goal, audience, where it runs, videos wanted,
-  must-show claims, must-not-say, voiceover yes or no.
+```bash
+DEMO_ROOT=./demos bash "$P/scripts/new-demo.sh" <name>      # <name> is lowercase-with-dashes
+```
 
-## 3. Story arc
+Expected: `scaffolded ./demos/<name>` and `OUTPUT ./demos/<name>`.
 
-Default arc: **why** (the pain, in context) -> **find it** -> **set it up** (install, each credential
-with least-privilege scopes, where secrets go, run) -> **use it** (the hero flow end to end) ->
-**proof** (the result in the system of record) -> **edge case** (it asks instead of guessing, cancel,
-an error handled) -> **close** (the one-line payoff and where to get it).
+| If you see | Do this |
+| --- | --- |
+| `already exists` | The demo exists. Ask the user: resume it, or pick a new name |
+| `usage` or a name error | Use only lowercase letters, digits and dashes |
 
-- One consistent world: one workspace, one customer, one set of numbers across every scene.
-- Fictional people with names and roles ("Riley Chen, sales"). Never real customers.
-- The promo (about 1:30) tells the story; the how-to (about 3:00) adds setup steps and the edge case.
-  Plan scenes so both videos come from one shoot.
+It creates `README.md, BRIEF.md, RUN-SHEET.md, SHOT-LIST.md, VOICEOVER.md, PREP.md, THROWAWAYS.md,
+demo.json, handoff.json, tools/, assets/, recordings/{raw,frames,scenes,exports}/, recordings/takes.csv`.
+If `./demos/README.md` (the index) exists, add a row: `| <name> | <one line> | Planning <date> | none yet |`.
 
-## 4. RUN-SHEET.md
+## Step 2: BRIEF.md
 
-Beat by beat: where, the pointer action, the exact text typed on camera, the expected result and its
-latency, and a draft voiceover line. This is what you follow while recording.
+| Situation | What to write |
+| --- | --- |
+| Someone sent a brief | Paste it word for word under "Their brief". Never change their wording, in any file. Our notes go under "Our reading" |
+| No brief | Write "none: internal demo" under "Their brief", then fill every line of "Our reading" from the goal |
 
-## 5. SHOT-LIST.md
+Then add a **Claims list** table (claim, proved by scene), as in `$P/samples/plan/BRIEF.md`.
+A claim with no scene that proves it is cut from the script.
 
-One row per scene: number, part, scene stem, what is on screen, caption, target length, and what it
-depends on (scenes that show the same seeded data or the same record). Stems are `NN-kebab-name`
-(`03-add-key`); use `03b` for inserts. Keep scenes short (10 to 40s) and single purpose.
+## Step 3: story arc
 
-## 6. VOICEOVER.md
+Use this order unless the brief says otherwise:
 
-Draft the lines now, per scene, for the promo and the how-to. Rules (full guide in
-`$P/references/voiceover.md`):
+**why** (the pain) -> **set it up** (install, each credential with least privilege) -> **use it**
+(the hero flow) -> **proof** (the result in the system of record) -> **edge case** (it handles an
+error or asks instead of guessing) -> **close** (the payoff and where to get it).
+
+- One world: one workspace, one customer, one set of numbers across every scene.
+- Fictional people with a name and role ("Riley Chen, growth lead"). Never real customers.
+
+## Step 4: SHOT-LIST.md
+
+One row per scene: number, part, stem, what is on screen, caption, length, depends on, recipe.
+
+- Stems are `NN-kebab-name` (`03-add-key`); `03b` for an insert.
+- Each scene is 10 to 40 seconds and does one thing.
+- "Depends on" names the scenes that show the same data, so a re-seed re-shoots all of them.
+- "Recipe" names the file in `$P/samples/scenes/` the scene body will start from:
+
+| The scene shows | Recipe |
+| --- | --- |
+| A form, with an error then success | `form-validation.body.js` |
+| A long page or dashboard | `dashboard-tour.body.js` |
+| Creating an API key or token | `secret-reveal.body.js` |
+| An AI or bot reply | `ai-chat-reply.body.js` |
+| A dialog (invite, share, confirm) | `modal-dialog.body.js` |
+| A setting with a visible effect | `settings-toggle.body.js` |
+| Finding a record in a list | `table-search-filter.body.js` |
+| Two people in two windows | `two-person-handoff-a.body.js` and `-b` |
+| None of these | the skeleton in `$P/references/scene-patterns.md` |
+
+Captions: one short sentence, sentence case, ending in a period, under about eight words.
+
+## Step 5: RUN-SHEET.md
+
+For each beat: where, the pointer action, the exact text typed on camera, the expected result and
+how long it takes, and a voiceover draft. Typed text reads like a real person with a goal.
+
+## Step 6: VOICEOVER.md
+
+Rules (full guide `$P/references/voiceover.md`):
+
 - Spoken English, present tense, second person. Point at what is on screen and say why.
-- About **2.5 words per second** of the scene's time.
-- **No em dashes**, parentheses or symbols. Spell out URLs ("acme dot com slash billing") and
-  amounts ("twelve hundred dollars").
+- About 2.5 words per second of the time the line plays over. Write the word count after each line.
+- No em dashes, parentheses or symbols. Spell out URLs ("acme dot com slash billing") and amounts
+  ("twelve hundred dollars").
 - Claim only what the footage will show.
 
-## 7. PREP.md
+## Step 7: PREP.md and demo.json
 
-Fill the checklist: accounts (sandbox or test only), a dedicated demo user with realistic seeded
-data, seed and reset scripts in `tools/`, consistent numbers, timezone and locale for time-sensitive
-UI, clutter list, secret patterns, one instance of every service, and the smoke run. Recording starts
-only when PREP is ticked.
+Tick each PREP.md box as you do it: sandbox accounts, a dedicated demo user with seeded data, seed
+and reset scripts in `tools/`, timezone and locale, clutter list, secret patterns, one instance of
+every service, a smoke run.
 
-## 8. demo.json and _project.js
+Then fill:
 
-- `demo.json` `sequence`: the scenes plus title cards between parts. Add `browser.timezone` and, for
-  multi-person demos, `windows` (see `$P/schemas/demo.schema.json`).
-- `recordings/scenes/_project.js`: `cursor` ('arrow' by default, or 'hand'), `maskPatterns` and `maskLabels` for the
-  product's secrets, `clutter` for banners and toasts.
-- `handoff.json` is filled after recording (in and out points come from the takes); see demo-edit.
+- `demo.json` `sequence`: the scenes and title cards in story order, each scene with `caption`, and
+  `voiceover` on the items that speak. Shape: `$P/schemas/demo.schema.json`. Example:
+  `$P/samples/plan/demo.json`. Add `browser.timezone` if the UI shows times, and `windows` for a
+  two-person demo.
+- `recordings/scenes/_project.js`: start from `$P/samples/scenes/_project.js`:
 
-## 9. Claims and test sweep
+| Setting | Default | Change when |
+| --- | --- | --- |
+| `cursor` | `'arrow'` | `'hand'` for a consumer app (shopping, social, games) |
+| `maskPatterns` | `[]` | The product has its own token prefix (`'\\bwf_(live|test)_\\w{16,}'`) |
+| `maskLabels` | `[]` | A secret sits next to a label like "Ingest key" |
+| `clutter` | `[]` | Any banner or toast shows. Use its full wording, never a short word |
 
-Before recording, pass the first two gates in `$P/references/quality-gates.md`: every claim the
-script makes maps to a scene that proves it, and the test sweep (each scene and edge case run off
-camera from a clean state, the hero flow twice, the dead-end hunt) is written as a table in the
-demo README with every row passing.
+Check demo.json parses: `python3 -I -m json.tool demo.json > /dev/null && echo ok`.
 
-## 10. Show the user
+## Step 8: claims check
+
+Every row of the claims list in BRIEF.md names a scene in SHOT-LIST.md. If not, cut the claim.
+
+## Step 9: test sweep
+
+From `$P/references/quality-gates.md` section 2. Off camera, from a freshly reset state:
+
+1. Run each scene's action in order. Each ends in the expected visible state.
+2. Run each edge-case scene. Each ends in a clear message, not a spinner or a raw error.
+3. Run the hero flow twice in a row. The second run must pass too.
+4. Check every URL in the script, captions and cards with `curl -sI <url>` (expect 200 or a redirect).
+
+Write a table in the demo's README.md under **Test sweep**: path, how checked, `pass` or the fix.
+Fix each failure, or cut the scene and its claim.
+
+## Step 10: show the user
 
 Post the scene table and a three-line story summary. Continue unless they object.
-See `$P/examples/acme-invoice-bot/` for a filled-in plan.
+
+## Done when
+
+- [ ] BRIEF.md has "Our reading" filled and a claims list
+- [ ] SHOT-LIST.md has every scene with caption, length, depends on and recipe
+- [ ] RUN-SHEET.md has the exact typed text for every beat
+- [ ] VOICEOVER.md has every line with a word count
+- [ ] demo.json parses and lists every scene; `_project.js` has the masks and clutter
+- [ ] Every PREP.md box is ticked
+- [ ] The test sweep table has `pass` on every row
+- [ ] The user has seen the scene table

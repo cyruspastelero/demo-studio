@@ -1,81 +1,123 @@
 ---
 name: demo-record
-description: Record demo footage scene by scene. Sets up the 2x Playwright recording rig and frame receiver, writes and wraps scene bodies, drives the logged-in browser (or several demo windows) with human-looking pointer and typing, masks secrets in the page, QAs frames on contact sheets, encodes 1080p 30fps takes, keeps the take log and handles re-shoots. Use when recording, re-shooting or QA-ing demo takes.
+description: Record demo footage scene by scene. Sets up the 2x Playwright recording rig and frame receiver, copies and adapts a scene recipe, drives the logged-in browser (or several demo windows) with human-looking pointer and typing, masks secrets in the page, QAs frames on contact sheets, encodes 1080p 30fps takes, keeps the take log and handles re-shoots. Use when recording, re-shooting or QA-ing demo takes.
 ---
 
 # Demo record
 
-`P` is this plugin's root, `${CLAUDE_PLUGIN_ROOT}` (if unfilled, `ls -d ~/.claude/plugins/cache/*/demo-studio/*/ | tail -1`).
-Read `$P/references/learnings.md` and `$P/references/secrets.md` first. Scene code examples are in
-`$P/references/scene-patterns.md`.
+Read once before the first take: `$P/references/learnings.md` (gotchas), `$P/references/secrets.md`
+(masking), `$P/references/style-guide.md` sections 3 to 6 (pointer, typing, pacing, scrolling).
 
-## 1. Rig (once per browser session)
+Start every shell command with this line (it finds the plugin folder):
 
 ```bash
-export PLAYWRIGHT_MCP_OUT="$PWD/.playwright-mcp"   # the Claude session's cwd, NOT the demo dir
-cd <demo>/recordings && node "$P/scripts/frame-receiver.mjs" .   # run_in_background: true
-DEMO_TIMEZONE=Europe/London bash "$P/scripts/mk-setup.sh" https://site-a/... https://site-b/...
+P="${CLAUDE_PLUGIN_ROOT:-$(ls -d ~/.claude/plugins/cache/*/demo-studio/*/ | tail -1)}"
 ```
 
-Call `browser_run_code` with `filename` set to the printed `_setup.run.js`. It clones the logged-in
-MCP session into a DPR 2, 1440x810 context with one tab per URL and reports where each tab landed.
-If a tab landed on a login page, ask the user to log in **in the MCP browser** (not their everyday
-Chrome), then re-run setup. Re-run setup whenever the MCP browser restarts.
+`<cwd>` below means the folder Claude Code was started in. `<demo>` is the demo folder.
 
-Optional, to keep payloads small: `bash "$P/scripts/mk-lib.sh"` then run `_lib.run.js` once, and wrap
-scenes with `--use-lib` below. Re-run it after every setup.
+## Step 1: rig (once per browser session)
 
-**Multi-person demos** (two people in a chat, an admin and a member): open one Chrome window per
-person with `bash "$P/scripts/open-window.sh" <name> <port> <url>`, have the user log in once in each,
-list them under `windows` in demo.json, and record with `node "$P/scripts/rec.mjs" <name> scenes/<body>.js`
-instead of the MCP. Use a separate `rx_port` (and a second receiver with `DEMO_RX_PORT`) to film two
-windows at once. `node "$P/scripts/run.mjs" <name> <script.mjs>` runs off-camera helpers in a window.
+1. Check disk: `df -h .` must show 10 GB or more free.
+2. Start the frame receiver, **in the background** (`run_in_background: true`):
+   ```bash
+   cd <demo>/recordings && node "$P/scripts/frame-receiver.mjs" .
+   ```
+   Expected: `frame-receiver on 127.0.0.1:8765, frames in ...`. If the port is in use, a receiver
+   is already running: leave it.
+3. Write the setup file (one URL per tab the demo uses):
+   ```bash
+   export PLAYWRIGHT_MCP_OUT="<cwd>/.playwright-mcp"
+   cd <demo>/recordings && DEMO_TIMEZONE=America/New_York bash "$P/scripts/mk-setup.sh" https://app.example.com/
+   ```
+   Expected: a path ending in `scenes/_setup.run.js`.
+4. Call the Playwright MCP tool `browser_run_code` (newer versions: `browser_run_code_unsafe`) with
+   `filename` set to that path.
 
-Before filming, check: `df -h` has 10 GB or more free (the receiver refuses below 4 GB), only one
-instance of any bot or server runs, seed data exists and stray test data is cleared, and the smoke
-run passed.
+| If the result shows | Do this |
+| --- | --- |
+| every tab `landed` on the right page, `dpr: 2` | Go on |
+| a tab landed on a login page | Ask the user to log in **in the Playwright MCP browser**, then repeat step 4 |
+| `no browser handle` | The MCP runs a persistent context. Ask the user to restart it with `--isolated` |
+| `filename` refused | `PLAYWRIGHT_MCP_OUT` is not `<cwd>/.playwright-mcp`. Fix it and repeat step 3 |
 
-## 2. Shoot one scene per run
+Repeat steps 3 and 4 whenever the MCP browser restarts.
 
-1. **Scout** an unfamiliar UI first: a body that returns button labels plus a screenshot.
-2. **Write** `recordings/scenes/<NN-name>.body.js`: `prep(p)`, `ensure(p, urlPart)`,
-   `stop = await record(p, '_tmpNN')`, the actions with `glide`/`click`/`typeHuman`, `park`, a hold,
-   `stop()`, and return a summary (frames, latencies, what the mask caught).
-3. **Wrap and run:** `bash "$P/scripts/mk-scene.sh" <NN-name>` (add `--use-lib` if installed), then
-   `browser_run_code` with the printed filename. For windows: `node "$P/scripts/rec.mjs" <window> scenes/<NN-name>.body.js`.
-4. **QA the raw frames before encoding:**
-   `python3 -I "$P/scripts/tile-frames.py" frames/_tmpNN 0 30 /tmp/sheet.png every=8` and read the image.
-   Check framing, clutter, pointer placement, whether the action completed, and **every frame across
-   any secret reveal** (`every=1` with a crop).
-5. **Encode:** `bash "$P/scripts/encode-take.sh" frames/_tmpNN NN-scene-name "what happened, latencies"`.
-   Writes `raw/NN-scene-name-tN.mp4` (1920x1080, 30fps, CRF 14), moves the frames to
-   `frames/NN-scene-name-tN`, and appends a `takes.csv` row with status `new`.
-6. **Log:** set the row's `status` to `keep`, `alt` or `reject` with a reason in the notes. One `keep`
-   per scene. Note trims ("wait 12s before reply, trim") for the edit.
-7. **Throwaways:** record every item created on camera (apps, keys, repos, channels, records) in
-   THROWAWAYS.md right away, with its id.
+**Two people in two windows:** instead of steps 3 and 4, run
+`bash "$P/scripts/open-window.sh" <name> <port> <url>` once per person, ask the user to log in in
+each window, and list them under `windows` in `<demo>/demo.json`. Record with `rec.mjs` (Step 2.3).
 
-Contact sheet of an encoded take: `bash "$P/scripts/sheet.sh" raw/<clip>.mp4 /tmp/x.png 2`.
+## Step 2: shoot one scene (repeat per scene, in SHOT-LIST.md order)
 
-## 3. Masking secrets
+1. **Copy the recipe** named in SHOT-LIST.md's Recipe column:
+   ```bash
+   command cp "$P/samples/scenes/<recipe>.body.js" <demo>/recordings/scenes/<NN-name>.body.js
+   ```
+   Recipe list and when to use each: `$P/samples/README.md`. Also copy
+   `$P/samples/scenes/_project.js` to `<demo>/recordings/scenes/_project.js` if it is still the template.
+2. **Scout, then adapt.** For an unfamiliar page, run the scout body from
+   `$P/references/scene-patterns.md` ("Scout run") to get the real button names. Then change every
+   line marked `// CHANGE:` in the copied file, and rename `'_tmpNN'` to this scene's number.
 
-- Token shapes and labels go in `_project.js` before the first take (`maskPatterns`, `maskLabels`).
-- `prep(p)` applies the mask; call `maskSecrets(p)` again on pages that were already open.
-- Canvas or image secrets: `const since = now()` before the revealing click, then
-  `blur(locator, since)` or `blurRect(x, y, w, h, since)`. These become post-encode blur boxes.
-- Return `maskedSummary(p)` from the scene and check it caught the token prefix.
-- One unmasked frame is a leak: re-shoot rather than patch.
+   | Choice | Default | Use the other when |
+   | --- | --- | --- |
+   | type or paste | `typeHuman` | Paste when the text is longer than about 2 lines |
+   | typing speed | 55ms | 70 to 75ms for a mention or a key phrase; 45ms for a long sentence |
+   | wait | `locator.waitFor` on the result | Never a fixed sleep for something async |
+   | pointer after an action | `park(p)` | `park(p, x, y)` when the default spot covers content |
 
-## 4. Re-shoot rules
+3. **Wrap and run:**
+   ```bash
+   cd <demo>/recordings && bash "$P/scripts/mk-scene.sh" <NN-name>
+   ```
+   Expected: a path ending in `scenes/<NN-name>.run.js`. Call `browser_run_code` with that
+   `filename`. For two windows: `node "$P/scripts/rec.mjs" <window> scenes/<NN-name>.body.js`.
 
-- Re-shoot a take when the action failed, clutter showed, the pointer covered the content, a secret
-  was visible for even one frame, or the timing is unusable. The next take number is automatic.
-- If seed data changed, re-shoot **every scene that depends on it** (the shot list's "Depends on"
-  column) so numbers match across scenes. Run the reset script between takes.
-- Keep the "use" scenes in one continuous pass so ids, names and amounts line up.
-- Keep frames until the take is approved; re-encodes are cheap, re-shoots are not.
+   | If the run returns | Do this |
+   | --- | --- |
+   | `{ frames: N, ... }` with N above 0 | Go to step 4 (a still page sends few frames; that is fine) |
+   | `expected <url>, on <other url>` | Redirected, often to a login. Ask the user to log in, re-run setup |
+   | `bad viewport` | Add `await prep(p)` right before `record()` |
+   | `frame receiver refused start` | Disk under 4 GB or the receiver stopped. Check `df -h`, restart it |
+   | a locator timeout | The label differs. Scout again and fix the `// CHANGE:` line |
+   | `glide target not visible` | Scroll first with `scrollIntoCenter(p, locator)` |
 
-## 5. Done when
+4. **QA the frames** before encoding:
+   ```bash
+   python3 -I "$P/scripts/tile-frames.py" frames/_tmpNN 0 30 /tmp/sheet.png every=8
+   ```
+   Read `/tmp/sheet.png`. Check: no banners or toasts, the pointer is not on the content being read,
+   the action finished, the head and tail are still. For a secret reveal, check **every frame**
+   across it (`every=1`, see the recipe header). Then do the "verify after the take" list in the
+   recipe's header comment.
+5. **Encode:**
+   ```bash
+   bash "$P/scripts/encode-take.sh" frames/_tmpNN <NN-name> "what happened, latencies"
+   ```
+   Expected: `raw/<NN-name>-tN.mp4 (12.3s, 1920x1080); frames kept in frames/<NN-name>-tN`.
+6. **Log:** in `recordings/takes.csv`, change the new row's status from `new` to `keep`, `alt` or
+   `reject`, and say why in the notes. Exactly one `keep` per scene.
+7. **Throwaways:** add every item created on camera (keys, records, invites) to THROWAWAYS.md now.
 
-Every scene has one `keep` take, THROWAWAYS.md is current, and the review reel (demo-edit) has been
-shown to the user.
+Scene done when: one `keep` row, the recipe's verify list passed, THROWAWAYS.md updated.
+
+## Step 3: re-shoot
+
+| Problem | Re-shoot? |
+| --- | --- |
+| The action failed, or clutter or a toast showed | Yes |
+| The pointer covered what the viewer reads | Yes |
+| A secret was visible for even one frame | Yes, and never patch it in post |
+| A long wait | No. Trim it in the edit |
+| Seed data changed | Yes, every scene in its "Depends on" chain, in one pass |
+
+Run the reset script in `<demo>/tools/` between takes. The next take number is automatic. Keep
+frames until the take is approved; re-encodes are cheap, re-shoots are not.
+
+## Done when
+
+- [ ] Every scene in SHOT-LIST.md has exactly one `keep` row in `recordings/takes.csv`
+- [ ] No row is still `new`
+- [ ] Every secret-bearing take was checked frame by frame
+- [ ] THROWAWAYS.md lists everything created on camera
+- [ ] Next: skill `demo-edit`, Step 1 (review reel)

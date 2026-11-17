@@ -5,6 +5,16 @@ The demo-studio plugin holds the mechanics (recording rig, scene code, encoding,
 This file holds your team's rules around it. Where they disagree, this file wins, so edit it to fit
 how you work.
 
+Plugin files to read (`P` is the plugin folder:
+`P="${CLAUDE_PLUGIN_ROOT:-$(ls -d ~/.claude/plugins/cache/*/demo-studio/*/ | tail -1)}"`):
+
+| When | Read |
+| --- | --- |
+| Before planning | `$P/samples/plan/` (a filled-in plan to match) |
+| Before writing a scene | `$P/samples/README.md`, then copy the nearest recipe from `$P/samples/scenes/` |
+| Before the first take | `$P/references/learnings.md` and `$P/references/style-guide.md` |
+| Before captions or voiceover | `$P/references/style-guide.md` sections 8 to 12 |
+
 Run `python3 -I check.py` at the start and end of every session. It reports drift: wrong index
 paths, unreviewed takes, open throwaways, leftover frames, stray secrets files, low disk.
 
@@ -60,6 +70,11 @@ Update the demo README **Status** and the index row in `README.md` at the end of
 - Voiceover in the second person and present tense, written for the ear. Spell out URLs and amounts.
 - Claim only what the footage proves.
 
+**Narration voice** (first match wins; the plugin's `narrate.py` picks the same way)
+- The person's own recordings in the demo's `voiceover/01.wav`, `02.wav`...
+- ElevenLabs, when `ELEVENLABS_API_KEY` is set in the shell. Never ask for the key in chat or write it in a file.
+- macOS `say` (free). Otherwise ask the person to record their own lines.
+
 **Secrets**
 - Sandbox or test accounts only. Mask in the page while recording, never in post. One unmasked frame is a leak.
 - Secrets live only in a password manager or a demo's gitignored `app/.env`. Never in any other file here.
@@ -79,6 +94,7 @@ Update the demo README **Status** and the index row in `README.md` at the end of
   handoff.json       promo and how-to cuts, cards, brand, brief
   app/               your copy of the product, when you run one (secrets only in app/.env)
   tools/             seed, reset, preflight, helper servers
+  voiceover/         optional: your own narration, 01.wav, 02.wav... one per voiced line
   recordings/
     raw/             NN-scene-tN.mp4, one per take
     scenes/          scene scripts

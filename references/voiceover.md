@@ -35,6 +35,12 @@ teaching a colleague, not like a caption.
 - The timing preview (`reference/<VIDEO>-VOICEOVER-TIMING-PREVIEW.mp4`) places every line with a
   placeholder voice so the editor and the user can hear the pacing before the real voice exists.
 
+## Recording the voice
+
+`narrate.py` turns the `voiceover` lines in `demo.json` into a narrated keynote cut. The voice is
+your own recordings (`voiceover/01.wav`...), else ElevenLabs when `ELEVENLABS_API_KEY` is set in the
+shell, else macOS `say`. Commands and fixes: skill `demo-edit`, Step 3.
+
 ## Promo vs how-to
 
 - **Promo (about 1:30):** the story only. One idea per scene, about 8 to 12 lines in total.

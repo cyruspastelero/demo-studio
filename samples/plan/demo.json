@@ -1,0 +1,25 @@
+{
+  "_comment": "Fictional sample: the keynote cut of the Wrenfield Analytics promo. Scenes, numbers and URLs are made up. zoom = [factor, centerX, centerY, startSec, durationSec] in 1920x1080 output coordinates; trim = [inSec, outSec] of the raw take. voiceover starts just after its item starts and must end before the next voiced item. voice = how narrate.py speaks the lines.",
+  "title": "Wrenfield Analytics",
+  "logo": "",
+  "browser": { "timezone": "America/New_York", "locale": "en-US" },
+  "windows": {
+    "sam": { "port": 9334, "match": "app.example.com", "rx_port": 8766 }
+  },
+  "voice": {
+    "_comment": "No provider set, so narrate.py picks: your own voiceover/ files if there are any, else ElevenLabs when ELEVENLABS_API_KEY is set in the shell, else macOS say. The key is never written in this file.",
+    "elevenlabs": { "model_id": "eleven_multilingual_v2" },
+    "music": "assets/bed.mp3",
+    "music_volume": 0.12
+  },
+  "sequence": [
+    { "card": "intro", "title": "Last week, in one answer.", "subtitle": "Wrenfield Analytics", "duration": 3.4, "voiceover": "Monday morning. Someone asks where last week's signups came from, and you open five tabs to find out." },
+    { "scene": "03", "stem": "03-dashboard-tour", "take": 1, "caption": "Your week on one page.", "trim": [1.0, 13.0], "speed": 1.5 },
+    { "card": "use", "title": "Just ask.", "subtitle": "In plain words.", "duration": 2.4 },
+    { "scene": "04", "stem": "04-ask-assistant", "take": 2, "caption": "Ask in plain words.", "trim": [1.0, 19.0], "speed": 1.25, "zoom": [1.6, 1180, 620, 7.2, 1.0], "voiceover": "Or just ask. The answer comes from your own numbers, so you can check it." },
+    { "scene": "05", "stem": "05-hide-test-traffic", "take": 1, "caption": "Test traffic, gone.", "trim": [0.8, 10.5], "zoom": [1.5, 1320, 420, 4.6, 0.8], "voiceover": "One switch hides your own test traffic." },
+    { "scene": "06", "stem": "06-invite-viewer", "take": 1, "caption": "Share it with the team.", "trim": [0.8, 10.0], "speed": 1.25, "voiceover": "Share it with the team. Viewers don't need a paid seat, and they can't change a thing." },
+    { "scene": "07", "stem": "07-sam-sees-report", "take": 1, "caption": "Same numbers, no extra seat.", "trim": [0.6, 6.5] },
+    { "card": "outro", "title": "Wrenfield Analytics", "subtitle": "wrenfield.example.com", "duration": 4.5, "voiceover": "Wrenfield. Try it free at wrenfield dot example dot com." }
+  ]
+}

@@ -1,14 +1,14 @@
 # Finishing in Cardboard (optional)
 
-demo-studio never needs Cardboard. The built-in path (ffmpeg) gives rough assemblies, scripts and a
-zip for a human editor. If you have the Cardboard desktop app and its `cb` command line tool, Claude
+demo-studio never needs Cardboard. The free built-in path (ffmpeg) gives a narrated keynote cut
+(`narrate.py`), rough assemblies, scripts and a zip for a human editor. If you have the Cardboard desktop app and its `cb` command line tool, Claude
 can also finish the video itself: narration, captions, music and the export.
 
 | | Built in | Cardboard |
 | --- | --- | --- |
 | Needs | ffmpeg | The Cardboard app, signed in, with `cb` installed (File > Install Agent Tools...) |
 | Cuts, speed changes, title cards | `build-handoff.py` | The same clips, imported |
-| Narration | Script with timecodes for a voice tool or a person | Generated on the timeline (uses Cardboard credits) |
+| Narration | `narrate.py` on the keynote cut (say, own recordings or ElevenLabs), plus a script with timecodes | Generated on the timeline (uses Cardboard credits) |
 | Captions and music | Left to the editor | `cb audio captions`, `cb generate music` |
 | Result | Editor handoff zip | A finished mp4, and a project a person can keep editing |
 

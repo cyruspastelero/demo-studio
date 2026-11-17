@@ -5,7 +5,13 @@ description: Optional finishing path for a demo video in Cardboard. Takes the cu
 
 # Demo finish in Cardboard (optional)
 
-`P` is this plugin's root, `${CLAUDE_PLUGIN_ROOT}` (if unfilled, `ls -d ~/.claude/plugins/cache/*/demo-studio/*/ | tail -1`).
+Optional. The default free finish is skill `demo-edit` Step 3 (`narrate.py`); use this skill only
+when the user asks for Cardboard. Start every shell command with:
+
+```bash
+P="${CLAUDE_PLUGIN_ROOT:-$(ls -d ~/.claude/plugins/cache/*/demo-studio/*/ | tail -1)}"
+```
+
 Read `$P/references/cardboard.md` first. If a Cardboard skill is installed, load it too; it is the
 authority on `cb` and `timeline.tsx`.
 
@@ -68,3 +74,9 @@ Then follow demo-handoff's wrap-up: status, index row, throwaways, frames.
 - Narration claims only what the footage proves (the claims list).
 - To change the cut, change `handoff.json`, rebuild and start a fresh project. To polish, edit the
   project's own `timeline.tsx` in small steps.
+
+## Done when
+
+- [ ] `cb verify` reports no problems and the `cb look` sheet shows captions inside the frame
+- [ ] Every narration line fits its window
+- [ ] The export (if asked for) is in `<demo>/final/` and demo-handoff's wrap-up is ticked
