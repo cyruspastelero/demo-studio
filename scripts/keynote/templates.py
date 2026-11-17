@@ -60,13 +60,10 @@ def is_workspace(folder: Path) -> bool:
     return all((Path(folder) / name).is_file() for name in WORKSPACE_MARKERS)
 
 
-def _is_demo(folder: Path) -> bool:
-    return (folder / "handoff.json").exists() or (folder / "demo.json").exists()
-
 
 def demo_root(demo_dir: Path | None = None, cwd: Path | None = None, env=None) -> Path | None:
     """The one demos root whose `_templates` is searched (None: built-ins only). Same rule as
-    app/server/demos.mjs demoRoot() when there is no demo."""
+    app/server/demos.mjs templatesRoot() when there is no demo."""
     env = os.environ if env is None else env
     here = Path(cwd or Path.cwd()).absolute()
     if env.get("DEMO_ROOT"):
@@ -74,11 +71,12 @@ def demo_root(demo_dir: Path | None = None, cwd: Path | None = None, env=None) -
     if demo_dir is not None:
         parent = Path(demo_dir).absolute().parent
         return parent if is_workspace(parent) else None
-    nested = here / "demos"
-    if nested.exists():
-        return nested
-    has_demos = here.is_dir() and any(not p.name.startswith(".") and p.is_dir() and _is_demo(p) for p in here.iterdir())
-    return here if is_workspace(here) or has_demos else None
+    # Only a real workspace (check.py + AGENTS.md) supplies templates, never a folder that merely
+    # holds demo folders: same rule as app/server/demos.mjs templatesRoot().
+    for candidate in (here / "demos", here):
+        if is_workspace(candidate):
+            return candidate
+    return None
 
 
 def workspace_roots(demo_dir: Path | None = None, cwd: Path | None = None) -> list[Path]:

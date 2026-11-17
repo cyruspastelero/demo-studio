@@ -8,7 +8,7 @@
 // server at other files.
 import { lstatSync, readdirSync, readFileSync, realpathSync } from 'node:fs';
 import { basename, join, sep } from 'node:path';
-import { demoRoot } from './demos.mjs';
+import { templatesRoot } from './demos.mjs';
 
 export const TEMPLATE_ID = /^[a-z0-9][a-z0-9-]{2,63}$/;
 export const ORIGINS = ['workspace', 'built-in'];
@@ -20,7 +20,7 @@ const COLOUR = /^(#[0-9a-fA-F]{3,8}|(rgb|rgba|hsl|hsla|oklch|oklab)\([0-9.,%\s/+
 
 export function templateRoots({ cwd, repo }) {
   return [
-    { origin: 'workspace', root: join(demoRoot(cwd), '_templates') },
+    ...(templatesRoot(cwd) ? [{ origin: 'workspace', root: join(templatesRoot(cwd), '_templates') }] : []),
     { origin: 'built-in', root: join(repo, 'look-templates') },
   ];
 }
@@ -130,8 +130,8 @@ export function listTemplates(options) {
 export function previewFile(options, origin, id, name) {
   if (!ORIGINS.includes(origin) || !TEMPLATE_ID.test(id)) return null;
   if (!/^0[1-6]\.png$/.test(name)) return null;
-  const { root } = templateRoots(options).find((r) => r.origin === origin);
-  if (!isRealDir(root)) return null;
+  const root = templateRoots(options).find((r) => r.origin === origin)?.root;
+  if (!root || !isRealDir(root)) return null;
   const dir = join(root, id);
   const file = join(dir, 'preview', name);
   if (!isRealDir(dir) || !isRealDir(join(dir, 'preview')) || !isRealFile(file)) return null;

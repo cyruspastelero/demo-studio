@@ -76,6 +76,17 @@ export function demoRoot(cwd, env = process.env) {
   return isWorkspace(here) || hasDemos ? here : nested;
 }
 
+// The folder whose _templates/ holds the user's look templates. Stricter than demoRoot: only an
+// explicit $DEMO_ROOT or a real workspace (the starter kit's check.py + AGENTS.md) counts, never a
+// folder that merely contains demo folders, so a downloaded folder cannot supply templates.
+export function templatesRoot(cwd, env = process.env) {
+  if (env.DEMO_ROOT) return resolve(cwd, env.DEMO_ROOT);
+  for (const candidate of [resolve(cwd, 'demos'), resolve(cwd)]) {
+    if (isWorkspace(candidate)) return candidate;
+  }
+  return null;
+}
+
 // Demos under $DEMO_ROOT (default ./demos where the command ran) and the repo's examples.
 export function listDemos({ cwd, repo }) {
   return [...scan(demoRoot(cwd), 'Your demos'), ...scan(join(repo, 'examples'), 'Examples')];

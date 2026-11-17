@@ -322,22 +322,38 @@ def require(*tools: str) -> None:
 # concat playlists, image2 patterns, data: and http: URLs); limiting protocols to local files and
 # pipes keeps a crafted file from making ffmpeg fetch URLs or read other kinds of input.
 PROTOCOL_WHITELIST = ("-protocol_whitelist", "file,pipe")
+# ffmpeg picks a demuxer from a file's content, not its name, so a ".mp4" that is really a concat
+# list or playlist could pull in other files. Untrusted inputs may only use plain media demuxers.
+# An input with an explicit -f (our own concat lists, lavfi generators) keeps the format we chose.
+SAFE_FORMATS = "mov,mp4,m4a,3gp,3g2,mj2,matroska,webm,wav,mp3,aac,flac,ogg,aiff,image2,png_pipe,jpeg_pipe,mjpeg"
+FORMAT_WHITELIST = ("-format_whitelist", SAFE_FORMATS)
 
 
 def ffmpeg_cmd(cmd: list) -> list[str]:
     """The command as strings, with the protocol whitelist in front of every input of an ffmpeg
-    command (it is a per-input option) and at the start of an ffprobe command."""
+    command (a per-input option) and a demuxer whitelist in front of every input that does not name
+    its format with -f; ffprobe gets both at the start."""
     cmd = [str(c) for c in cmd]
     tool = Path(cmd[0]).name if cmd else ""
-    if tool == "ffprobe" and "-protocol_whitelist" not in cmd:
-        return [cmd[0], *PROTOCOL_WHITELIST, *cmd[1:]]
+    if tool == "ffprobe":
+        extra = [] if "-protocol_whitelist" in cmd else list(PROTOCOL_WHITELIST)
+        extra += [] if ("-format_whitelist" in cmd or "-f" in cmd) else list(FORMAT_WHITELIST)
+        return [cmd[0], *extra, *cmd[1:]]
     if tool != "ffmpeg":
         return cmd
     out: list[str] = []
-    for i, arg in enumerate(cmd):
-        if arg == "-i" and (i < 2 or cmd[i - 2] != "-protocol_whitelist"):
-            out += PROTOCOL_WHITELIST
+    since_input: list[str] = []
+    for arg in cmd:
+        if arg == "-i":
+            if "-protocol_whitelist" not in since_input:
+                out += PROTOCOL_WHITELIST
+            if "-f" not in since_input and "-format_whitelist" not in since_input:
+                out += FORMAT_WHITELIST
+            out.append(arg)
+            since_input = []
+            continue
         out.append(arg)
+        since_input.append(arg)
     return out
 
 

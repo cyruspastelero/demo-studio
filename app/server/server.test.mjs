@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs';
 import { request } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -142,7 +142,10 @@ describe('save and load', () => {
     try {
       const data = JSON.parse(readFileSync(join(dir, 'demo.json'), 'utf8'));
       writeFileSync(join(dir, 'demo.json'), JSON.stringify({ ...data, title: 'Outside' }));
-      await new Promise((r) => setTimeout(r, 600));
+      // fs.watch delivery time varies with load: poll up to 5 s instead of one fixed sleep.
+      for (let waited = 0; changes.at(-1)?.data.title !== 'Outside' && waited < 5000; waited += 50) {
+        await new Promise((r) => setTimeout(r, 50));
+      }
       expect(changes.at(-1)?.data.title).toBe('Outside');
       const before = changes.length;
       store.save('demo', { ...data, title: 'Inside' }, changes.at(-1).hash);
@@ -351,6 +354,9 @@ describe('look templates', () => {
     demos = join(dir, 'demos');
     mkdirSync(join(repo, 'look-templates'), { recursive: true });
     mkdirSync(join(demos, '_templates'), { recursive: true });
+    // Workspace templates count only in a real workspace (the starter kit's check.py + AGENTS.md).
+    writeFileSync(join(demos, 'check.py'), '# check\n');
+    writeFileSync(join(demos, 'AGENTS.md'), '# playbook\n');
     template(join(repo, 'look-templates'), 'house', {
       id: 'house', name: 'House', description: 'The default look.', created: '2026-11-18',
       source: 'built-in', look: { brand: { accent: '#FC5E32', background: { base: '#111111' } } },
@@ -366,6 +372,13 @@ describe('look templates', () => {
   });
   afterEach(async () => {
     await studio.close();
+  });
+
+  it('a folder that is not a workspace does not supply templates', async () => {
+    unlinkSync(join(demos, 'check.py'));
+    const res = await get('/api/templates');
+    expect(JSON.parse(res.body).map((t) => t.origin)).toEqual(['built-in']);
+    expect((await get('/api/template-preview/workspace/reference-cut/01.png')).status).toBe(404);
   });
 
   it('lists templates from the workspace and the plugin', async () => {

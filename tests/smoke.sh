@@ -80,7 +80,7 @@ RX_PID=$!
 for _ in 1 2 3 4 5 6 7 8 9 10; do curl -s "http://127.0.0.1:$PORT/" >/dev/null 2>&1 && break; sleep 0.3; done
 RX_TOKEN="$(python3 -I -c 'import json, sys; print(json.load(open(sys.argv[1]))[sys.argv[2]])' "$R/.rx-token" "$PORT")" \
   || die "receiver wrote no token to .rx-token"
-[ "$(stat -f %Lp "$R/.rx-token" 2>/dev/null || stat -c %a "$R/.rx-token")" = 600 ] || die ".rx-token is not mode 600"; ok ".rx-token is private"
+[ "$(python3 -I -c 'import os, sys; print(oct(os.stat(sys.argv[1]).st_mode & 0o777))' "$R/.rx-token")" = 0o600 ] || die ".rx-token is not mode 600"; ok ".rx-token is private"
 rx() { curl -sf -X POST -H "x-rx-token: $RX_TOKEN" "$@"; }
 code="$(curl -s -o /dev/null -w '%{http_code}' -X POST "http://127.0.0.1:$PORT/start?take=tmprx")"
 [ "$code" = 403 ] || die "receiver accepted a request without its token ($code)"; ok "receiver refuses requests without the token"

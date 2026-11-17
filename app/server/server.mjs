@@ -4,7 +4,7 @@ import { createServer } from 'node:http';
 import { join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DocumentStore, FILES, readDocument, SaveError } from './documents.mjs';
-import { demoRoot, isDemoFolder, listDemos, workspace } from './demos.mjs';
+import { demoRoot, isDemoFolder, listDemos, templatesRoot, workspace } from './demos.mjs';
 import { demoDir, isPassiveMedia, mediaIndex, sendFile, thumbnail } from './media.mjs';
 import { insideAny, PathError, resolveInside } from './paths.mjs';
 import { RenderRunner } from './render.mjs';
@@ -206,7 +206,7 @@ export function createStudio({ repo, cwd, folder: initialFolder, dev = false, op
     if (route === 'POST /api/render') {
       const { kind, video } = await readBody(req);
       try {
-        return json(res, 200, runner.start(kind, { repo, folder: requireFolder(), video, demoRoot: demoRoot(cwd) }));
+        return json(res, 200, runner.start(kind, { repo, folder: requireFolder(), video, demoRoot: templatesRoot(cwd) ?? undefined }));
       } catch (error) {
         throw new HttpError(error.status ?? 400, error.message);
       }

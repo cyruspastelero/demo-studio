@@ -14,6 +14,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import shutil
 from pathlib import Path
 from unittest import mock
 
@@ -226,11 +227,22 @@ class HighlightTake(Folder):
 class ProtocolWhitelist(unittest.TestCase):
     def test_every_ffmpeg_input_and_every_ffprobe_call_gets_the_whitelist(self):
         cmd = lib.ffmpeg_cmd(["ffmpeg", "-y", "-i", "a.mp4", "-f", "lavfi", "-i", "color=c=red", "out.mp4"])
-        self.assertEqual(cmd, ["ffmpeg", "-y", "-protocol_whitelist", "file,pipe", "-i", "a.mp4", "-f", "lavfi",
+        safe = ["-format_whitelist", lib.SAFE_FORMATS]
+        self.assertEqual(cmd, ["ffmpeg", "-y", "-protocol_whitelist", "file,pipe", *safe, "-i", "a.mp4", "-f", "lavfi",
                                "-protocol_whitelist", "file,pipe", "-i", "color=c=red", "out.mp4"])
         self.assertEqual(lib.ffmpeg_cmd(cmd), cmd)  # idempotent
-        self.assertEqual(lib.ffmpeg_cmd(["ffprobe", "-v", "error", Path("x.mp4")])[:3],
-                         ["ffprobe", "-protocol_whitelist", "file,pipe"])
+        self.assertEqual(lib.ffmpeg_cmd(["ffprobe", "-v", "error", Path("x.mp4")])[:5],
+                         ["ffprobe", "-protocol_whitelist", "file,pipe", *safe])
+
+    @unittest.skipUnless(shutil.which("ffprobe"), "needs ffprobe")
+    def test_a_concat_list_disguised_as_mp4_is_refused(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            fake = Path(tmp) / "take.mp4"
+            fake.write_text("ffconcat version 1.0\nfile '/etc/hosts'\n")
+            result = subprocess.run(lib.ffmpeg_cmd(["ffprobe", "-v", "error", "-show_entries", "format=format_name",
+                                                    "-of", "csv=p=0", fake]), capture_output=True, text=True)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("not on whitelist", result.stderr)
         self.assertEqual(lib.ffmpeg_cmd(["say", "-i", "x"]), ["say", "-i", "x"])
 
     def test_measure_and_motion_pass_the_whitelist(self):

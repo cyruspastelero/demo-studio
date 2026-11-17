@@ -20,6 +20,9 @@ const MEDIA_HEADERS = {
 // Demo media is untrusted: ffmpeg may only read local files and pipes, never follow a playlist or
 // reference inside a crafted file out to a URL (same rule as scripts/demolib.py PROTOCOL_WHITELIST).
 export const PROTOCOL_WHITELIST = ['-protocol_whitelist', 'file,pipe'];
+// ffmpeg picks a demuxer from content, not the name: a ".mp4" that is really a concat list could pull in
+// other files. Untrusted media may only use plain media demuxers (same list as scripts/demolib.py).
+export const FORMAT_WHITELIST = ['-format_whitelist', 'mov,mp4,m4a,3gp,3g2,mj2,matroska,webm,wav,mp3,aac,flac,ogg,aiff,image2,png_pipe,jpeg_pipe,mjpeg'];
 const THUMB_CACHE_LIMIT = 400;
 const THUMB_WORKERS = 3;
 
@@ -107,7 +110,7 @@ export async function probeDuration(file) {
   const key = `${file}:${statSync(file).mtimeMs}`;
   if (durations.has(key)) return durations.get(key);
   try {
-    const out = await run('ffprobe', [...PROTOCOL_WHITELIST, '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', file]);
+    const out = await run('ffprobe', [...PROTOCOL_WHITELIST, ...FORMAT_WHITELIST, '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', file]);
     const value = Number.parseFloat(out.trim());
     const result = Number.isFinite(value) ? value : null;
     durations.set(key, result);
@@ -136,7 +139,7 @@ export function thumbnail(file, seconds, width) {
   const key = `${file}:${statSync(file).mtimeMs}:${seconds.toFixed(2)}:${width}`;
   if (thumbs.has(key)) return thumbs.get(key);
   const promise = new Promise((resolvePromise, reject) => {
-    queue.push(() => run('ffmpeg', ['-v', 'error', '-ss', String(seconds), ...PROTOCOL_WHITELIST, '-i', file, '-frames:v', '1',
+    queue.push(() => run('ffmpeg', ['-v', 'error', '-ss', String(seconds), ...PROTOCOL_WHITELIST, ...FORMAT_WHITELIST, '-i', file, '-frames:v', '1',
       '-vf', `scale=${width}:-2`, '-f', 'image2pipe', '-c:v', 'mjpeg', '-q:v', '5', '-'], { binary: true })
       .then(resolvePromise, reject));
     pump();
