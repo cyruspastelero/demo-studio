@@ -49,17 +49,31 @@ function scan(root, group) {
     .sort((a, b) => b.modified - a.modified);
 }
 
+// What scripts/new-workspace.sh puts in a demos workspace (scripts/keynote/templates.py checks the same).
+export const WORKSPACE_MARKERS = ['check.py', 'AGENTS.md'];
+
+export function isWorkspace(dir) {
+  return WORKSPACE_MARKERS.every((name) => {
+    try {
+      return statSync(join(dir, name)).isFile();
+    } catch {
+      return false;
+    }
+  });
+}
+
 // Where demos live: $DEMO_ROOT if set, else ./demos, else the current folder when the command was
 // run from inside a demos workspace (it has the starter kit's check.py or demo folders of its own).
+// Look templates are searched only in <this>/_templates and the built-ins; build-keynote.py uses the
+// same root (scripts/keynote/templates.py demo_root), or the workspace that holds the demo it builds.
 export function demoRoot(cwd, env = process.env) {
   if (env.DEMO_ROOT) return resolve(cwd, env.DEMO_ROOT);
   const nested = resolve(cwd, 'demos');
   if (existsSync(nested)) return nested;
   const here = resolve(cwd);
-  const isWorkspace = existsSync(join(here, 'check.py')) && existsSync(join(here, 'AGENTS.md'));
   const hasDemos = existsSync(here) && readdirSync(here).some((name) => !name.startsWith('.')
     && statSync(join(here, name)).isDirectory() && isDemoFolder(join(here, name)));
-  return isWorkspace || hasDemos ? here : nested;
+  return isWorkspace(here) || hasDemos ? here : nested;
 }
 
 // Demos under $DEMO_ROOT (default ./demos where the command ran) and the repo's examples.

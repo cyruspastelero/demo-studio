@@ -5,9 +5,9 @@ Usage:
   python3 -I scripts/templates.py list [--json]       every template, workspace first, then built-in
   python3 -I scripts/templates.py show <id> [--json]  where it is, its look merged over the house look
   python3 -I scripts/templates.py validate <id>       schema, folder layout, previews; exit 1 on a problem
-Options: --demo-dir DIR (search DIR/../_templates first, as build-keynote.py does for that demo).
-Workspace templates live in <demos root>/_templates/<id>/ ($DEMO_ROOT, or ./demos); built-ins in
-<plugin>/look-templates/<id>/.
+Options: --demo-dir DIR (search that demo's workspace, as build-keynote.py does for that demo).
+Workspace templates live in <demos root>/_templates/<id>/: $DEMO_ROOT, else the demos workspace that
+holds the demo (it has check.py and AGENTS.md), else ./demos; built-ins in <plugin>/look-templates/<id>/.
 """
 from __future__ import annotations
 

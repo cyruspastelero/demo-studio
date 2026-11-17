@@ -3,7 +3,9 @@
 // Run: node tests/test_frame_receiver.mjs
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, rmSync, statSync } from 'node:fs';
+import {
+  existsSync, lstatSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, symlinkSync, writeFileSync,
+} from 'node:fs';
 import { request } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -95,10 +97,42 @@ try {
     assert.equal(stop.status, 200);
     assert.equal(JSON.parse(stop.text).frames, 1);
   });
+  await test('a take folder planted as a symlink is refused and nothing lands outside', async () => {
+    const outside = mkdtempSync(join(tmpdir(), 'rx-outside-'));
+    try {
+      symlinkSync(outside, join(dir, 'frames', 'planted-t1'));
+      assert.equal((await post('/start?take=planted-t1', { headers: auth })).status, 409);
+      assert.equal((await post('/frame', { headers: auth, body: JSON.stringify({ ts: 5000, b64: JPEG }) })).status, 409);
+      assert.deepEqual(readdirSync(outside), []);
+    } finally {
+      rmSync(outside, { recursive: true, force: true });
+    }
+  });
+  await test('frame, blur, ts and end files planted as symlinks are never written through', async () => {
+    const outside = mkdtempSync(join(tmpdir(), 'rx-outside-'));
+    const victim = join(outside, 'victim.txt');
+    writeFileSync(victim, 'keep');
+    try {
+      const take = join(dir, 'frames', 'links-t1');
+      mkdirSync(take, { recursive: true });
+      for (const name of ['f00000.jpg', 'blur.jsonl', 'ts.txt']) symlinkSync(victim, join(take, name));
+      assert.equal((await post('/start?take=links-t1', { headers: auth })).status, 200);
+      assert.equal((await post('/frame', { headers: auth, body: JSON.stringify({ ts: 6000, b64: JPEG }) })).status, 409);
+      const blur = await post('/blur', { headers: auth, body: JSON.stringify({ x: 1, y: 2, w: 3, h: 4, t: 1000 }) });
+      assert.equal(blur.status, 409);
+      assert.equal((await post('/stop', { headers: auth })).status, 409);
+      assert.equal(readFileSync(victim, 'utf8'), 'keep');
+      assert.ok(lstatSync(join(take, 'ts.txt')).isSymbolicLink());
+    } finally {
+      rmSync(outside, { recursive: true, force: true });
+    }
+  });
+  await test('the token is written through a random temp name and leaves no temp file', async () => {
+    assert.deepEqual(readdirSync(dir).filter((name) => name.startsWith('.rx-token.')), []);
+  });
   await test('rx-tokens.mjs passes the token to scene code and drops anything that is not port -> hex', async () => {
     const { readRxTokens, rxTokensLine } = await import('../scripts/rx-tokens.mjs');
     assert.deepEqual(readRxTokens(dir), { [String(port)]: token });
-    const { writeFileSync } = await import('node:fs');
     writeFileSync(tokenFile, JSON.stringify({ 8765: 'ab'.repeat(24), '1};alert(1);//': 'ab'.repeat(24), 9000: "'};evil()//" }));
     assert.equal(rxTokensLine(dir), `const RX_TOKENS = {"8765":"${'ab'.repeat(24)}"};`);
   });

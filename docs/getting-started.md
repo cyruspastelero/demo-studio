@@ -112,7 +112,7 @@ Claude then:
 3. Records the three scenes, checks each one on a contact sheet, and encodes the takes.
 4. Shows you the review reel, then builds the keynote cut (window, pills, highlight boxes, zooms,
    cards), narrates it and runs the quality-bar checklist on it.
-5. Narrates it with macOS `say` (or your own voice or ElevenLabs, if set up) and opens
+5. Narrates it with macOS `say` (or your own voice, or ElevenLabs when you ask for it with `--voice elevenlabs`) and opens
    `demos/todo-sample/recordings/exports/todo-app-sample-keynote-cut-narrated.mp4`.
 
 To do the same steps by hand, follow the commands in [examples/todo-sample/README.md](../examples/todo-sample/README.md).

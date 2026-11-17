@@ -53,6 +53,15 @@ class TemplateCase(unittest.TestCase):
         env.start()
         self.addCleanup(env.stop)
         os.environ.pop("DEMO_ROOT", None)
+        make_workspace(self.root / "demos")
+
+
+def make_workspace(folder: Path) -> Path:
+    """What scripts/new-workspace.sh leaves behind that marks a demos workspace."""
+    folder.mkdir(parents=True, exist_ok=True)
+    for name in templates.WORKSPACE_MARKERS:
+        (folder / name).write_text("")
+    return folder
 
 
 class Ids(TemplateCase):
@@ -84,15 +93,41 @@ class Resolution(TemplateCase):
         self.assertEqual(found.where, "built-in")
         self.assertEqual(found.folder, REPO / "look-templates" / "house")
 
-    def test_search_order_is_demo_parent_then_demo_root_then_cwd(self):
-        demo_root = self.root / "env-root"
-        os.environ["DEMO_ROOT"] = str(demo_root)
+    def test_the_only_workspace_root_is_the_workspace_that_holds_the_demo(self):
+        self.assertEqual(templates.workspace_roots(self.root / "demos" / "acme", cwd=self.root / "cwd"),
+                         [self.root / "demos" / "_templates"])
+
+    def test_demo_root_env_wins_over_the_demo_parent(self):
+        os.environ["DEMO_ROOT"] = str(self.root / "env-root")
         roots = templates.workspace_roots(self.root / "demos" / "acme", cwd=self.root / "cwd")
-        self.assertEqual(roots[:3], [self.root / "demos" / "_templates", demo_root / "_templates",
-                                     self.root / "cwd" / "demos" / "_templates"])
-        write_template(demo_root / "_templates", "shared-look")
-        write_template(self.root / "cwd" / "demos" / "_templates", "shared-look", name="later")
-        self.assertEqual(templates.find("shared-look", self.root / "demos" / "acme", self.root / "cwd").name, "T")
+        self.assertEqual(roots, [(self.root / "env-root" / "_templates").resolve()])
+        write_template(self.root / "env-root" / "_templates", "shared-look", name="env")
+        write_template(self.root / "demos" / "_templates", "shared-look", name="parent")
+        self.assertEqual(templates.find("shared-look", self.root / "demos" / "acme", self.root / "cwd").name, "env")
+
+    def test_a_demo_outside_a_workspace_never_reads_a_sibling_templates_folder(self):
+        downloads = self.root / "Downloads"  # an unzipped share: demo plus its own _templates/house
+        write_template(downloads / "_templates", "house", {"zoom": {"dur": 3.9}}, name="Planted")
+        write_template(downloads / "_templates", "planted-look")
+        self.assertEqual(templates.workspace_roots(downloads / "shared-demo", cwd=self.root), [])
+        self.assertEqual(templates.find("house", downloads / "shared-demo", cwd=self.root).where, "built-in")
+        with self.assertRaisesRegex(templates.TemplateError, "not found"):
+            templates.find("planted-look", downloads / "shared-demo", cwd=self.root)
+
+    def test_cwd_and_its_parent_templates_are_not_searched_for_a_demo(self):
+        write_template(self.root / "cwd" / "demos" / "_templates", "cwd-look")
+        with self.assertRaisesRegex(templates.TemplateError, "not found"):
+            templates.find("cwd-look", self.root / "demos" / "acme", self.root / "cwd")
+
+    def test_without_a_demo_the_root_is_the_one_the_studio_lists(self):
+        # Same rule as app/server/demos.mjs demoRoot(): ./demos, else the current folder if it is a workspace.
+        self.assertEqual(templates.WORKSPACE_MARKERS, ("check.py", "AGENTS.md"))  # = demos.mjs WORKSPACE_MARKERS
+        self.assertEqual(templates.demo_root(cwd=self.root), self.root / "demos")
+        bare = self.root / "bare"
+        bare.mkdir()
+        self.assertIsNone(templates.demo_root(cwd=bare))
+        self.assertEqual(templates.demo_root(cwd=make_workspace(self.root / "ws")), self.root / "ws")
+        self.assertEqual(templates.demo_root(cwd=bare, env={"DEMO_ROOT": "x"}), (bare / "x").resolve())
 
     def test_missing_template_lists_available_ids_and_the_command(self):
         write_template(self.root / "demos" / "_templates", "mine-123456")

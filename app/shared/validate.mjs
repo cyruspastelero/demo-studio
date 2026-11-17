@@ -3,12 +3,20 @@ import Ajv2020Module from 'ajv/dist/2020.js';
 // ajv ships CommonJS; under Node ESM the class sits on .default, under Vite it is the export itself.
 const Ajv2020 = Ajv2020Module.default ?? Ajv2020Module;
 
-// One validator per schema, compiled once. Messages read like demolib.py's so the app and the
-// scripts say the same thing.
+/** @typedef {((data: unknown) => boolean) & { errors?: object[] | null }} CompiledCheck */
+
+// A compiled Ajv check (from ajv.compile, or the build-time code in validators-plugin.mjs) as a
+// function that returns readable messages. They read like demolib.py's so the app and the scripts
+// say the same thing.
+export function fromCheck(check) {
+  return (data) => (check(data) ? [] : summarize(check.errors ?? []));
+}
+
+// Node only: compiles at runtime. The browser uses fromCheck on the precompiled validators, since
+// its Content-Security-Policy does not allow eval.
 export function makeValidator(schema) {
   const ajv = new Ajv2020({ allErrors: true, strict: false });
-  const check = ajv.compile(schema);
-  return (data) => (check(data) ? [] : summarize(check.errors ?? []));
+  return fromCheck(ajv.compile(schema));
 }
 
 function where(error) {

@@ -33,10 +33,12 @@ def loudnorm(measured: dict | None) -> str:
     """Pass one: a loudnorm that only measures. Pass two: one fixed gain to the target, then a
     limiter for the peaks. (loudnorm's own second pass falls back to a slow AGC whenever its
     linear gain would clip, and that AGC pumps the music bed up in every pause.)"""
+    lufs = lib.ff_num(core.TARGET_LUFS, "target loudness", -70, 0)
+    true_peak = lib.ff_num(core.TARGET_TP, "target true peak", -9, 0)
     if not measured:
-        return f"loudnorm=I={core.TARGET_LUFS}:TP={core.TARGET_TP}:LRA=11:print_format=json"
-    gain = core.TARGET_LUFS - float(measured["input_i"])
-    ceiling = 10 ** ((core.TARGET_TP - 0.3) / 20)  # sample-peak ceiling under the true-peak target
+        return f"loudnorm=I={lufs}:TP={true_peak}:LRA=11:print_format=json"
+    gain = float(lufs) - lib.finite_number(float(measured["input_i"]), "measured loudness", -200, 50)
+    ceiling = 10 ** ((float(true_peak) - 0.3) / 20)  # sample-peak ceiling under the true-peak target
     return f"volume={gain:.2f}dB,alimiter=limit={ceiling:.4f}:attack=5:release=80:level=false"
 
 
@@ -122,8 +124,8 @@ def mix_filter(spans: list[tuple[float, float]], total: float, music_input: int 
 
 def measure(inputs: list, graph: str, what: str) -> dict | None:
     """Runs a graph that ends in a print_format=json loudnorm and returns its measurements."""
-    result = subprocess.run(["ffmpeg", "-hide_banner", "-nostats", "-loglevel", "info", *map(str, inputs),
-                             "-filter_complex", graph, "-map", "[out]", "-f", "null", "-"],
+    result = subprocess.run(lib.ffmpeg_cmd(["ffmpeg", "-hide_banner", "-nostats", "-loglevel", "info", *inputs,
+                                         "-filter_complex", graph, "-map", "[out]", "-f", "null", "-"]),
                             capture_output=True, text=True)
     if result.returncode:
         sys.exit(f"ffmpeg failed while measuring {what}:\n{result.stderr[-1500:]}")
@@ -181,7 +183,7 @@ PLACEHOLDER_MARK = "make-bed placeholder"  # make-bed.py writes this into the fi
 
 def is_placeholder_bed(path: Path) -> bool:
     """True when the bed is make-bed.py's placeholder pad (it tags its files)."""
-    result = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format_tags=comment", "-of", "json", str(path)],
+    result = subprocess.run(lib.ffmpeg_cmd(["ffprobe", "-v", "error", "-show_entries", "format_tags=comment", "-of", "json", path]),
                             capture_output=True, text=True)
     try:
         tags = json.loads(result.stdout or "{}").get("format", {}).get("tags", {})
@@ -195,8 +197,8 @@ EBUR = {"I": r"I:\s+(-?[\d.]+|-inf) LUFS", "LRA": r"LRA:\s+(-?[\d.]+) LU", "TP":
 
 def ebur128(path: Path) -> dict[str, float]:
     """Integrated loudness, loudness range and true peak of a file's audio (ffmpeg ebur128)."""
-    result = subprocess.run(["ffmpeg", "-hide_banner", "-nostats", "-i", str(path), "-map", "0:a:0",
-                             "-af", "ebur128=peak=true", "-f", "null", "-"], capture_output=True, text=True)
+    result = subprocess.run(lib.ffmpeg_cmd(["ffmpeg", "-hide_banner", "-nostats", "-i", path, "-map", "0:a:0",
+                                         "-af", "ebur128=peak=true", "-f", "null", "-"]), capture_output=True, text=True)
     summary = result.stderr[result.stderr.rfind("Summary:"):]
     values = {}
     for key, pattern in EBUR.items():

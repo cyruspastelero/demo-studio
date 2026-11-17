@@ -4,7 +4,7 @@ import { createServer } from 'node:http';
 import { join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DocumentStore, FILES, readDocument, SaveError } from './documents.mjs';
-import { isDemoFolder, listDemos, workspace } from './demos.mjs';
+import { demoRoot, isDemoFolder, listDemos, workspace } from './demos.mjs';
 import { demoDir, isPassiveMedia, mediaIndex, sendFile, thumbnail } from './media.mjs';
 import { insideAny, PathError, resolveInside } from './paths.mjs';
 import { RenderRunner } from './render.mjs';
@@ -16,6 +16,14 @@ const BODY_LIMIT = 5 * 1024 * 1024;
 const MEDIA_SETTLE_MS = 500;
 // The editor is never meant to be framed (clickjacking of Render, Save or Open).
 const FRAME_HEADERS = { 'Content-Security-Policy': "frame-ancestors 'none'", 'X-Frame-Options': 'DENY' };
+// The built UI loads only its own scripts and styles; media comes from /media/ and thumbnails from
+// /api/. Inline styles are allowed because React sets style attributes (video positions, swatches).
+export const UI_CSP = [
+  "default-src 'self'", "img-src 'self' data: blob:", "media-src 'self' blob:", "style-src 'self' 'unsafe-inline'",
+  "script-src 'self'", "connect-src 'self'", "font-src 'self'", "object-src 'none'", "base-uri 'none'",
+  "form-action 'none'", "frame-ancestors 'none'",
+].join('; ');
+const UI_HEADERS = { 'Content-Security-Policy': UI_CSP, 'X-Frame-Options': 'DENY', 'X-Content-Type-Options': 'nosniff' };
 
 class HttpError extends Error {
   constructor(status, message, extra = {}) {
@@ -62,7 +70,8 @@ function openWith(path, reveal) {
   }).unref();
 }
 
-export function createStudio({ repo, cwd, folder: initialFolder, dev = false }) {
+// `opener` hands a file to the OS (open / xdg-open); tests pass a recorder instead.
+export function createStudio({ repo, cwd, folder: initialFolder, dev = false, opener = openWith }) {
   const clients = new Set();
   let folder = null;
   let store = null;
@@ -166,7 +175,7 @@ export function createStudio({ repo, cwd, folder: initialFolder, dev = false }) 
       // else is shown in the file manager and never launched: scripts, apps, and folders too,
       // since a folder can be a bundle (a .app) that `open` would run.
       const viewable = statSync(real).isFile() && (isPassiveMedia(real) || real.endsWith('.md'));
-      openWith(real, action === 'reveal' || !viewable);
+      opener(real, action === 'reveal' || !viewable);
       return json(res, 200, { ok: true });
     }
     if (route === 'POST /api/open') {
@@ -197,7 +206,7 @@ export function createStudio({ repo, cwd, folder: initialFolder, dev = false }) 
     if (route === 'POST /api/render') {
       const { kind, video } = await readBody(req);
       try {
-        return json(res, 200, runner.start(kind, { repo, folder: requireFolder(), video }));
+        return json(res, 200, runner.start(kind, { repo, folder: requireFolder(), video, demoRoot: demoRoot(cwd) }));
       } catch (error) {
         throw new HttpError(error.status ?? 400, error.message);
       }
@@ -207,8 +216,9 @@ export function createStudio({ repo, cwd, folder: initialFolder, dev = false }) 
       const { path, action } = await readBody(req);
       const real = insideAny([requireFolder()], String(path ?? ''));
       if (!real) throw new HttpError(403, 'only files inside the demo folder can be opened');
-      // Only media and text open in their app; anything else (scripts, apps) is shown in the folder instead.
-      openWith(real, action === 'reveal' || !isPassiveMedia(real));
+      // Only a regular file that is media or text opens in its app; anything else (scripts, apps, and
+      // folders, which can be bundles named like media: x.mp4/ as a .app) is shown in the folder instead.
+      opener(real, action === 'reveal' || !(statSync(real).isFile() && isPassiveMedia(real)));
       return json(res, 200, { ok: true });
     }
     if (route === 'GET /api/events') {
@@ -226,7 +236,8 @@ export function createStudio({ repo, cwd, folder: initialFolder, dev = false }) 
   }
 
   function serveUi(req, res, url) {
-    for (const [name, value] of Object.entries(FRAME_HEADERS)) res.setHeader(name, value);
+    // The Vite dev server injects inline scripts for hot reload, so dev keeps the framing rule only.
+    for (const [name, value] of Object.entries(dev ? FRAME_HEADERS : UI_HEADERS)) res.setHeader(name, value);
     if (dev && vite) return vite.middlewares(req, res, () => json(res, 404, { error: 'not found' }));
     if (!existsSync(join(UI_DIR, 'index.html'))) {
       res.writeHead(500, { 'Content-Type': 'text/plain' });

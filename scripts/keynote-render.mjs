@@ -12,6 +12,8 @@ import { html, render } from './keynote-page.mjs';
 const FONT_FILE = /^[A-Za-z][A-Za-z0-9-]*\.woff2$/;
 const IMAGE = /^data:image\/(png|jpeg|webp|svg\+xml);base64,[A-Za-z0-9+/=]+$/;
 const HEX = /^#[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$/;
+// window.shadow from a look template: the same allow-list as schemas/template.schema.json.
+const SHADOW = /^(none|(?:inset|-?[0-9]{1,4}(?:\.[0-9]{1,4})?(?:px)?|#[0-9A-Fa-f]{3,8}|rgba?\([0-9]{1,3}, ?[0-9]{1,3}, ?[0-9]{1,3}(?:, ?(?:0|1|0?\.[0-9]{1,4}))?\))(?:,? (?:inset|-?[0-9]{1,4}(?:\.[0-9]{1,4})?(?:px)?|#[0-9A-Fa-f]{3,8}|rgba?\([0-9]{1,3}, ?[0-9]{1,3}, ?[0-9]{1,3}(?:, ?(?:0|1|0?\.[0-9]{1,4}))?\))){0,39})$/;
 
 function fail(message) {
   console.error(`keynote-render: ${message}`);
@@ -65,6 +67,10 @@ for (const [group, values] of Object.entries(LOOK_DEFAULT)) {
   }
 }
 for (const [id, uri] of Object.entries(job.images || {})) if (!IMAGE.test(uri)) fail(`image ${id} is not a data: image`);
+for (const entry of [...(job.static || []), ...(job.frames || [])]) {
+  const shadow = entry?.state?.window?.shadow;
+  if (shadow !== undefined && (typeof shadow !== 'string' || !SHADOW.test(shadow))) fail('window shadow is not an allowed box-shadow');
+}
 
 const { chromium } = await loadPlaywright();
 const browser = await launchChrome(chromium);

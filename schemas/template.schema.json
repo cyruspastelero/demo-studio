@@ -81,8 +81,8 @@
         "radius": { "type": "number", "minimum": 0, "maximum": 120 },
         "shadow": {
           "type": "string",
-          "pattern": "^(none|[0-9a-z(),.%# -]{1,240})$",
-          "description": "CSS box-shadow: offsets in px and colours as rgba(), #hex or none. No url()."
+          "pattern": "^(none|(?:inset|-?[0-9]{1,4}(?:\\.[0-9]{1,4})?(?:px)?|#[0-9A-Fa-f]{3,8}|rgba?\\([0-9]{1,3}, ?[0-9]{1,3}, ?[0-9]{1,3}(?:, ?(?:0|1|0?\\.[0-9]{1,4}))?\\))(?:,? (?:inset|-?[0-9]{1,4}(?:\\.[0-9]{1,4})?(?:px)?|#[0-9A-Fa-f]{3,8}|rgba?\\([0-9]{1,3}, ?[0-9]{1,3}, ?[0-9]{1,3}(?:, ?(?:0|1|0?\\.[0-9]{1,4}))?\\))){0,39})$",
+          "description": "CSS box-shadow, from an allow-list: numbers (optionally px), inset, #hex and rgb()/rgba() with plain numbers, separated by spaces and commas; or none. No other words, so no url(), var() or colour names."
         }
       }
     },

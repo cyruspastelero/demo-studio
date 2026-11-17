@@ -99,7 +99,12 @@ def measure_line(demo_dir: Path, cfg: dict, text: str, number: int) -> tuple[flo
                 return lib.duration(path), f"voiceover/{path.name}"
     if voice.provider in (None, "say") and shutil.which("say"):
         from narration.core import Line
-        audio = render_say(Line(number, "end", text, 0.0, 0.0), voice, demo_dir / "recordings" / "voice-cache")
+        cache = demo_dir / "recordings" / "voice-cache"
+        for folder, what in ((demo_dir / "recordings", "recordings"), (cache, "recordings/voice-cache")):
+            if folder.is_symlink():  # render_say writes here: a planted link must not redirect it
+                raise lib.UnsafePath(f"{what}: {folder} is a symlink; refusing to write through it")
+        lib.refuse_symlinks_under(cache, "recordings/voice-cache")
+        audio = render_say(Line(number, "end", text, 0.0, 0.0), voice, cache)
         return lib.duration(audio), "say"
     return len(text.split()) / voice.rate_wpm * 60, "word-count estimate"
 

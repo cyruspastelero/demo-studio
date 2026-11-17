@@ -91,7 +91,9 @@ voices:
   files       ready-made audio: voiceover/01.mp3, voiceover/02.wav, ... next to demo.json,
               numbered 1, 2, 3 in the order of the voiced items (.wav, .mp3 or .m4a). Made by
               you, or by an MCP voice tool from voiceover/lines.json (--export-lines).
-Default: files when voiceover/ has them, else elevenlabs when a key is found, else say.
+Default: files when voiceover/ has them, else say. ElevenLabs spends credits, so it is used only
+when you ask: --voice elevenlabs, or DEMO_STUDIO_ALLOW_CONFIG_VOICE=1 to let voice.provider (or a
+key in the environment) choose it.
 
 music: --music or voice.music (for example music/bed.m4a). Make it with the ElevenLabs MCP
 compose_music (instrumental), or use your own licensed track. make-bed.py only makes a placeholder
@@ -141,13 +143,33 @@ def timeline(cfg: dict, cut: Path, raw_dir: Path, rebuild: str) -> tuple[list[It
     return derive_timing(cfg["sequence"], raw_dir, lib.duration), lib.duration(cut)
 
 
+ALLOW_CONFIG_VOICE_ENV = "DEMO_STUDIO_ALLOW_CONFIG_VOICE"
+
+
+def paid_voice_allowed(args: argparse.Namespace, env) -> bool:
+    """ElevenLabs sends each line's text to a paid service and spends the key's credits. demo.json
+    may be someone else's, so only the user can turn it on: --voice elevenlabs on the command line,
+    or DEMO_STUDIO_ALLOW_CONFIG_VOICE=1 to let voice.provider (or a key in the environment) pick it."""
+    return args.voice == "elevenlabs" or env.get(ALLOW_CONFIG_VOICE_ENV, "").strip() == "1"
+
+
 def choose_provider(args: argparse.Namespace, voice: Voice, files_dir: Path) -> tuple[str, str]:
     """(provider, ElevenLabs key or ""). The Keychain is read only when ElevenLabs could be picked."""
-    choice = args.voice or voice.provider
+    allowed = paid_voice_allowed(args, os.environ)
+    configured = voice.provider
+    if configured == "elevenlabs" and not allowed:
+        configured = None
+        print(f"narrate: demo.json asks for ElevenLabs (voice.provider), which sends the voiceover text to a paid "
+              f"service and spends your credits, so it is not used unless you ask for it: add --voice elevenlabs "
+              f"(or set {ALLOW_CONFIG_VOICE_ENV}=1). Using voiceover files or the macOS voice instead.", flush=True)
+    choice = args.voice or configured
     has_files = has_voice_files(files_dir)
     key, problem = "", ""
-    if choice == "elevenlabs" or (choice is None and not has_files):
+    if choice == "elevenlabs" or (choice is None and not has_files and allowed):
         key, problem = find_api_key(voice, os.environ, explicit=args.voice == "elevenlabs")
+    elif choice is None and not has_files and os.environ.get(KEY_ENV, "").strip():
+        print(f"narrate: {KEY_ENV} is set, but ElevenLabs is only used when you ask for it "
+              f"(--voice elevenlabs, or {ALLOW_CONFIG_VOICE_ENV}=1).", flush=True)
     try:
         if choice == "elevenlabs" and not key and problem and not args.dry_run:
             service = keychain_service(voice, os.environ, explicit=args.voice == "elevenlabs")
@@ -156,10 +178,10 @@ def choose_provider(args: argparse.Namespace, voice: Voice, files_dir: Path) -> 
                                 f"{shlex.quote(service) if SERVICE_NAME.fullmatch(service) else KEYCHAIN_EXAMPLE} -w",
                                 f"Or set it for this shell only: {KEY_FIX}",
                                 "Then: {cmd} --voice elevenlabs"))
-        return select_provider(args.voice, voice.provider, bool(key),
+        return select_provider(args.voice, configured, bool(key),
                                shutil.which("say") is not None, has_files), key
     except NarrateError:
-        if args.dry_run and not args.voice and voice.provider is None:
+        if args.dry_run and not args.voice and configured is None:
             return ESTIMATE, key
         if args.dry_run and choice == "elevenlabs":
             return "elevenlabs", key  # dry run: cached lines are measured, the rest estimated
@@ -167,14 +189,19 @@ def choose_provider(args: argparse.Namespace, voice: Voice, files_dir: Path) -> 
 
 
 def use_template_audio(cut: Path) -> None:
-    """The build's look template may set its own loudness targets; they are in plan.json `look.audio`."""
+    """The build's look template may set its own loudness targets; they are in plan.json `look.audio`.
+    plan.json may come from someone else's demo folder, so it is validated first (shape, ranges and
+    the look schema) and refused with a rebuild hint when it does not pass."""
     plan = cut.with_suffix(".plan.json")
-    try:
-        data = json.loads(plan.read_text()) if plan.is_file() else {}
-    except json.JSONDecodeError:
+    if not plan.is_file():
         return
+    try:
+        data = lib.load_sidecar(plan, "plan")
+        if data.get("template"):
+            narration_core.use_audio((data.get("look") or {}).get("audio"))
+    except lib.SidecarError as error:
+        raise NarrateError(str(error), (REBUILD, "{cmd}")) from error
     if data.get("template"):
-        narration_core.use_audio((data.get("look") or {}).get("audio"))
         print(f"narrate: audio targets from template {data['template']}: "
               f"{narration_core.TARGET_LUFS} LUFS, true peak <= {narration_core.TRUE_PEAK_BAR} dBTP", flush=True)
 
@@ -206,8 +233,13 @@ def narrate(args: argparse.Namespace) -> int:
         check_voice_files(lines, files_dir)
     music = resolve_music(args.music, voice.music, demo_dir)
     lib.require("ffmpeg", "ffprobe")
-    for folder, what in ((rec / "voice-cache", "recordings/voice-cache"), (rec / "exports", "recordings/exports")):
-        lib.refuse_symlinks_under(folder, what)  # a planted link must not redirect a write
+    try:
+        if rec.is_symlink():
+            raise lib.UnsafePath(f"recordings: {rec} is a symlink; refusing to write through it")
+        for folder, what in ((rec / "voice-cache", "recordings/voice-cache"), (rec / "exports", "recordings/exports")):
+            lib.refuse_symlinks_under(folder, what)  # a planted link must not redirect a write
+    except lib.UnsafePath as error:
+        raise NarrateError(str(error), ("Replace the link with a real folder, then: {cmd}",)) from error
     ctx = Context(provider, voice, rec / "voice-cache", files_dir, args.dry_run, api_key)
     print(f"narrate: voice {provider}, {len(lines)} line(s), cut {total:.1f}s", flush=True)
 

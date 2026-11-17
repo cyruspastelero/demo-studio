@@ -5,14 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="light dark" />
     <title>demo-studio</title>
-    <script>
-      // Apply the saved theme (src/lib/theme.ts) before first paint so the page never flashes the wrong one.
-      (function () {
-        var choice = 'system';
-        try { choice = localStorage.getItem('demo-studio.theme') || 'system'; } catch (e) { /* storage blocked: follow the device */ }
-        document.documentElement.dataset.theme = choice === 'light' || choice === 'dark' ? choice : 'system';
-      })();
-    </script>
+    <script src="/theme-init.js"></script>
   </head>
   <body>
     <div id="root"></div>

@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -70,6 +71,26 @@ def side_by_side(reference: Path, t_ref: float, ours: Path, t_ours: float, out: 
              "[0:v]scale=960:540[a];[1:v]scale=960:540[b];[a][b]hstack=inputs=2", out])
 
 
+def save_previews(folder: Path, frames: list[Path]) -> Path:
+    """Writes frames as <folder>/preview/01.png.. Each is copied to a fresh temp file (mkstemp:
+    O_EXCL, never follows a link) and renamed over its target, so a symlinked preview file is
+    replaced, never written through. A symlinked preview folder is refused."""
+    preview = folder / "preview"
+    if preview.is_symlink():
+        fail(f"{preview} is a symlink; refusing to write previews through it")
+    preview.mkdir(exist_ok=True)
+    for n, frame in enumerate(frames, 1):
+        fd, partial = tempfile.mkstemp(dir=preview, prefix=f".{n:02d}.", suffix=".part")
+        try:
+            with os.fdopen(fd, "wb") as handle, open(frame, "rb") as source:
+                shutil.copyfileobj(source, handle)
+            os.replace(partial, preview / f"{n:02d}.png")
+        except BaseException:
+            Path(partial).unlink(missing_ok=True)
+            raise
+    return preview
+
+
 def stage(template: templates.Template, work: Path) -> Path:
     """work/demos/_templates/<id> and work/demos/todo-sample (raw takes, no exports), template set."""
     demos = work / "demos"
@@ -107,16 +128,25 @@ def main() -> None:
             template = templates.find(args.id)
     except templates.TemplateError as error:
         fail(str(error))
+    try:  # a template from someone else: copytree and the preview writes must not follow a planted link
+        lib.refuse_symlinks_under(template.folder, f"template {template.id}")
+    except lib.UnsafePath as error:
+        fail(f"{error}. Copy the template in as real files (cp -R) and run again.")
     work = Path(args.work).expanduser().resolve() if args.work else Path(tempfile.mkdtemp(prefix=f"tpl-{args.id}-"))
     work.mkdir(parents=True, exist_ok=True)
     demo = stage(template, work)
     print(f"{TOOL}: building the todo sample in {template.id} under {demo}", flush=True)
-    build = subprocess.run([sys.executable, "-I", str(SCRIPTS / "build-keynote.py"), "demo.json"], cwd=demo)
+    # The staged copy is found through DEMO_ROOT: templates are only searched in the demos root.
+    build = subprocess.run([sys.executable, "-I", str(SCRIPTS / "build-keynote.py"), "demo.json"], cwd=demo,
+                           env={**os.environ, "DEMO_ROOT": str(demo.parent)})
     if build.returncode:
         fail(f"build-keynote.py failed (exit {build.returncode}); fix template.json and run again")
     exports = demo / "recordings" / "exports"
     cut = exports / f"{lib.slugify(json.loads((demo / 'demo.json').read_text())['title'])}-keynote-cut.mp4"
-    plan = json.loads(cut.with_suffix(".plan.json").read_text())
+    try:
+        plan = lib.load_sidecar(cut.with_suffix(".plan.json"), "plan")
+    except lib.SidecarError as error:
+        fail(str(error))
     ours = our_moments(plan)
     ref_times: dict[str, float | None] = {}
     if args.measurements:
@@ -142,12 +172,7 @@ def main() -> None:
     if args.check:
         subprocess.run([sys.executable, "-I", str(SCRIPTS / "check-cut.py"), str(cut), "--frames", str(work / "check")])
     if args.save_previews:
-        preview = template.folder / "preview"
-        if preview.is_symlink():
-            fail(f"{preview} is a symlink; refusing to write previews through it")
-        preview.mkdir(exist_ok=True)
-        for n, key in enumerate(MOMENTS, 1):
-            shutil.copyfile(shots / f"{n:02d}-{key}.png", preview / f"{n:02d}.png")
+        preview = save_previews(template.folder, [shots / f"{n:02d}-{key}.png" for n, key in enumerate(MOMENTS, 1)])
         print(f"previews: 6 frames of the todo sample in {template.id} -> {preview}")
     print(f"cut: {cut}")
     lib.output(compare if args.reference else shots)

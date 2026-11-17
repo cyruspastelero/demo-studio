@@ -9,7 +9,6 @@ Usage (from the demo dir, after build-keynote.py): keynote-handoff.py demo.json
 Segments are cut from the finished cut at the times in <slug>-keynote-cut.timing.json.
 """
 import csv
-import json
 import importlib.util
 import re
 import shutil
@@ -33,8 +32,8 @@ VO_LEAD = 0.5  # a voiceover line starts this far into its segment
 
 
 def duration(path):
-    out = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration",
-                          "-of", "csv=p=0", str(path)], capture_output=True, text=True, check=True)
+    out = subprocess.run(lib.ffmpeg_cmd(["ffprobe", "-v", "error", "-show_entries", "format=duration",
+                                         "-of", "csv=p=0", path]), capture_output=True, text=True, check=True)
     return float(out.stdout)
 
 
@@ -153,7 +152,10 @@ def main():
     timing_path = final.with_suffix(".timing.json")
     if not timing_path.exists():
         sys.exit(f"handoff: {timing_path.name} missing; run build-keynote.py again")
-    timing = json.loads(timing_path.read_text())
+    try:  # a shared demo folder can ship its own timing file; its numbers become ffmpeg -ss/-t
+        timing = lib.load_sidecar(timing_path, "timing")
+    except lib.SidecarError as error:
+        sys.exit(f"handoff: {error}")
     if [i["key"] for i in timing["items"]] != keys:
         sys.exit("handoff: demo.json changed since the cut was built; run build-keynote.py again")
     durs = [float(i["duration"]) for i in timing["items"]]

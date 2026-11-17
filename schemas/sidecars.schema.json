@@ -1,0 +1,160 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Cyvid7-Darus10/demo-studio/schemas/sidecars.schema.json",
+  "title": "demo-studio build sidecars",
+  "description": "Files the build writes next to a cut in recordings/exports: <slug>-keynote-cut.plan.json and .timing.json (build-keynote.py) and <slug>-keynote-cut-narrated.voice.json (narrate.py). A shared demo folder can ship its own, so every reader validates them against these shapes before a value reaches ffmpeg or a loop. Times are seconds in the cut, capped at four hours; lists are capped so a crafted file cannot make a checker run for ever. The plan's look is checked separately against the look in template.schema.json.",
+  "$defs": {
+    "seconds": { "type": "number", "minimum": 0, "maximum": 14400 },
+    "key": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$" },
+    "color": { "type": "string", "pattern": "^#(?:[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$" },
+    "line": { "type": "string", "pattern": "^[\\s\\S]{0,2000}$" },
+    "timing": {
+      "type": "object",
+      "required": ["total", "items"],
+      "additionalProperties": false,
+      "properties": {
+        "video": { "type": "string", "pattern": "^[^/\\\\\\n\\r]{1,200}$" },
+        "total": { "$ref": "#/$defs/seconds" },
+        "outro": { "type": "number", "minimum": 0, "maximum": 60 },
+        "items": {
+          "type": "array", "maxItems": 1000,
+          "items": {
+            "type": "object",
+            "required": ["key", "start", "duration"],
+            "additionalProperties": false,
+            "properties": {
+              "index": { "type": "integer", "minimum": 0, "maximum": 1000 },
+              "key": { "$ref": "#/$defs/key" },
+              "start": { "$ref": "#/$defs/seconds" },
+              "duration": { "$ref": "#/$defs/seconds" }
+            }
+          }
+        }
+      }
+    },
+    "voice": {
+      "type": "object",
+      "required": ["lines"],
+      "additionalProperties": false,
+      "properties": {
+        "total": { "$ref": "#/$defs/seconds" },
+        "outro": { "type": "number", "minimum": 0, "maximum": 60 },
+        "dips": {
+          "type": "array", "maxItems": 200,
+          "items": {
+            "type": "object", "required": ["at", "dur"], "additionalProperties": false,
+            "properties": { "at": { "$ref": "#/$defs/seconds" }, "dur": { "type": "number", "minimum": 0, "maximum": 60 } }
+          }
+        },
+        "lines": {
+          "type": "array", "maxItems": 1000,
+          "items": {
+            "type": "object", "required": ["start", "end"], "additionalProperties": false,
+            "properties": { "start": { "$ref": "#/$defs/seconds" }, "end": { "$ref": "#/$defs/seconds" } }
+          }
+        }
+      }
+    },
+    "plan": {
+      "type": "object",
+      "required": ["total", "runs", "cards", "callouts", "highlights"],
+      "additionalProperties": false,
+      "properties": {
+        "video": { "type": "string", "pattern": "^[^/\\\\\\n\\r]{1,200}$" },
+        "total": { "$ref": "#/$defs/seconds" },
+        "template": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$" },
+        "look": { "type": "object" },
+        "look_samples": {
+          "type": "object", "additionalProperties": false,
+          "properties": {
+            "background": {
+              "type": "object", "additionalProperties": false,
+              "patternProperties": { "^[0-9]{1,4},[0-9]{1,4}$": { "$ref": "#/$defs/color" } }
+            }
+          }
+        },
+        "runs": {
+          "type": "array", "maxItems": 200,
+          "items": {
+            "type": "object", "required": ["start", "end", "zooms", "cuts"], "additionalProperties": false,
+            "properties": {
+              "start": { "$ref": "#/$defs/seconds" },
+              "end": { "$ref": "#/$defs/seconds" },
+              "zooms": {
+                "type": "array", "maxItems": 100,
+                "items": {
+                  "type": "object", "required": ["start", "landed", "out", "end", "scale"], "additionalProperties": false,
+                  "properties": {
+                    "start": { "$ref": "#/$defs/seconds" }, "landed": { "$ref": "#/$defs/seconds" },
+                    "out": { "$ref": "#/$defs/seconds" }, "end": { "$ref": "#/$defs/seconds" },
+                    "scale": { "type": "number", "minimum": 1, "maximum": 4 }
+                  }
+                }
+              },
+              "cuts": { "type": "array", "maxItems": 200, "items": { "$ref": "#/$defs/seconds" } }
+            }
+          }
+        },
+        "cards": {
+          "type": "array", "maxItems": 200,
+          "items": {
+            "type": "object", "required": ["key", "kind", "start", "end", "accent", "outro"], "additionalProperties": false,
+            "properties": {
+              "key": { "$ref": "#/$defs/key" },
+              "kind": { "enum": ["hero", "section", "end"] },
+              "start": { "$ref": "#/$defs/seconds" },
+              "end": { "$ref": "#/$defs/seconds" },
+              "accent": { "$ref": "#/$defs/line" },
+              "outro": { "type": "number", "minimum": 0, "maximum": 60 }
+            }
+          }
+        },
+        "callouts": {
+          "type": "array", "maxItems": 500,
+          "items": {
+            "type": "object", "required": ["start", "end", "kind", "text"], "additionalProperties": false,
+            "properties": {
+              "start": { "$ref": "#/$defs/seconds" },
+              "end": { "$ref": "#/$defs/seconds" },
+              "kind": { "enum": ["statement", "person"] },
+              "text": { "$ref": "#/$defs/line" }
+            }
+          }
+        },
+        "highlights": {
+          "type": "array", "maxItems": 500,
+          "items": {
+            "type": "object", "required": ["start", "end", "rect"], "additionalProperties": false,
+            "properties": {
+              "start": { "$ref": "#/$defs/seconds" },
+              "end": { "$ref": "#/$defs/seconds" },
+              "rect": { "type": "array", "minItems": 4, "maxItems": 4, "items": { "type": "number", "minimum": 0, "maximum": 16384 } },
+              "where": { "$ref": "#/$defs/line" },
+              "scene": { "$ref": "#/$defs/key" },
+              "take": {
+                "type": "string", "pattern": "^[^\\n\\r\\u0000]{1,400}\\.(mp4|mov)$",
+                "description": "Relative to the plan's folder; check-cut.py also confines it to the demo folder."
+              },
+              "take_size": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "type": "integer", "minimum": 1, "maximum": 16384 } },
+              "shot_start": { "$ref": "#/$defs/seconds" },
+              "shot_end": { "$ref": "#/$defs/seconds" },
+              "trim_in": { "$ref": "#/$defs/seconds" },
+              "speed": { "type": "number", "exclusiveMinimum": 0, "maximum": 20 }
+            }
+          }
+        },
+        "brand": {
+          "type": "object", "additionalProperties": false,
+          "properties": {
+            "accent": { "$ref": "#/$defs/color" },
+            "sweep": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "$ref": "#/$defs/color" } },
+            "highlight": { "$ref": "#/$defs/color" },
+            "pill": { "anyOf": [{ "$ref": "#/$defs/color" }, { "type": "null" }] }
+          }
+        },
+        "fonts": { "type": "array", "maxItems": 20, "items": { "$ref": "#/$defs/line" } },
+        "warnings": { "type": "array", "maxItems": 500, "items": { "$ref": "#/$defs/line" } }
+      }
+    }
+  }
+}

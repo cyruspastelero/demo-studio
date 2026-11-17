@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { existsSync, readFileSync, renameSync, unlinkSync, watch, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { formatJson } from '../shared/format.mjs';
@@ -15,6 +15,11 @@ export class SaveError extends Error {
     this.status = status;
     this.extra = extra;
   }
+}
+
+// A fresh, unguessable temp name next to the file, so the rename stays on one filesystem.
+export function tempPath(folder, name) {
+  return join(folder, `.${name}.studio-${randomBytes(12).toString('hex')}.tmp`);
 }
 
 export function readDocument(folder, kind) {
@@ -80,14 +85,21 @@ export class DocumentStore {
     const text = formatJson(data);
     const hash = hashText(text);
     if (hash === currentHash) return { hash };
-    const temp = join(this.folder, `.${FILES[kind]}.studio-${process.pid}.tmp`);
+    const temp = tempPath(this.folder, FILES[kind]);
     this.known.set(kind, hash);
+    let created = false;
     try {
-      writeFileSync(temp, text);
+      // 'wx' is O_CREAT|O_EXCL: it fails rather than follow a symlink planted at the temp name, and
+      // the random name cannot be guessed ahead. The rename then replaces the file (or a symlink to
+      // it) without following it.
+      writeFileSync(temp, text, { flag: 'wx', mode: 0o644 });
+      created = true;
       renameSync(temp, file);
     } catch (error) {
       this.known.set(kind, currentHash);
-      try { unlinkSync(temp); } catch { /* temp was never created */ }
+      if (created) {
+        try { unlinkSync(temp); } catch { /* already renamed or removed */ }
+      }
       throw new SaveError(`could not write ${FILES[kind]}: ${error.message}`, 500);
     }
     return { hash };

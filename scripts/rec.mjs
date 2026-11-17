@@ -6,7 +6,7 @@
 // Usage (from recordings/): node rec.mjs <window> [scenes/<part>.js ...] scenes/<body>.js
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { PLUGIN_ROOT, loadDemoConfig, loadPlaywright, windowConfig } from './pw.mjs';
+import { PLUGIN_ROOT, browserConfig, loadPlaywright, windowConfig } from './pw.mjs';
 import { rxTokensLine } from './rx-tokens.mjs';
 
 const [who, ...files] = process.argv.slice(2);
@@ -15,13 +15,17 @@ if (!who || files.length === 0) {
   process.exit(1);
 }
 const win = windowConfig(who);
-const browserOpts = loadDemoConfig().browser || {};
+const browserOpts = browserConfig();
 const timezoneId = process.env.DEMO_TIMEZONE || browserOpts.timezone;
 const locale = process.env.DEMO_LOCALE || browserOpts.locale;
 const lib = readFileSync(join(PLUGIN_ROOT, 'scripts', 'lib.js'), 'utf8');
 // A per-window receiver port lets two windows record at once.
-const rxPort = process.env.RX_PORT || win.rx_port;
-const port = rxPort ? `PROJECT.port = ${Number(rxPort)};` : '';
+const rxPort = process.env.RX_PORT ? Number(process.env.RX_PORT) : win.rx_port;
+if (rxPort !== undefined && !(Number.isInteger(rxPort) && rxPort >= 1 && rxPort <= 65535)) {
+  console.error(`RX_PORT must be a port number, got ${process.env.RX_PORT}`);
+  process.exit(1);
+}
+const port = rxPort ? `PROJECT.port = ${rxPort};` : '';
 // Read now, from recordings/.rx-token, so start the window's frame receiver before this.
 const code = [readFileSync('scenes/_project.js', 'utf8'), port, rxTokensLine(), lib, ...files.slice(0, -1).map((f) => readFileSync(f, 'utf8')),
   'let stop = null;', 'try {', readFileSync(files.at(-1), 'utf8'), '} finally { if (stop) await stop(); }'].join('\n');

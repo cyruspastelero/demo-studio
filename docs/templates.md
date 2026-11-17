@@ -64,11 +64,16 @@ look is checked against its own numbers, not the house ones.
 
 Searched in this order; the first folder with the id wins:
 
-1. Workspace templates, `<demos root>/_templates/<id>/`: next to the demo being built, then
-   `$DEMO_ROOT/_templates`, then `./demos/_templates` (in a clone of the plugin, `<repo>/demos/_templates`).
+1. Workspace templates, `<demos root>/_templates/<id>/`. There is one demos root: `$DEMO_ROOT` when
+   it is set; else, for a build, the demos workspace that holds the demo (its parent folder, when
+   that folder has the starter kit's `check.py` and `AGENTS.md`); else `./demos`, or the current
+   folder when it is a workspace. The studio lists templates from the same root and passes it to
+   the builds it runs.
 2. Built-ins, `<plugin>/look-templates/<id>/`.
 
-So a workspace template with the same id as a built-in overrides it. A symlinked template folder,
+So a workspace template with the same id as a built-in overrides it. A `_templates` folder next to
+a demo that sits anywhere else (an unzipped share in Downloads, say) is never searched, and the
+build prints the `template.json` it used. A symlinked template folder,
 or a symlinked template.json, is refused. `check.py` in a demos folder skips folders starting with
 `_`, so `_templates` is never reported as a demo.
 

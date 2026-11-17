@@ -51,9 +51,14 @@ export const TEMPLATE_COPIER: Prompt = {
   what: 'Claude splits the video into frames, checks them one by one and saves the colours, type and pacing as a template you can reuse.',
 };
 
+// Template ids come from template folders, which may be someone else's. Only an id of the
+// template-id shape goes into a prompt (in backticks); anything else stays a part to fill in.
+const TEMPLATE_ID = /^[a-z0-9][a-z0-9-]{2,63}$/;
+
 // "Use" on a template card copies this, with the template's id filled in.
 export function templatePrompt(id: string): string {
-  return `Make a demo of [[app.example.com]] using template ${id}.`;
+  const named = TEMPLATE_ID.test(id) ? `\`${id}\`` : id === '[[<id>]]' ? id : '[[<id>]]';
+  return `Make a demo of [[app.example.com]] using template ${named}.`;
 }
 
 export const PROMPT_GROUPS: PromptGroup[] = [

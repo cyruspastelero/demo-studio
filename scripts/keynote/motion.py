@@ -15,6 +15,10 @@ from pathlib import Path
 from . import spec
 from .spec import Rect
 
+# Same as demolib.PROTOCOL_WHITELIST: media from a demo folder may only be read as local files or
+# pipes, never through a URL a crafted file points ffmpeg at. One input per command here.
+PROTOCOLS = ("-protocol_whitelist", "file,pipe")
+
 CHANGED_LEVEL = 32       # a pixel changed when its grey level moved at least this much
 MOVING_FRACTION = 0.20   # the area moved when at least this share of its pixels changed
 EMPTY_SPREAD = 3.0       # grey-level standard deviation under which the box holds nothing
@@ -74,7 +78,7 @@ def spread(patch: Patch) -> float:
 
 def _read(take: Path, rect: Rect, size: tuple[int, int], start: float, args: list[str]) -> list[Patch]:
     (x, y, w, h), inner = context_box(rect, size)
-    cmd = ["ffmpeg", "-v", "error", "-ss", f"{max(0.0, start):.3f}", "-i", str(take), *args,
+    cmd = ["ffmpeg", *PROTOCOLS, "-v", "error", "-ss", f"{max(0.0, start):.3f}", "-i", str(take), *args,
            "-vf", f"crop={w}:{h}:{x}:{y},format=gray", "-f", "rawvideo", "-pix_fmt", "gray", "-"]
     result = subprocess.run(cmd, capture_output=True)
     if result.returncode:

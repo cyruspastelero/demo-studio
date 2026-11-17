@@ -15,3 +15,10 @@ app/out/
 
 # The todo sample ships its three small raw takes so the editor can play it.
 !examples/todo-sample/recordings/raw/*.mp4
+
+# Per-run and generated files a demo folder can hold (the receiver token, voice and keynote caches,
+# raw screencast frames). Keep them out of commits even for demos outside ./demos/.
+.rx-token
+voice-cache/
+recordings/exports/.keynote/
+recordings/frames/

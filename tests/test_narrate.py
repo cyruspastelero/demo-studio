@@ -240,7 +240,7 @@ class Mix(unittest.TestCase):
         self.assertIn("adelay=6250|6250", graph)
         self.assertIn("amix=inputs=2", graph)
         self.assertIn("atrim=0:14.000", graph)
-        self.assertIn("loudnorm=I=-14:TP=-2.0", graph)
+        self.assertIn("loudnorm=I=-14.00:TP=-2.00", graph)
         self.assertNotIn("sidechaincompress", graph)
 
     def test_second_pass_uses_the_measured_loudness(self):

@@ -18,7 +18,9 @@ The reference's frames, logos, words and music stay in <work> (scratch); nothing
 template folder. Finish the template with skill demo-template (fonts, pill and box styles by eye),
 then check it with template-validate.py.
 
-Usage: template-from-video.py VIDEO [--name NAME] [--out DIR] [--work DIR] [--force]
+Usage: template-from-video.py VIDEO [--name NAME] [--out DIR] [--work DIR] [--force] [--anonymous]
+  --anonymous  write "reference video" instead of the video's file name into source.json, README.md,
+               the template id and the default name (the file name can say whose video it was)
   --out    templates folder (default <demos root>/_templates: $DEMO_ROOT/_templates, else ./demos/_templates)
   --work   scratch folder (default a new temp folder; printed)
 Prints PROGRESS lines and `OUTPUT <template folder>`. Heavy-ish: decodes the video twice at low rate.
@@ -144,9 +146,9 @@ def scene_changes(video: Path, threshold: float, crop: list[int] | None = None) 
     if crop:
         x, y, w, h = crop
         region = f"scale={W}:{H},crop={w}:{h}:{x}:{y},"
-    result = subprocess.run(["ffmpeg", "-hide_banner", "-i", str(video), "-an", "-vf",
-                             f"{region}scale=480:-2,select='gt(scene,{threshold})',showinfo", "-f", "null", "-"],
-                            capture_output=True, text=True)
+    result = subprocess.run(lib.ffmpeg_cmd(["ffmpeg", "-hide_banner", "-i", video, "-an", "-vf",
+                                         f"{region}scale=480:-2,select='gt(scene,{threshold})',showinfo",
+                                         "-f", "null", "-"]), capture_output=True, text=True)
     return parse_scene_times(result.stderr)
 
 
@@ -160,8 +162,9 @@ def merge_times(a: list[float], b: list[float], gap: float = 0.25) -> list[float
 
 def frames_at(video: Path, start: float, seconds: float, fps: float):
     """Yields (t, measure.Frame) at `fps` over [start, start + seconds], scaled to 1920x1080."""
-    cmd = ["ffmpeg", "-v", "error", "-ss", f"{max(0.0, start):.3f}", "-t", f"{seconds:.3f}", "-i", str(video),
-           "-an", "-vf", f"fps={fps},scale={W}:{H}:flags=bicubic", "-f", "rawvideo", "-pix_fmt", "rgb24", "-"]
+    cmd = lib.ffmpeg_cmd(["ffmpeg", "-v", "error", "-ss", f"{max(0.0, start):.3f}", "-t", f"{seconds:.3f}",
+                          "-i", video, "-an", "-vf", f"fps={fps},scale={W}:{H}:flags=bicubic", "-f", "rawvideo",
+                          "-pix_fmt", "rgb24", "-"])
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     size, n = W * H * 3, 0
     try:
@@ -494,6 +497,27 @@ def write_readme(folder: Path, template_id: str, name: str, meas: dict, todo: li
     (folder / "README.md").write_text("\n".join(lines))
 
 
+ANONYMOUS_LABEL = "reference video"
+
+
+def reference_label(video: Path, anonymous: bool) -> str:
+    """What the template records about the reference: its file name, or a neutral label."""
+    return ANONYMOUS_LABEL if anonymous else video.name
+
+
+def prepare_target(folder: Path, force: bool) -> None:
+    """The template folder must be new, or (with --force) a real folder with no symlinks in it, so
+    redoing a draft cannot write template.json, source.json or README.md through a planted link."""
+    if folder.is_symlink():
+        fail(f"{folder} is a symlink; refusing to write through it")
+    if folder.exists() and not force:
+        fail(f"{folder} exists. Pass --force to redo the draft, or delete the folder first")
+    try:
+        lib.refuse_symlinks_under(folder, f"template folder {folder.name}")
+    except lib.UnsafePath as error:
+        fail(f"{error}. Delete the folder and run again")
+
+
 def default_out() -> Path:
     root = Path(os.environ["DEMO_ROOT"]) if os.environ.get("DEMO_ROOT") else Path.cwd() / "demos"
     return root / "_templates"
@@ -507,6 +531,8 @@ def main() -> None:
     parser.add_argument("--work", help="scratch folder for frames, sheets and measurements.json")
     parser.add_argument("--threshold", type=float, default=SCENE_THRESHOLD, help="scene-change threshold (0.3)")
     parser.add_argument("--force", action="store_true", help="replace the draft if the template folder exists")
+    parser.add_argument("--anonymous", action="store_true",
+                        help='record "reference video" instead of the file name (source.json, README, id, name)')
     args = parser.parse_args()
     lib.require("ffmpeg", "ffprobe")
     video = Path(args.video).expanduser().resolve()
@@ -514,19 +540,21 @@ def main() -> None:
         fail(f"video not found: {video}")
     info = probe(video)
     digest = sha256(video)
-    name = args.name or Path(video.name).stem.replace("_", " ").replace("-", " ").strip() or "Copied look"
-    tid = template_id(args.name or video.name, digest)
+    label = reference_label(video, args.anonymous)
+    if not args.anonymous:
+        print(f"{TOOL}: note: the file name {video.name!r} goes into source.json, README.md and the template id"
+              f"{'' if args.name else ' and name'}; if it says whose video this is, run again with --anonymous "
+              f"(records {ANONYMOUS_LABEL!r} instead)", file=sys.stderr, flush=True)
+    name = args.name or Path(label).stem.replace("_", " ").replace("-", " ").strip() or "Copied look"
+    tid = template_id(args.name or label, digest)
     out_root = Path(args.out).expanduser().resolve() if args.out else default_out().resolve()
     folder = out_root / tid
-    if folder.is_symlink():
-        fail(f"{folder} is a symlink; refusing to write through it")
-    if folder.exists() and not args.force:
-        fail(f"{folder} exists. Pass --force to redo the draft, or delete the folder first")
+    prepare_target(folder, args.force)
     work = Path(args.work).expanduser().resolve() if args.work else Path(tempfile.mkdtemp(prefix=f"demo-template-{tid}-"))
     if work == folder or folder in work.parents:
         fail("--work must be outside the template folder (frames of the reference never go into a template)")
     work.mkdir(parents=True, exist_ok=True)
-    print(f"{TOOL}: {video.name}: {info['width']}x{info['height']} at {info['fps']} fps, {info['duration']:.1f}s; "
+    print(f"{TOOL}: {label}: {info['width']}x{info['height']} at {info['fps']} fps, {info['duration']:.1f}s; "
           f"id {tid}; scratch {work}", flush=True)
 
     scenes = scene_changes(video, args.threshold)
@@ -535,7 +563,7 @@ def main() -> None:
     sheets = contact_sheets(stills, work / "frames", work / "sheets")
     rows = track(video, info["duration"])
     rect, rest_frames = rest_window(rows)
-    meas: dict = {"tool": TOOL, "video": video.name, "probe": info, "scenes": scenes,
+    meas: dict = {"tool": TOOL, "video": label, "probe": info, "scenes": scenes,
                   "shots": shot_lengths(scenes, info["duration"]), "frames": stills, "sheets": sheets}
     zooms = []
     if rect:
@@ -579,7 +607,7 @@ def main() -> None:
         fail("draft template does not match the schema (a measuring bug):\n  " + "\n  ".join(errors))
     (folder / "template.json").write_text(json.dumps(template, indent=2) + "\n")
     (folder / "source.json").write_text(json.dumps({
-        "file": video.name, "duration": round(info["duration"], 3), "sha256": digest,
+        "file": label, "duration": round(info["duration"], 3), "sha256": digest,
         "created": datetime.date.today().isoformat(), "width": info["width"], "height": info["height"],
         "fps": info["fps"], "tool": TOOL}, indent=2) + "\n")
     write_readme(folder, tid, name, meas, todo)

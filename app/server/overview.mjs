@@ -20,15 +20,29 @@ export function isPlaceholderTitle(title) {
   return typeof title !== 'string' || !title.trim() || PLACEHOLDER_TITLES.includes(title.trim());
 }
 
+// Folder names come from whoever made the demo. One goes into a prompt the user pastes into Claude,
+// so only a plain name is used (in backticks); anything else (spaces, quotes, newlines, words that
+// read as instructions) gets a generic prompt instead.
+export const SAFE_DEMO_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
+
+export function demoSubject(name) {
+  return typeof name === 'string' && SAFE_DEMO_NAME.test(name) ? `the \`${name}\` demo` : 'the demo in this folder';
+}
+
 const STAGES = [
-  { key: 'plan', label: 'Plan', prompt: (name) => `Plan the ${name} demo: brief, run sheet, shot list and voiceover draft.` },
-  { key: 'prep', label: 'Prep', prompt: (name) => `Prep the ${name} demo: accounts, seed data, then the smoke run and the test sweep.` },
-  { key: 'record', label: 'Record', prompt: (name) => `Record the scenes for the ${name} demo.` },
-  { key: 'review', label: 'Review', prompt: (name) => `Mark the takes for the ${name} demo and build the review reel.` },
-  { key: 'edit', label: 'Edit', prompt: (name) => `Cut the promo and the how-to for the ${name} demo.` },
-  { key: 'handoff', label: 'Handoff', prompt: (name) => `Build the editor handoff for the ${name} demo.` },
-  { key: 'final', label: 'Final', prompt: (name) => `Save the finished videos for the ${name} demo to final/ and wrap it up.` },
+  { key: 'plan', label: 'Plan', prompt: (it) => `Plan ${it}: brief, run sheet, shot list and voiceover draft.` },
+  { key: 'prep', label: 'Prep', prompt: (it) => `Prep ${it}: accounts, seed data, then the smoke run and the test sweep.` },
+  { key: 'record', label: 'Record', prompt: (it) => `Record the scenes for ${it}.` },
+  { key: 'review', label: 'Review', prompt: (it) => `Mark the takes for ${it} and build the review reel.` },
+  { key: 'edit', label: 'Edit', prompt: (it) => `Cut the promo and the how-to for ${it}.` },
+  { key: 'handoff', label: 'Handoff', prompt: (it) => `Build the editor handoff for ${it}.` },
+  { key: 'final', label: 'Final', prompt: (it) => `Save the finished videos for ${it} to final/ and wrap it up.` },
 ];
+
+export function stagePrompt(stage, name) {
+  const found = STAGES.find((s) => s.key === stage);
+  return found ? found.prompt(demoSubject(name)) : null;
+}
 
 function readText(file) {
   try {
@@ -163,7 +177,7 @@ export function demoOverview(demo, indexStatus = null) {
   const firstTake = [...raw].sort()[0];
   return {
     stages,
-    next: nextStage ? { stage: nextStage.key, label: nextStage.label, prompt: nextStage.prompt(name) } : null,
+    next: nextStage ? { stage: nextStage.key, label: nextStage.label, prompt: nextStage.prompt(demoSubject(name)) } : null,
     scenes,
     takes,
     attention,

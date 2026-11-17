@@ -41,13 +41,13 @@ awk '{ printf "%s %d\n", $1, NR - 1 }' "${frames_dir}/ts.txt" | sort -n -k1,1 |
       }
       printf "file '\''%s/f%05d.jpg'\''\n", d, f[NR]
     }' > "$list"
-ffmpeg -y -loglevel error -f concat -safe 0 -i "$list" -filter_complex "$fc" -map "[out]" \
+ffmpeg -y -loglevel error -protocol_whitelist file,pipe -f concat -safe 0 -i "$list" -filter_complex "$fc" -map "[out]" \
   -c:v libx264 -preset slow -crf 14 -pix_fmt yuv420p -r 30 -movflags +faststart "$out"
 
 kept="frames/${scene}-t${take}"
 mv "$frames_dir" "$kept"
 
-read -r w h dur < <(ffprobe -v error -select_streams v:0 \
+read -r w h dur < <(ffprobe -v error -protocol_whitelist file,pipe -select_streams v:0 \
   -show_entries stream=width,height:format=duration -of default=nw=1:nk=1 "$out" | tr '\n' ' '; echo)
 printf '%s,%s,%s,%.1f,%sx%s,vfr->30,%s,new,"%s"\n' \
   "$out" "$scene" "$take" "$dur" "$w" "$h" "$(date -u +%Y-%m-%dT%H:%M)" "${notes//\"/\'}" >> takes.csv

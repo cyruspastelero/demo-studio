@@ -2,11 +2,15 @@
 
 A template is a folder `<id>/` holding template.json, README.md, source.json and preview/01..06.png.
 Search order, first match wins:
-  1. workspace templates: `<demos root>/_templates/<id>/`, where the demos root is the demo's own
-     parent folder, then $DEMO_ROOT, then ./demos, then <repo>/demos (a clone of the plugin)
+  1. workspace templates: `<demos root>/_templates/<id>/`. The demos root is $DEMO_ROOT when it is
+     set; else, for a build, the workspace that holds the demo (the demo's parent folder, and only
+     when it is a demos workspace: it has the starter kit's check.py and AGENTS.md); else, with no
+     demo, the same folder the studio lists (./demos, or the current folder when it is a workspace).
   2. built-ins: `<repo>/look-templates/<id>/`
-A symlinked template folder (or a symlinked template.json) is refused: a template shared by someone
-else must not be able to point the engine at files outside its folder."""
+A `_templates` folder next to a demo that sits anywhere else (Downloads, an unzipped share) is never
+searched. app/server/demos.mjs demoRoot() follows the same rule. A symlinked template folder (or a
+symlinked template.json) is refused: a template shared by someone else must not be able to point the
+engine at files outside its folder."""
 from __future__ import annotations
 
 import json
@@ -49,21 +53,38 @@ class Template:
         return self.data.get("look", {})
 
 
-def workspace_roots(demo_dir: Path | None = None, cwd: Path | None = None) -> list[Path]:
-    """The `_templates` folders to search before the built-ins, in order, without duplicates."""
-    candidates = []
+WORKSPACE_MARKERS = ("check.py", "AGENTS.md")  # what scripts/new-workspace.sh puts in a demos workspace
+
+
+def is_workspace(folder: Path) -> bool:
+    return all((Path(folder) / name).is_file() for name in WORKSPACE_MARKERS)
+
+
+def _is_demo(folder: Path) -> bool:
+    return (folder / "handoff.json").exists() or (folder / "demo.json").exists()
+
+
+def demo_root(demo_dir: Path | None = None, cwd: Path | None = None, env=None) -> Path | None:
+    """The one demos root whose `_templates` is searched (None: built-ins only). Same rule as
+    app/server/demos.mjs demoRoot() when there is no demo."""
+    env = os.environ if env is None else env
+    here = Path(cwd or Path.cwd()).absolute()
+    if env.get("DEMO_ROOT"):
+        return (here / env["DEMO_ROOT"]).resolve()
     if demo_dir is not None:
-        candidates.append(Path(demo_dir).parent / "_templates")
-    if os.environ.get("DEMO_ROOT"):
-        candidates.append(Path(os.environ["DEMO_ROOT"]) / "_templates")
-    candidates.append(Path(cwd or Path.cwd()) / "demos" / "_templates")
-    candidates.append(REPO / "demos" / "_templates")
-    out: list[Path] = []
-    for path in candidates:
-        key = path.resolve() if path.exists() else path.absolute()
-        if key not in [p.resolve() if p.exists() else p.absolute() for p in out]:
-            out.append(path)
-    return out
+        parent = Path(demo_dir).absolute().parent
+        return parent if is_workspace(parent) else None
+    nested = here / "demos"
+    if nested.exists():
+        return nested
+    has_demos = here.is_dir() and any(not p.name.startswith(".") and p.is_dir() and _is_demo(p) for p in here.iterdir())
+    return here if is_workspace(here) or has_demos else None
+
+
+def workspace_roots(demo_dir: Path | None = None, cwd: Path | None = None) -> list[Path]:
+    """The `_templates` folder to search before the built-ins (none, or exactly one)."""
+    root = demo_root(demo_dir, cwd)
+    return [] if root is None else [root / "_templates"]
 
 
 def search_path(demo_dir: Path | None = None, cwd: Path | None = None) -> list[tuple[str, Path]]:

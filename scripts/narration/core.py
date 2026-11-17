@@ -32,17 +32,33 @@ TRUE_PEAK_BAR = -1.0       # A3, measured after AAC
 TP_HEADROOM = 1.0          # TARGET_TP sits this far under the bar
 
 
+# Ranges for a look's audio targets: the same as look.audio in schemas/template.schema.json.
+AUDIO_RANGES = {"lufs": (-30.0, -8.0), "true_peak": (-6.0, 0.0), "music_gap_db": (0.0, 30.0),
+                "outro_silence": (0.0, 10.0)}
+
+
 def use_audio(audio: dict | None) -> None:
     """A look template's audio targets (lufs, true_peak, music_gap_db, outro_silence), read from the
-    build's plan.json `look.audio`. narrate.py calls it once before mixing; None keeps the bar."""
+    build's plan.json `look.audio`. narrate.py calls it once before mixing; None keeps the bar.
+    plan.json may come from someone else's demo folder and these numbers go into the ffmpeg filter
+    graph, so each one must be a real number in its schema range (lib.SidecarError otherwise)."""
     global TARGET_LUFS, TARGET_TP, TRUE_PEAK_BAR, MUSIC_GAP_DB, SILENT_TAIL
     if not audio:
         return
-    TARGET_LUFS = audio.get("lufs", TARGET_LUFS)
-    TRUE_PEAK_BAR = audio.get("true_peak", TRUE_PEAK_BAR)
+    if not isinstance(audio, dict):
+        raise lib.SidecarError("look.audio: expected an object")
+    unknown = sorted(set(audio) - set(AUDIO_RANGES))
+    if unknown:
+        raise lib.SidecarError(f"look.audio: unknown field(s) {', '.join(map(repr, unknown))}")
+    values = {key: lib.finite_number(audio[key], f"look.audio.{key}", *AUDIO_RANGES[key])
+              for key in AUDIO_RANGES if key in audio}
+    TARGET_LUFS = values.get("lufs", TARGET_LUFS)
+    TRUE_PEAK_BAR = values.get("true_peak", TRUE_PEAK_BAR)
     TARGET_TP = TRUE_PEAK_BAR - TP_HEADROOM
-    MUSIC_GAP_DB = audio.get("music_gap_db", MUSIC_GAP_DB)
-    SILENT_TAIL = audio.get("outro_silence", SILENT_TAIL)
+    MUSIC_GAP_DB = values.get("music_gap_db", MUSIC_GAP_DB)
+    SILENT_TAIL = values.get("outro_silence", SILENT_TAIL)
+
+
 SAMPLE_RATE = 48000
 KEY_ENV = "ELEVENLABS_API_KEY"
 KEYCHAIN_ENV = "ELEVENLABS_KEYCHAIN_SERVICE"

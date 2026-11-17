@@ -44,13 +44,61 @@ export function loadDemoConfig() {
   }
 }
 
+// demo.json may be someone else's: a window's port and match go into a CDP URL and a tab pick,
+// and browser.timezone/locale into the recording context. Returns a list of problems.
+const PORT_MIN = 1024;
+const PORT_MAX = 65535;
+const MATCH = /^[^\s\u0000-\u001f]{1,200}$/;
+const LOCALE = /^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8}){0,3}$/;
+const TIMEZONE = /^[A-Za-z][A-Za-z0-9_+-]*(\/[A-Za-z0-9_+-]+){0,2}$/;
+
+const isPort = (value) => Number.isInteger(value) && value >= PORT_MIN && value <= PORT_MAX;
+
+export function windowProblems(name, win) {
+  if (!win || typeof win !== 'object' || Array.isArray(win)) return [`windows.${name} must be an object`];
+  const problems = [];
+  if (!isPort(win.port)) problems.push(`windows.${name}.port must be a whole number from ${PORT_MIN} to ${PORT_MAX}`);
+  if (win.rx_port !== undefined && !isPort(win.rx_port)) problems.push(`windows.${name}.rx_port must be a whole number from ${PORT_MIN} to ${PORT_MAX}`);
+  if (win.match !== undefined && (typeof win.match !== 'string' || !MATCH.test(win.match))) {
+    problems.push(`windows.${name}.match must be a short piece of a URL (no spaces or control characters)`);
+  }
+  return problems;
+}
+
+export function browserProblems(browser) {
+  if (browser === undefined) return [];
+  if (!browser || typeof browser !== 'object' || Array.isArray(browser)) return ['browser must be an object'];
+  const problems = [];
+  if (browser.timezone !== undefined && (typeof browser.timezone !== 'string' || !TIMEZONE.test(browser.timezone))) {
+    problems.push('browser.timezone must be an IANA zone such as Europe/London');
+  }
+  if (browser.locale !== undefined && (typeof browser.locale !== 'string' || !LOCALE.test(browser.locale))) {
+    problems.push('browser.locale must be a locale such as en-US');
+  }
+  return problems;
+}
+
+function failWith(problems) {
+  console.error(`demo.json: ${problems.join('; ')}`);
+  process.exit(1);
+}
+
+export function browserConfig() {
+  const browser = loadDemoConfig().browser;
+  const problems = browserProblems(browser);
+  if (problems.length) failWith(problems);
+  return browser || {};
+}
+
 export function windowConfig(name) {
   const windows = loadDemoConfig().windows || {};
-  const win = windows[name];
+  const win = Object.hasOwn(windows, name) ? windows[name] : undefined;
   if (!win) {
     const known = Object.keys(windows).join(', ') || 'none';
     console.error(`unknown window "${name}". Windows in demo.json: ${known}. Add {"windows": {"${name}": {"port": 9333}}}.`);
     process.exit(1);
   }
+  const problems = windowProblems(name, win);
+  if (problems.length) failWith(problems);
   return win;
 }

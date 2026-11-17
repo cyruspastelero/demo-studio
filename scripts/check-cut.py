@@ -22,6 +22,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+import demolib as lib  # noqa: E402
 from keynote import measure as m  # noqa: E402
 from keynote import look as looks  # noqa: E402
 from keynote import motion, spec  # noqa: E402
@@ -48,12 +49,69 @@ class Report:
 
 
 def find_plan(cut: Path, given: str | None) -> tuple[Path, dict]:
+    """The plan sidecar, validated: it may come from someone else's demo folder, and its numbers
+    drive frame grabs, ffmpeg crops and loops here."""
     path = Path(given) if given else cut.with_name(re.sub(r"-narrated$", "", cut.stem) + ".plan.json")
     if not path.exists():
         sys.exit(f"check-cut: no plan file {path}. Build the cut with build-keynote.py first, or pass --plan.")
-    return path.resolve(), json.loads(path.read_text())
+    try:
+        plan = lib.load_sidecar(path, "plan")
+    except lib.SidecarError as error:
+        sys.exit(f"check-cut: {error}")
+    problems = plan_problems(plan)
+    if problems:
+        sys.exit(f"check-cut: {path.name} is not a plan this build could have written; rebuild the cut:\n  "
+                 + "\n  ".join(problems))
+    return path.resolve(), plan
 
 
+def plan_problems(plan: dict) -> list[str]:
+    """Bounds the schema cannot express: every time inside the cut, every span the right way round."""
+    total = plan["total"]
+    out = []
+
+    def within(value: float, where: str) -> None:
+        if value > total + 0.05:
+            out.append(f"{where} {value:g}s is after the end of the cut ({total:g}s)")
+
+    for n, run in enumerate(plan["runs"]):
+        if run["start"] > run["end"]:
+            out.append(f"runs[{n}] starts after it ends")
+        within(run["end"], f"runs[{n}].end")
+        for k, z in enumerate(run["zooms"]):
+            if not z["start"] <= z["landed"] <= z["out"] <= z["end"]:
+                out.append(f"runs[{n}].zooms[{k}]: start, landed, out, end must be in order")
+            within(z["end"], f"runs[{n}].zooms[{k}].end")
+        for k, cut_t in enumerate(run["cuts"]):
+            within(cut_t, f"runs[{n}].cuts[{k}]")
+    for name in ("cards", "callouts", "highlights"):
+        for n, item in enumerate(plan[name]):
+            if item["start"] > item["end"]:
+                out.append(f"{name}[{n}] starts after it ends")
+            within(item["end"], f"{name}[{n}].end")
+    return out
+
+
+def demo_folder(plan_path: Path) -> Path:
+    """The demo folder a plan belongs to: <demo>/recordings/exports/x.plan.json -> <demo>; a plan
+    anywhere else only reaches files in its own folder."""
+    folder = plan_path.parent
+    if folder.name == "exports" and folder.parent.name == "recordings":
+        return folder.parent.parent
+    return folder
+
+
+def find_voice(cut: Path) -> dict | None:
+    path = cut.with_suffix(".voice.json")
+    if not path.exists():
+        return None
+    try:
+        return lib.load_sidecar(path, "voice")
+    except lib.SidecarError as error:
+        sys.exit(f"check-cut: {error}")
+
+
+TAKE_FIELDS = ("where", "scene", "take_size", "shot_start", "shot_end", "trim_in", "speed")
 OLD_HIGHLIGHT = "#E2483C"  # what plans built before the brand-coloured boxes drew
 
 
@@ -74,11 +132,6 @@ def overlay_colours(plan: dict) -> tuple[str, str | None]:
 def plan_look(plan: dict) -> dict:
     """The look the cut was built with; plans from before look templates get the house look."""
     return looks.effective(plan.get("look"))
-
-
-def find_voice(cut: Path) -> dict | None:
-    path = cut.with_suffix(".voice.json")
-    return json.loads(path.read_text()) if path.exists() else None
 
 
 def check_streams(r: Report, cut: Path) -> dict:
@@ -300,12 +353,21 @@ def check_overlays(r: Report, cut: Path, plan: dict, save) -> None:
                         "(bar: brand-derived, readable on white)")
 
 
-def highlight_motion(h: dict, plan_dir: Path) -> tuple[bool, str]:
+def highlight_take(h: dict, plan_dir: Path, demo_dir: Path) -> Path:
+    """The raw take a highlight was drawn over: relative to the plan, never absolute, and it must
+    resolve (symlinks included) inside the demo folder. Raises lib.UnsafePath otherwise."""
+    value = h["take"]
+    if value.startswith(("/", "\\")) or re.match(r"^[A-Za-z]:", value) or Path(value).is_absolute():
+        raise lib.UnsafePath(f"highlights[].take: absolute paths are not allowed ({value!r})")
+    return lib.ensure_inside(demo_dir, plan_dir / value, "highlights[].take")
+
+
+def highlight_motion(h: dict, plan_dir: Path, demo_dir: Path | None = None) -> tuple[bool, str]:
     """H8: the take under one box, sampled at the start, middle and end of its time on screen (cut
     time mapped onto the take through the build plan): still, not blank, and inside its scene."""
     where = f"{h['where']} (scene {h['scene']})"
     rect = motion.Rect(*h["rect"])
-    take = (plan_dir / h["take"]).resolve()
+    take = highlight_take(h, plan_dir, plan_dir if demo_dir is None else demo_dir)
     last = h["shot_end"] - 1 / 30
     if h["end"] + spec.HIGHLIGHT_OUT > h["shot_end"] + 0.01:
         return False, (f"{where}: box on screen until {h['end'] + spec.HIGHLIGHT_OUT:.2f}s, after its scene ends at "
@@ -328,14 +390,20 @@ def highlight_motion(h: dict, plan_dir: Path) -> tuple[bool, str]:
     return True, f"{where}: the UI under the box holds still ({worst:.0%} change) at {', '.join(f'{t:.2f}s' for t in times)}"
 
 
-def check_highlight_motion(r: Report, plan: dict, plan_dir: Path) -> None:
+def check_highlight_motion(r: Report, plan: dict, plan_dir: Path, demo_dir: Path | None = None) -> None:
     for k, h in enumerate(plan["highlights"]):
+        if "take" in h and any(f not in h for f in TAKE_FIELDS):
+            r.add("LOOK", "H8", f"highlight {k}: plan has a take but not its timing; rebuild the cut")
+            continue
         if "take" not in h:
             r.add("LOOK", "H8", f"highlight {k}: plan has no take mapping (built by an older build-keynote.py); "
                   "rebuild to check the box sits on still UI")
             continue
         try:
-            ok, text = highlight_motion(h, plan_dir)
+            ok, text = highlight_motion(h, plan_dir, demo_dir)
+        except lib.UnsafePath as error:
+            r.check(False, "H8", f"highlight {k}: {error}")
+            continue
         except (motion.MotionError, OSError) as error:
             r.add("LOOK", "H8", f"highlight {k}: could not read its take ({error}); watch the box by eye")
             continue
@@ -410,8 +478,8 @@ def main() -> int:
 
     def save(name: str, t: float) -> None:
         if frames_dir:
-            subprocess.run(["ffmpeg", "-y", "-v", "error", "-ss", f"{max(0, t):.3f}", "-i", str(cut), "-frames:v", "1",
-                            str(frames_dir / f"{name}-{t:06.2f}s.png")], check=False)
+            subprocess.run(lib.ffmpeg_cmd(["ffmpeg", "-y", "-v", "error", "-ss", f"{max(0, t):.3f}", "-i", cut,
+                                         "-frames:v", "1", frames_dir / f"{name}-{t:06.2f}s.png"]), check=False)
 
     r = Report()
     print(f"Quality bar checklist for {cut.name} ({plan['total']:.1f}s). Bar: docs/quality-bar.md section 4.")
@@ -422,7 +490,7 @@ def main() -> int:
     check_background(r, cut, plan)
     check_windows(r, cut, plan, save)
     check_overlays(r, cut, plan, save)
-    check_highlight_motion(r, plan, plan_path.parent)
+    check_highlight_motion(r, plan, plan_path.parent, demo_folder(plan_path))
     check_ending(r, cut, plan, save)
     r.check(bool(plan.get("fonts")) and all("Inter" in f or "Geist" in f for f in plan.get("fonts", [])), "T1",
             f"painted fonts {plan.get('fonts')} (bar: bundled Inter, or Geist when brand.font is geist)")

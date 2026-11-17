@@ -17,6 +17,9 @@ const MEDIA_HEADERS = {
   'X-Content-Type-Options': 'nosniff', 'Content-Security-Policy': "sandbox; default-src 'none'; frame-ancestors 'none'",
   'X-Frame-Options': 'DENY',
 };
+// Demo media is untrusted: ffmpeg may only read local files and pipes, never follow a playlist or
+// reference inside a crafted file out to a URL (same rule as scripts/demolib.py PROTOCOL_WHITELIST).
+export const PROTOCOL_WHITELIST = ['-protocol_whitelist', 'file,pipe'];
 const THUMB_CACHE_LIMIT = 400;
 const THUMB_WORKERS = 3;
 
@@ -104,7 +107,7 @@ export async function probeDuration(file) {
   const key = `${file}:${statSync(file).mtimeMs}`;
   if (durations.has(key)) return durations.get(key);
   try {
-    const out = await run('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', file]);
+    const out = await run('ffprobe', [...PROTOCOL_WHITELIST, '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', file]);
     const value = Number.parseFloat(out.trim());
     const result = Number.isFinite(value) ? value : null;
     durations.set(key, result);
@@ -133,7 +136,7 @@ export function thumbnail(file, seconds, width) {
   const key = `${file}:${statSync(file).mtimeMs}:${seconds.toFixed(2)}:${width}`;
   if (thumbs.has(key)) return thumbs.get(key);
   const promise = new Promise((resolvePromise, reject) => {
-    queue.push(() => run('ffmpeg', ['-v', 'error', '-ss', String(seconds), '-i', file, '-frames:v', '1',
+    queue.push(() => run('ffmpeg', ['-v', 'error', '-ss', String(seconds), ...PROTOCOL_WHITELIST, '-i', file, '-frames:v', '1',
       '-vf', `scale=${width}:-2`, '-f', 'image2pipe', '-c:v', 'mjpeg', '-q:v', '5', '-'], { binary: true })
       .then(resolvePromise, reject));
     pump();

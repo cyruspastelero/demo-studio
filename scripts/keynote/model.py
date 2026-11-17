@@ -164,6 +164,18 @@ def card_kind(item: dict, is_last: bool) -> str:
     return "hero" if item.get("subtitle") else "section"
 
 
+def confine_take(source: Path, raw_dir: Path, where: str) -> Path:
+    """A raw take must be a regular file that resolves (symlinks and a symlinked recordings/ or raw/
+    included) inside the demo folder, <demo>/recordings/raw/../.. . A shared demo folder must not
+    pull a file from elsewhere on disk into the cut."""
+    demo = Path(raw_dir).parent.parent.resolve()
+    real = Path(source).resolve()
+    if not real.is_relative_to(demo) or not real.is_file():
+        raise PlanError(f"{where}: raw take {source} resolves to {real}, outside the demo folder {demo} "
+                        "(or is not a regular file); copy the take into recordings/raw/ instead of linking it")
+    return real
+
+
 def _shot_from(item: dict, index: int, start: int, raw_dir: Path,
                probe: Callable[[Path], tuple[float, tuple[int, int]]], warn: list[str]) -> Shot:
     where = f"sequence[{index}] (scene {item['scene']})"
@@ -171,6 +183,7 @@ def _shot_from(item: dict, index: int, start: int, raw_dir: Path,
     if not source.exists():
         raise PlanError(f"{where}: raw take {source} is missing. Record or encode it first "
                         f"(skill demo-record), or fix `stem`/`take`.")
+    confine_take(source, raw_dir, where)
     length, size = probe(source)
     trim_in, trim_out = (item.get("trim") or [None, None])
     trim_in = float(trim_in or 0)

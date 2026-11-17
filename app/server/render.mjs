@@ -65,7 +65,9 @@ export class RenderRunner {
   start(kind, ctx) {
     if (this.job?.status === 'running') throw Object.assign(new Error('a render is already running'), { status: 409 });
     const [cmd, args] = renderCommand(kind, ctx);
-    const child = spawn(cmd, args, { cwd: ctx.folder, detached: true, stdio: ['ignore', 'pipe', 'pipe'], env: process.env });
+    // Templates are looked up in the same demos root the home screen lists them from.
+    const env = ctx.demoRoot ? { ...process.env, DEMO_ROOT: ctx.demoRoot } : process.env;
+    const child = spawn(cmd, args, { cwd: ctx.folder, detached: true, stdio: ['ignore', 'pipe', 'pipe'], env });
     this.job = {
       id: Date.now(), kind, label: RENDER_LABELS[kind] + (ctx.video ? ` (${ctx.video})` : ''), status: 'running',
       progress: null, outputs: [], log: [], startedAt: Date.now(), child,

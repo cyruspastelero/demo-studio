@@ -127,7 +127,10 @@ again on the narrated cut for the sound.
    text to speech, so it works through its MCP server.
 
    Use an MCP or a paid key only when the user asked for that voice or already set it up; otherwise
-   take the first free row that applies.
+   take the first free row that applies. `narrate.py` itself never picks ElevenLabs from a key in the
+   environment or from `voice.provider` in demo.json (a shared demo must not spend the user's
+   credits): pass `--voice elevenlabs` when the user chose it, or they can set
+   `DEMO_STUDIO_ALLOW_CONFIG_VOICE=1` to let demo.json choose.
 
 3. **Keys.** Never ask the user to paste an API key into chat, into any file, or into a commit.
    If they want ElevenLabs by key, tell them to run one of these in the shell they start Claude

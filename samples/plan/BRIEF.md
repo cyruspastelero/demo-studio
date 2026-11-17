@@ -24,7 +24,7 @@ every name, number and URL here is fictional. Copy the shape, not the words.
 - **Must not say or show:** "real time" (data lands within a few minutes, not instantly);
   "AI-powered insights" or any claim of accuracy beyond what the answer on screen shows; any real
   company, person, email or key.
-- **Voiceover:** yes. ElevenLabs if the key is set, else macOS `say` for the timing pass.
+- **Voiceover:** yes. ElevenLabs (`--voice elevenlabs`, the user asked for it), else macOS `say` for the timing pass.
 - **Deadline:** none set.
 
 ## Claims list

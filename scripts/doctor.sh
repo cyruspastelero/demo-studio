@@ -39,6 +39,12 @@ else bad "Python 3.10+ not found" "$(brew_or python@3.12 'install Python 3.10+ f
 if command -v ffmpeg >/dev/null 2>&1 && command -v ffprobe >/dev/null 2>&1; then
   if ffmpeg -hide_banner -encoders 2>/dev/null | grep -q libx264; then ok "ffmpeg $(ffmpeg -version | head -1 | awk '{print $3}') with libx264"
   else bad "ffmpeg has no libx264 encoder" "$(brew_or ffmpeg 'install an ffmpeg build with --enable-libx264')"; fi
+  # ffmpeg parses media from demo folders other people made; old releases have known demuxer bugs.
+  ffv="$(ffmpeg -version 2>/dev/null | head -1 | awk '{print $3}')"
+  ffmajor="$(printf '%s' "$ffv" | sed -E 's/^n?([0-9]+).*/\1/')"
+  if printf '%s' "$ffmajor" | grep -Eq '^[0-9]+$' && [ "$ffmajor" -ge 6 ]; then ok "ffmpeg $ffv is 6.0 or newer"
+  elif printf '%s' "$ffmajor" | grep -Eq '^[0-9]+$'; then warn "ffmpeg $ffv is older than 6.0" "It reads media from shared demo folders; update it: $(brew_or ffmpeg 'apt install ffmpeg (or a newer static build)')"
+  else warn "could not read the ffmpeg version ($ffv)" "Make sure it is 6.0 or newer and kept updated: it parses media from shared demo folders"; fi
   if ffmpeg -hide_banner -filters 2>/dev/null | grep -q ' drawtext '; then ok "ffmpeg drawtext (social caption text)"
   else warn "ffmpeg has no drawtext filter" "Fine: render caption PNGs with: node \"$root/scripts/title-cards.mjs\" handoff.json --social"; fi
 else bad "ffmpeg/ffprobe not found" "$(brew_or ffmpeg 'apt install ffmpeg')"; fi

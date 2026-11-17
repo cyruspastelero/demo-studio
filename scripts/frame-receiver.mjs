@@ -15,7 +15,8 @@
 import { createServer } from "node:http";
 import { randomBytes, timingSafeEqual } from "node:crypto";
 import {
-  appendFileSync, chmodSync, existsSync, mkdirSync, readFileSync, renameSync, statfsSync, writeFileSync,
+  closeSync, constants, existsSync, lstatSync, mkdirSync, openSync, readFileSync, renameSync, statfsSync,
+  writeFileSync, writeSync,
 } from "node:fs";
 import { join, resolve } from "node:path";
 
@@ -35,7 +36,29 @@ if (!Number.isInteger(port) || port < 1 || port > 65535) {
   console.error(`[frame-receiver] DEMO_RX_PORT must be a port number, got ${process.env.DEMO_RX_PORT}`);
   process.exit(1);
 }
-mkdirSync(root, { recursive: true });
+
+// Recordings folders may come from other people. Every folder written into must be a real folder
+// and every file is opened with O_NOFOLLOW, so a symlink planted in frames/ cannot send a frame,
+// blur box or timestamp file anywhere else.
+function realDir(path) {
+  mkdirSync(path, { recursive: true });
+  const stat = lstatSync(path);
+  if (stat.isSymbolicLink() || !stat.isDirectory()) throw new HttpError(409, `${path} is a symlink or not a folder; refusing to write into it`);
+  return path;
+}
+
+function writeNoFollow(path, data, { append = false } = {}) {
+  let leaf = null;
+  try { leaf = lstatSync(path); } catch { /* new file */ }
+  if (leaf && (leaf.isSymbolicLink() || !leaf.isFile())) throw new HttpError(409, `${path} is a symlink or not a file; refusing to write it`);
+  const flags = constants.O_WRONLY | constants.O_CREAT | constants.O_NOFOLLOW | (append ? constants.O_APPEND : constants.O_TRUNC);
+  const fd = openSync(path, flags, 0o644);
+  try {
+    writeSync(fd, data);
+  } finally {
+    closeSync(fd);
+  }
+}
 
 const token = randomBytes(24).toString("hex");
 const tokenBuffer = Buffer.from(token);
@@ -51,9 +74,10 @@ function writeTokenFile() {
     tokens = {};
   }
   const next = { ...tokens, [String(port)]: token };
-  const tmp = `${TOKEN_FILE}.${process.pid}.tmp`;
-  writeFileSync(tmp, JSON.stringify(next) + "\n", { mode: 0o600 });
-  chmodSync(tmp, 0o600);
+  // Random name and 'wx' (O_CREAT|O_EXCL): a symlink planted at a guessable temp name cannot
+  // redirect the token; the rename replaces .rx-token itself without following a link there.
+  const tmp = `${TOKEN_FILE}.${randomBytes(12).toString("hex")}.tmp`;
+  writeFileSync(tmp, JSON.stringify(next) + "\n", { mode: 0o600, flag: "wx" });
   renameSync(tmp, TOKEN_FILE);
 }
 
@@ -62,6 +86,14 @@ class HttpError extends Error {
     super(message);
     this.status = status;
   }
+}
+
+try {
+  realDir(recordings);
+  realDir(root);
+} catch (error) {
+  console.error(`[frame-receiver] ${error.message}`);
+  process.exit(1);
 }
 
 function readBody(req, limit) {
@@ -134,8 +166,8 @@ async function handle(req, res, url) {
     if (!take || !TAKE.test(take) || take.includes("..")) throw new HttpError(400, "bad take name");
     const free = statfsSync(root);
     if (free.bavail * free.bsize < minFreeBytes) throw new HttpError(507, "not enough free disk space to record");
-    dir = join(root, take);
-    mkdirSync(dir, { recursive: true });
+    realDir(root);
+    dir = realDir(join(root, take));
     stamps = [];
     lastTs = 0;
   } else if (url.pathname === "/frame") {
@@ -147,18 +179,18 @@ async function handle(req, res, url) {
     const jpeg = Buffer.from(b64, "base64");
     if (jpeg.length < 3 || jpeg[0] !== 0xff || jpeg[1] !== 0xd8) throw new HttpError(400, "frame is not a JPEG");
     lastTs = ts;
-    writeFileSync(join(dir, `f${String(stamps.length).padStart(5, "0")}.jpg`), jpeg);
+    writeNoFollow(join(realDir(dir), `f${String(stamps.length).padStart(5, "0")}.jpg`), jpeg);
     stamps.push(ts);
   } else if (url.pathname === "/blur") {
     const box = blurBox(await readBody(req, MAX_SMALL_BODY));
     if (!dir) throw new HttpError(409, "no active take");
-    appendFileSync(join(dir, "blur.jsonl"), JSON.stringify(box) + "\n");
+    writeNoFollow(join(realDir(dir), "blur.jsonl"), JSON.stringify(box) + "\n", { append: true });
   } else if (url.pathname === "/stop") {
     await readBody(req, MAX_SMALL_BODY);
     if (!dir) throw new HttpError(409, "no active take");
-    writeFileSync(join(dir, "ts.txt"), stamps.join("\n") + "\n");
+    writeNoFollow(join(realDir(dir), "ts.txt"), stamps.join("\n") + "\n");
     // screencast only emits on change; the encoder holds the last frame until this time
-    writeFileSync(join(dir, "end.txt"), String(Date.now() / 1000));
+    writeNoFollow(join(dir, "end.txt"), String(Date.now() / 1000));
     res.end(JSON.stringify({ frames: stamps.length, dir }));
     dir = null;
     return;

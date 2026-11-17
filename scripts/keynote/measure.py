@@ -9,6 +9,10 @@ import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
+# Same as demolib.PROTOCOL_WHITELIST: media from a demo folder may only be read as local files or
+# pipes, never through a URL a crafted file points ffmpeg at. One input per command here.
+PROTOCOLS = ("-protocol_whitelist", "file,pipe")
+
 W, H = 1920, 1080
 
 
@@ -26,7 +30,7 @@ class Frame:
 
 
 def grab(video: Path, t: float) -> Frame:
-    out = subprocess.run(["ffmpeg", "-v", "error", "-ss", f"{max(0.0, t):.3f}", "-i", str(video), "-frames:v", "1",
+    out = subprocess.run(["ffmpeg", *PROTOCOLS, "-v", "error", "-ss", f"{max(0.0, t):.3f}", "-i", str(video), "-frames:v", "1",
                           "-f", "rawvideo", "-pix_fmt", "rgb24", "-"], capture_output=True, check=True).stdout
     if len(out) < W * H * 3:
         raise ValueError(f"could not read a 1920x1080 frame at {t:.2f}s from {video.name}")
@@ -34,13 +38,13 @@ def grab(video: Path, t: float) -> Frame:
 
 
 def probe(video: Path) -> dict:
-    out = subprocess.run(["ffprobe", "-v", "error", "-show_streams", "-show_format", "-of", "json", str(video)],
+    out = subprocess.run(["ffprobe", *PROTOCOLS, "-v", "error", "-show_streams", "-show_format", "-of", "json", str(video)],
                          capture_output=True, text=True, check=True).stdout
     return json.loads(out)
 
 
 def keyframe_times(video: Path) -> list[float]:
-    out = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "packet=pts_time,flags",
+    out = subprocess.run(["ffprobe", *PROTOCOLS, "-v", "error", "-select_streams", "v:0", "-show_entries", "packet=pts_time,flags",
                           "-of", "csv=p=0", str(video)], capture_output=True, text=True, check=True).stdout
     times = []
     for line in out.splitlines():
@@ -54,7 +58,7 @@ def video_bitrate(video: Path, info: dict) -> float:
     stream = next(s for s in info["streams"] if s["codec_type"] == "video")
     if stream.get("bit_rate"):
         return float(stream["bit_rate"])
-    out = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "packet=size",
+    out = subprocess.run(["ffprobe", *PROTOCOLS, "-v", "error", "-select_streams", "v:0", "-show_entries", "packet=size",
                           "-of", "csv=p=0", str(video)], capture_output=True, text=True, check=True).stdout
     size = sum(int(x) for x in out.split() if x.isdigit())
     return size * 8 / float(info["format"]["duration"])
@@ -100,7 +104,7 @@ def parse_momentary(stderr: str) -> list[tuple[float, float]]:
 
 def momentary(video: Path) -> list[tuple[float, float]]:
     """(time, momentary LUFS) every 0.1 s from ffmpeg ebur128."""
-    result = subprocess.run(["ffmpeg", "-hide_banner", "-nostats", "-i", str(video), "-map", "0:a:0",
+    result = subprocess.run(["ffmpeg", *PROTOCOLS, "-hide_banner", "-nostats", "-i", str(video), "-map", "0:a:0",
                              "-af", "ebur128", "-f", "null", "-"], capture_output=True, text=True)
     return parse_momentary(result.stderr)
 

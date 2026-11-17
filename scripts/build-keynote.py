@@ -51,6 +51,17 @@ def fail(message: str) -> None:
     sys.exit(f"{TOOL}: {message}")
 
 
+def refuse_linked_outputs(demo_dir: Path) -> None:
+    """recordings/, recordings/exports/ and recordings/voice-cache/ must be real folders with no
+    symlinks under them (the build writes the cut, its sidecars, .keynote/ and the end card's `say`
+    line there). Raises lib.UnsafePath."""
+    rec = demo_dir / "recordings"
+    if rec.is_symlink():
+        raise lib.UnsafePath(f"recordings: {rec} is a symlink; refusing to write through it")
+    lib.refuse_symlinks_under(rec / "exports", "recordings/exports")
+    lib.refuse_symlinks_under(rec / "voice-cache", "recordings/voice-cache")  # the end card may render `say` there
+
+
 def probe(path: Path) -> tuple[float, tuple[int, int]]:
     return lib.duration(path), lib.probe_size(path)
 
@@ -153,7 +164,7 @@ def resolve_look(cfg: dict, demo_dir: Path) -> tuple[str | None, dict, dict]:
         except TemplateError as error:
             fail(str(error))
         template_look = template.look
-        print(f"template: {template.id} ({template.where}, {template.folder})", flush=True)
+        print(f"template: {template.id} ({template.where}), using {template.folder / 'template.json'}", flush=True)
     look = looks.effective(template_look)
     looks.apply(look)
     return template_id, look, looks.brand_config(template_look, cfg.get("brand"))
@@ -229,11 +240,11 @@ def main() -> None:
     if args.strict and plan.warnings:
         fail(f"{len(plan.warnings)} quality-bar warning(s) above; fix them or run without --strict")
     work = rec / "exports" / ".keynote"
-    work.mkdir(parents=True, exist_ok=True)
-    try:
-        lib.refuse_symlinks_under(rec / "exports", "recordings/exports")
+    try:  # before any folder is made: a planted link must not send the build's writes elsewhere
+        refuse_linked_outputs(demo_dir)
     except lib.UnsafePath as error:
         fail(str(error))
+    work.mkdir(parents=True, exist_ok=True)
     bg_dir, overlays, windows, fonts, samples = render_graphics(plan, brand, cfg, demo_dir, work)
     final = rec / "exports" / f"{lib.slugify(cfg['title'])}-keynote-cut.mp4"
     intermediate = work / "composite.mkv"

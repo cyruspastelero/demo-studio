@@ -224,12 +224,29 @@ describe('http server', () => {
     });
   }
 
+  let opened;
+
+  function post(path, body) {
+    return new Promise((resolvePromise, reject) => {
+      const text = JSON.stringify(body);
+      const req = request({ host: '127.0.0.1', port, path, method: 'POST',
+        headers: { host: `127.0.0.1:${port}`, 'x-studio': '1', 'content-type': 'application/json' } }, (res) => {
+        let out = '';
+        res.on('data', (c) => { out += c; });
+        res.on('end', () => resolvePromise({ status: res.statusCode, body: out }));
+      });
+      req.on('error', reject);
+      req.end(text);
+    });
+  }
+
   beforeEach(async () => {
     demo = join(dir, 'demo');
     mkdirSync(join(demo, 'recordings', 'raw'), { recursive: true });
     cpSync(join(EXAMPLE, 'handoff.json'), join(demo, 'handoff.json'));
     writeFileSync(join(demo, 'recordings', 'raw', 'a.mp4'), 'x');
-    studio = createStudio({ repo: REPO, cwd: dir, folder: demo });
+    opened = [];
+    studio = createStudio({ repo: REPO, cwd: dir, folder: demo, opener: (path, reveal) => opened.push({ path, reveal }) });
     const url = await studio.listen(20000 + Math.floor(Math.random() * 20000));
     port = Number(new URL(url).port);
   });
@@ -259,6 +276,30 @@ describe('http server', () => {
     const media = await get('/media/recordings/raw/a.mp4');
     expect(media.headers['content-security-policy']).toMatch(/sandbox/);
     expect(media.headers['content-security-policy']).toMatch(/frame-ancestors 'none'/);
+  });
+
+  it('opens only a regular media file; a folder named like media (a bundle) is only revealed', async () => {
+    mkdirSync(join(demo, 'recordings', 'raw', 'trap.mp4', 'Contents'), { recursive: true });
+    expect((await post('/api/reveal', { path: join(demo, 'recordings', 'raw', 'a.mp4'), action: 'open' })).status).toBe(200);
+    expect((await post('/api/reveal', { path: join(demo, 'recordings', 'raw', 'trap.mp4'), action: 'open' })).status).toBe(200);
+    expect(opened.map((o) => o.reveal)).toEqual([false, true]);
+    expect(opened[1].path.endsWith('trap.mp4')).toBe(true);
+  });
+
+  it('sends the built UI with a strict Content-Security-Policy', async () => {
+    const page = await get('/');
+    const csp = page.headers['content-security-policy'];
+    for (const rule of ["default-src 'self'", "script-src 'self'", "object-src 'none'", "base-uri 'none'",
+      "form-action 'none'", "frame-ancestors 'none'", "img-src 'self' data: blob:", "media-src 'self' blob:"]) {
+      expect(csp).toContain(rule);
+    }
+    expect(csp).not.toMatch(/script-src[^;]*unsafe/);
+    expect(page.headers['x-content-type-options']).toBe('nosniff');
+  });
+
+  it('ships no inline script, so script-src self is enough', () => {
+    const html = readFileSync(join(REPO, 'app', 'index.html'), 'utf8');
+    for (const tag of html.match(/<script[^>]*>/g)) expect(tag).toMatch(/\ssrc=/);
   });
 
   it('lists no media from a paths.raw that leaves the demo folder', async () => {

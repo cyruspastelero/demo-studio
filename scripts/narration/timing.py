@@ -1,11 +1,10 @@
 """Where each voiced line goes: read build-keynote's timing file, or derive it from demo.json."""
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Callable
 
-from .core import DEFAULT_CARD, FPS, REBUILD, ItemTiming, Line, NarrateError
+from .core import DEFAULT_CARD, FPS, REBUILD, ItemTiming, Line, NarrateError, lib
 
 def item_key(item: dict) -> str:
     return f"card-{item['card']}" if "card" in item else item["scene"]
@@ -13,12 +12,14 @@ def item_key(item: dict) -> str:
 
 def load_timing(path: Path, sequence: list[dict]) -> tuple[list[ItemTiming], float]:
     """Reads the timing file build-keynote.py wrote and checks it still matches demo.json."""
-    try:
-        data = json.loads(path.read_text())
-        items = [ItemTiming(i["key"], float(i["start"]), float(i["duration"])) for i in data["items"]]
-        total = float(data["total"])
-    except (OSError, ValueError, KeyError, TypeError) as error:
-        raise NarrateError(f"could not read timing file {path.name}: {error}") from error
+    try:  # a shared demo folder can ship its own timing file: every number is checked before use
+        data = lib.load_sidecar(path, "timing")
+    except lib.SidecarError as error:
+        raise NarrateError(f"timing file {path.name} is not usable: {error}", (REBUILD, "{cmd}")) from error
+    items = [ItemTiming(i["key"], float(i["start"]), float(i["duration"])) for i in data["items"]]
+    total = float(data["total"])
+    if any(i.start + i.duration > total + 0.05 for i in items):
+        raise NarrateError(f"timing file {path.name}: an item ends after the cut ({total:.3f}s)", (REBUILD, "{cmd}"))
     built = [i.key for i in items]
     wanted = [item_key(i) for i in sequence]
     if built != wanted:
@@ -69,6 +70,6 @@ def estimate_seconds(text: str, rate_wpm: float) -> float:
 def timing_outro(path: Path) -> float:
     """Seconds of narration-free outro at the end of the cut (0 for older timing files)."""
     try:
-        return max(0.0, float(json.loads(path.read_text()).get("outro", 0)))
-    except (OSError, ValueError, TypeError, AttributeError):
+        return float(lib.load_sidecar(path, "timing").get("outro", 0))
+    except lib.SidecarError:
         return 0.0

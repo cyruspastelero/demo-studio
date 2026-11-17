@@ -103,7 +103,7 @@ try {
     await tpl.getByRole('button', { name: `Copy template id ${FIXTURE_TEMPLATE.id}` }).click();
     assert.equal(await copied(), FIXTURE_TEMPLATE.id);
     await tpl.locator('[data-testid="use-template"]').click();
-    assert.equal(await copied(), `Make a demo of app.example.com using template ${FIXTURE_TEMPLATE.id}.`);
+    assert.equal(await copied(), `Make a demo of app.example.com using template \`${FIXTURE_TEMPLATE.id}\`.`);
   });
 
   await step('the views have tabs and no sideways scroll at phone width', async () => {

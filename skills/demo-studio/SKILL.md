@@ -216,7 +216,7 @@ It only reads files. Stop it when the session ends. If it fails with a missing m
 | Callouts | pills under the window, 3 to 5 s: person (name, role) or a statement of 6 words at most |
 | Highlights | red outline on the one element the narration names, 0.17 s after a zoom lands |
 | Voiceover | spoken English, about 2.5 words per second, URLs and amounts spelled out |
-| Narration voice | own recordings in `voiceover/`, else ElevenLabs if `ELEVENLABS_API_KEY` is set, else macOS `say` |
+| Narration voice | own recordings in `voiceover/`, else macOS `say`; ElevenLabs only when the user asks (`--voice elevenlabs`) |
 | Music | always a real bed (ElevenLabs `compose_music` or the user's licensed track; `make-bed.py` is a placeholder only), 13 dB under the voice, held down under speech, one dip; mix at -14 LUFS, true peak under -1 dBTP |
 | Videos | keynote cut + narration; promo about 1:30 and how-to about 3:00 for an editor |
 | Social | 4:5 1080x1350 and 9:16 1080x1920, blurred footage background, caption band |

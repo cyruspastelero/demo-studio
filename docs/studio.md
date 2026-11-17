@@ -35,7 +35,7 @@ A template keeps the look of a video (colours, type, pacing) so every demo made 
 same. The Templates menu lists yours, from `_templates/` in your demos folder, and the built-in
 ones from the plugin's `look-templates/`. Each card shows its preview frames (click the picture for
 the next one), its name and id with a copy button, where it was copied from, and its colours.
-**Use** copies `Make a demo of app.example.com using template <id>.` with the id filled in.
+**Use** copies ``Make a demo of app.example.com using template `<id>`.`` with the id filled in.
 
 To make a new one, copy the prompt at the top of the menu, paste it into Claude Code with the path
 to your video, and the template appears in the list when Claude has saved it. The menu only reads

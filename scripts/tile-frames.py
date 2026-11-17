@@ -20,12 +20,12 @@ if not picked:
 
 inputs, chains = [], []
 for k, (_, i) in enumerate(picked):
-    inputs += ["-i", str(frames_dir / f"f{i:05d}.jpg")]
+    inputs += ["-protocol_whitelist", "file,pipe", "-i", str(frames_dir / f"f{i:05d}.jpg")]  # local files only
     crop = f"crop={opts['crop']}," if "crop" in opts else ""
     chains.append(f"[{k}]{crop}scale=480:-2[c{k}]")
 
 probe = subprocess.run(
-    ["ffprobe", "-v", "error", "-show_entries", "stream=width,height", "-of", "csv=p=0", str(frames_dir / f"f{picked[0][1]:05d}.jpg")],
+    ["ffprobe", "-protocol_whitelist", "file,pipe", "-v", "error", "-show_entries", "stream=width,height", "-of", "csv=p=0", str(frames_dir / f"f{picked[0][1]:05d}.jpg")],
     capture_output=True, text=True, check=True).stdout.strip().split(",")
 w, h = (int(v) for v in (opts["crop"].split(":")[:2] if "crop" in opts else probe))
 tile_h = int(480 * h / w) // 2 * 2
