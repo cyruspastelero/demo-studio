@@ -139,9 +139,9 @@ function CardFields({ kind, doc, name, onEdit }: { kind: FileKind; doc: HandoffD
     <>
       <TextField label="Card title" value={card.title} onCommit={(v) => edit({ title: v })} testId="card-title" />
       <TextField label="Card subtitle" value={card.subtitle ?? ''} onCommit={(v) => edit({ subtitle: v })} />
-      <label className="field" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-        <input type="checkbox" style={{ width: 16, height: 16 }} checked={Boolean(card.logo)} onChange={(e) => edit({ logo: e.target.checked || undefined })} />
-        <span style={{ fontSize: 12, color: 'var(--text)' }}>Show the brand logo</span>
+      <label className="field check-field">
+        <input type="checkbox" checked={Boolean(card.logo)} onChange={(e) => edit({ logo: e.target.checked || undefined })} />
+        <span>Show the brand logo</span>
       </label>
       {kind === 'handoff' && (
         <TextArea label="People (one per line: Name, role)" value={people.map((p) => (p.role ? `${p.name}, ${p.role}` : p.name)).join('\n')}
@@ -154,7 +154,7 @@ function CardFields({ kind, doc, name, onEdit }: { kind: FileKind; doc: HandoffD
             edit({ people: list.length ? list : undefined });
           }} />
       )}
-      <p className="faint" style={{ fontSize: 11 }}>Render Title cards to update the PNG; until then the preview draws the card from this text.</p>
+      <p className="field-note">Render Title cards to update the PNG; until then the preview draws the card from this text.</p>
     </>
   );
 }

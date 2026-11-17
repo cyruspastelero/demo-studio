@@ -1,4 +1,4 @@
-import { Clapperboard, Film, Gauge, LayoutGrid, Image, Keyboard, Layers, Moon, Package, Redo2, Smartphone, Sun, Undo2 } from 'lucide-react';
+import { ChevronLeft, Clapperboard, Film, Gauge, Image, Keyboard, Layers, Package, Redo2, Smartphone, Undo2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { SaveStatus } from '../state/use-documents';
 import type { Aspect, FileKind } from '../lib/types';
@@ -29,7 +29,7 @@ export function renderOptions(has: { handoff: boolean; demo: boolean; social: bo
 
 export function TopBar({
   name, fileTabs, fileKind, onFileKind, videoTabs, videoIndex, onVideo, aspect, onAspect, canUndo, canRedo, onUndo, onRedo,
-  saveStatus, theme, onTheme, onShortcuts, options, rendering, onRender, onShowRender, onClose,
+  saveStatus, onShortcuts, options, rendering, onRender, onShowRender, onClose,
 }: {
   name: string;
   fileTabs: FileKind[];
@@ -45,8 +45,6 @@ export function TopBar({
   onUndo: () => void;
   onRedo: () => void;
   saveStatus: SaveStatus;
-  theme: 'dark' | 'light';
-  onTheme: () => void;
   onShortcuts: () => void;
   options: RenderOption[];
   rendering: boolean;
@@ -66,7 +64,8 @@ export function TopBar({
 
   return (
     <header className="topbar">
-      <button className="icon-btn" aria-label="All demos" title="All demos" onClick={onClose} data-testid="close-demo"><LayoutGrid size={16} /></button>
+      <button className="back-link" title="Back to the dashboard" onClick={onClose} data-testid="close-demo"><ChevronLeft size={16} />All demos</button>
+      <span className="sep" />
       <span className="demo-name" title={name}>{name}</span>
       <span className="sep" />
       {fileTabs.length > 1 && (
@@ -98,9 +97,6 @@ export function TopBar({
       </span>
       <span className="sep" />
       <button className="icon-btn" aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)" onClick={onShortcuts}><Keyboard size={16} /></button>
-      <button className="icon-btn" aria-label={theme === 'dark' ? 'Use the light theme' : 'Use the dark theme'} title="Switch theme" onClick={onTheme}>
-        {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-      </button>
       <div className="menu-wrap" ref={wrap}>
         <button className="btn primary" onClick={() => (rendering ? onShowRender() : setMenu(!menu))} aria-haspopup="menu" aria-expanded={menu} data-testid="render-button">
           <Clapperboard size={15} />{rendering ? 'Rendering' : 'Render'}

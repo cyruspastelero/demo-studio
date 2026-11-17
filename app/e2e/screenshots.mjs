@@ -1,4 +1,4 @@
-// Screenshots for the README and for a layout check at common laptop sizes, both themes.
+// Screenshots for the README and for a layout check at common laptop sizes (the UI has one light theme).
 // Usage: npm run screenshots -w app        (writes docs/img/studio-*.png)
 import { spawnSync } from 'node:child_process';
 import { mkdirSync } from 'node:fs';
@@ -7,12 +7,11 @@ import { exampleCopy, launch, REPO, startServer } from './harness.mjs';
 
 const OUT = join(REPO, 'docs', 'img');
 const SHOTS = [
-  { name: 'studio-dark-1440', theme: 'dark', width: 1440, height: 900 },
-  { name: 'studio-light-1440', theme: 'light', width: 1440, height: 900 },
-  { name: 'studio-dark-1280', theme: 'dark', width: 1280, height: 800 },
-  { name: 'studio-light-1280', theme: 'light', width: 1280, height: 800 },
-  { name: 'studio-9x16-dark-1440', theme: 'dark', width: 1440, height: 900, aspect: '9x16' },
-  { name: 'studio-render-light-1440', theme: 'light', width: 1440, height: 900, render: true },
+  { name: 'studio-1440', width: 1440, height: 900 },
+  { name: 'studio-1280', width: 1280, height: 800 },
+  { name: 'studio-9x16-1440', width: 1440, height: 900, aspect: '9x16' },
+  { name: 'studio-render-1440', width: 1440, height: 900, render: true },
+  { name: 'studio-shortcuts-1440', width: 1440, height: 900, shortcuts: true },
 ];
 
 const { folder, cleanup } = exampleCopy();
@@ -26,7 +25,6 @@ try {
   mkdirSync(OUT, { recursive: true });
   for (const shot of SHOTS) {
     const page = await browser.newPage({ viewport: { width: shot.width, height: shot.height } });
-    await page.addInitScript((theme) => localStorage.setItem('demo-studio-theme', theme), shot.theme);
     await page.goto(server.url);
     await page.waitForSelector('[data-testid="shot"]');
     await page.locator('[data-shot-id="0:1:1"]').click();
@@ -41,6 +39,7 @@ try {
       await page.click('[data-testid="render-cards"]');
       await page.waitForSelector('[data-testid="render-drawer"][data-status="done"]', { timeout: 60000 });
     }
+    if (shot.shortcuts) await page.keyboard.press('?');
     await page.waitForTimeout(900);
     await page.screenshot({ path: join(OUT, `${shot.name}.png`) });
     await page.close();

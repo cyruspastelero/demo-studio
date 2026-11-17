@@ -1,4 +1,4 @@
-import { AlertCircle, Check, Copy, FileText, Film, FolderOpen, Moon, PencilRuler, Play, RefreshCw, Search, Sun } from 'lucide-react';
+import { Check, Copy, ExternalLink, FileText, Film, FolderOpen, PencilRuler, Play, RefreshCw, Search } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { api, demoThumbUrl, type DemoEntry, type HomeSession } from '../api';
 
@@ -105,14 +105,12 @@ function DemoCard({ demo, onOpen, onError }: { demo: DemoEntry; onOpen: (path: s
         </ol>
 
         {overview.attention.length > 0 && (
-          <ul className="demo-attention">
-            {overview.attention.map((line) => <li key={line}><AlertCircle size={13} />{line}</li>)}
-          </ul>
+          <p className="demo-flag">{overview.attention.length} thing{overview.attention.length === 1 ? '' : 's'} to check</p>
         )}
 
         {overview.next && (
           <div className="demo-next">
-            <span className="demo-next-label">Ask Claude</span>
+            <span className="demo-next-label eyebrow quiet">Ask Claude</span>
             <span className="demo-next-prompt">{overview.next.prompt}</span>
             <CopyButton text={overview.next.prompt} label="Copy the prompt" />
           </div>
@@ -152,7 +150,7 @@ function GettingStarted({ session }: { session: HomeSession }) {
   const { workspace, repo } = session;
   return (
     <section className="home-start" data-testid="getting-started">
-      <h2>Make your first demo</h2>
+      <div className="panel-bar"><span>Getting started</span><span>{workspace.hasPlaybook ? 3 : 4} steps</span></div>
       <ol>
         <li>
           <strong>Check your setup.</strong> It lists anything missing with the command that fixes it.
@@ -172,16 +170,109 @@ function GettingStarted({ session }: { session: HomeSession }) {
           <Command text="Make a demo of <product>. Goal: <what the viewer should be able to do>. Audience: <who watches>." />
         </li>
       </ol>
-      <p className="muted">New demos appear here as soon as Claude scaffolds them. The example below is a filled-in plan you can open.</p>
+      <p className="home-start-note">New demos appear here as soon as Claude scaffolds them. The examples below are filled-in plans you can open.</p>
     </section>
   );
 }
 
-export function Home({ session, theme, onTheme, onOpen, onRefresh }: {
-  session: HomeSession; theme: 'dark' | 'light'; onTheme: () => void; onOpen: (path: string) => void; onRefresh: () => void;
+const DOCS = [
+  { label: 'Read me', href: 'https://github.com/Cyvid7-Darus10/demo-studio#readme' },
+  { label: 'Local editor', href: 'https://github.com/Cyvid7-Darus10/demo-studio#local-editor' },
+  { label: 'Roadmap', href: 'https://github.com/Cyvid7-Darus10/demo-studio/blob/main/docs/ROADMAP.md' },
+];
+
+type Section = 'overview' | 'demos' | 'examples';
+
+interface NavItem { id: Section; label: string; count?: number }
+
+function Sidebar({ items, active, onGo, root, onRefresh }: {
+  items: NavItem[]; active: Section; onGo: (id: Section) => void; root: string; onRefresh: () => void;
+}) {
+  return (
+    <aside className="side" aria-label="Sections">
+      <span className="home-brand"><span className="mark" aria-hidden />demo-studio</span>
+      <nav className="side-nav">
+        <p className="side-label">Workspace</p>
+        <ul>
+          {items.map((item) => (
+            <li key={item.id}>
+              <a href={`#${item.id}`} aria-current={active === item.id ? 'page' : undefined}
+                onClick={(e) => { e.preventDefault(); onGo(item.id); }}>
+                <span>{item.label}</span>
+                {item.count !== undefined && <span className="nav-count">{item.count}</span>}
+              </a>
+            </li>
+          ))}
+        </ul>
+        <p className="side-label">Docs</p>
+        <ul>
+          {DOCS.map((doc) => (
+            <li key={doc.href}>
+              <a href={doc.href} target="_blank" rel="noreferrer"><span>{doc.label}</span><ExternalLink size={13} aria-hidden /></a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+      <div className="side-foot">
+        <p className="side-label">Folder</p>
+        <p className="side-root home-root" title="Where demos are looked up ($DEMO_ROOT, default ./demos)">{root}</p>
+        <button className="side-util" onClick={onRefresh}><RefreshCw size={14} />Refresh</button>
+      </div>
+    </aside>
+  );
+}
+
+function Stats({ demos }: { demos: DemoEntry[] }) {
+  const finished = demos.filter((d) => !d.overview.next || d.status?.status === 'Delivered').length;
+  const inProgress = demos.length - finished;
+  const attention = demos.filter((d) => d.overview.attention.length > 0).length;
+  const videos = demos.reduce((sum, d) => sum + d.overview.videos.length, 0);
+  const tiles = [
+    { label: 'Demos', value: demos.length, note: `${finished} finished` },
+    { label: 'In progress', value: inProgress, note: inProgress === 1 ? 'demo still has a next step' : 'demos still have a next step' },
+    { label: 'Needs attention', value: attention, note: attention ? 'see the list below' : 'nothing to check', flag: attention > 0 },
+    { label: 'Videos', value: videos, note: 'cuts and reels on disk' },
+  ];
+  return (
+    <dl className="stats" data-testid="stats">
+      {tiles.map((t) => (
+        <div key={t.label} className={`stat${t.flag ? ' flag' : ''}`}>
+          <dt className="eyebrow quiet">{t.label}</dt>
+          <dd><span className="stat-value">{t.value}</span><span className="stat-note">{t.note}</span></dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+function Attention({ demos, onReveal }: { demos: DemoEntry[]; onReveal: (demo: DemoEntry) => void }) {
+  const rows = demos.flatMap((demo) => demo.overview.attention.map((line) => ({ demo, line })));
+  if (rows.length === 0) return null;
+  return (
+    <section className="attention" aria-labelledby="attention-h">
+      <div className="attention-bar">
+        <h2 id="attention-h" className="eyebrow quiet">Needs attention</h2>
+        <span className="eyebrow quiet">{rows.length} item{rows.length === 1 ? '' : 's'}</span>
+      </div>
+      <ul>
+        {rows.map(({ demo, line }) => (
+          <li key={`${demo.path}:${line}`}>
+            <span className="attention-line">{line}</span>
+            <span className="attention-demo">{demo.title ?? demo.name}</span>
+            <button className="btn" onClick={() => onReveal(demo)}><FolderOpen size={14} />Show folder</button>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+export function Home({ session, onOpen, onRefresh }: {
+  session: HomeSession; onOpen: (path: string) => void; onRefresh: () => void;
 }) {
   const [filter, setFilter] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [active, setActive] = useState<Section>('overview');
   const { demos, workspace } = session;
   const mine = useMemo(() => demos.filter((d) => d.group !== 'Examples'), [demos]);
   const examples = useMemo(() => demos.filter((d) => d.group === 'Examples'), [demos]);
@@ -189,61 +280,89 @@ export function Home({ session, theme, onTheme, onOpen, onRefresh }: {
   const shown = needle
     ? mine.filter((d) => `${d.name} ${d.title ?? ''} ${statusOf(d)}`.toLowerCase().includes(needle))
     : mine;
-  const needAttention = mine.filter((d) => d.overview.attention.length > 0).length;
-  const finished = mine.filter((d) => !d.overview.next || d.status?.status === 'Delivered').length;
+  const nav: NavItem[] = [
+    { id: 'overview', label: 'Overview' },
+    ...(mine.length ? [{ id: 'demos' as Section, label: 'Demos', count: mine.length }] : []),
+    ...(examples.length ? [{ id: 'examples' as Section, label: 'Examples', count: examples.length }] : []),
+  ];
+  const go = (id: Section) => {
+    setActive(id);
+    document.getElementById(id)?.scrollIntoView({ block: 'start' });
+  };
+  const revealDemo = (demo: DemoEntry) => {
+    api.revealInDemo(demo.path, null, 'reveal').catch((e: Error) => setError(`Could not open ${demo.name}: ${e.message}`));
+  };
+  const filterBox = mine.length >= FILTER_FROM && (
+    <label className="home-filter">
+      <Search size={14} />
+      <span className="sr-only">Filter demos</span>
+      <input value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="Filter demos" />
+    </label>
+  );
 
   return (
     <main className="home">
-      <header className="home-bar">
-        <span className="home-brand"><Film size={16} />demo-studio</span>
-        <span className="home-root mono" title="Where demos are looked up ($DEMO_ROOT, default ./demos)">{workspace.root}</span>
-        <span className="home-bar-space" />
-        {mine.length >= FILTER_FROM && (
-          <label className="home-filter">
-            <Search size={14} />
-            <span className="sr-only">Filter demos</span>
-            <input value={filter} onChange={(e) => setFilter(e.target.value)} placeholder="Filter demos" />
-          </label>
-        )}
-        <button className="icon-btn" onClick={onRefresh} aria-label="Refresh" title="Refresh"><RefreshCw size={15} /></button>
-        <button className="icon-btn" onClick={onTheme} aria-label={theme === 'dark' ? 'Switch to the light theme' : 'Switch to the dark theme'}>
-          {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-        </button>
-      </header>
+      <Sidebar items={nav} active={active} onGo={go} root={workspace.root} onRefresh={onRefresh} />
+      <div className="home-col">
+        <header className="home-bar">
+          <span className="home-brand"><span className="mark" aria-hidden />demo-studio</span>
+          <span className="home-root mono" title="Where demos are looked up ($DEMO_ROOT, default ./demos)">{workspace.root}</span>
+          <span className="home-bar-space" />
+          <button className="icon-btn" onClick={onRefresh} aria-label="Refresh" title="Refresh"><RefreshCw size={15} /></button>
+        </header>
 
-      <div className="home-inner">
-        {error && <p className="note bad" role="alert">{error}</p>}
+        <div className="home-inner">
+          {error && <p className="note bad" role="alert">{error}</p>}
 
-        {mine.length === 0 ? <GettingStarted session={session} /> : (
-          <section>
+          <section id="overview" className="home-section">
             <div className="home-heading">
-              <h1>Your demos</h1>
-              <p className="muted">
-                {mine.length} demo{mine.length === 1 ? '' : 's'} · {finished} finished
-                {needAttention > 0 && ` · ${needAttention} need${needAttention === 1 ? 's' : ''} attention`}
+              <p className="eyebrow quiet">Overview</p>
+              <h1>{mine.length ? 'Your demos' : 'Make your first demo'}</h1>
+              <p className="home-summary">
+                {mine.length
+                  ? 'Where every demo in this folder stands, and what to ask Claude next.'
+                  : 'Nothing in this folder yet. A few steps take you from an empty folder to a planned demo.'}
               </p>
             </div>
-            {!workspace.hasPlaybook && (
-              <p className="note">
-                This folder has no playbook yet. Add one, with an index and a drift check, by running:
-                <Command text={`bash "${session.repo}/scripts/new-workspace.sh" "${workspace.root}"`} />
-              </p>
-            )}
-            <div className="demo-grid">
-              {shown.map((demo) => <DemoCard key={demo.path} demo={demo} onOpen={onOpen} onError={setError} />)}
-            </div>
-            {shown.length === 0 && <p className="muted">No demo matches "{filter}".</p>}
+            {mine.length > 0 ? (
+              <>
+                <Stats demos={mine} />
+                <Attention demos={mine} onReveal={revealDemo} />
+              </>
+            ) : <GettingStarted session={session} />}
           </section>
-        )}
 
-        {examples.length > 0 && (
-          <section>
-            <div className="home-heading"><h2>Examples</h2></div>
-            <div className="demo-grid">
-              {examples.map((demo) => <DemoCard key={demo.path} demo={demo} onOpen={onOpen} onError={setError} />)}
-            </div>
-          </section>
-        )}
+          {mine.length > 0 && (
+            <section id="demos" className="home-section">
+              <div className="section-bar">
+                <h2>Demos</h2>
+                {filterBox}
+              </div>
+              {!workspace.hasPlaybook && (
+                <p className="note">
+                  This folder has no playbook yet. Add one, with an index and a drift check, by running:
+                  <Command text={`bash "${session.repo}/scripts/new-workspace.sh" "${workspace.root}"`} />
+                </p>
+              )}
+              <div className="demo-grid">
+                {shown.map((demo) => <DemoCard key={demo.path} demo={demo} onOpen={onOpen} onError={setError} />)}
+              </div>
+              {shown.length === 0 && <p className="muted">No demo matches "{filter}".</p>}
+            </section>
+          )}
+
+          {examples.length > 0 && (
+            <section id="examples" className="home-section">
+              <div className="section-bar">
+                <h2>Examples</h2>
+                <p className="section-note">Filled-in plans you can open and try the editor on.</p>
+              </div>
+              <div className="demo-grid">
+                {examples.map((demo) => <DemoCard key={demo.path} demo={demo} onOpen={onOpen} onError={setError} />)}
+              </div>
+            </section>
+          )}
+        </div>
       </div>
     </main>
   );

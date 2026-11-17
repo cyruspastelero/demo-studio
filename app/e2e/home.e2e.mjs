@@ -1,6 +1,6 @@
 // End-to-end check of the home screen: a temp demos folder holding a copy of the example with
 // synthetic takes. Lists the demo with its stages and next step, opens it in the editor, comes back.
-// Usage: node e2e/home.e2e.mjs      (HOME_SHOT=1 also writes docs/img/studio-home-*.png)
+// Usage: node e2e/home.e2e.mjs      (HOME_SHOT=1 also writes docs/img/studio-home-1440.png and studio-home-390.png)
 import assert from 'node:assert/strict';
 import { copyFileSync, cpSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -76,12 +76,13 @@ try {
   if (process.env.HOME_SHOT) {
     const out = join(REPO, 'docs', 'img');
     mkdirSync(out, { recursive: true });
-    await page.evaluate(() => { document.querySelector('.home-root').textContent = '~/demos'; });
-    for (const theme of ['dark', 'light']) {
-      await page.evaluate((t) => { document.documentElement.dataset.theme = t; }, theme);
-      await page.waitForTimeout(1500);
-      await page.screenshot({ path: join(out, `studio-home-${theme}-1440.png`) });
-    }
+    await page.evaluate(() => { document.querySelectorAll('.home-root').forEach((el) => { el.textContent = '~/demos'; }); });
+    await page.waitForTimeout(1500);
+    await page.screenshot({ path: join(out, 'studio-home-1440.png') });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.waitForTimeout(600);
+    await page.screenshot({ path: join(out, 'studio-home-390.png') });
+    await page.setViewportSize({ width: 1440, height: 900 });
   }
 
   await step('opens the demo in the editor and comes back', async () => {

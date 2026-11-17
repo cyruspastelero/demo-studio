@@ -24,8 +24,8 @@ const EMPTY: TimelineModel = { scenes: [], shots: [], total: 0, rateWpm: 165, le
 
 type EditorSession = Extract<Session, { mode: 'editor' }>;
 
-export function Editor({ session, theme, onTheme, onClose }: {
-  session: EditorSession; theme: 'dark' | 'light'; onTheme: () => void; onClose: () => void;
+export function Editor({ session, onClose }: {
+  session: EditorSession; onClose: () => void;
 }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const notify = useCallback((message: string, tone: Toast['tone'] = 'info') => {
@@ -164,7 +164,7 @@ export function Editor({ session, theme, onTheme, onClose }: {
         onVideo={(i) => { setVideoIndex(i); setSelection(null); }}
         aspect={aspect} onAspect={setAspect}
         canUndo={docs.canUndo} canRedo={docs.canRedo} onUndo={docs.undo} onRedo={docs.redo}
-        saveStatus={docs.status[fileKind]} theme={theme} onTheme={onTheme} onShortcuts={() => setHelp(true)}
+        saveStatus={docs.status[fileKind]} onShortcuts={() => setHelp(true)}
         options={renderOptions(has, videoKey ?? '')} rendering={job?.status === 'running'}
         onRender={startRender} onShowRender={() => setDrawer(true)} onClose={onClose}
       />

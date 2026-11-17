@@ -120,7 +120,7 @@ try {
     await page.click('[data-testid="render-button"]');
     await page.click('[data-testid="render-cards"]');
     await page.waitForSelector('[data-testid="render-drawer"][data-status="done"]', { timeout: 60000 });
-    const progress = await page.textContent('[data-testid="render-drawer"] .muted');
+    const progress = await page.textContent('[data-testid="render-stage"]');
     assert.match(progress ?? '', /title-cards 5\/5/);
     const loaded = await page.locator('[data-testid="render-output"] img').first().evaluate((img) => img.complete && img.naturalWidth);
     assert.equal(loaded, 1920, 'the rendered card loads in the drawer');

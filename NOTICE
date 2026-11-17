@@ -6,3 +6,7 @@ This product includes software developed by Cyrus David Pastelero
 
 Under the Apache License 2.0, if you redistribute this software or a work based on it,
 you must include this NOTICE file with it.
+
+The editor UI bundles the Geist and Geist Mono typefaces (app/src/fonts/), Copyright 2026 The Geist
+Project Authors (https://github.com/vercel/geist-font), licensed under the SIL Open Font License,
+Version 1.1. The full licence is in app/src/fonts/OFL.txt.

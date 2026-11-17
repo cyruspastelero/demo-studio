@@ -74,7 +74,7 @@ export function ShortcutsOverlay({ onClose }: { onClose: () => void }) {
           </div>
         ))}
       </div>
-      <p className="faint" style={{ marginTop: 12 }}>Ctrl works in place of Cmd on Linux and Windows.</p>
+      <p className="field-note shortcut-note">Ctrl works in place of Cmd on Linux and Windows.</p>
       <div className="actions"><button className="btn" onClick={onClose}>Close</button></div>
     </Modal>
   );

@@ -37,9 +37,9 @@ export function RenderDrawer({ job, onClose, onError }: { job: RenderState; onCl
   return (
     <aside className="drawer" aria-label="Render" data-testid="render-drawer" data-status={job.status}>
       <div className="panel-head">
-        <span style={{ color: 'var(--text)' }}>{job.label}</span>
-        <span className={job.status === 'failed' ? 'status-reject' : job.status === 'done' ? 'status-keep' : ''} data-testid="render-status">{STATUS[job.status]}</span>
-        <span style={{ flex: 1 }} />
+        <span className="drawer-title">{job.label}</span>
+        <span className={`drawer-status ${job.status}`} data-testid="render-status">{STATUS[job.status]}</span>
+        <span className="spacer" />
         <button className="icon-btn" aria-label="Close" onClick={onClose}><X size={16} /></button>
       </div>
       <div className="drawer-body">
@@ -47,7 +47,7 @@ export function RenderDrawer({ job, onClose, onError }: { job: RenderState; onCl
           aria-valuenow={pct ?? undefined} aria-valuemin={0} aria-valuemax={100} data-testid="render-progress">
           <div style={{ width: job.status === 'done' ? '100%' : pct === null ? undefined : `${pct}%` }} />
         </div>
-        <div className="muted" style={{ fontSize: 12 }}>
+        <div className="drawer-stage mono" data-testid="render-stage">
           {p ? `${p.stage} ${p.done}/${p.total}` : job.status === 'running' ? 'Starting' : ''}
           {job.error ? ` ${job.error}` : ''}
         </div>
@@ -56,7 +56,7 @@ export function RenderDrawer({ job, onClose, onError }: { job: RenderState; onCl
         )}
         {shown.length > 0 && (
           <div className="outputs">
-            {files.length > shown.length && <div className="faint" style={{ fontSize: 12 }}>{files.length} files written; the last {shown.length} are shown.</div>}
+            {files.length > shown.length && <div className="field-note">{files.length} files written; the last {shown.length} are shown.</div>}
             {shown.map((f) => <OutputView key={f.path} file={f} onError={onError} />)}
           </div>
         )}

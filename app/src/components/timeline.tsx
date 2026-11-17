@@ -238,7 +238,7 @@ export function Timeline({
                     title={`${s.screen}${s.text ? `\nOn screen: ${s.text}` : ''}\n${s.length.toFixed(2)}s`}
                   >
                     {thumb && <div className="strip" style={{ backgroundImage: `url("${thumb}")` }} />}
-                    {s.kind === 'card' && <div className="strip" style={{ display: 'grid', placeItems: 'center', fontSize: 11, padding: 4, textAlign: 'center' }}>{s.cardTitle}</div>}
+                    {s.kind === 'card' && <div className="strip card-strip">{s.cardTitle}</div>}
                     {s.ref && <span className="badge">{s.ref}</span>}
                     <div className="label">{s.kind === 'card' ? s.card : s.screen || s.file}</div>
                     <div className="handle left" data-testid="handle-left" onPointerDown={(e) => onHandleDown(e, s, 'left')} onPointerMove={onHandleMove} onPointerUp={onHandleUp} />
