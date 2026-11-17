@@ -9,7 +9,7 @@
     {
       "name": "demo-studio",
       "description": "Make product demo videos with Claude: plan, record, cut, voiceover and editor handoff.",
-      "version": "0.2.0",
+      "version": "0.3.0",
       "author": { "name": "Cyrus David Pastelero" },
       "source": "./",
       "category": "productivity"

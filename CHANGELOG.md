@@ -2,10 +2,30 @@
 
 Notable changes, newest first. Versions follow semver as described in CONTRIBUTING.md.
 
-## Unreleased
+## 0.3.0 (2026-11-18)
 
-- Removed the Cardboard path (skill, timeline script and reference). The built-in finish
-  (keynote cut plus `narrate.py`) is the only one; the editor is moving to parity instead.
+- **Finished cuts at a measured quality bar** (`docs/quality-bar.md`): bundled Inter and Geist, a
+  soft colour-field background, a cropped floating window with eased zooms, callout pills,
+  highlight boxes in the product's own colour (only on UI that holds still), word-by-word titles
+  with an accent word, an end card, 5 Mbps BT.709 encodes. `check-cut.py` runs the checklist frame
+  by frame and the skills refuse to call a cut finished until it passes.
+- **Narration and music**: ElevenLabs by API key (environment or macOS Keychain) or through the
+  ElevenLabs or Higgsfield MCP (`narrate.py --export-lines`), own recordings, or `say`; music beds
+  held steadily under the voice, -14 LUFS. Paid voices need `--voice elevenlabs`.
+- **Look templates and a template copier**: `"template": "<id>"` in demo.json; the
+  `demo-template` skill measures any reference video into a reusable template; built-in `house`.
+- **Studio**: a dashboard (stats, needs attention, demo cards), Prompts and Templates menus, a
+  raw-take viewer, System, Light and Dark themes, in the guide site's design system.
+- **Hands-off flow**: log in yourself or hand Claude sandbox credentials (Keychain, never files or
+  camera); it then runs every stage without asking. Clone the repo and work in `./demos`.
+- **demo-organize** skill and stronger `check.py` (loose videos, misplaced handoffs, broken links).
+- The pointing hand is the default cursor; the dot is gone.
+- **Security**: two full audits closed. Untrusted demo folders, sidecars and templates are
+  validated and confined; title and overlay pages are sandboxed with no network; ffmpeg reads with
+  protocol and demuxer whitelists; the studio has a CSP and refuses cross-site requests; temp
+  files are O_EXCL; CI actions are SHA-pinned. See SECURITY.md.
+- `docs/dependencies.md` lists every tool, package and font with versions and licences.
+- Removed the Cardboard path; the built-in finish is the only one.
 
 ## 0.2.0 (2026-11-17)
 

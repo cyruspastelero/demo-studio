@@ -1,6 +1,6 @@
 {
   "name": "demo-studio",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "Product demo video pipeline packaged as a Claude Code plugin.",
   "license": "Apache-2.0",

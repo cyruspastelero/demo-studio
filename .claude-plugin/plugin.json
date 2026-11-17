@@ -1,6 +1,6 @@
 {
   "name": "demo-studio",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Make product demo videos with Claude: plan the story, record crisp browser takes with Playwright, mask secrets, cut a promo and a how-to, write the voiceover, and package an editor handoff.",
   "author": {
     "name": "Cyrus David Pastelero"
