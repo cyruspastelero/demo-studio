@@ -31,21 +31,20 @@ Both were recorded from the real app and cut with the plugin's scripts. Click a 
 
 ## Quick start
 
-```
-/plugin marketplace add Cyvid7-Darus10/demo-studio
-/plugin install demo-studio@demo-studio
-```
-
-Then set up once (macOS with Homebrew; [other systems](docs/getting-started.md#requirements)):
+Clone the repo and work inside it. Your demos live in `demos/` in the clone, which git ignores.
 
 ```bash
-brew install node ffmpeg python && brew install --cask google-chrome
+brew install node ffmpeg python && brew install --cask google-chrome   # other systems: docs/getting-started.md
 claude mcp add playwright --scope user -- npx -y @playwright/mcp@0.0.84 --browser chrome
-P="$(ls -d ~/.claude/plugins/cache/demo-studio/demo-studio/*/ | tail -1)"
-npm install --prefix "$P" && bash "$P/scripts/doctor.sh"
+git clone https://github.com/Cyvid7-Darus10/demo-studio.git && cd demo-studio
+npm install && bash scripts/doctor.sh && bash scripts/new-workspace.sh ./demos
+claude
 ```
 
-Start Claude Code in a folder for your demos and ask:
+Prefer it as a plugin in any folder? `/plugin marketplace add Cyvid7-Darus10/demo-studio`, then
+`/plugin install demo-studio@demo-studio` ([details](docs/getting-started.md#install)).
+
+Then ask:
 
 > Make a demo of app.example.com. Goal: a new user creates a project and invites a teammate.
 > I'm logged in to the sandbox in the Playwright browser.

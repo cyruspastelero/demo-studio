@@ -107,6 +107,36 @@ def duplicated_handoffs(demo: Path) -> list[Path]:
     return found
 
 
+VIDEO_SUFFIXES = (".mp4", ".mov", ".m4v", ".webm")
+SKIPPED_FOR_LINKS = {"node_modules", ".git", "frames"}
+
+
+def layout_issues(demo: Path, status: str) -> list[str]:
+    """Where files sit: videos belong in final/ (or recordings/), handoffs under recordings/."""
+    issues = []
+    for path in sorted(demo.iterdir()):
+        if path.is_file() and path.suffix.lower() in VIDEO_SUFFIXES:
+            issues.append(f"video at the demo root, move it into final/: {path.name}")
+    if (demo / "editor-handoff").is_dir():
+        issues.append("editor-handoff/ at the demo root, move it under recordings/")
+    for path in sorted(demo.glob("*editor-handoff.zip")):
+        issues.append(f"handoff zip at the demo root, move it under recordings/: {path.name}")
+    final = demo / "final"
+    has_final = final.is_dir() and any(
+        p.suffix.lower() in VIDEO_SUFFIXES and p.exists() for p in final.iterdir())
+    if status.lower().startswith("delivered") and not has_final:
+        issues.append("status says delivered but final/ has no video")
+    for dirpath, dirnames, filenames in os.walk(demo, followlinks=False):
+        dirnames[:] = [d for d in dirnames if d not in SKIPPED_FOR_LINKS and not d.startswith(".browser")]
+        for name in [*dirnames, *filenames]:
+            if name in SKIPPED_FOR_LINKS:
+                continue
+            entry = Path(dirpath) / name
+            if entry.is_symlink() and not entry.exists():
+                issues.append(f"broken link: {entry.relative_to(demo)}")
+    return issues
+
+
 def check_demo(root: Path, demo: Path, index: dict[str, dict]) -> list[str]:
     issues = []
     row = index.get(demo.name)
@@ -130,6 +160,7 @@ def check_demo(root: Path, demo: Path, index: dict[str, dict]) -> list[str]:
         issues.append(f"{count} open throwaway(s) (not 'deleted <date>' or 'kept: <reason>')")
     for path in stray_env_files(demo):
         issues.append(f"secrets file outside app/: {path}")
+    issues.extend(layout_issues(demo, row["status"] if row else ""))
     for folder in duplicated_handoffs(demo):
         if dir_size_gb(folder) < MIN_REPORTED_GB:
             continue

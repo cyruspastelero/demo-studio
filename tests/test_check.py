@@ -47,6 +47,27 @@ class WorkspaceCheck(unittest.TestCase):
         make_workspace(self.root)
         self.assertEqual(self.issues(), {"acme": []})
 
+    def test_loose_video_at_the_demo_root_is_reported(self):
+        demo = make_workspace(self.root)
+        (demo / "promo.mp4").write_bytes(b"x")
+        self.assertIn("video at the demo root, move it into final/: promo.mp4", self.issues()["acme"])
+
+    def test_editor_handoff_at_the_demo_root_is_reported(self):
+        demo = make_workspace(self.root)
+        (demo / "editor-handoff").mkdir()
+        self.assertIn("editor-handoff/ at the demo root, move it under recordings/", self.issues()["acme"])
+
+    def test_broken_link_is_reported(self):
+        demo = make_workspace(self.root)
+        (demo / "recordings" / "raw").mkdir(parents=True)
+        (demo / "recordings" / "raw" / "01-a-t1.mp4").symlink_to(self.root / "gone.mp4")
+        self.assertIn("broken link: recordings/raw/01-a-t1.mp4", self.issues()["acme"])
+
+    def test_delivered_demo_without_final_videos_is_reported(self):
+        demo = make_workspace(self.root, final="none yet")
+        (demo / "final" / "acme.mp4").unlink()
+        self.assertIn("status says delivered but final/ has no video", self.issues()["acme"])
+
     def test_demo_missing_from_index_is_reported(self):
         make_workspace(self.root)
         other = self.root / "other"
