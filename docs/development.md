@@ -1,0 +1,32 @@
+# Development
+
+[Back to the README](../README.md)
+
+## Repo layout
+
+```
+.claude-plugin/   plugin.json, marketplace.json
+skills/           demo-studio (orchestrator), demo-plan, demo-record, demo-edit, demo-handoff,
+                  demo-cardboard (optional)
+scripts/          every tool (recorder, QA, encode, edit, narrate, handoff, social, scaffold, doctor)
+references/       style guide, learnings, quality gates, scene patterns, voiceover, handoff spec,
+                  secrets, cardboard
+samples/          scene recipes to copy and a sample plan
+examples/         acme-invoice-bot (a filled-in fictional plan) and todo-sample (a real, recorded demo)
+templates/        files new-demo.sh copies into a new demo
+starter/          the workspace kit new-workspace.sh installs: playbook, index, check.py
+schemas/          demo.schema.json and handoff.schema.json (the config shapes the scripts check)
+app/              local editor: React UI (src/), file and render server (server/), tests (e2e/)
+tests/            smoke.sh (end to end on synthetic footage) and unit tests for the Python tools
+docs/             ROADMAP.md, img/ (screenshots and the sample GIF)
+```
+
+## Tests
+
+```bash
+npm install && bash tests/smoke.sh   # pipeline, on synthetic footage
+python3 -I tests/test_check.py && python3 -I tests/test_cardboard_timeline.py && python3 -I tests/test_narrate.py
+npm run test:app                     # editor unit tests (vitest)
+npm run test:e2e                     # editor end to end, headless Chrome on a temp copy of the example
+npm run screenshots -w app           # refresh docs/img/
+```

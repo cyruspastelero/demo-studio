@@ -51,11 +51,12 @@ Expected last line: `All required checks passed.`
 
 Records and cuts `$P/examples/todo-sample` (a public todo app) so the user sees the whole pipeline.
 
-1. Copy it into the demos folder and clear its take log:
+1. Copy it into the demos folder, then clear its take log and the shipped takes:
    ```bash
    P="${CLAUDE_PLUGIN_ROOT:-$(ls -d ~/.claude/plugins/cache/*/demo-studio/*/ | tail -1)}"
    mkdir -p demos && command cp -R "$P/examples/todo-sample" demos/todo-sample
    cd demos/todo-sample/recordings && mkdir -p raw frames exports && head -1 takes.csv > t && command mv t takes.csv
+   command rm -f raw/*.mp4   # the example ships its takes; record fresh ones
    ```
 2. Follow skill `demo-record` from its Step 1 with the URL `https://todomvc.com/examples/react/dist/`
    and the scenes `01-add-todos`, `02-complete-and-filter`, `03-clear-completed`, in that order.

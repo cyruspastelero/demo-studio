@@ -21,7 +21,8 @@ complete example: three scenes, no login, no secrets, nothing to clean up afterw
 | `demo.json` | The keynote-style cut: trims, speed, zoom, captions, cards |
 | `handoff.json` | The promo cut for an editor: shots, voiceover lines, brief, claims |
 
-The footage is not in the repo. Recording it again takes about two minutes.
+The three raw takes (about 400 KB) are in `recordings/raw/`, so the editor can open and play this
+example straight away: `npm run studio examples/todo-sample`. Recording them again takes about two minutes.
 
 ## Record it yourself
 
@@ -30,6 +31,7 @@ From the folder you started Claude Code in, with the Playwright MCP set up (`P` 
 ```bash
 cp -R "$P/examples/todo-sample" demos/todo-sample && cd demos/todo-sample/recordings
 mkdir -p raw frames exports && head -1 takes.csv > t && mv t takes.csv   # start a fresh take log
+command rm -f raw/*.mp4                                     # and drop the shipped takes
 export PLAYWRIGHT_MCP_OUT="<the folder Claude Code started in>/.playwright-mcp"
 node "$P/scripts/frame-receiver.mjs" .                      # leave running
 bash "$P/scripts/mk-setup.sh" https://todomvc.com/examples/react/dist/
