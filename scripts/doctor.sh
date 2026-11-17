@@ -70,8 +70,12 @@ cb_bin="$(command -v cb 2>/dev/null || command -v cardboard 2>/dev/null || true)
 if [ -n "$cb_bin" ]; then ok "Cardboard CLI at $cb_bin (optional finishing path)"
 else warn "Cardboard CLI not found" "Optional. Without it you get rough cuts and an editor handoff; with it Claude can also add narration, captions and music. See references/cardboard.md"; fi
 
-if command -v say >/dev/null 2>&1; then ok "macOS say (voiceover timing previews)"
-else warn "macOS say not available" "Optional. Voiceover fit is estimated from words per minute and no timing preview is made."; fi
+if command -v say >/dev/null 2>&1; then ok "macOS say (free narration with narrate.py, voiceover timing previews)"
+else warn "macOS say not available" "Optional. Voiceover fit is estimated from words per minute and no timing preview is made. For narration use ELEVENLABS_API_KEY or your own voiceover/NN.wav files."; fi
+
+# Never print the key itself, only whether it is set.
+if [ -n "${ELEVENLABS_API_KEY:-}" ]; then ok "ELEVENLABS_API_KEY is set (narrate.py can use ElevenLabs)"
+else printf '  info  ELEVENLABS_API_KEY not set (optional; narrate.py then uses say or your own recordings)\n'; fi
 
 echo
 if [ "$fails" -eq 0 ]; then echo "All required checks passed."

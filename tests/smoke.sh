@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # End-to-end smoke test on synthetic footage: scaffold, frame receiver, encode, QA sheets, keynote cut,
-# review reel, editor handoff (promo + how-to), quick preview, social versions, scene wrappers.
+# narration, review reel, editor handoff (promo + how-to), quick preview, social versions, scene wrappers.
 # Needs ffmpeg with libx264, python3 and node. Uses real Chrome for title cards when playwright-core
 # and Chrome are installed, else placeholder PNGs. macOS `say` is used when present.
 # Usage: bash tests/smoke.sh        (KEEP=1 keeps the temp folder)
@@ -141,7 +141,7 @@ cat > "$D/demo-short.json" <<'EOF2'
 { "title": "Acme Invoice Bot", "sequence": [
   { "card": "intro", "title": "Invoices from the thread.", "duration": 1.0, "voiceover": "Invoices from the thread." },
   { "scene": "01", "stem": "01-the-thread", "take": 1, "caption": "The deal is agreed in chat.", "trim": [1.0, 3.0] },
-  { "scene": "05", "stem": "05-approve", "take": 1, "trim": [0.5, 2.5], "speed": 2, "zoom": [1.6, 1500, 600, 0.2, 0.6] },
+  { "scene": "05", "stem": "05-approve", "take": 1, "trim": [0.5, 2.5], "speed": 2, "zoom": [1.6, 1500, 600, 0.2, 0.6], "voiceover": "Approve it." },
   { "card": "outro", "title": "Acme Invoice Bot", "duration": 1.0 } ] }
 EOF2
 (cd "$D" && python3 -I "$S/build-keynote.py" demo-short.json > "$TMP/keynote.log")
@@ -149,8 +149,39 @@ grep -q '^PROGRESS parts 4/4' "$TMP/keynote.log" || die "no PROGRESS lines from 
 grep -q '^OUTPUT .*acme-invoice-bot-keynote-cut.mp4' "$TMP/keynote.log" || die "no OUTPUT line"; ok "build-keynote prints OUTPUT"
 CUT="$R/exports/acme-invoice-bot-keynote-cut.mp4"
 exists "$CUT"; size_is "$CUT" 1920x1080; fps_is "$CUT"
+exists "$R/exports/acme-invoice-bot-keynote-cut.timing.json"
+python3 -I -c 'import json,sys; t=json.load(open(sys.argv[1])); assert [i["key"] for i in t["items"]]==["card-intro","01","05","card-outro"] and t["total"]>0, t' \
+  "$R/exports/acme-invoice-bot-keynote-cut.timing.json" || die "timing file does not match the sequence"
+ok "build-keynote writes the timing file"
 (cd "$D" && python3 -I "$S/keynote-handoff.py" demo-short.json >/dev/null)
 exists "$D/editor-handoff/SCRIPT.txt"; exists "$D/editor-handoff/VOICEOVER.txt"; exists "$D/acme-invoice-bot-editor-handoff.zip"
+
+step "narrate (own voice files, so it runs without say or an API key)"
+tone() {  # out seconds frequency
+  ffmpeg -y -loglevel error -f lavfi -i "sine=frequency=$3:sample_rate=44100:duration=$2" "$1"
+}
+mkdir -p "$D/voiceover"
+NARRATED="$R/exports/acme-invoice-bot-keynote-cut-narrated.mp4"
+tone "$D/voiceover/01.wav" 4 440; tone "$D/voiceover/02.m4a" 0.6 660
+if (cd "$D" && python3 -I "$S/narrate.py" demo-short.json --voice files --dry-run >"$TMP/narrate.log" 2>&1); then
+  die "narrate accepted a line that runs long"; fi
+grep -q 'line 1 (card-intro) runs 4.0s but has 2.7s' "$TMP/narrate.log" || { cat "$TMP/narrate.log"; die "overrun not reported"; }
+ok "narrate reports a line that runs long"
+(cd "$D" && python3 -I "$S/narrate.py" demo-short.json --voice files --dry-run --allow-overrun >/dev/null 2>&1) || die "--allow-overrun still failed"
+[ -e "$NARRATED" ] && die "dry run wrote a video"; ok "dry run writes no video"
+tone "$D/voiceover/01.wav" 1.5 440; tone "$TMP/music.wav" 1.5 220
+(cd "$D" && python3 -I "$S/narrate.py" demo-short.json --voice files --music "$TMP/music.wav" > "$TMP/narrate.log") \
+  || { cat "$TMP/narrate.log"; die "narrate failed"; }
+grep -q '^OUTPUT .*keynote-cut-narrated.mp4' "$TMP/narrate.log" || die "no OUTPUT from narrate"; ok "narrate prints OUTPUT"
+exists "$NARRATED"; size_is "$NARRATED" 1920x1080
+[ "$(ffprobe -v error -select_streams a:0 -show_entries stream=codec_name -of csv=p=0 "$NARRATED")" = aac ] \
+  || die "narrated cut has no AAC audio"; ok "narrated cut has AAC audio"
+video_md5() { ffmpeg -loglevel error -i "$1" -map 0:v -c copy -f md5 -; }
+[ "$(video_md5 "$CUT")" = "$(video_md5 "$NARRATED")" ] || die "video stream was re-encoded"; ok "video stream copied untouched"
+python3 -I -c 'import sys; a, b = map(float, sys.argv[1:]); assert abs(a - b) < 0.15, (a, b)' \
+  "$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$CUT")" \
+  "$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$NARRATED")" || die "narrated length differs from the cut"
+ok "narrated cut is as long as the cut"
 
 step "review reel"
 (cd "$D" && python3 -I "$S/review-reel.py" recordings --config demo.json > "$TMP/reel.log")
@@ -205,6 +236,7 @@ ok "cardboard-timeline rejects an unknown video"
 step "starter kit"
 python3 -I "$ROOT/tests/test_check.py" 2>/dev/null || die "check.py unit tests"; ok "check.py unit tests"
 python3 -I "$ROOT/tests/test_cardboard_timeline.py" 2>/dev/null || die "cardboard-timeline unit tests"; ok "cardboard-timeline unit tests"
+python3 -I "$ROOT/tests/test_narrate.py" 2>/dev/null || die "narrate unit tests"; ok "narrate unit tests"
 node "$ROOT/tests/test_lib.mjs" >/dev/null || die "lib.js unit tests"; ok "lib.js unit tests"
 bash "$S/new-workspace.sh" "$TMP/ws" >/dev/null
 for f in AGENTS.md CLAUDE.md README.md check.py .gitignore; do exists "$TMP/ws/$f"; done

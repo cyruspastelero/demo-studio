@@ -1,7 +1,8 @@
 {
   "title": "Product name, short",
   "logo": "",
-  "_comment": "sequence runs top to bottom. Cards are full-frame titles; scenes point at raw/<stem>-t<take>.mp4. zoom = [factor, centerX, centerY, startSec, durationSec] in 1920x1080 coords of the output clip; omit for a gentle 1.05 push-in. trim = [inSec, outSec] of the raw clip. speed > 1 speeds the clip up. voiceover (optional) = narration that starts 0.5s into that item and must finish before the next voiceover item; put it on a card to let it run over the card and the scenes after it.",
+  "voice": { "rate_wpm": 165, "lead_in": 0.3, "music_volume": 0.18 },
+  "_comment": "sequence runs top to bottom. Cards are full-frame titles; scenes point at raw/<stem>-t<take>.mp4. zoom = [factor, centerX, centerY, startSec, durationSec] in 1920x1080 coords of the output clip; omit for a gentle 1.05 push-in. trim = [inSec, outSec] of the raw clip. speed > 1 speeds the clip up. voiceover (optional) = narration that starts voice.lead_in (0.3s) into that item and must finish before the next voiceover item; put it on a card to let it run over the card and the scenes after it. narrate.py reads the voice object (provider say, elevenlabs or files) and adds the narration to the keynote cut.",
   "sequence": [
     { "card": "intro", "title": "Product in one line.", "subtitle": "What it does, in plain words.", "logo": true, "duration": 3.2, "voiceover": "You have probably been here. Describe the everyday pain in one or two sentences, then promise the fix." },
     { "scene": "01", "stem": "01-the-problem", "take": 1, "caption": "It starts where the work happens.", "speed": 1 },

@@ -3,6 +3,7 @@
 */recordings/raw/
 */recordings/exports/
 */recordings/editor-handoff/
+*/recordings/voice-cache/
 *.zip
 *.mp4
 *.mov

@@ -5,10 +5,12 @@ eased zooms onto key UI, statement captions, dissolves through the background co
 Usage (from the demo dir): build-keynote.py demo.json [item ...]
   item = scene id or card-<name>; only those parts are rebuilt, the rest reuse existing renders.
 Needs: recordings/raw/<stem>-t<take>.mp4 and the PNGs from mk-assets.py in
-recordings/exports/.keynote/. Output: recordings/exports/<slug>-keynote-cut.mp4 (1920x1080, 30fps).
+recordings/exports/.keynote/. Output: recordings/exports/<slug>-keynote-cut.mp4 (1920x1080, 30fps)
+and <slug>-keynote-cut.timing.json next to it (where each item starts; narrate.py reads it).
 demo.json is checked against schemas/demo.schema.json first. Prints PROGRESS and OUTPUT lines.
 """
 import importlib.util
+import json
 import re
 import shutil
 import subprocess
@@ -103,6 +105,20 @@ def item_key(item):
     return f"card-{item['card']}" if "card" in item else item["scene"]
 
 
+def write_timing(final, cfg, parts):
+    """Writes where each sequence item starts in the cut, measured from the rendered parts."""
+    items, clock = [], 0.0
+    for index, (item, part) in enumerate(zip(cfg["sequence"], parts)):
+        length = duration(part)
+        items.append({"index": index, "key": item_key(item), "start": round(clock, 3),
+                      "duration": round(length, 3)})
+        clock += length
+    timing = final.with_suffix(".timing.json")
+    timing.write_text(json.dumps({"video": final.name, "total": round(duration(final), 3),
+                                  "items": items}, indent=2) + "\n")
+    return timing
+
+
 def main():
     if not shutil.which("ffmpeg"):
         sys.exit("build-keynote: ffmpeg not found")
@@ -136,7 +152,8 @@ def main():
     final = rec / "exports" / f"{slug}-keynote-cut.mp4"
     run(["ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", str(lst),
          "-c", "copy", "-movflags", "+faststart", str(final)])
-    print(f"{final} ({duration(final):.1f}s)")
+    timing = write_timing(final, cfg, parts)
+    print(f"{final} ({duration(final):.1f}s)\ntiming: {timing}")
     lib.output(final)
 
 

@@ -40,6 +40,7 @@ jobs:
         run: |
           python3 -I tests/test_check.py
           python3 -I tests/test_cardboard_timeline.py
+          python3 -I tests/test_narrate.py
       - name: Smoke test on synthetic footage
         run: bash tests/smoke.sh
 
