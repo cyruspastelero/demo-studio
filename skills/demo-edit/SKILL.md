@@ -88,7 +88,7 @@ Show the reel to the user and agree on the takes before cutting.
    export ELEVENLABS_KEYCHAIN_SERVICE=elevenlabs-api              # ...and tell narrate.py its name
    ```
 
-   `voice.elevenlabs.keychain_service` in demo.json can hold the item name too (never the key).
+   `voice.elevenlabs.keychain_service` in demo.json can hold the item name too (never the key); it must start with `elevenlabs` and is used only with `--voice elevenlabs`.
    The environment variable wins. Rendered lines are cached in `recordings/voice-cache/`.
 
 4. **The MCP route** (ElevenLabs MCP or Higgsfield MCP). narrate.py does not call MCP tools; you

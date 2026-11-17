@@ -45,7 +45,7 @@
             "model_id": { "type": "string", "minLength": 1, "description": "Default eleven_multilingual_v2." },
             "stability": { "type": "number", "minimum": 0, "maximum": 1, "description": "Default 0.5." },
             "similarity_boost": { "type": "number", "minimum": 0, "maximum": 1, "description": "Default 0.75." },
-            "keychain_service": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._ -]{0,127}$", "description": "macOS Keychain service name holding the ElevenLabs key, read with `security find-generic-password -s <name> -w` only when ELEVENLABS_API_KEY is unset. The env var ELEVENLABS_KEYCHAIN_SERVICE wins over this. Holds a name, never the key." }
+            "keychain_service": { "type": "string", "pattern": "^[Ee][Ll][Ee][Vv][Ee][Nn][Ll][Aa][Bb][Ss][A-Za-z0-9._ -]{0,117}$", "description": "macOS Keychain service name holding the ElevenLabs key; must start with elevenlabs. Read with `security find-generic-password -s <name> -w` only when ELEVENLABS_API_KEY is unset and you ran narrate.py with --voice elevenlabs. The env var ELEVENLABS_KEYCHAIN_SERVICE wins over this. Holds a name, never the key." }
           }
         },
         "lead_in": { "type": "number", "minimum": 0, "description": "Seconds into an item before its line starts. Default 0.3." },

@@ -365,6 +365,29 @@ class Keychain(unittest.TestCase):
         self.assertEqual((key, problem), ("env-key", ""))
         run.assert_not_called()
 
+    def test_config_service_is_ignored_unless_the_user_chose_elevenlabs(self):
+        voice = narrate.Voice.from_config({"elevenlabs": {"keychain_service": "elevenlabs-api"}})
+        with mock.patch.object(narrate.subprocess, "run") as run:
+            self.assertEqual(narrate.find_api_key(voice, {}), ("", ""))
+        run.assert_not_called()
+
+    def test_config_cannot_name_an_unrelated_keychain_item(self):
+        voice = narrate.Voice.from_config({"elevenlabs": {"keychain_service": "github-token"}})
+        with mock.patch.object(narrate.subprocess, "run") as run:
+            self.assertEqual(narrate.find_api_key(voice, {}, explicit=True), ("", ""))
+        run.assert_not_called()
+
+    def test_write_atomic_replaces_a_planted_symlink_instead_of_following_it(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            victim = base / "victim.txt"; victim.write_text("keep me")
+            target = base / "lines.json"; target.symlink_to(victim)
+            (base / "lines.json.part").symlink_to(victim)
+            narrate.write_atomic(target, b"new")
+            self.assertEqual(victim.read_text(), "keep me")
+            self.assertFalse(target.is_symlink())
+            self.assertEqual(target.read_text(), "new")
+
     def test_no_service_means_no_lookup(self):
         with mock.patch.object(narrate.subprocess, "run") as run:
             self.assertEqual(narrate.find_api_key(VOICE, {}), ("", ""))
@@ -373,7 +396,7 @@ class Keychain(unittest.TestCase):
     def test_keychain_service_from_config_is_read_without_a_shell(self):
         voice = narrate.Voice.from_config({"elevenlabs": {"keychain_service": "elevenlabs-api"}})
         with mock.patch.object(narrate.subprocess, "run", return_value=self.done(out=self.SECRET + "\n")) as run:
-            key, problem = narrate.find_api_key(voice, {})
+            key, problem = narrate.find_api_key(voice, {}, explicit=True)
         self.assertEqual((key, problem), (self.SECRET, ""))
         args, kwargs = run.call_args
         self.assertEqual(args[0], ["security", "find-generic-password", "-s", "elevenlabs-api", "-w"])

@@ -29,6 +29,7 @@ import shlex
 import shutil
 import subprocess
 import sys
+import tempfile
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -330,10 +331,17 @@ def render_elevenlabs(line: Line, voice: Voice, api_key: str, cache_dir: Path,
 
 
 def write_atomic(target: Path, data: bytes) -> Path:
+    """Writes through a new, uniquely named temp file (mkstemp: O_CREAT|O_EXCL, never follows a link)
+    in the same folder, then renames it over the target (a rename replaces a symlink, never follows it)."""
     target.parent.mkdir(parents=True, exist_ok=True)
-    partial = target.with_suffix(target.suffix + ".part")
-    partial.write_bytes(data)
-    os.replace(partial, target)
+    fd, partial = tempfile.mkstemp(dir=target.parent, prefix=f".{target.name}.", suffix=".part")
+    try:
+        with os.fdopen(fd, "wb") as handle:
+            handle.write(data)
+        os.replace(partial, target)
+    except BaseException:
+        Path(partial).unlink(missing_ok=True)
+        raise
     return target
 
 
@@ -364,10 +372,22 @@ def user_file(line: Line, folder: Path) -> Path | None:
     return None
 
 
-def keychain_service(voice: Voice, env: dict) -> str:
-    """The Keychain item to read the ElevenLabs key from. The environment wins over demo.json, so a
-    shared demo folder cannot pick which of your Keychain items gets sent to ElevenLabs."""
-    return (env.get(KEYCHAIN_ENV, "") or voice.keychain_service).strip()
+CONFIG_KEYCHAIN_PREFIX = "elevenlabs"
+
+
+def keychain_service(voice: Voice, env: dict, explicit: bool = False) -> str:
+    """The Keychain item to read the ElevenLabs key from.
+
+    The environment always wins. demo.json may name an item only when the user chose ElevenLabs
+    themselves (--voice elevenlabs) and the name starts with "elevenlabs", so a shared demo folder
+    cannot pick an unrelated Keychain item to be sent to ElevenLabs."""
+    from_env = env.get(KEYCHAIN_ENV, "").strip()
+    if from_env:
+        return from_env
+    from_config = voice.keychain_service.strip()
+    if explicit and from_config.lower().startswith(CONFIG_KEYCHAIN_PREFIX):
+        return from_config
+    return ""
 
 
 def read_keychain(service: str) -> tuple[str, str]:
@@ -390,12 +410,12 @@ def read_keychain(service: str) -> tuple[str, str]:
     return "", f"Keychain item {service!r} could not be read (security exit code {result.returncode})"
 
 
-def find_api_key(voice: Voice, env: dict) -> tuple[str, str]:
+def find_api_key(voice: Voice, env: dict, explicit: bool = False) -> tuple[str, str]:
     """The ElevenLabs key: ELEVENLABS_API_KEY first, else the named Keychain item. (key, problem)."""
     key = env.get(KEY_ENV, "").strip()
     if key:
         return key, ""
-    service = keychain_service(voice, env)
+    service = keychain_service(voice, env, explicit)
     return read_keychain(service) if service else ("", "")
 
 
@@ -752,10 +772,10 @@ def choose_provider(args: argparse.Namespace, voice: Voice, files_dir: Path) -> 
     has_files = has_voice_files(files_dir)
     key, problem = "", ""
     if choice == "elevenlabs" or (choice is None and not has_files):
-        key, problem = find_api_key(voice, os.environ)
+        key, problem = find_api_key(voice, os.environ, explicit=args.voice == "elevenlabs")
     try:
         if choice == "elevenlabs" and not key and problem and not args.dry_run:
-            service = keychain_service(voice, os.environ)
+            service = keychain_service(voice, os.environ, explicit=args.voice == "elevenlabs")
             raise NarrateError(f"provider 'elevenlabs' found no {KEY_ENV} and {problem}",
                                (f'Store the key (it asks for it): security add-generic-password -a "$USER" -s '
                                 f"{shlex.quote(service) if SERVICE_NAME.fullmatch(service) else KEYCHAIN_EXAMPLE} -w",
