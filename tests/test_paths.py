@@ -154,5 +154,31 @@ class Scripts(Folder):
             narrate.user_file(line, voice)
 
 
+class OutputSymlinks(Folder):
+    def test_a_symlink_inside_the_output_tree_is_refused(self) -> None:
+        out = self.root / "out"
+        (out / "reference").mkdir(parents=True)
+        (out / "reference" / "assets").symlink_to(self.outside)
+        with self.assertRaises(lib.UnsafePath):
+            lib.refuse_symlinks_under(out, "output")
+
+    def test_an_output_folder_that_is_itself_a_symlink_is_refused(self) -> None:
+        (self.root / "out").symlink_to(self.outside)
+        with self.assertRaises(lib.UnsafePath):
+            lib.refuse_symlinks_under(self.root / "out", "output")
+
+    def test_a_real_output_tree_passes(self) -> None:
+        (self.root / "out" / "a").mkdir(parents=True)
+        (self.root / "out" / "a" / "f.txt").write_text("x")
+        lib.refuse_symlinks_under(self.root / "out", "output")
+
+    def test_takes_that_point_outside_are_skipped(self) -> None:
+        raw = self.root / "raw"; raw.mkdir()
+        inside = raw / "01-t1.mp4"; inside.write_text("x")
+        (self.outside / "secret.mp4").write_text("x")
+        escaped = raw / "02-t1.mp4"; escaped.symlink_to(self.outside / "secret.mp4")
+        self.assertEqual(lib.inside_only(self.root, [inside, escaped], "test"), [inside])
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

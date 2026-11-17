@@ -7,6 +7,7 @@ under `python3 -I`, which drops the script folder from sys.path.
 from __future__ import annotations
 
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -180,6 +181,33 @@ def safe_rmtree(root: Path, path: Path, what: str) -> None:
     if Path(path).is_symlink():
         raise UnsafePath(f"{what}: {path} is a symlink; refusing to delete through it")
     shutil.rmtree(full)
+
+
+def refuse_symlinks_under(folder: Path, what: str) -> None:
+    """Raises UnsafePath if folder, or anything under it, is a symlink. Output folders must be real
+    folders, so a planted link cannot send a write (or a zip) outside the demo folder."""
+    folder = Path(folder)
+    if folder.is_symlink():
+        raise UnsafePath(f"{what}: {folder} is a symlink; refusing to write through it")
+    if not folder.exists():
+        return
+    for dirpath, dirnames, filenames in os.walk(folder, followlinks=False):
+        for name in [*dirnames, *filenames]:
+            entry = Path(dirpath) / name
+            if entry.is_symlink():
+                raise UnsafePath(f"{what}: {entry} is a symlink; remove it, outputs must be real files")
+
+
+def inside_only(root: Path, files: list, what: str) -> list:
+    """Keeps only files that resolve inside root (a symlinked take pointing elsewhere is skipped)."""
+    base = Path(root).resolve()
+    kept = []
+    for file in files:
+        if Path(file).resolve().is_relative_to(base):
+            kept.append(file)
+        else:
+            print(f"{what}: WARN skipping {file}, it points outside the demo folder", file=sys.stderr)
+    return kept
 
 
 def config_path(root: Path, value, field: str, tool: str) -> Path:

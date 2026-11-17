@@ -3,8 +3,8 @@
 // the social versions (for ffmpeg builds without drawtext).
 // Uses a short-lived headless Chrome through playwright-core, so no demo window has to be open.
 // Usage: node title-cards.mjs [handoff.json] [--social]
-import { mkdirSync, readFileSync, existsSync } from 'node:fs';
-import { dirname, join, parse, resolve } from 'node:path';
+import { mkdirSync, readFileSync, existsSync, lstatSync, realpathSync } from 'node:fs';
+import { dirname, join, parse, resolve, sep } from 'node:path';
 import { launchChrome, loadPlaywright } from './pw.mjs';
 import {
   CardInputError, blockRequests, checkBrand, escapeHtml as esc, imageDataUri, safeJoin,
@@ -99,11 +99,28 @@ if (jobs.length === 0) {
   process.exit(1);
 }
 
+// A planted symlink in the output tree must not redirect a write outside the demo folder.
+function assertWritableInside(base, file) {
+  const realBase = realpathSync(base);
+  const realDir = realpathSync(dirname(file));
+  if (realDir !== realBase && !realDir.startsWith(realBase + sep)) {
+    console.error(`title-cards: ${dirname(file)} resolves outside the demo folder; remove the symlink`);
+    process.exit(1);
+  }
+  let leaf = null;
+  try { leaf = lstatSync(file); } catch { /* not there yet: fine */ }
+  if (leaf?.isSymbolicLink()) {
+    console.error(`title-cards: ${file} is a symlink; refusing to write through it`);
+    process.exit(1);
+  }
+}
+
 const { chromium } = await loadPlaywright();
 const browser = await launchChrome(chromium);
 try {
   for (const [i, job] of jobs.entries()) {
     mkdirSync(dirname(job.path), { recursive: true });
+    assertWritableInside(root, job.path);
     // No script and no requests: the page only lays out escaped text and inline data: images.
     const context = await browser.newContext({
       viewport: { width: job.size[0], height: job.size[1] }, deviceScaleFactor: 1, javaScriptEnabled: false,

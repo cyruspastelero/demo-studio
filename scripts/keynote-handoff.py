@@ -77,6 +77,15 @@ def write_voiceover(path, cfg, seq, keys, vo):
         + "\n\n\nFULL READ (one take)\n\n" + "\n\n".join(text for _, text in blocks) + "\n")
 
 
+def copy_in(demo, src, dest):
+    """Copies a file from the demo folder, refusing anything (such as a planted symlink) that resolves outside it."""
+    try:
+        lib.ensure_inside(demo, src, "keynote-handoff source")
+    except lib.UnsafePath as error:
+        sys.exit(f"keynote-handoff: {error}")
+    shutil.copy2(src, dest)
+
+
 def main():
     cfg_path = Path(sys.argv[1] if len(sys.argv) > 1 else "demo.json").resolve()
     cfg = lib.load_config(cfg_path, "demo", "keynote-handoff")
@@ -97,7 +106,7 @@ def main():
     for d in dirs.values():
         d.mkdir(parents=True)
 
-    shutil.copy2(final, dirs["01-final-cut"] / final.name)
+    copy_in(demo, final, dirs["01-final-cut"] / final.name)
     for f in ["bg.png", "shadow.png", "mask.png"]:
         shutil.copy2(PLUGIN_ASSETS / f, dirs["04-graphics/layout"] / f)
     if cfg.get("logo"):
@@ -121,10 +130,10 @@ def main():
     for i, item in enumerate(seq):
         key, part, d = keys[i], parts[i], durs[i]
         lib.progress("segments", i + 1, len(seq))
-        shutil.copy2(part, dirs["03-edited-segments"] / part.name)
+        copy_in(demo, part, dirs["03-edited-segments"] / part.name)
         head = f"[{tc(t)} - {tc(t + d)}]  ({d:.1f}s)"
         if "card" in item:
-            shutil.copy2(assets / f"{key}.png", dirs["04-graphics/title-cards"] / f"{key}.png")
+            copy_in(demo, assets / f"{key}.png", dirs["04-graphics/title-cards"] / f"{key}.png")
             lines += [f"{head}  TITLE CARD  {key}", f"    Title:    {item['title']}",
                       f"    Subtitle: {item.get('subtitle', '')}",
                       f"    Graphic:  04-graphics/title-cards/{key}.png"]
@@ -132,11 +141,11 @@ def main():
             n += 1
             raw_name = f"{item['stem']}-t{item.get('take', 1)}.mp4"
             dest = f"{n:02d}_{item['stem']}.mp4"
-            shutil.copy2(rec / "raw" / raw_name, dirs["02-raw-footage"] / dest)
+            copy_in(demo, rec / "raw" / raw_name, dirs["02-raw-footage"] / dest)
             used.add(raw_name)
             cap = assets / f"cap-{key}.png"
             if cap.exists():
-                shutil.copy2(cap, dirs["04-graphics/captions"] / cap.name)
+                copy_in(demo, cap, dirs["04-graphics/captions"] / cap.name)
             trim = item.get("trim")
             zoom = item.get("zoom")
             captions.append(f"  {key:>4}  {item.get('caption', '')}")

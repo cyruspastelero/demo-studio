@@ -252,7 +252,7 @@ def copy_source_footage(cfg: dict, paths: Paths) -> None:
     groups = cfg.get("parts") or {"all-takes": [""]}
     sheets = paths.reference / "take-contact-sheets"
     sheets.mkdir(parents=True, exist_ok=True)
-    takes = sorted(paths.raw.glob("*.mp4"))
+    takes = lib.inside_only(paths.root, sorted(paths.raw.glob("*.mp4")), "build-handoff")
     for done, (group, patterns) in enumerate(groups.items(), start=1):
         source.mkdir(parents=True, exist_ok=True)
         part = lib.config_path(source, group, f"parts.{group}", "build-handoff")
@@ -426,6 +426,10 @@ def main() -> None:
         print("build-handoff: macOS `say` not used; voiceover fit is estimated from words per minute", flush=True)
 
     paths = config_paths(cfg_path, cfg)
+    try:
+        lib.refuse_symlinks_under(paths.out, "build-handoff output")
+    except lib.UnsafePath as error:
+        sys.exit(f"build-handoff: {error}")
     videos = build_videos(cfg)
     check_sources(videos, paths)
     paths.reference.mkdir(parents=True, exist_ok=True)
