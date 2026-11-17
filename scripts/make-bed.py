@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-"""Makes a quiet, royalty-free music bed with ffmpeg alone: a slow four-chord pad (soft sine
-voices, gentle swell, low-passed), so a narrated cut always has the bed the quality bar asks for
-(docs/quality-bar.md A6). Deterministic: the same arguments give the same file. No network.
+"""PLACEHOLDER music bed, made with ffmpeg alone: a slow four-chord sine pad. It only stands in
+while a real track is on its way, so timing and levels can be checked; it sounds like test tones
+and must be replaced before the cut is shared. Real beds: the ElevenLabs MCP `compose_music`
+(instrumental) or the user's own licensed track (see references/voiceover.md).
+
+The file is tagged (comment metadata PLACEHOLDER_TAG), and narrate.py warns on every render that
+uses it. Deterministic: the same arguments give the same file. No network.
 
 Usage: make-bed.py OUT.(m4a|wav|mp3) [--seconds 60] [--bpm 72]
-Then set "voice": {"music": "<OUT relative to demo.json>"} and run narrate.py; it levels the bed
-13 dB under the narration and ducks it while someone speaks.
 """
 from __future__ import annotations
 
@@ -14,6 +16,8 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+
+PLACEHOLDER_TAG = "demo-studio make-bed placeholder bed, replace before sharing"
 
 # A calm I - vi - IV - V in C major, as frequencies (Hz) per chord voice.
 CHORDS = (
@@ -41,7 +45,8 @@ def chord_expr(seconds_per_chord: float) -> str:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Make a quiet pad music bed with ffmpeg.")
+    parser = argparse.ArgumentParser(description="Make a placeholder pad music bed with ffmpeg "
+                                     "(replace it before sharing).")
     parser.add_argument("out", help="output file (.m4a, .wav or .mp3)")
     parser.add_argument("--seconds", type=float, default=60.0, help="length in seconds (default 60)")
     parser.add_argument("--bpm", type=float, default=72.0, help="tempo; one chord per bar of 4 beats (default 72)")
@@ -62,9 +67,11 @@ def main() -> int:
              ".wav": ["-c:a", "pcm_s16le"]}[out.suffix.lower()]
     result = subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-f", "lavfi",
                              "-i", f"aevalsrc='{expr}|{expr}':s=48000:d={args.seconds:.3f}",
-                             "-af", chain, *codec, str(out)], capture_output=True, text=True)
+                             "-af", chain, "-metadata", f"comment={PLACEHOLDER_TAG}", *codec, str(out)], capture_output=True, text=True)
     if result.returncode:
         sys.exit(f"make-bed: ffmpeg failed:\n{result.stderr[-1500:]}")
+    print("make-bed: placeholder bed, replace before sharing. Make the real one with the ElevenLabs MCP "
+          "compose_music (instrumental) or use your own licensed track.", file=sys.stderr)
     print(f"OUTPUT {out}")
     return 0
 

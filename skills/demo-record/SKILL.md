@@ -101,8 +101,9 @@ and list them under `windows` in `<demo>/demo.json`. Record with `rec.mjs` (Step
    ```
    Recipe list and when to use each: `$P/samples/README.md`. Also copy
    `$P/samples/scenes/_project.js` to `<demo>/recordings/scenes/_project.js` if it is still the template.
-   Keep `cursor: 'dot'` there: the cursor is drawn into the footage at record time and cannot be
-   changed in the edit.
+   Keep `cursor: 'hand'` there (the pointing hand, hotspot at the fingertip; `'arrow'` is the
+   alternative for developer tools; never a dot): the cursor is drawn into the footage at record
+   time and cannot be changed in the edit.
 2. **Scout, then adapt.** For an unfamiliar page, run the scout body from
    `$P/references/scene-patterns.md` ("Scout run") to get the real button names. Then change every
    line marked `// CHANGE:` in the copied file, and rename `'_tmpNN'` to this scene's number.
@@ -163,6 +164,13 @@ and list them under `windows` in `<demo>/demo.json`. Record with `rec.mjs` (Step
    1080p take** (CSS px x 4/3, because the 1440 px wide page at DPR 2 is encoded 1920 wide) and `t`,
    the seconds since `record()` started. Target the element's **text** (`getByText`, a label), not
    its padded container: the cut pads the box by 15 and 9 px itself.
+   **Highlight targets must hold still** (quality bar H8): the box is a fixed rectangle in source
+   px, so if the page scrolls or reflows while it shows, it lands on the wrong element. In the scene
+   body, scroll first, wait for the page to settle, measure, then keep the page still for the whole
+   time the box will show (about 4 to 5 s: the zoom, its hold and the zoom-out). Log every scroll
+   as its own scout entry, for example `scroll1: {"t": 6.2}` (`t` since `record()` started), so the
+   edit can keep highlights away from those times. build-keynote.py and check-cut.py both read the
+   raw take under each box and flag motion.
    Save what the run returned as `<demo>/recordings/scout/<NN-name>.json` (Write tool), e.g.
    `{"take": 1, "region": {"rect": [300, 120, 1320, 640], "t": 1.2}, "answer": {"rect": [1012, 598, 336, 44], "focus": [1180, 620], "t": 8.6}}`.
 
@@ -178,6 +186,7 @@ and list them under `windows` in `<demo>/demo.json`. Record with `rec.mjs` (Step
    | `scout target answer is not visible` | Measure after its `waitFor`, or scroll it into view first |
    | a rect much wider than the text | You measured the container; use `getByText` or a tighter locator |
    | the element moves later in the take (a list grows, a filter reflows) | Measure again at the moment it is highlighted, under a second name |
+   | the page has to scroll while the target is on camera | Scroll before measuring, log the scroll time, and give the box a still stretch of about 5 s after it |
 
 Scene done when: one `keep` row, the recipe's verify list passed, THROWAWAYS.md updated, and
 `recordings/scout/<NN-name>.json` holds every crop region and highlight target in its Edit plan row.
@@ -204,5 +213,5 @@ frames until the take is approved; re-encodes are cheap, re-shoots are not.
 - [ ] No password appears in any file in `<demo>` (only a gitignored `app/.env` the user asked for)
 - [ ] THROWAWAYS.md lists everything created on camera
 - [ ] Every scene has `recordings/scout/<NN-name>.json` with its crop region and highlight rects
-- [ ] `_project.js` has `cursor: 'dot'` (the quality-bar cursor; an OS-style arrow fails the bar)
+- [ ] `_project.js` has `cursor: 'hand'` (default; `'arrow'` for developer tools; a dot or click circle fails the bar)
 - [ ] Next: skill `demo-edit`, Step 1 (review reel)

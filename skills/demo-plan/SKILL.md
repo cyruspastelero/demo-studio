@@ -131,9 +131,16 @@ Then fill:
   where planned (leave `focus` and `rect` as your best estimate from a screenshot; the record step's
   scout replaces them with measured values); `voiceover` on the items that speak; `voice.music`
   (`music/bed.m4a`) and one `voice.music_dips` entry. Shape: `$P/schemas/demo.schema.json`.
-  Example: `$P/samples/plan/demo.json`. Add `brand` (`font`, `accent`, `logo_on_dark`) when the
-  product has its own accent colour, `browser.timezone` if the UI shows times, and `windows` for a
+  Example: `$P/samples/plan/demo.json`. Add `brand` (`font`, `accent`, `logo_on_dark`), `browser.timezone` if the UI shows times, and `windows` for a
   two-person demo. Old `caption` and `zoom` fields still build but do not reach the bar.
+- `brand.accent`: **always set it from the product itself**, since highlight boxes and statement
+  pills take this colour (quality bar H1, C4) and must look native to the UI. Read the primary
+  button's (or primary link's) colour from the live page, for example in a scout run
+  (`$P/references/scene-patterns.md`, "Scout run") or a `run.mjs` body:
+  `return getComputedStyle(document.querySelector('<primary button selector>')).backgroundColor;`
+  (also try the page's CSS custom properties such as `--primary`). Convert `rgb(r, g, b)` to
+  `#RRGGBB`. No live page: sample the button in a screenshot. Never leave the red default for a
+  product that is not red; without a value the boxes and pills fall back to neutral ink.
 - `recordings/scenes/_project.js`: start from `$P/samples/scenes/_project.js`:
 
 | Setting | Default | Change when |

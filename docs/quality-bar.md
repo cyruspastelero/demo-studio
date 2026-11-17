@@ -8,7 +8,7 @@ All sizes are px in a 1920x1080 frame. All times are seconds. "Ease-out cubic" m
 
 ## 1. The bar in one paragraph
 
-A finished cut opens directly on a title, with no black frame. It sits on a soft, slowly drifting, multi-colour pastel background. The product appears in one floating rounded window that is cropped tight to the UI that matters, so app text reads at about 20 px cap height. That window rises in from below frame. It stays put while clips cut inside it, and the whole window (not just its contents) eases up to 1.15x to point at something, then eases back. A red outline marks the exact UI element being talked about. Short pill callouts sit centred under the window: a person (avatar + "Name, role") or a statement in the accent colour. All type is one grotesk (Inter) at medium weight with tight tracking, and words blur in one by one. Narration runs under about 60% of the runtime, over a music bed 12 to 14 dB below it. The cut ends on a timed end card, a brand-gradient sweep, and a logo outro on dark.
+A finished cut opens directly on a title, with no black frame. It sits on a soft, slowly drifting, multi-colour pastel background. The product appears in one floating rounded window that is cropped tight to the UI that matters, so app text reads at about 20 px cap height. That window rises in from below frame. It stays put while clips cut inside it, and the whole window (not just its contents) eases up to 1.15x to point at something, then eases back. An outline in the product's own accent colour marks the exact UI element being talked about. Short pill callouts sit centred under the window: a person (avatar + "Name, role") or a statement in the product's accent colour. All type is one grotesk (Inter) at medium weight with tight tracking, and words blur in one by one. Narration runs under about 60% of the runtime, over a music bed 12 to 14 dB below it. The cut ends on a timed end card, a brand-gradient sweep, and a logo outro on dark.
 
 ---
 
@@ -66,13 +66,14 @@ A finished cut opens directly on a title, with no black frame. It sits on a soft
 
 | # | Property | Bar |
 |---|---|---|
-| H1 | Stroke | 3 px solid `#E2483C` (measured core `#E2483E`/`#E0483B`) |
+| H1 | Stroke | 3 px solid in **the product's brand accent** (`brand.accent`, sampled from the product's primary button or link), so the box looks native to the UI; never a fixed red or orange. No `brand.accent`: neutral ink `#171717` |
 | H2 | Radius | 12 px |
-| H3 | Fill + halo | Fill `rgba(226,72,60,0.07)` (measured `#FDF2F0` over white). Outer halo `0 0 0 6px rgba(226,72,60,0.10)` (measured `#FCECEB` band) |
+| H3 | Fill + halo | Fill: the H1 colour at 7% alpha. Outer halo `0 0 0 6px` in the H1 colour at 10% alpha |
 | H4 | Padding | 15 px horizontal and 9 px vertical around the element's text box, after window scale |
 | H5 | Timing | It appears **0.17 s after a zoom lands**, holds through the zoom (measured 13.27 to 16.3+), and stays glued to the UI while the window zooms back out |
 | H6 | Animation | In: 0.40 s ease-out cubic, opacity 0→1, scale 1.12→1. Out: 0.30 s linear opacity. |
 | H7 | Count | ≤ 2 boxes on screen, and only on the element the narration names |
+| H8 | Still target | The UI under the box holds still (no scroll or reflow) and is not empty for as long as the box shows, and the box leaves before its scene's clip ends. The rect is fixed in source px, so a box over moving content lands on the wrong element |
 
 ### 2.6 Callout pills (under the window)
 
@@ -81,7 +82,7 @@ A finished cut opens directly on a title, with no black frame. It sits on a soft
 | C1 | Position | Centred at (960, **962**), in the band between the window bottom (900) and the frame edge |
 | C2 | Shape | Height 68 px (measured 928 to 995), radius 999, fill `rgba(255,255,255,0.95)`, shadow `0 14px 40px rgba(60,45,60,0.12), 0 2px 6px rgba(60,45,60,0.06)` |
 | C3 | Person variant ("a sales person callout") | 50 px circular avatar, padding `9px 30px 9px 9px`, gap 14. "Name," in ink `#24272B` (measured `#212123`), role in `#7A8089` (measured `#7A7C80`). Measured size 316x67. |
-| C4 | Statement variant | No avatar, padding `16px 32px`, all text in accent `#D9463B` (measured `#DB4435`). ≤ 6 words. Measured 453x67 for a 28-character line. |
+| C4 | Statement variant | No avatar, padding `16px 32px`, all text in **the product's brand accent**, darkened in the same hue until it reads on the white pill (≥ 4.5:1); never a fixed red or orange. No `brand.accent`: neutral ink `#171717`. ≤ 6 words. Measured 453x67 for a 28-character line. |
 | C5 | Type | Inter 500, 30 px (measured cap height 22 px), letter-spacing −0.3 px |
 | C6 | Entry | 0.45 s ease-out cubic: opacity 0→1, translateY +16→0, scale 0.96→1. Words stagger 0.07 s, each 0.40 s ease-out cubic with blur 8→0 px and translateX +10→0. It starts within 0.1 s of the window landing (measured: window lands 6.667, pill 6.73). |
 | C7 | Exit | 0.35 s: opacity→0, blur 0→6 px, translateY +8 |
@@ -213,9 +214,10 @@ Run these on any new render. Each line is pass/fail. Frame grabs: `ffmpeg -ss <t
 - [ ] Hold at zoom is 2.4 to 4.5 s.
 
 **Highlights and callouts**
-- [ ] Each highlight is 3 px `#E2483C` ±8 per channel, radius ≈ 12, appears 0.1 to 0.3 s after a zoom lands, and tracks the UI during zoom-out.
+- [ ] Each highlight is 3 px in the product's brand accent ±8 per channel (neutral ink without one), radius ≈ 12, appears 0.1 to 0.3 s after a zoom lands, and tracks the UI during zoom-out.
+- [ ] The UI under each highlight holds still and is not empty while the box shows (sample the raw take at the box's start, middle and end), and the box leaves before its clip ends.
 - [ ] Pills are centred at y = 962 ±3, 68 ±2 px tall, fully rounded, white with a shadow.
-- [ ] Person pills: 50 px avatar, name in ink, role in grey. Statement pills: accent-coloured text, ≤ 6 words.
+- [ ] Person pills: 50 px avatar, name in ink, role in grey. Statement pills: text in the product's brand accent (readable on white), ≤ 6 words.
 - [ ] Each pill is on screen 3 to 5 s, enters within 0.1 s of the window landing, and never overlaps a zoomed window.
 - [ ] Pill text cap height is 22 ±2 px (30 px Inter 500).
 

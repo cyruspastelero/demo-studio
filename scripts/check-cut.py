@@ -21,7 +21,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from keynote import measure as m  # noqa: E402
-from keynote import spec  # noqa: E402
+from keynote import motion, spec  # noqa: E402
 
 REST = (180, 100, 1560, 800)
 BG_SAMPLES = {(40, 40): "#EFEFEF", (960, 40): "#E4E4E4", (1880, 40): "#C2CAD6", (40, 1040): "#E0DBDA",
@@ -44,11 +44,28 @@ class Report:
         return sum(1 for r in self.rows if r["status"] == "FAIL")
 
 
-def find_plan(cut: Path, given: str | None) -> dict:
+def find_plan(cut: Path, given: str | None) -> tuple[Path, dict]:
     path = Path(given) if given else cut.with_name(re.sub(r"-narrated$", "", cut.stem) + ".plan.json")
     if not path.exists():
         sys.exit(f"check-cut: no plan file {path}. Build the cut with build-keynote.py first, or pass --plan.")
-    return json.loads(path.read_text())
+    return path.resolve(), json.loads(path.read_text())
+
+
+OLD_HIGHLIGHT = "#E2483C"  # what plans built before the brand-coloured boxes drew
+
+
+def brand_colours(plan: dict) -> tuple[str, tuple[str, str]]:
+    """(accent, (sweep from, sweep to)) the cut was built with; quality-bar defaults for old plans."""
+    brand = plan.get("brand") or {}
+    sweep = brand.get("sweep") or [spec.SWEEP_FROM, spec.SWEEP_TO]
+    return brand.get("accent", spec.ACCENT), (sweep[0], sweep[1])
+
+
+def overlay_colours(plan: dict) -> tuple[str, str | None]:
+    """(highlight stroke, statement-pill text) the cut was drawn with: the product's accent (or
+    neutral ink) from plan.json. Old plans: the old red stroke and no pill colour to check."""
+    brand = plan.get("brand") or {}
+    return brand.get("highlight", OLD_HIGHLIGHT), brand.get("pill")
 
 
 def find_voice(cut: Path) -> dict | None:
@@ -146,9 +163,10 @@ def check_opening(r: Report, cut: Path, plan: dict, save) -> None:
             r.check(abs(word[3] - 96) <= 3 or first["kind"] != "hero", "T2",
                     f"first title word ink height {word[3]} px (bar: 132 px hero -> 96 px cap +-3; a word with "
                     "descenders reads taller)")
-        accent = m.count_colour(m.grab(cut, first["end"] - 0.3), m.hex_rgb(spec.ACCENT), 40, (100, 300, 1720, 500))
+        colour = brand_colours(plan)[0]
+        accent = m.count_colour(m.grab(cut, first["end"] - 0.3), m.hex_rgb(colour), 40, (100, 300, 1720, 500))
         r.check(bool(first["accent"]) and accent > 30, "T9",
-                f"accent word {first['accent']!r}, {accent} accent pixels on the card (bar: exactly one accent word)")
+                f"accent word {first['accent']!r}, {accent} {colour} pixels on the card (bar: exactly one accent word)")
     runs = plan["runs"]
     if runs:
         r.check(runs[0]["start"] <= 6.0, "O4", f"first product UI at {runs[0]['start']:.2f}s (bar: <= 6.0)")
@@ -203,15 +221,20 @@ def check_windows(r: Report, cut: Path, plan: dict, save) -> None:
 def check_overlays(r: Report, cut: Path, plan: dict, save) -> None:
     landings = [z["landed"] for run in plan["runs"] for z in run["zooms"]]
     zooms = [(z["start"], z["end"]) for run in plan["runs"] for z in run["zooms"]]
+    stroke, pill_text = overlay_colours(plan)
     for k, h in enumerate(plan["highlights"]):
         t = h["start"] + 0.6
         frame = m.grab(cut, t)
         save(f"30-highlight{k}", t)
-        red = m.count_colour(frame, m.hex_rgb(spec.HIGHLIGHT_COLOR), 8)
+        # The box takes the product's colour, which the UI itself also uses: count what the box adds
+        # over the frame just before it appears.
+        before = m.count_colour(m.grab(cut, max(0.0, h["start"] - 0.05)), m.hex_rgb(stroke), 8)
+        added = m.count_colour(frame, m.hex_rgb(stroke), 8) - before
         after = min((h["start"] - l for l in landings if l <= h["start"] + 0.01), default=None)
-        r.check(red > 150 and after is not None and 0.1 <= after <= 0.3, "H1-H5",
-                f"highlight {k}: {red} #E2483C pixels, shows {after if after is None else round(after, 2)}s after "
-                "its zoom lands (bar: 3 px #E2483C +-8, 0.1 to 0.3 s)")
+        r.check(added > 150 and after is not None and 0.1 <= after <= 0.3, "H1-H5",
+                f"highlight {k}: {added} more {stroke} pixels with the box, shows "
+                f"{after if after is None else round(after, 2)}s after its zoom lands "
+                f"(bar: 3 px box in the product colour {stroke} +-8, 0.1 to 0.3 s)")
     for k, c in enumerate(plan["callouts"]):
         t = (c["start"] + c["end"]) / 2
         frame = m.grab(cut, t)
@@ -227,6 +250,52 @@ def check_overlays(r: Report, cut: Path, plan: dict, save) -> None:
         if c["kind"] == "statement":
             words = len(c["text"].split())
             r.check(words <= 6, "C4", f"statement pill {k}: {words} words (bar: <= 6)")
+            if pill_text and box:
+                ink = m.count_colour(frame, m.hex_rgb(pill_text), 40, box, step=1)
+                r.check(ink > 40, "C4", f"statement pill {k} text in the product colour {pill_text}: {ink} pixels "
+                        "(bar: brand-derived, readable on white)")
+
+
+def highlight_motion(h: dict, plan_dir: Path) -> tuple[bool, str]:
+    """H8: the take under one box, sampled at the start, middle and end of its time on screen (cut
+    time mapped onto the take through the build plan): still, not blank, and inside its scene."""
+    where = f"{h['where']} (scene {h['scene']})"
+    rect = motion.Rect(*h["rect"])
+    take = (plan_dir / h["take"]).resolve()
+    last = h["shot_end"] - 1 / 30
+    if h["end"] + spec.HIGHLIGHT_OUT > h["shot_end"] + 0.01:
+        return False, (f"{where}: box on screen until {h['end'] + spec.HIGHLIGHT_OUT:.2f}s, after its scene ends at "
+                       f"{h['shot_end']:.2f}s, so it sits over the next clip. Fix: shorten `dur`")
+    times = [min(t, last) for t in (h["start"], (h["start"] + h["end"]) / 2, h["end"])]
+    patches = [motion.patch_at(take, rect, tuple(h["take_size"]), h["trim_in"] + (t - h["shot_start"]) * h["speed"])
+               for t in times]
+    pairs = [(0, 1), (1, 2), (0, 2)]
+    changes = {(a, b): motion.changed_fraction(patches[a], patches[b]) for a, b in pairs}
+    (a, b), worst = max(changes.items(), key=lambda kv: kv[1])
+    fix = f"Fix: {motion.FIX}"
+    if worst >= motion.MOVING_FRACTION:
+        return False, (f"{where} rect {h['rect']}: the UI under the box moves between {times[a]:.2f}s and "
+                       f"{times[b]:.2f}s ({worst:.0%} of the area changes; bar: still, under "
+                       f"{motion.MOVING_FRACTION:.0%}). {fix}")
+    blank = [(t, s) for t, p in zip(times, patches) if (s := motion.spread(p)) < motion.EMPTY_SPREAD]
+    if blank:
+        return False, (f"{where} rect {h['rect']}: the box frames an empty area at {blank[0][0]:.2f}s "
+                       f"(grey spread {blank[0][1]:.1f}; bar: >= {motion.EMPTY_SPREAD}). {fix}")
+    return True, f"{where}: the UI under the box holds still ({worst:.0%} change) at {', '.join(f'{t:.2f}s' for t in times)}"
+
+
+def check_highlight_motion(r: Report, plan: dict, plan_dir: Path) -> None:
+    for k, h in enumerate(plan["highlights"]):
+        if "take" not in h:
+            r.add("LOOK", "H8", f"highlight {k}: plan has no take mapping (built by an older build-keynote.py); "
+                  "rebuild to check the box sits on still UI")
+            continue
+        try:
+            ok, text = highlight_motion(h, plan_dir)
+        except (motion.MotionError, OSError) as error:
+            r.add("LOOK", "H8", f"highlight {k}: could not read its take ({error}); watch the box by eye")
+            continue
+        r.check(ok, "H8", f"highlight {k} at {h['start']:.2f}s: {text}")
 
 
 def check_ending(r: Report, cut: Path, plan: dict, save) -> None:
@@ -241,8 +310,9 @@ def check_ending(r: Report, cut: Path, plan: dict, save) -> None:
     sweep_t = end["end"] + spec.SWEEP_SECONDS * 0.5
     save("51-sweep", sweep_t)
     sweep = m.grab(cut, sweep_t)
-    brand = m.count_colour(sweep, m.hex_rgb(spec.SWEEP_FROM), 30) + m.count_colour(sweep, m.hex_rgb(spec.SWEEP_TO), 30)
-    r.check(brand > 2000, "X2", f"brand sweep: {brand} gradient pixels mid-sweep")
+    ends = brand_colours(plan)[1]
+    brand = sum(m.count_colour(sweep, m.hex_rgb(c), 30) for c in ends)
+    r.check(brand > 2000, "X2", f"brand sweep: {brand} {ends[0]}/{ends[1]} gradient pixels mid-sweep")
     last = plan["total"] - 0.05
     hold_a, hold_b = m.grab(cut, plan["total"] - 3.0), m.grab(cut, last)
     save("52-last-frame", last)
@@ -273,7 +343,7 @@ def main() -> int:
     cut = Path(args.cut).resolve()
     if not cut.exists():
         sys.exit(f"check-cut: {cut} not found")
-    plan = find_plan(cut, args.plan)
+    plan_path, plan = find_plan(cut, args.plan)
     frames_dir = Path(args.frames).resolve() if args.frames else None
     if frames_dir:
         frames_dir.mkdir(parents=True, exist_ok=True)
@@ -292,13 +362,14 @@ def main() -> int:
     check_background(r, cut, plan)
     check_windows(r, cut, plan, save)
     check_overlays(r, cut, plan, save)
+    check_highlight_motion(r, plan, plan_path.parent)
     check_ending(r, cut, plan, save)
     r.check(bool(plan.get("fonts")) and all("Inter" in f or "Geist" in f for f in plan.get("fonts", [])), "T1",
             f"painted fonts {plan.get('fonts')} (bar: bundled Inter, or Geist when brand.font is geist)")
     r.add("LOOK", "W2", "app body text cap height >= 18 px and no empty panel over 15% of the window: open the "
           "10-run*-rest frames")
-    r.add("LOOK", "K1-K2", "cursor is the blue disc with a white ring, never an OS arrow or hand: open the rest and "
-          "zoom frames")
+    r.add("LOOK", "K1-K2", "cursor is the pointing hand (default) or the arrow (developer tools), present and never "
+          "a dot or a recorder-style click circle: open the rest and zoom frames")
     r.add("LOOK", "X1", "end-card words appear just before they are spoken: watch the last 13 s with sound")
     for warning in plan.get("warnings", []):
         r.add("WARN", "plan", warning)

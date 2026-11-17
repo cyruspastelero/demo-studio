@@ -43,9 +43,10 @@ The house look, in short. The full guide an agent follows is
 
 - **Crisp capture.** A 1440x810 viewport at 2x pixel density, downscaled to 1080p, so UI text reads.
 - **A clean frame.** No banners, toasts, cookie bars or personal history. One consistent, seeded world.
-- **A calm pointer.** A soft blue disc with a white ring (drawn into the page, so it scales with the
-  window), gliding on an eased arc, a short pause before each click, then parked out of the way.
-  Never a teleport, never the OS arrow.
+- **A calm pointer.** The pointing hand by default (`cursor: 'hand'`, hotspot at the fingertip), or
+  the `arrow` for developer tools; drawn into the page, so it scales with the window, gliding on an
+  eased arc, a short pause before each click, then parked out of the way. Never a teleport, never a
+  dot or a recorder-style click circle.
 - **Human typing.** 45 to 75ms a key for short text; long text is pasted.
 - **Room to breathe.** A still second at the start of every take, a hold at the end, and about two
   seconds on every result. Waits are trimmed in the edit, not hidden.
@@ -83,8 +84,8 @@ python3 -I "$P/scripts/check-cut.py" recordings/exports/<slug>-keynote-cut-narra
 ```
 
 `narrate.py` reads the `voiceover` lines in `demo.json`, renders each one, places it at its item's
-start, checks every line fits before the next one, loops and ducks a music bed under the speech
-with a fade in and out, normalises loudness, and writes a `-narrated.mp4` next to the cut in
+start, checks every line fits before the next one, loops a music bed, ducks it under the speech with a fixed envelope,
+fades it in and out, normalises loudness, and writes a `-narrated.mp4` next to the cut in
 `recordings/exports/`. `--dry-run` checks the timing without rendering. Pick the voice with `--voice`:
 
 | Voice | Cost | How |
@@ -103,9 +104,11 @@ Claude reads it, makes each file with the ElevenLabs MCP (`text_to_speech`) or t
 number with the next command. Higgsfield works only this way, since its public API has no text to
 speech endpoint.
 
-**Music.** Save a bed as `music/bed.m4a`: your own instrumental, a free one from
-`scripts/make-bed.py`, or one made with the ElevenLabs MCP (`compose_music`) or the Higgsfield MCP
-(`generate_audio` with a music model). narrate.py sets it 13 dB under the voice.
+**Music.** Save a bed as `music/bed.m4a`. The default is one made with the ElevenLabs MCP
+(`compose_music`, instrumental) or your own licensed instrumental; the Higgsfield MCP
+(`generate_audio` with a music model) also works. `scripts/make-bed.py` makes only a placeholder
+(sine-pad test tones; replace before sharing), and narrate.py warns while it is in use. narrate.py
+sets the bed 13 dB under the voice and holds it 7 dB lower under each spoken line, with no pumping.
 `--export-lines` also writes `music/README.txt` with the length to ask for.
 
 Optional settings go in a `voice` object in `demo.json`, for example

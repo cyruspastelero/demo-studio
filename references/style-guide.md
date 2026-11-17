@@ -150,8 +150,9 @@ The frame shows the product and nothing else.
 ## 12. Music and loudness (bar 2.12)
 
 - **Always a bed** from frame 0, instrumental, no vocals: the user's file, an MCP-made track, or
-  the free one from `scripts/make-bed.py`. narrate.py sets it **13 dB under the narration**
-  (`voice.music_gap_db`), ducks it under speech, dips it on one key moment (`voice.music_dips`) and
+  a licensed track (ElevenLabs MCP `compose_music` or the user's own). `scripts/make-bed.py` is a
+  placeholder for timing only; replace it before anyone sees the cut. narrate.py sets the bed
+  **13 dB under the narration** (`voice.music_gap_db`), holds it down under each spoken line, dips it on one key moment (`voice.music_dips`) and
   fades it so the last 3 s of the outro are silent.
 - **The mix:** -14 LUFS integrated (+-1), true peak at most -1 dBTP, loudness range at most 15 LU.
   Narration covers at least half the runtime. If a viewer notices the music, it is too loud.

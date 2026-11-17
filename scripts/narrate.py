@@ -34,7 +34,7 @@ from narration.core import (ESTIMATE, KEY_ENV, KEY_FIX, KEYCHAIN_ENV, KEYCHAIN_E
                             MUSIC_TARGET, PROVIDERS, REBUILD, SCRIPTS, SERVICE_NAME, VOICE_DIR, Context,
                             ItemTiming, NarrateError, Voice, lib)
 from narration.mix import *  # noqa: E402,F401,F403
-from narration.mix import ebur128, loudness_report, mux  # noqa: E402
+from narration.mix import ebur128, is_placeholder_bed, loudness_report, mux  # noqa: E402
 from narration.core import OUTRO_FADE, SILENT_TAIL  # noqa: E402
 from narration.providers import *  # noqa: E402,F401,F403
 from narration.providers import (check_voice_files, find_api_key, has_voice_files, keychain_service,  # noqa: E402
@@ -65,7 +65,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         epilog=f"""examples:
   # 1. check every line fits its slot first (renders no video, spends no credits)
   python3 -I {SCRIPTS / 'narrate.py'} demo.json --dry-run
-  # 2. free macOS voice plus a music bed ducked under the speech
+  # 2. free macOS voice plus a music bed (compose_music or your own track) ducked under the speech
   python3 -I {SCRIPTS / 'narrate.py'} demo.json --voice say --music music/bed.m4a
   # 3. ElevenLabs with an API key (the key stays in your shell, never in a file)
   export {KEY_ENV}=your-key-here
@@ -92,8 +92,10 @@ voices:
               you, or by an MCP voice tool from voiceover/lines.json (--export-lines).
 Default: files when voiceover/ has them, else elevenlabs when a key is found, else say.
 
-music: --music or voice.music (for example music/bed.m4a; make a free one with make-bed.py). The bed
-is set voice.music_gap_db (13) under the narration, ducked, dipped at voice.music_dips and faded
+music: --music or voice.music (for example music/bed.m4a). Make it with the ElevenLabs MCP
+compose_music (instrumental), or use your own licensed track. make-bed.py only makes a placeholder
+(narrate.py warns while it is in use). The bed is set voice.music_gap_db (13) under the narration,
+held 7 dB lower under each spoken line (no pumping), dipped at voice.music_dips and faded
 (voice.music_fade_in, voice.music_fade_out); the mix lands at -14 LUFS, true peak under -1 dBTP.
 --export-lines also writes music/README.txt.""")
     parser.add_argument("config", nargs="?", default="demo.json")
@@ -214,9 +216,14 @@ def narrate(args: argparse.Namespace) -> int:
     fade_out = OUTRO_FADE if outro and not voice.fade_out_set else None
     mux(cut, spoken, total, music, voice, out, tail=tail, fade_out=fade_out)
     if not music:
-        print("narrate: no music bed. The quality bar wants one under the narration (A6); make a free one with\n"
-              f"  python3 -I {SCRIPTS / 'make-bed.py'} {MUSIC_TARGET} --seconds {int(total) + 2}\n"
-              f"  then set \"voice\": {{\"music\": \"{MUSIC_TARGET}\"}} in {args.config} and run again.", flush=True)
+        print("narrate: no music bed. The quality bar wants one under the narration (A6). Make one with the\n"
+              f"  ElevenLabs MCP compose_music (instrumental, music_length_ms {(int(total) + 2) * 1000}) or use your own\n"
+              f"  licensed track, save it as {MUSIC_TARGET}, set \"voice\": {{\"music\": \"{MUSIC_TARGET}\"}} in\n"
+              f"  {args.config} and run again. Ways to get one: {MUSIC_DIR}/README.txt (--export-lines).", flush=True)
+    elif is_placeholder_bed(music):
+        print(f"narrate: WARN placeholder bed, replace before sharing: {music.name} was made by make-bed.py.\n"
+              "  Make the real bed with the ElevenLabs MCP compose_music (instrumental) or use your own licensed\n"
+              f"  track, save it over {MUSIC_TARGET} and run again.", file=sys.stderr, flush=True)
     write_atomic(out.with_suffix(".voice.json"), (json.dumps({  # for check-cut.py: where narration is
         "total": round(total, 3), "outro": outro,
         "dips": [{"at": a, "dur": d} for a, d in voice.music_dips],

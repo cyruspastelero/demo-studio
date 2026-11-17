@@ -21,7 +21,7 @@ from keynote.model import Callout, Card, PlanError, Run, Zoom, accent_index, car
 from keynote.overlay import box_geometry, pill_state, title_card_state  # noqa: E402
 from keynote.spec import Rect  # noqa: E402
 from keynote.timeline import build_plan  # noqa: E402
-from keynote.voice_sync import end_card_times, word_offsets  # noqa: E402
+from keynote.voice_sync import end_card_times, match_times, word_offsets  # noqa: E402
 from keynote.window import quantize, rise_offset, run_frames, window_rect, zoom_center, zoom_progress  # noqa: E402
 
 FPS = spec.FPS
@@ -148,7 +148,8 @@ class Geometry(unittest.TestCase):
         page = (REPO / "scripts" / "keynote-page.mjs").read_text()
         for snippet in ("top: ${962 - 34}px", "height: 68px", "padding: 9px 30px 9px 9px", "padding: 16px 32px",
                         "font-size: 30px; font-weight: 500; letter-spacing: -0.3px", "width: 50px; height: 50px",
-                        "border: 3px solid #E2483C; border-radius: 12px"):
+                        "border: 3px solid ${c.highlight}; border-radius: 12px",
+                        "background: ${rgba(c.highlight, 0.07)}; box-shadow: 0 0 0 6px ${rgba(c.highlight, 0.10)}"):
             self.assertIn(snippet, page)
 
 
@@ -173,7 +174,7 @@ class Pills(unittest.TestCase):
         self.assertGreater(first[2], 0)
         self.assertEqual(second[2], 0)
         self.assertEqual(second[3], spec.PILL_WORD_BLUR)
-        self.assertTrue(all(w[1] == "accent" for w in state["words"]))
+        self.assertTrue(all(w[1] == "pill" for w in state["words"]))  # brand-derived pill colour
 
     def test_person_pill_has_name_in_ink_and_role_in_grey(self):
         person = Callout(0, 4, "person", "Ana Cruz", "Product lead", "people/ana.png")
@@ -227,6 +228,60 @@ class Titles(unittest.TestCase):
         self.assertAlmostEqual(title[0], max(0, 0.3 - 0.1), places=6)
         self.assertAlmostEqual(title[3], 0.3 + offsets[3] * 4.0 - 0.1, places=6)
         self.assertEqual(title, sorted(title))
+
+
+class SpokenWords(unittest.TestCase):
+    def test_a_dotted_name_syncs_to_the_spoken_x_dot_y(self):
+        spoken = word_offsets("Start today at example dot review.")
+        times, cursor = match_times(["example.review"], spoken, 0, 0.0, 10.0, 0.05)
+        self.assertEqual(cursor, 6)
+        self.assertAlmostEqual(times[0], 10.0 * spoken[3][1] - spec.END_REVEAL_LEAD, places=6)
+
+    def test_multi_word_matches_join_any_separator(self):
+        spoken = word_offsets("Our AI powered notes app")
+        times, cursor = match_times(["AI-powered", "notes"], spoken, 0, 0.0, 10.0, 0.05)
+        self.assertEqual(cursor, 4)
+        self.assertLess(times[0], times[1])
+
+    def test_a_word_that_is_never_said_falls_back_to_the_stagger(self):
+        spoken = word_offsets("Hello there")
+        times, cursor = match_times(["missing.word"], spoken, 0, 2.0, 10.0, 0.05)
+        self.assertEqual((times, cursor), ([2.05], 0))
+
+
+class ProductColours(unittest.TestCase):
+    """Boxes and statement pills take the product's colour (brand.accent), never a fixed red."""
+
+    def test_no_brand_accent_means_neutral_ink_never_red(self):
+        brand = load_brand({})
+        self.assertEqual((brand.highlight, brand.pill_text), ("#171717", "#171717"))
+        r, g, b = (int(brand.highlight[i:i + 2], 16) for i in (1, 3, 5))
+        self.assertLess(max(r, g, b) - min(r, g, b), 8)  # grey, no hue
+
+    def test_box_stroke_and_pill_text_follow_the_brand_accent(self):
+        brand = load_brand({"accent": "#1d4ed8"})
+        self.assertEqual(brand.highlight, "#1D4ED8")
+        self.assertEqual(brand.pill_text, "#1D4ED8")  # already reads on white: kept as is
+
+    def test_pill_text_is_darkened_until_it_reads_on_white(self):
+        from keynote.brand import contrast_on_white
+        brand = load_brand({"accent": "#22D3EE"})  # light cyan: about 1.8:1 on white
+        self.assertEqual(brand.highlight, "#22D3EE")  # the box keeps the product's own colour
+        self.assertGreaterEqual(contrast_on_white(brand.pill_text), spec.PILL_TEXT_MIN_CONTRAST)
+        self.assertLess(contrast_on_white(brand.pill_text), spec.PILL_TEXT_MIN_CONTRAST + 0.5)  # no darker than needed
+        r, g, b = (int(brand.pill_text[i:i + 2], 16) for i in (1, 3, 5))
+        self.assertTrue(b >= g > r)  # same hue
+
+    def test_alpha_in_the_accent_is_dropped_for_box_and_pill(self):
+        self.assertEqual(load_brand({"accent": "#1D4ED8CC"}).highlight, "#1D4ED8")
+
+    def test_render_job_carries_the_hex_colours_the_page_validates(self):
+        from keynote.render import Renderer
+        with tempfile.TemporaryDirectory() as tmp:
+            job = Renderer(Path(tmp), load_brand({"accent": "#22D3EE"}), {}, has_logo=False).job("keynote", None)
+        hex_colour = re.compile(r"^#[0-9A-F]{6}$")
+        self.assertRegex(job["colors"]["highlight"], hex_colour)
+        self.assertRegex(job["colors"]["pill"], hex_colour)
 
 
 class Expressions(unittest.TestCase):
@@ -342,6 +397,26 @@ class Plans(unittest.TestCase):
         warnings = "\n".join(self.plan(long_pill).warnings)
         self.assertIn("(C8)", warnings)
         self.assertIn("(T9)", warnings)
+
+    def test_highlight_without_at_never_pairs_with_another_scenes_zoom(self):
+        other = json.loads(json.dumps(self.SEQUENCE))
+        other[1]["zooms"] = [{"at": 0.8, "focus": [900, 300], "dur": 2.5}]
+        other[2]["zooms"] = []
+        with self.assertRaises(PlanError) as caught:
+            self.plan(other)
+        message = str(caught.exception)
+        self.assertIn("sequence[2].highlights[0]", message)
+        self.assertIn("its scene has no zoom", message)
+        self.assertIn("Give `at`", message)
+
+    def test_highlight_without_at_follows_its_own_scenes_zoom_not_an_earlier_one(self):
+        both = json.loads(json.dumps(self.SEQUENCE))
+        both[1]["zooms"] = [{"at": 0.8, "focus": [900, 300], "dur": 2.5}]
+        both[1]["callouts"] = []
+        plan = self.plan(both)
+        own = plan.runs[0].zooms[1]
+        self.assertAlmostEqual(plan.highlights[0].start, 3.0 + own.landed + 0.17, places=6)
+        self.assertEqual(plan.highlights[0].where, "sequence[2].highlights[0]")
 
     def test_unknown_accent_word_is_an_error(self):
         bad = json.loads(json.dumps(self.SEQUENCE))

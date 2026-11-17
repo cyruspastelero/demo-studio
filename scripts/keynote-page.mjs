@@ -3,6 +3,9 @@
 // with textContent (never parsed as HTML), colours arrive pre-validated as #hex, and images are
 // data: URIs only. Sizes follow docs/quality-bar.md (ids in comments).
 
+// #RRGGBB -> rgba() at alpha a (colours are validated #hex before they get here).
+const rgba = (hex, a) => `rgba(${[1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(',')},${a})`;
+
 const css = (c, font) => `
 html, body { margin: 0; background: transparent; }
 body { width: 1920px; height: 1080px; -webkit-font-smoothing: antialiased;
@@ -12,7 +15,7 @@ body { width: 1920px; height: 1080px; -webkit-font-smoothing: antialiased;
 #bg { position: absolute; inset: 0; display: none; }
 .w { display: inline-block; white-space: pre; will-change: transform, filter; }
 .ink { color: ${c.ink}; } .secondary { color: ${c.secondary}; } .accent { color: ${c.accent}; }
-.role { color: ${c.role}; } .white { color: #FFFFFF; }
+.role { color: ${c.role}; } .white { color: #FFFFFF; } .pill { color: ${c.pill}; }
 .line { position: absolute; left: 110px; width: 1700px; text-align: center; transform-origin: 50% 50%;
   text-wrap: balance; }
 #title { font-family: 'DS Display', 'DS Text', sans-serif; font-weight: 500; line-height: 1.08; }
@@ -26,8 +29,8 @@ body { width: 1920px; height: 1080px; -webkit-font-smoothing: antialiased;
 #pill.statement { padding: 16px 32px; } /* C4 */
 #avatar { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; display: none; flex: none; }
 #pilltext { line-height: 1; }
-.box { position: absolute; box-sizing: border-box; border: 3px solid #E2483C; border-radius: 12px; /* H1-H3 */
-  background: rgba(226,72,60,0.07); box-shadow: 0 0 0 6px rgba(226,72,60,0.10); transform-origin: 50% 50%; }
+.box { position: absolute; box-sizing: border-box; border: 3px solid ${c.highlight}; border-radius: 12px; /* H1-H3: product colour */
+  background: ${rgba(c.highlight, 0.07)}; box-shadow: 0 0 0 6px ${rgba(c.highlight, 0.10)}; transform-origin: 50% 50%; }
 #outro { position: absolute; inset: 0; overflow: hidden; display: none; }
 #sweep { position: absolute; left: -240px; width: 2400px; height: 2600px; transform: skewY(${c.skew}deg); } /* X2 */
 #band { height: 320px; background: linear-gradient(100deg, ${c.sweep[0]}, ${c.sweep[1]}); }

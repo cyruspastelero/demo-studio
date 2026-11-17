@@ -122,7 +122,7 @@ def pill_state(callout: Callout, t: float) -> dict | None:
         name = callout.text if callout.text.endswith(",") else callout.text + ","
         parts = [(w, "ink") for w in name.split()] + [(w, "role") for w in callout.role.split()]
     else:
-        parts = [(w, "accent") for w in callout.text.split()]
+        parts = [(w, "pill") for w in callout.text.split()]  # C4: brand-derived, readable on white
     words = [word_state(w, role, t, callout.start + i * spec.PILL_WORD_STAGGER, spec.PILL_WORD_SECONDS,
                         spec.PILL_WORD_BLUR, spec.PILL_WORD_SHIFT) for i, (w, role) in enumerate(parts)]
     return {"variant": callout.kind, "avatar": callout.avatar if callout.kind == "person" else "",

@@ -63,8 +63,8 @@ Records and cuts `$P/examples/todo-sample` (a public todo app) so the user sees 
    and the scenes `01-add-todos`, `02-complete-and-filter`, `03-clear-completed`, in that order.
    The scene bodies already exist in `recordings/scenes/`.
 3. Follow skill `demo-edit` Steps 1, 2, 3 and 2b (review reel, keynote cut, narration with
-   `python3 -I "$P/scripts/make-bed.py" music/bed.m4a --seconds 40` for the bed, then the
-   quality-bar checklist). The sample's demo.json already plans the crop, zooms, highlights, pills
+   a real music bed: ElevenLabs MCP `compose_music` (instrumental, about 40 s) or the user's own
+   track; `make-bed.py` only as a labelled placeholder, then the quality-bar checklist). The sample's demo.json already plans the crop, zooms, highlights, pills
    and cards; after recording, update its rects from `recordings/scout/`.
 4. Open `recordings/exports/todo-app-sample-keynote-cut-narrated.mp4` for the user.
 
@@ -215,7 +215,7 @@ It only reads files. Stop it when the session ends. If it fails with a missing m
 | Highlights | red outline on the one element the narration names, 0.17 s after a zoom lands |
 | Voiceover | spoken English, about 2.5 words per second, URLs and amounts spelled out |
 | Narration voice | own recordings in `voiceover/`, else ElevenLabs if `ELEVENLABS_API_KEY` is set, else macOS `say` |
-| Music | always a bed (`make-bed.py` when nothing else), 13 dB under the voice, ducked, one dip; mix at -14 LUFS, true peak under -1 dBTP |
+| Music | always a real bed (ElevenLabs `compose_music` or the user's licensed track; `make-bed.py` is a placeholder only), 13 dB under the voice, held down under speech, one dip; mix at -14 LUFS, true peak under -1 dBTP |
 | Videos | keynote cut + narration; promo about 1:30 and how-to about 3:00 for an editor |
 | Social | 4:5 1080x1350 and 9:16 1080x1920, blurred footage background, caption band |
 | Demo folder | `$DEMO_ROOT/<name>`, default `./demos/<name>` |

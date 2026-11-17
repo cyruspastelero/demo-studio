@@ -44,6 +44,7 @@ class Highlight:
     end: float                     # cut seconds when the fade-out starts
     rect: Rect                     # source px
     shot: int                      # index into Plan.shots (whose crop maps the rect)
+    where: str = ""                # demo.json path, e.g. sequence[3].highlights[0], for messages
 
 
 @dataclass(frozen=True)

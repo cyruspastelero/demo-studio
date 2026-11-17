@@ -68,19 +68,20 @@ narrate.py loops one music file under the voice, ducks it while someone speaks, 
 balances the loudness. The cut is {total:.1f}s long, so a bed of about {seconds}s needs no loop.
 Use instrumental music only, with no vocals, that you have the rights to use.
 
-Get a bed one of these ways, and save it as {target}:
-  Free, made here  {make_bed} {target} --seconds {seconds}
-                   (a calm pad made with ffmpeg alone; no network, no credits)
-  Your own file    any .mp3, .wav or .m4a you are allowed to use; copy it to {target}.
+Get a bed one of these ways (the first two are the default), and save it as {target}:
   ElevenLabs MCP   compose_music with a short prompt (for example "calm modern instrumental for a
                    product demo, soft piano and light beat"), force_instrumental true,
                    music_length_ms {length_ms}. Move the saved file to {target}.
+  Your own file    any .mp3, .wav or .m4a you are licensed to use; copy it to {target}.
   Higgsfield MCP   generate_audio with a music model (for example suno_music, instrumental true,
                    duration {seconds}), wait for the job, then download the result to {target}.
+  Placeholder only {make_bed} {target} --seconds {seconds}
+                   (sine-pad test tones; placeholder bed, replace before sharing. narrate.py warns
+                   on every render that uses it)
 
 Then point demo.json at it, inside "voice":
   "music": "{target}", "music_dips": [{{"at": 12.0, "dur": 1.5}}]
-narrate.py sets the bed 13 dB under the narration (music_gap_db), ducks it under speech, dips it at
+narrate.py sets the bed 13 dB under the narration (music_gap_db), holds it 7 dB lower under speech, dips it at
 each music_dips time (cut seconds; pick one key moment) and fades it out ({fade}s, or 4 s before a
 silent outro). music_volume fixes the level by hand instead (0 to 1, before ducking). Render:
   {command}

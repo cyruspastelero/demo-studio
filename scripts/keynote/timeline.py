@@ -151,10 +151,12 @@ def _highlights(sequence: list[dict], shots: tuple[Shot, ...], runs: tuple[Run, 
                 warn: list[str]) -> tuple[Highlight, ...]:
     out = []
     for run in runs:
-        landings = [(run.start / spec.FPS + z.landed, run.start / spec.FPS + z.end) for z in run.zooms]
+        run_base = run.start / spec.FPS
+        landings = [(run_base + z.landed, run_base + z.end) for z in run.zooms]
         for shot_number in run.shots:
             shot = shots[shot_number]
             base = shot.start / spec.FPS
+            own = _shot_landings(run, shot)
             automatic = 0
             for n, h in enumerate(sequence[shot.index].get("highlights", [])):
                 where = f"sequence[{shot.index}].highlights[{n}]"
@@ -162,7 +164,7 @@ def _highlights(sequence: list[dict], shots: tuple[Shot, ...], runs: tuple[Run, 
                 if x < 0 or y < 0 or x + w > shot.source_size[0] or y + hh > shot.source_size[1]:
                     raise PlanError(f"{where}.rect: {h['rect']} is outside the {shot.source_size[0]}x"
                                     f"{shot.source_size[1]} take (source px)")
-                start, zoom = _highlight_start(h, base, landings, where, automatic)
+                start, zoom = _highlight_start(h, base, landings, own, where, automatic)
                 automatic += "at" not in h
                 end = start + float(h["dur"]) if "dur" in h else (zoom[1] if zoom else start + 2.5)
                 if zoom and not 0.1 <= start - zoom[0] <= 0.3:
@@ -170,7 +172,7 @@ def _highlights(sequence: list[dict], shots: tuple[Shot, ...], runs: tuple[Run, 
                                 f"{spec.HIGHLIGHT_DELAY}s (H5). Leave `at` out to place it automatically")
                 if not zoom:
                     warn.append(f"{where}: no zoom lands just before it; the bar pairs each box with a zoom (H5)")
-                out.append(Highlight(start, end, spec.Rect(x, y, w, hh), shot_number))
+                out.append(Highlight(start, end, spec.Rect(x, y, w, hh), shot_number, where))
     for h in out:
         live = sum(1 for o in out if o.start < h.end and o.end > h.start)
         if live > spec.HIGHLIGHT_MAX_ON_SCREEN:
@@ -180,15 +182,26 @@ def _highlights(sequence: list[dict], shots: tuple[Shot, ...], runs: tuple[Run, 
     return tuple(out)
 
 
-def _highlight_start(h: dict, base: float, landings: list[tuple[float, float]], where: str,
+def _shot_landings(run: Run, shot: Shot) -> list[tuple[float, float]]:
+    """(landed, eased back) in cut seconds for the zooms that start inside this shot."""
+    run_base = run.start / spec.FPS
+    first, last = shot.start / spec.FPS, (shot.start + shot.frames) / spec.FPS
+    return [(run_base + z.landed, run_base + z.end) for z in run.zooms if first <= run_base + z.at < last]
+
+
+def _highlight_start(h: dict, base: float, landings: list[tuple[float, float]],
+                     own: list[tuple[float, float]], where: str,
                      automatic: int) -> tuple[float, tuple[float, float] | None]:
-    """With `at`: that time. Without: 0.17 s after the zoom it pairs with (the first box without `at`
-    follows the scene's first zoom, the second its second zoom, and so on)."""
+    """With `at`: that time. Without: 0.17 s after the zoom it pairs with, counted inside its own
+    scene only (the first box without `at` follows the scene's first zoom, the second its second
+    zoom, and so on). A zoom in another scene of the same window run never counts."""
     if "at" in h:
         start = base + float(h["at"])
         before = [z for z in landings if z[0] <= start + 0.05 and start < z[1]]
         return start, (before[-1] if before else None)
-    after = [z for z in landings if z[1] > base]
-    if len(after) <= automatic:
-        raise PlanError(f"{where}: give `at` (seconds into the scene), or add a zoom it can follow")
-    return after[automatic][0] + spec.HIGHLIGHT_DELAY, after[automatic]
+    if len(own) <= automatic:
+        have = f"its scene has {len(own)} zoom(s)" if own else "its scene has no zoom"
+        raise PlanError(f"{where}: no `at`, so it follows zoom {automatic + 1} of its own scene, but {have} "
+                        "(zooms in other scenes do not count). Give `at` (seconds into the scene), or add a "
+                        "zoom to this scene's `zooms`")
+    return own[automatic][0] + spec.HIGHLIGHT_DELAY, own[automatic]

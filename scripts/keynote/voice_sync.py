@@ -30,19 +30,43 @@ def word_offsets(text: str) -> list[tuple[str, float]]:
     return out
 
 
+MAX_SPAN = 6        # spoken words one card word may stretch over ("x dot y", "A I powered")
+SPOKEN_DOT = "dot"  # said for the "." of a domain or file name
+
+
+def spoken_span(target: str, spoken: list[tuple[str, float]], start: int) -> int | None:
+    """Index of the last spoken word when the words from `start` join up to `target`, else None.
+    Joining drops separators, so "x.y" (normalised "xy") matches "x dot y", "x y" or "xy"; a spoken
+    "dot" inside the run may stand for the "." the normalisation removed."""
+    joined = {""}
+    for j in range(start, min(len(spoken), start + MAX_SPAN)):
+        word = spoken[j][0]
+        grown = {a + word for a in joined}
+        if word == SPOKEN_DOT and j > start:
+            grown |= joined
+        if target in grown:
+            return j
+        joined = {a for a in grown if a and target.startswith(a)}
+        if not joined:
+            return None
+    return None
+
+
 def match_times(words: list[str], spoken: list[tuple[str, float]], cursor: int, start: float,
                 seconds: float, fallback_step: float) -> tuple[list[float], int]:
-    """Card-local reveal times for `words`, matched in order against the spoken words from `cursor`."""
+    """Card-local reveal times for `words`, matched in order against the spoken words from `cursor`.
+    A card word may match several spoken words in a row; it shows when the first of them is said."""
     times: list[float] = []
     for word in words:
         target = norm(word)
-        hit = next((i for i in range(cursor, len(spoken)) if spoken[i][0] == target), None)
+        hit = next(((i, end) for i in range(cursor, len(spoken))
+                    if target and (end := spoken_span(target, spoken, i)) is not None), None)
         if hit is None:
             previous = times[-1] if times else start
             times.append(previous + fallback_step)
             continue
-        times.append(max(0.0, start + spoken[hit][1] * seconds - spec.END_REVEAL_LEAD))
-        cursor = hit + 1
+        times.append(max(0.0, start + spoken[hit[0]][1] * seconds - spec.END_REVEAL_LEAD))
+        cursor = hit[1] + 1
     return times, cursor
 
 

@@ -6,7 +6,8 @@ under the window; word-by-word title cards in bundled Inter; a timed end card wi
 and logo outro; a soft drifting pastel background. Video only: run narrate.py next for voice and music.
 
 Usage (from the demo dir): build-keynote.py [demo.json] [--strict]
-  --strict   treat quality-bar warnings (shot too long, pill too long, no accent word...) as errors
+  --strict   treat quality-bar warnings (shot too long, pill too long, no accent word, a highlight over
+             a take that scrolls under it...) as errors
 Needs: recordings/raw/<stem>-t<take>.mp4, ffmpeg, node with playwright-core and Chrome.
 Output: recordings/exports/<slug>-keynote-cut.mp4 (1920x1080, 30 fps, H.264 High, BT.709, 2 s GOP)
 plus <slug>-keynote-cut.timing.json (narrate.py reads it) and <slug>-keynote-cut.plan.json (where
@@ -16,7 +17,9 @@ Rebuilds are incremental: graphics are cached by content in recordings/exports/.
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import json
+import os
 import shutil
 import sys
 from pathlib import Path
@@ -28,6 +31,7 @@ from keynote import spec  # noqa: E402
 from keynote.brand import background_keyframes, load_brand  # noqa: E402
 from keynote.compose import composite, encode  # noqa: E402
 from keynote.model import Card, PlanError  # noqa: E402
+from keynote.motion import highlight_warnings  # noqa: E402
 from keynote.overlay import OverlayTimeline, pill_state, title_card_state  # noqa: E402
 from keynote.render import Renderer, RenderError, check_fonts, image_uri, window_statics  # noqa: E402
 from keynote.timeline import build_plan  # noqa: E402
@@ -100,7 +104,20 @@ def render_graphics(plan, brand, cfg, demo_dir: Path, work: Path) -> tuple[Path,
     return bg_dir, (under_dir, over_dir), windows, fonts
 
 
-def write_sidecars(final: Path, cfg: dict, plan, fonts: list[str]) -> Path:
+def highlight_sidecar(plan, folder: Path) -> list[dict]:
+    """Each box with its rect and how its cut time maps onto the raw take (check-cut.py H8)."""
+    out = []
+    for h in plan.highlights:
+        shot = plan.shots[h.shot]
+        out.append({"start": round(h.start, 3), "end": round(h.end, 3), "rect": list(h.rect), "where": h.where,
+                    "scene": shot.key, "take": os.path.relpath(shot.source, folder),
+                    "take_size": list(shot.source_size), "shot_start": round(shot.start / spec.FPS, 3),
+                    "shot_end": round((shot.start + shot.frames) / spec.FPS, 3), "trim_in": shot.trim_in,
+                    "speed": shot.speed})
+    return out
+
+
+def write_sidecars(final: Path, cfg: dict, plan, fonts: list[str], brand) -> Path:
     """timing.json (narrate.py) and plan.json (check-cut.py)."""
     items = []
     for n, item in enumerate(plan.items):
@@ -124,7 +141,9 @@ def write_sidecars(final: Path, cfg: dict, plan, fonts: list[str]) -> Path:
                           "outro": round(c.outro_frames / spec.FPS, 3)} for c in plan.cards],
                "callouts": [{"start": round(c.start, 3), "end": round(c.end, 3), "kind": c.kind, "text": c.text}
                             for c in plan.callouts],
-               "highlights": [{"start": round(h.start, 3), "end": round(h.end, 3)} for h in plan.highlights],
+               "highlights": highlight_sidecar(plan, final.parent),
+               "brand": {"accent": brand.accent, "sweep": list(brand.sweep), "highlight": brand.highlight,
+                         "pill": brand.pill_text},
                "fonts": fonts, "warnings": list(plan.warnings)}
     final.with_suffix(".plan.json").write_text(json.dumps(sidecar, indent=2) + "\n")
     return timing
@@ -155,6 +174,7 @@ def main() -> None:
         plan = build_plan(cfg, rec / "raw", probe)
     except PlanError as error:
         fail(f"{error}\nFix {cfg_path.name}, then run: python3 -I {Path(__file__).resolve()} {args.config}")
+    plan = dataclasses.replace(plan, warnings=plan.warnings + tuple(highlight_warnings(plan)))
     for warning in plan.warnings:
         print(f"WARN {warning}", flush=True)
     if args.strict and plan.warnings:
@@ -174,7 +194,7 @@ def main() -> None:
         intermediate.unlink(missing_ok=True)
         for folder in ("seq-bg", "seq-under", "seq-over"):
             lib.safe_rmtree(work, work / folder, f".keynote/{folder}")
-    timing = write_sidecars(final, cfg, plan, fonts)
+    timing = write_sidecars(final, cfg, plan, fonts, brand)
     card_stills(final, plan, work)
     print(f"{final} ({lib.duration(final):.1f}s)\ntiming: {timing}\n"
           f"Next: narrate it (voice + music):  python3 -I {Path(__file__).resolve().parent / 'narrate.py'} "

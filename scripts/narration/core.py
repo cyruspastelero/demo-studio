@@ -43,7 +43,6 @@ HTTP_TIMEOUT = 120
 PROVIDERS = ("say", "elevenlabs", "files")
 FILE_EXTENSIONS = (".wav", ".mp3", ".m4a")
 ESTIMATE = "estimate"       # dry-run only: word-count estimates, nothing rendered
-SCRIPTS = Path(__file__).resolve().parent
 KEY_FIX = f"export {KEY_ENV}=your-key-here   (in your shell only; never save the key in a file here)"
 KEYCHAIN_FIXES = (
     f"Or keep it in the macOS Keychain (it asks for the key, so it stays out of shell history):",

@@ -104,6 +104,7 @@ class Renderer:
         return {"out_dir": str(self.work), "kind": kind,
                 "font": {"text": font["text"], "display": {str(k): v for k, v in font["display"].items()}},
                 "colors": {"ink": b.ink, "secondary": b.secondary, "accent": b.accent, "role": ROLE_GREY,
+                           "pill": b.pill_text, "highlight": b.highlight,
                            "dark": b.dark, "sweep": list(b.sweep), "skew": spec.SWEEP_SKEW},
                 "images": self.images, "styles": self.styles, "font_probe": font_probe, **groups}
 

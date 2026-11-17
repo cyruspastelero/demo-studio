@@ -389,7 +389,7 @@
         },
         "accent": {
           "$ref": "#/$defs/color",
-          "description": "The one accent word per title, and statement pills. Default #D9463B."
+          "description": "The product's own colour (its primary button or link). Used for the one accent word per title, the highlight boxes and statement pills (darkened to read on white). Without it: title accent #D9463B, boxes and pills neutral ink #171717."
         },
         "ink": {
           "$ref": "#/$defs/color",

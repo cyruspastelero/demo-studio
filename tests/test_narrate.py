@@ -235,7 +235,7 @@ class ElevenLabs(unittest.TestCase):
 
 class Mix(unittest.TestCase):
     def test_lines_are_delayed_to_their_start_and_loudness_normalised(self):
-        graph = narrate.mix_filter([0.3, 6.25], 14.0, None, 0.2, True)
+        graph = narrate.mix_filter([(0.3, 2.0), (6.25, 8.0)], 14.0, None, 0.2)
         self.assertIn("adelay=300|300", graph)
         self.assertIn("adelay=6250|6250", graph)
         self.assertIn("amix=inputs=2", graph)
@@ -247,7 +247,7 @@ class Mix(unittest.TestCase):
         stderr = 'noise\n[Parsed_loudnorm_0 @ 0x1] \n{\n "input_i" : "-24.1", "input_tp" : "-6.0", ' \
                  '"input_lra" : "3.2", "input_thresh" : "-34.5", "target_offset" : "0.4"\n}\n'
         measured = narrate.parse_loudnorm(stderr)
-        graph = narrate.mix_filter([0.3], 5.0, None, 0.2, True, measured)
+        graph = narrate.mix_filter([(0.3, 2.0)], 5.0, None, 0.2, measured)
         self.assertIn("volume=10.10dB", graph)          # -14 LUFS target minus the measured -24.1
         self.assertIn("alimiter=limit=0.7674", graph)   # peaks held under -2.3 dBFS (true peak <= -1)
         self.assertNotIn("loudnorm", graph)             # no AGC fallback that pumps the bed
@@ -255,28 +255,27 @@ class Mix(unittest.TestCase):
         silent = stderr.replace('"-24.1"', '"-inf"')
         self.assertIsNone(narrate.parse_loudnorm(silent))
 
-    def test_music_is_ducked_under_the_voice(self):
-        graph = narrate.mix_filter([0.3], 14.0, 2, 0.2, True)
+    def test_music_is_ducked_under_the_voice_by_an_envelope_not_a_compressor(self):
+        graph = narrate.mix_filter([(0.3, 2.0)], 14.0, 2, 0.2)
         self.assertIn("[2:a]", graph)
-        self.assertIn("sidechaincompress", graph)
-        plain = narrate.mix_filter([0.3], 14.0, 2, 0.2, False)
-        self.assertNotIn("sidechaincompress", plain)
-        self.assertIn("volume=0.100", plain)
+        self.assertIn("volume=0.200", graph)
+        self.assertNotIn("sidechaincompress", graph)
+        self.assertIn(narrate.duck_stage([(0.3, 2.0)]), graph)
 
     def test_music_fades_in_and_out_when_set(self):
-        graph = narrate.mix_filter([0.3], 14.0, 2, 0.2, True, fade_in=2.0, fade_out=3.0)
+        graph = narrate.mix_filter([(0.3, 2.0)], 14.0, 2, 0.2, fade_in=2.0, fade_out=3.0)
         self.assertIn("afade=t=in:st=0:d=2.000", graph)
         self.assertIn("afade=t=out:st=11.000:d=3.000", graph)
 
     def test_default_music_has_a_fade_out_and_no_fade_in(self):
-        graph = narrate.mix_filter([0.3], 14.0, 2, 0.2, True)
+        graph = narrate.mix_filter([(0.3, 2.0)], 14.0, 2, 0.2)
         self.assertNotIn("afade=t=in", graph)
         self.assertIn("afade=t=out:st=12.500:d=1.500", graph)
 
     def test_zero_fades_leave_the_bed_untouched_and_long_fades_are_clamped(self):
-        graph = narrate.mix_filter([0.3], 14.0, 2, 0.2, True, fade_in=0, fade_out=0)
+        graph = narrate.mix_filter([(0.3, 2.0)], 14.0, 2, 0.2, fade_in=0, fade_out=0)
         self.assertNotIn("afade", graph)
-        short = narrate.mix_filter([0.3], 4.0, 2, 0.2, True, fade_in=10, fade_out=10)
+        short = narrate.mix_filter([(0.3, 2.0)], 4.0, 2, 0.2, fade_in=10, fade_out=10)
         self.assertIn("afade=t=in:st=0:d=2.000", short)
         self.assertIn("afade=t=out:st=2.000:d=2.000", short)
 
@@ -284,6 +283,57 @@ class Mix(unittest.TestCase):
         voice = narrate.Voice.from_config({"music_fade_in": 1.0, "music_fade_out": 4.0})
         self.assertEqual((voice.music_fade_in, voice.music_fade_out), (1.0, 4.0))
         self.assertEqual((VOICE.music_fade_in, VOICE.music_fade_out), (0.0, narrate.MUSIC_FADE))
+
+
+class DuckEnvelope(unittest.TestCase):
+    @staticmethod
+    def gain(stage: str, t: float) -> float:
+        """Evaluates the volume expression duck_stage writes, the way ffmpeg would."""
+        expression = stage.split("volume='")[1].split("'")[0]
+        return eval(expression, {"__builtins__": {}, "t": t, "min": min,  # noqa: S307
+                                 "clip": lambda x, lo, hi: max(lo, min(hi, x))})
+
+    def test_short_pauses_stay_ducked_and_real_gaps_come_back_up(self):
+        regions = narrate.duck_regions([(0.3, 2.0), (2.6, 4.0), (6.0, 8.0)])
+        self.assertEqual(regions, [(0.3, 4.0), (6.0, 8.0)])
+
+    def test_bed_is_held_down_under_speech_with_quarter_second_ramps(self):
+        stage = narrate.duck_stage([(1.0, 3.0), (3.5, 5.0), (8.0, 9.0)])
+        low = 10 ** (-narrate.DUCK_DB / 20)
+        self.assertAlmostEqual(self.gain(stage, 0.5), 1.0, places=6)          # before speech: full
+        self.assertAlmostEqual(self.gain(stage, 0.875), (1 + low) / 2, places=3)  # halfway down the ramp
+        for t in (1.0, 2.0, 3.25, 4.9, 5.0):                                   # held flat, no swell in 0.5 s pause
+            self.assertAlmostEqual(self.gain(stage, t), low, places=3)
+        self.assertAlmostEqual(self.gain(stage, 5.25), 1.0, places=6)         # back up 0.25 s after
+        self.assertAlmostEqual(self.gain(stage, 6.5), 1.0, places=6)          # a real gap: normal level
+        self.assertAlmostEqual(self.gain(stage, 8.5), low, places=3)
+
+    def test_no_lines_means_no_envelope(self):
+        self.assertEqual(narrate.duck_stage([]), "")
+
+
+class PlaceholderBed(unittest.TestCase):
+    def test_make_bed_tags_its_file_and_narrate_spots_it(self):
+        import subprocess
+        with tempfile.TemporaryDirectory() as tmp:
+            bed = Path(tmp) / "bed.m4a"
+            result = subprocess.run([sys.executable, "-I", str(REPO / "scripts" / "make-bed.py"), str(bed),
+                                     "--seconds", "3"], capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("placeholder bed, replace before sharing", result.stderr)
+            self.assertTrue(narrate.is_placeholder_bed(bed))
+            plain = Path(tmp) / "own.m4a"
+            subprocess.run(["ffmpeg", "-y", "-v", "error", "-f", "lavfi", "-i", "sine=d=1", str(plain)], check=True)
+            self.assertFalse(narrate.is_placeholder_bed(plain))
+
+
+class NextCommands(unittest.TestCase):
+    def test_printed_commands_point_at_scripts_narrate_py(self):
+        args = narrate.parse_args(["demo.json", "--voice", "files"])
+        command = narrate.command_for(args)
+        self.assertIn(str(REPO / "scripts" / "narrate.py"), command)
+        self.assertNotIn("narration/narrate.py", command)
+        self.assertEqual(narrate.SCRIPTS, REPO / "scripts")
 
 
 class ExportLines(unittest.TestCase):
@@ -487,13 +537,12 @@ class QualityBarAudio(unittest.TestCase):
         self.assertAlmostEqual(20 * __import__("math").log10(volume), -9.0, places=6)
 
     def test_bed_stops_before_a_silent_tail_and_dips_on_key_moments(self):
-        graph = narrate.mix_filter([0.3], 20.0, 2, 0.3, True, fade_out=4.0, tail=3.0, dips=((8.0, 1.5),),
-                                   exact_level=True)
+        graph = narrate.mix_filter([(0.3, 2.0)], 20.0, 2, 0.3, fade_out=4.0, tail=3.0, dips=((8.0, 1.5),))
         self.assertIn("atrim=0:17.000", graph)            # the bed ends 3 s before the cut
         self.assertIn("afade=t=out:st=13.000:d=4.000", graph)
         self.assertIn("apad,atrim=0:20.000[bed]", graph)  # then silence to the end
         self.assertIn("volume='(1-0.650*clip(min((t-8.000)/0.3,(9.500-t)/0.3),0,1))':eval=frame", graph)
-        self.assertIn("volume=0.300", graph)              # exact level: not halved
+        self.assertIn("volume=0.300", graph)              # the level as given
 
     def test_mix_targets_minus_14_lufs(self):
         self.assertEqual(narrate.TARGET_LUFS, -14)

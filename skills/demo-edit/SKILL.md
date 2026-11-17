@@ -43,7 +43,7 @@ engine bakes in every look value; your job is the per-scene fields below, then S
    | `speed` | 1.25 to 1.5 for typing and setup; never on the hero moment | |
    | `crop: [x, y, w, h]` | Source px (the 1920x1080 take) around the UI that matters; widened to 1.95:1 | W2: body text cap >= 18 px, no empty panel over 15% of the window |
    | `zooms: [{at, focus: [x, y], dur}]` | `at` = seconds into the scene when the zoom-in starts, `focus` = source px of what it points at, `dur` = hold | Z5: hold 2.4 to 4.5; Z6: about one every 11 s, only on a point the narration makes |
-   | `highlights: [{rect: [x, y, w, h]}]` | The scout rect of the element the narration names; leave `at` out and it shows 0.17 s after the next zoom of that scene lands, and stays until the zoom has eased back | H7: at most 2 on screen |
+   | `highlights: [{rect: [x, y, w, h]}]` | The scout rect of the element the narration names; leave `at` out and it shows 0.17 s after the next zoom **of that same scene** lands (zooms in other scenes never count), and stays until the zoom has eased back. The rect is fixed in source px, so the page must hold still under it the whole time it shows: check the scroll times in the take log | H7: at most 2 on screen; H8: still, non-empty UI under the box |
    | `callouts: [{at, dur, kind, text}]` | `statement` (at most 6 words) or `person` (`text` name, `role`, `avatar` image path) | C8: 3 to 5 s, one at a time; Z7: never during a zoom |
    | cards: `kind`, `accent` | `hero` (title + subtitle), `section` (one question title), `end` (last item: logo, title, tagline, sweep, outro) ; `accent` = the one key word | T9: exactly one accent word |
 
@@ -65,6 +65,9 @@ engine bakes in every look value; your job is the per-scene fields below, then S
    | --- | --- |
    | `WARN ... (C8)` / `(Z5)` / `(T9)` / `(P2)` ... | The id is the quality-bar row. Fix that field and rebuild |
    | `PlanError`-style stop naming `sequence[3] (scene 02).crop` | That field is impossible (outside the take, overlapping pills, zooms overlapping); fix it as the message says |
+   | `sequence[N].highlights[K]: no \`at\`, so it follows zoom 1 of its own scene, but its scene has no zoom` | Give that highlight an `at`, or add a zoom to the same scene |
+   | `WARN sequence[N].highlights[K]: the take moves under the box (scroll or reflow ...) (H8)` | The page scrolls or reflows while the box shows, so it would land on the wrong element. Re-time `at`/`dur` to a still moment (the message names the moving scene seconds) or re-measure `rect` at that moment (skill `demo-record`, step 8). `--strict` stops on it |
+   | `WARN ... the box frames an empty area ... (H8)` / `... stays on screen ... after its scene ends (H8)` | Re-measure `rect` (wrong coordinates) / shorten `dur` so the box leaves before the cut |
    | `keynote-render.mjs failed` / `Could not start Chrome` | `bash "$P/scripts/doctor.sh"`; install Chrome or set `CHROME_PATH` |
    | `Chrome painted [...], not the bundled Inter` | `git -C "$P" checkout assets/fonts`, then rebuild |
    | `raw take ... is missing` | Encode or record that take (skill `demo-record`) |
@@ -85,7 +88,7 @@ again on the narrated cut for the sound.
    `ffmpeg -ss <t> -i <cut> -frames:v 1 /tmp/f.png`.
 2. Read every PNG in `recordings/exports/checklist/` (the Read tool shows images). For each `LOOK`
    line, check that frame by eye: body text big enough and no empty panel (W2), the cursor is the
-   blue disc with a white ring (K1), boxes sit exactly on the element (H4), nothing is cut off.
+   pointing hand (or the arrow for developer tools), never a dot or click circle (K1), boxes sit exactly on the element (H4), boxes and statement pills are in the product's own colour (`brand.accent`, H1/C4: they must look native to the UI, never a stray red), nothing is cut off.
 3. Fix and repeat until there is no FAIL and every LOOK is fine:
 
    | FAIL / LOOK | Fix |
@@ -99,9 +102,11 @@ again on the narrated cut for the sound.
    | `Z2-Z3` / `Z4` | Do not hand-tune: they come from the engine; report a bug if they fail |
    | `C1-C2` pill box wrong | Something covers the band under the window (a zoom); move the callout |
    | `C8/Z7` | Shorten `dur` to 3 to 5 s, or move `at` out of the zoom |
-   | `H1-H5` | Leave `at` out so it follows the zoom; check the scout rect |
+   | `H1-H5` | Leave `at` out so it follows the zoom; check the scout rect. Box colour wrong: set `brand.accent` to the product's primary button colour (skill `demo-plan`) and rebuild |
+   | `C4` pill text not in the product colour | Set `brand.accent` from the product and rebuild |
+   | `H8` the UI under the box moves / the box frames an empty area | The take scrolls or reflows under the box (it samples the raw take at the box's start, middle and end). Re-time `at`/`dur` to a still moment or re-measure `rect`; if the page must scroll there, re-record that scene with the target still while it is shown |
    | `P2` shot over 8 s | Add a zoom or cut the scene with `trim` |
-   | `K1-K2` OS arrow in the footage | The take was recorded with another cursor; re-record with `PROJECT.cursor = 'dot'` |
+   | `K1-K2` no cursor, a dot or a click circle in the footage | The take was recorded with another cursor; re-record with `PROJECT.cursor = 'hand'` (or `'arrow'` for developer tools) |
    | `X2` / `X3` | The last item must be a card (`kind: end`, `outro` > 0) |
 
 ## Step 3: narrate (the built-in finish)
@@ -173,20 +178,22 @@ again on the narrated cut for the sound.
    | `Keychain item ... was not found` | The user stores it with the `security add-generic-password` line it prints |
    | `N of M voiceover file(s) are missing` | Make the listed `voiceover/NN.mp3` files (step 4), then run with `--voice files` |
    | `music file not found` | Fix `voice.music` in demo.json or drop `--music` |
+   | `WARN placeholder bed, replace before sharing` | The bed came from make-bed.py. Make a real one (step 6) before the cut goes to anyone |
 
 6. **Music bed** (required by the bar, A6). `--export-lines` also writes `music/README.txt` with
    the cut length. Pick a source:
 
    | Music source | How |
    | --- | --- |
-   | User's own file | Copy it to `music/bed.m4a`. Instrumental, and music they have the rights to |
-   | Free, made here | `python3 -I "$P/scripts/make-bed.py" music/bed.m4a --seconds 60` (a calm pad, ffmpeg only) |
-   | ElevenLabs MCP | `compose_music` with a short prompt ("calm modern instrumental for a product demo"), `force_instrumental: true`, `music_length_ms` from `voiceover/lines.json`; move the file to `music/bed.m4a` |
+   | ElevenLabs MCP (default) | `compose_music` with a short prompt ("calm modern instrumental for a product demo"), `force_instrumental: true`, `music_length_ms` from `voiceover/lines.json`; move the file to `music/bed.m4a` |
+   | User's own file (default when they have one) | Copy it to `music/bed.m4a`. Instrumental, and music they are licensed to use |
    | Higgsfield MCP | `generate_audio` with a music model (for example `suno_music`, instrumental, `duration` in seconds); wait for the job; `curl -fsSL -o music/bed.m4a "<result url>"` |
+   | Placeholder only | `python3 -I "$P/scripts/make-bed.py" music/bed.m4a --seconds 60`: sine-pad test tones to check timing and levels, **placeholder bed, replace before sharing**. narrate.py prints `WARN placeholder bed` on every render that uses it; never deliver a cut with it |
 
    Then set it in demo.json and render again: `"voice": {"music": "music/bed.m4a", "music_dips":
    [{"at": 20.3, "dur": 1.6}]}`. Leave `music_volume` out: narrate.py sets the bed 13 dB under
-   the narration (`music_gap_db`), ducks it under speech, dips it at each `music_dips` moment (pick
+   the narration (`music_gap_db`), holds it 7 dB lower under each spoken line (easing over 0.25 s,
+   staying down through pauses under 1.2 s, so it never pumps), dips it at each `music_dips` moment (pick
    one key visual beat, in cut seconds from the timing file), and with an end card fades it out
    over 4 s so the last 3 s are silent. It prints `loudness: I -14.0 LUFS, true peak -2.1 dBTP`.
 
@@ -239,8 +246,9 @@ It never writes a file that fails the schema, and keeps `_` keys.
 
 - [ ] The user has seen `recordings/exports/review-reel.mp4` and agreed the takes
 - [ ] `build-keynote.py` printed no `WARN` you did not decide to accept (and say why to the user)
+- [ ] `brand.accent` is the product's own colour, and every highlight box and statement pill in the checklist frames matches the product (no red or orange that the product does not use)
 - [ ] `narrate.py --dry-run` shows no line running long, and the narrated cut plays
-- [ ] The narrated cut has a music bed, or the user chose no music
+- [ ] The narrated cut has a real music bed (compose_music or the user's licensed track, not the make-bed placeholder), or the user chose no music
 - [ ] `check-cut.py` on the narrated cut reports 0 FAIL, and you read every frame it saved and
       every LOOK item holds; tell the user the summary line and anything accepted below the bar
 - [ ] If an editor is involved: `build-handoff.py` printed `voiceover fits`

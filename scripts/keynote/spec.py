@@ -50,10 +50,11 @@ ZOOM_PAN_MAX = 70                                # Z3, centre moves at most this
 
 # 2.5 Highlight boxes
 HIGHLIGHT_STROKE = 3                             # H1
-HIGHLIGHT_COLOR = "#E2483C"                      # H1
+# H1/H3: the box takes the product's colour (brand.accent), never a fixed red, so it reads as part of
+# the UI being shown. Without a brand accent it is a neutral ink. brand.py derives the actual colours.
+HIGHLIGHT_NEUTRAL = "#171717"                    # H1, no brand.accent set
+# H3: fill = that colour at 7%, a 6 px halo at 10% (keynote-page.mjs draws them).
 HIGHLIGHT_RADIUS = 12                            # H2
-HIGHLIGHT_FILL = "rgba(226,72,60,0.07)"          # H3
-HIGHLIGHT_HALO = "0 0 0 6px rgba(226,72,60,0.10)"  # H3
 HIGHLIGHT_PAD_X, HIGHLIGHT_PAD_Y = 15, 9         # H4
 HIGHLIGHT_DELAY = 0.17                           # H5, after a zoom lands
 HIGHLIGHT_IN = 0.40                              # H6, ease-out cubic, scale 1.12 -> 1
@@ -71,6 +72,8 @@ PILL_PERSON_PADDING = (9, 30, 9, 9)              # C3, top right bottom left
 PILL_GAP = 14                                    # C3
 PILL_STATEMENT_PADDING = (16, 32, 16, 32)        # C4
 PILL_STATEMENT_MAX_WORDS = 6                     # C4
+PILL_TEXT_NEUTRAL = "#171717"                    # C4, statement text with no brand.accent set
+PILL_TEXT_MIN_CONTRAST = 4.5                     # C4, statement text vs the white pill (WCAG AA)
 PILL_FONT_SIZE, PILL_FONT_WEIGHT, PILL_TRACKING = 30, 500, -0.3  # C5
 PILL_ENTRY = 0.45                                # C6, ease-out cubic
 PILL_ENTRY_RISE, PILL_ENTRY_SCALE = 16, 0.96     # C6

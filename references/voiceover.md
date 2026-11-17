@@ -56,12 +56,17 @@ Each line still has to fit its budget; narrate.py reports a long line, it never 
 
 ## Music bed
 
-The quality bar asks for a bed under every narrated cut (`docs/quality-bar.md` A6). Use your own
-file, make a free one with `python3 -I "$P/scripts/make-bed.py" music/bed.m4a --seconds 60`, or
-make one with the ElevenLabs MCP (`compose_music`, instrumental) or the Higgsfield MCP
-(`generate_audio` with a music model), and save it as `music/bed.m4a`. Then set
+The quality bar asks for a bed under every narrated cut (`docs/quality-bar.md` A6). The default
+source is the ElevenLabs MCP (`compose_music`, `force_instrumental: true`, `music_length_ms` from
+`voiceover/lines.json`) or the user's own licensed instrumental track. The Higgsfield MCP
+(`generate_audio` with a music model) also works. Save it as `music/bed.m4a`.
+`scripts/make-bed.py` makes only a **placeholder bed, replace before sharing**: sine-pad test tones
+for checking timing and levels. It tags the file, and narrate.py prints a warning on every render
+that uses it. Then set
 `"voice": {"music": "music/bed.m4a", "music_dips": [{"at": 12.0, "dur": 1.5}]}`. narrate.py loops
-it, sets it 13 dB under the narration, ducks it while someone speaks, dips it on the key moment,
+it, sets it 13 dB under the narration, holds it 7 dB lower under each spoken line (a fixed
+envelope with 0.25 s ramps that stays down through pauses under 1.2 s, so it never pumps), dips it
+on the key moment,
 fades it out (silent for the last 3 s of an outro) and brings the mix to -14 LUFS with true peak
 under -1 dBTP. No vocals, and only music you have the rights to.
 

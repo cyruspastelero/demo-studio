@@ -3,6 +3,7 @@ bounding box, pill and highlight detection, MP4 atom order, keyframe times. Stdl
 from __future__ import annotations
 
 import json
+import re
 import struct
 import subprocess
 from dataclasses import dataclass
@@ -80,20 +81,28 @@ def atom_order(video: Path) -> list[str]:
     return names
 
 
+MOMENTARY_LINE = re.compile(r"\bt:\s*(?P<t>-?[\d.]+).*?\bM:\s*(?P<m>-?(?:[\d.]+|inf)|nan)")
+
+
+def parse_momentary(stderr: str) -> list[tuple[float, float]]:
+    """(time, momentary LUFS) from ffmpeg ebur128's per-frame lines. ffmpeg pads the value after
+    `M:` with spaces only when it is short, so silence prints `M:-120.7` with no space; -inf and nan
+    come through as floats."""
+    series = []
+    for line in stderr.splitlines():
+        if "Parsed_ebur128" not in line:
+            continue
+        match = MOMENTARY_LINE.search(line)
+        if match:
+            series.append((float(match["t"]), float(match["m"])))
+    return series
+
+
 def momentary(video: Path) -> list[tuple[float, float]]:
     """(time, momentary LUFS) every 0.1 s from ffmpeg ebur128."""
     result = subprocess.run(["ffmpeg", "-hide_banner", "-nostats", "-i", str(video), "-map", "0:a:0",
                              "-af", "ebur128", "-f", "null", "-"], capture_output=True, text=True)
-    series = []
-    for line in result.stderr.splitlines():
-        if "Parsed_ebur128" in line and " t: " in line and " M: " in line:
-            try:
-                t = float(line.split(" t: ")[1].split()[0])
-                m = float(line.split(" M: ")[1].split()[0])
-            except (IndexError, ValueError):
-                continue
-            series.append((t, m))
-    return series
+    return parse_momentary(result.stderr)
 
 
 def edge_scan(values: list[float], threshold: float) -> int | None:

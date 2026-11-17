@@ -25,9 +25,10 @@ fps_is() {
   local got; got="$(ffprobe -v error -select_streams v:0 -show_entries stream=r_frame_rate -of csv=p=0 "$1")"
   [ "$got" = "30/1" ] || die "$1 runs at $got fps, expected 30/1"; ok "${1#$TMP/} is 30fps"
 }
-synthetic() {  # out seconds: a mostly still UI-like frame with one moving block, cheap to encode
+synthetic() {  # out seconds: a mostly still UI-like frame with one moving block and one still panel
   ffmpeg -y -loglevel error -f lavfi -i "color=c=0xF3F3F6:s=1920x1080:r=30:d=$2" \
-    -f lavfi -i "testsrc=s=320x180:r=30:d=$2" -filter_complex "[0:v][1:v]overlay=x='200+t*80':y=300" \
+    -f lavfi -i "testsrc=s=320x180:r=30:d=$2" -f lavfi -i "smptebars=s=400x100:r=30:d=$2" \
+    -filter_complex "[0:v][1:v]overlay=x='200+t*80':y=300[a];[a][2:v]overlay=x=1000:y=650" \
     -c:v libx264 -preset ultrafast -crf 23 -pix_fmt yuv420p -r 30 -movflags +faststart "$1"
 }
 solid_png() {  # out WxH colour
@@ -159,13 +160,15 @@ cat > "$D/demo-short.json" <<'EOF2'
     "callouts": [{ "at": 0.76, "dur": 3.0, "kind": "statement", "text": "The deal is agreed." }] },
   { "scene": "05", "stem": "05-approve", "take": 1, "trim": [0.5, 6.5], "crop": [160, 150, 1400, 718],
     "zooms": [{ "at": 0.5, "focus": [700, 420], "dur": 2.5 }],
-    "highlights": [{ "rect": [600, 400, 240, 40] }], "voiceover": "Approve it." },
+    "highlights": [{ "rect": [1050, 670, 240, 40] }], "voiceover": "Approve it." },
   { "card": "outro", "kind": "end", "title": "Acme Invoice Bot", "accent": "Invoice", "subtitle": "acme.example.com", "duration": 3.0, "outro": 3.5,
     "voiceover": "Acme invoice bot." } ] }
 EOF2
 (cd "$D" && python3 -I "$S/build-keynote.py" demo-short.json > "$TMP/keynote.log" 2>&1) || { cat "$TMP/keynote.log"; die "build-keynote failed"; }
 grep -q '^PROGRESS composite' "$TMP/keynote.log" || die "no PROGRESS lines from build-keynote"; ok "build-keynote prints PROGRESS"
 grep -q '^OUTPUT .*acme-invoice-bot-keynote-cut.mp4' "$TMP/keynote.log" || die "no OUTPUT line"; ok "build-keynote prints OUTPUT"
+if grep -q '(H8)' "$TMP/keynote.log"; then grep '(H8)' "$TMP/keynote.log"; die "highlight on a still panel flagged as moving"; fi
+ok "highlight on still UI passes the build-time motion probe"
 grep -q '^fonts: painted .*Inter' "$TMP/keynote.log" || { cat "$TMP/keynote.log"; die "titles not painted in the bundled Inter"; }
 ok "titles and pills painted in the bundled Inter"
 CUT="$R/exports/acme-invoice-bot-keynote-cut.mp4"
@@ -196,8 +199,10 @@ ok "narrate reports a line that runs long"
 (cd "$D" && python3 -I "$S/narrate.py" demo-short.json --voice files --dry-run --allow-overrun >/dev/null 2>&1) || die "--allow-overrun still failed"
 [ -e "$NARRATED" ] && die "dry run wrote a video"; ok "dry run writes no video"
 tone "$D/voiceover/01.wav" 4.5 440; python3 -I "$S/make-bed.py" "$TMP/music.m4a" --seconds 20 >/dev/null
-(cd "$D" && python3 -I "$S/narrate.py" demo-short.json --voice files --music "$TMP/music.m4a" > "$TMP/narrate.log") \
+(cd "$D" && python3 -I "$S/narrate.py" demo-short.json --voice files --music "$TMP/music.m4a" > "$TMP/narrate.log" 2>&1) \
   || { cat "$TMP/narrate.log"; die "narrate failed"; }
+grep -q 'WARN placeholder bed, replace before sharing' "$TMP/narrate.log" || die "no placeholder-bed warning"
+ok "narrate warns that the make-bed bed is a placeholder"
 grep -q '^OUTPUT .*keynote-cut-narrated.mp4' "$TMP/narrate.log" || die "no OUTPUT from narrate"; ok "narrate prints OUTPUT"
 grep -q '^narrate: bed set 13 dB under the narration' "$TMP/narrate.log" || die "bed not levelled under the voice"; ok "bed levelled 13 dB under the voice"
 exists "$NARRATED"; size_is "$NARRATED" 1920x1080
@@ -234,6 +239,8 @@ bar W7 "no background-only frame at the cut"
 bar Z2-Z3 "zoom peaks at 1.15x inside the frame"
 bar Z4 "zoom eases over 1.1 s"
 bar H1-H5 "highlight box 0.17 s after the zoom lands"
+bar H8 "UI under the highlight holds still"
+bar C4 "statement pill: short, in the product colour"
 bar C1-C2 "callout pill at y 962, 68 px"
 bar X2 "brand sweep"
 bar T1 "bundled font painted"
@@ -284,6 +291,7 @@ step "starter kit"
 python3 -I "$ROOT/tests/test_check.py" 2>/dev/null || die "check.py unit tests"; ok "check.py unit tests"
 python3 -I "$ROOT/tests/test_narrate.py" 2>/dev/null || die "narrate unit tests"; ok "narrate unit tests"
 python3 -I "$ROOT/tests/test_keynote.py" 2>/dev/null || die "keynote engine unit tests"; ok "keynote engine unit tests"
+python3 -I "$ROOT/tests/test_motion.py" >/dev/null 2>&1 || die "highlight motion and check-cut unit tests"; ok "highlight motion and check-cut unit tests"
 node "$ROOT/tests/test_lib.mjs" >/dev/null || die "lib.js unit tests"; ok "lib.js unit tests"
 bash "$S/new-workspace.sh" "$TMP/ws" >/dev/null
 for f in AGENTS.md CLAUDE.md README.md check.py .gitignore; do exists "$TMP/ws/$f"; done

@@ -47,7 +47,8 @@ Then cut it:
 cd .. && python3 -I "$P/scripts/review-reel.py" recordings --config demo.json
 node "$P/scripts/title-cards.mjs" handoff.json && python3 -I "$P/scripts/build-handoff.py" handoff.json
 python3 -I "$P/scripts/build-keynote.py" demo.json
-python3 -I "$P/scripts/make-bed.py" music/bed.m4a --seconds 40   # a free music bed (or use your own)
+# music/bed.m4a: make it with the ElevenLabs MCP compose_music (instrumental) or use your own licensed track.
+# make-bed.py music/bed.m4a --seconds 40 makes only a placeholder (replace before sharing).
 python3 -I "$P/scripts/narrate.py" demo.json                # adds the voiceover (macOS say by default)
 python3 -I "$P/scripts/check-cut.py" recordings/exports/todo-app-sample-keynote-cut-narrated.mp4 --frames recordings/exports/checklist
 ```
