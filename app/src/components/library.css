@@ -1,0 +1,135 @@
+/* Prompts and Templates views on the home screen. Uses only the tokens in styles.css: hairline rings,
+   one accent for marks, mono for ids and prompts, 44px controls. Kept apart from styles.css so the
+   editor's styles can change without touching these. */
+
+/* Views on small screens: a row of tabs under the top bar (the sidebar holds them from 1024px). */
+.home-tabs { flex: none; background: var(--surface); box-shadow: var(--hair-b); overflow-x: auto; scrollbar-width: none; }
+.home-tabs ul { display: flex; gap: 4px; margin: 0; padding: 6px 12px; list-style: none; }
+.home-tabs a {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 12px; border-radius: var(--radius);
+  font-size: 14px; color: var(--body); text-decoration: none; white-space: nowrap;
+  transition: background-color var(--fast) var(--ease), color var(--fast) var(--ease);
+}
+.home-tabs a[aria-current='page'] { background: var(--canvas); color: var(--ink); font-weight: 500; box-shadow: var(--ring); }
+@media (hover: hover) { .home-tabs a:not([aria-current='page']):hover { background: var(--hover-tint); color: var(--ink); } }
+@media (min-width: 1024px) { .home-tabs { display: none; } }
+
+.stats.five { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+@media (max-width: 1200px) { .stats.five { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 900px) { .stats.five { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* The parts of a prompt to change: an accent underline on a faint tint, ink text. */
+.prompt-ph {
+  padding: 0 2px; border-radius: 3px; background: var(--accent-tint); color: var(--ink);
+  box-shadow: inset 0 -1.5px 0 var(--accent);
+}
+
+/* ---------------------------------------------------------------- prompts */
+
+.prompt-group + .prompt-group { margin-top: 48px; }
+.prompt-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: var(--grid-gap); }
+.prompt-card {
+  display: flex; flex-direction: column; gap: 12px; min-width: 0; padding: 20px var(--card-pad) 16px;
+  border-radius: var(--radius); background: var(--surface); box-shadow: var(--ring);
+  transition: box-shadow var(--fast) var(--ease);
+}
+@media (hover: hover) { .prompt-card:hover { box-shadow: var(--ring-strong); } }
+.prompt-text {
+  display: block; padding: 12px 14px; border-radius: var(--radius); background: var(--canvas); box-shadow: inset 0 0 0 1px var(--line);
+  font: 13px/1.6 var(--mono); color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere;
+}
+.prompt-what { font-size: 14px; line-height: 1.5; color: var(--muted); }
+.prompt-foot { display: flex; gap: 8px; margin-top: auto; padding-top: 4px; }
+.prompt-pointer { background: var(--canvas); box-shadow: inset 0 0 0 1px var(--line); }
+.prompt-pointer-title { font-size: 15px; font-weight: 500; color: var(--ink); }
+
+/* ---------------------------------------------------------------- templates */
+
+/* New template: always first. The prompt and its Copy button on the left, how it works on the right. */
+.tpl-new {
+  display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(220px, 1fr); border-radius: var(--radius);
+  background: var(--surface); box-shadow: var(--ring); overflow: hidden;
+}
+.tpl-new-main { display: grid; gap: 10px; align-content: start; padding: var(--card-pad); }
+.tpl-new-main h2 { font-size: 22px; line-height: 1.2; font-weight: 450; letter-spacing: -0.03em; }
+.tpl-new-main .eyebrow { display: flex; align-items: center; gap: 8px; }
+.tpl-new-main .eyebrow::before { content: ''; width: 6px; height: 6px; border-radius: 1px; background: var(--accent); }
+.tpl-new-what { font-size: 14px; line-height: 1.5; color: var(--muted); max-width: 40em; }
+.tpl-new-prompt { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; margin-top: 6px; }
+.tpl-steps {
+  margin: 0; padding: 12px var(--card-pad); list-style: none; counter-reset: step; display: grid; align-content: center;
+  background: var(--canvas); box-shadow: inset 1px 0 0 var(--line);
+}
+.tpl-steps li { counter-increment: step; position: relative; padding: 12px 0 12px 40px; font-size: 14px; line-height: 1.5; color: var(--body); }
+.tpl-steps li + li { box-shadow: var(--hair-t); }
+.tpl-steps li::before {
+  content: counter(step); position: absolute; left: 0; top: 10px; width: 26px; height: 26px; border-radius: var(--radius);
+  display: grid; place-items: center; font: 12px/1 var(--mono); color: var(--muted); background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--faint);
+}
+@media (max-width: 860px) {
+  .tpl-new { grid-template-columns: minmax(0, 1fr); }
+  .tpl-steps { box-shadow: var(--hair-t); }
+  .tpl-new-prompt { grid-template-columns: minmax(0, 1fr); justify-items: start; }
+}
+
+.tpl-list-bar { margin-top: 40px; }
+.tpl-card {
+  display: flex; flex-direction: column; min-width: 0; border-radius: var(--radius);
+  background: var(--surface); box-shadow: var(--ring); overflow: hidden; transition: box-shadow var(--fast) var(--ease);
+}
+@media (hover: hover) { .tpl-card:hover { box-shadow: var(--ring-strong); } }
+
+/* Preview strip: the frame shown large, the others as small buttons below. */
+.tpl-strip { display: grid; gap: 0; box-shadow: var(--hair-b); }
+.tpl-preview {
+  position: relative; display: block; width: 100%; aspect-ratio: 16 / 9; padding: 0; border: 0;
+  background: var(--canvas); overflow: hidden;
+}
+.tpl-preview:disabled { cursor: default; }
+.tpl-preview img { display: block; width: 100%; height: 100%; object-fit: cover; filter: var(--picture-filter); }
+.tpl-preview:focus-visible, .tpl-thumb:focus-visible { outline-offset: -2px; }
+.tpl-frame {
+  position: absolute; right: 10px; bottom: 10px; height: 22px; padding: 0 8px; border-radius: 4px;
+  display: inline-flex; align-items: center; background: var(--surface); box-shadow: var(--ring); font-size: 12px; color: var(--ink);
+}
+.tpl-preview-empty { display: grid; place-items: center; box-shadow: var(--hair-b); }
+.tpl-preview-empty span {
+  display: inline-flex; align-items: center; gap: 8px; height: 28px; padding: 0 10px; border-radius: var(--radius);
+  background: var(--surface); box-shadow: var(--ring); font-family: var(--mono); font-size: 12px; color: var(--muted);
+}
+.tpl-thumbs { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; padding: 8px; background: var(--canvas); box-shadow: var(--hair-t); }
+.tpl-thumb {
+  aspect-ratio: 16 / 9; padding: 0; border: 0; border-radius: 4px; overflow: hidden; background: var(--surface);
+  box-shadow: var(--ring); opacity: 0.72; transition: opacity var(--fast) var(--ease), box-shadow var(--fast) var(--ease);
+}
+.tpl-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; filter: var(--picture-filter); }
+.tpl-thumb[aria-pressed='true'] { opacity: 1; box-shadow: var(--ring-accent); }
+@media (hover: hover) { .tpl-thumb:hover { opacity: 1; } }
+
+.tpl-body { display: flex; flex-direction: column; gap: 12px; flex: 1; padding: 20px var(--card-pad) var(--card-pad); }
+.tpl-origin.built-in { color: var(--muted); }
+.tpl-id {
+  display: flex; align-items: center; gap: 4px; align-self: flex-start; max-width: 100%; margin-top: -4px; padding: 0 0 0 10px;
+  border-radius: var(--radius); background: var(--canvas); box-shadow: inset 0 0 0 1px var(--line);
+}
+.tpl-id code { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: var(--ink); }
+.tpl-desc { font-size: 14px; line-height: 1.5; color: var(--body); }
+.tpl-source { font-size: 13px; color: var(--muted); }
+.tpl-swatches { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+.tpl-swatch { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--body); }
+.tpl-swatch .mono { font-size: 12px; color: var(--muted); }
+.tpl-chip { width: 16px; height: 16px; border-radius: 4px; box-shadow: inset 0 0 0 1px var(--faint); }
+
+.tpl-empty {
+  display: flex; gap: 14px; align-items: flex-start; max-width: 680px; margin-top: 24px; padding: 20px var(--card-pad);
+  border-radius: var(--radius); box-shadow: inset 0 0 0 1px var(--line); font-size: 14px; line-height: 1.55; color: var(--muted);
+}
+.tpl-empty svg { flex: none; margin-top: 2px; color: var(--quiet); }
+.tpl-empty-title { margin-bottom: 2px; font-size: 15px; font-weight: 500; color: var(--ink); }
+
+@media (max-width: 520px) {
+  .prompt-grid { grid-template-columns: minmax(0, 1fr); }
+  .prompt-card, .tpl-body, .tpl-new-main { padding: 20px 16px; }
+  .tpl-steps { padding: 8px 16px; }
+}

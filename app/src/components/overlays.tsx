@@ -60,6 +60,10 @@ const SHORTCUTS: [string[], string][] = [
   [['1'], '16:9 frame'],
   [['2'], '4:5 frame'],
   [['3'], '9:16 frame'],
+  [['Enter'], 'View the focused raw take'],
+  [['I'], 'Raw take: set the selected shot\'s in point'],
+  [['O'], 'Raw take: set the selected shot\'s out point'],
+  [['Esc'], 'Raw take: back to the cut'],
   [['?'], 'Show this list'],
 ];
 

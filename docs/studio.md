@@ -20,6 +20,30 @@ you can open the editor, play a video, open the planning documents or show the f
 demos yet, it shows the four steps to make the first one. It only reads your files, and it runs on
 your machine only (`127.0.0.1`).
 
+### Prompts
+
+The Prompts menu holds ready-to-copy things to ask Claude, grouped as Start, Templates, Fix and
+finish, and Housekeeping. Each card shows the prompt, one line on what Claude then does, and a Copy
+button. The parts to change, such as `app.example.com` or a scene number, are highlighted, so you
+know what to edit after pasting.
+
+![The Prompts menu: prompt cards in groups, each with a Copy button](img/studio-prompts-1440.png)
+
+### Templates
+
+A template keeps the look of a video (colours, type, pacing) so every demo made with it looks the
+same. The Templates menu lists yours, from `_templates/` in your demos folder, and the built-in
+ones from the plugin's `look-templates/`. Each card shows its preview frames (click the picture for
+the next one), its name and id with a copy button, where it was copied from, and its colours.
+**Use** copies `Make a demo of app.example.com using template <id>.` with the id filled in.
+
+To make a new one, copy the prompt at the top of the menu, paste it into Claude Code with the path
+to your video, and the template appears in the list when Claude has saved it. The menu only reads
+`template.json`, `source.json` and the six preview PNGs; it never serves other files from a
+template folder, and skips folders that are symlinks.
+
+![The Templates menu: the new-template prompt, then a card per template](img/studio-templates-1440.png)
+
 ## Local editor
 
 A local web app for reviewing and tweaking a cut without rendering. Open a demo folder, watch the
@@ -56,6 +80,15 @@ from `takes.csv`), title cards and named shots; drag them onto the timeline. Cen
 which plays the clips with their in and out points and speed, draws title cards and on-screen text,
 and frames 4:5 and 9:16 the way `social-cut.py` does. Bottom: the timeline, with a voiceover lane
 that turns red when a line runs past the next narrated scene. Right: the inspector.
+
+**Checking raw takes.** Click a take in the bin (or focus it and press Enter) to watch the whole
+take at real speed in the preview, with its own scrubber, frame step and length. Space, J, K, L and
+the arrow keys drive it while it is open; Esc or Back to cut returns to the cut where you left it.
+When a timeline shot that uses the take is selected, Set in and Set out (I and O) move that shot's
+in or out point to the current frame. Double-click a take, or use its open button, to play it in
+the system player. Dragging a take onto the timeline works as before.
+
+![A raw take open in the source viewer, with Set in and Set out for the selected shot](img/studio-raw-take-1440.png)
 
 **Your files stay the source of truth.** The editor reads and writes `handoff.json` and `demo.json`
 in the schema shape, keeping `_comment` and other `_` keys. It saves about a second after each edit

@@ -8,6 +8,7 @@ import { isDemoFolder, listDemos, workspace } from './demos.mjs';
 import { demoDir, isPassiveMedia, mediaIndex, sendFile, thumbnail } from './media.mjs';
 import { insideAny, PathError, resolveInside } from './paths.mjs';
 import { RenderRunner } from './render.mjs';
+import { listTemplates, previewFile } from './templates.mjs';
 
 const APP_DIR = fileURLToPath(new URL('..', import.meta.url));
 const UI_DIR = join(APP_DIR, 'out');
@@ -141,6 +142,14 @@ export function createStudio({ repo, cwd, folder: initialFolder, dev = false }) 
     if (route === 'GET /api/session') return json(res, 200, session());
     if (route === 'GET /api/demos') return json(res, 200, listDemos({ cwd, repo }));
     if (route === 'GET /api/home') return json(res, 200, { mode: 'picker', repo, demos: listDemos({ cwd, repo }), workspace: workspace({ cwd }) });
+    if (route === 'GET /api/templates') return json(res, 200, listTemplates({ cwd, repo }));
+    const preview = /^GET \/api\/template-preview\/([^/]+)\/([^/]+)\/([^/]+)$/.exec(route);
+    if (preview) {
+      // Only a template's preview PNGs, never another file from its folder; sandboxed like /media/.
+      const file = previewFile({ cwd, repo }, ...preview.slice(1));
+      if (!file) throw new HttpError(404, 'no such template preview');
+      return sendFile(req, res, file, { untrusted: true });
+    }
     if (route === 'GET /api/demo-thumb') {
       const file = resolveInside(listedDemo(url.searchParams.get('demo') ?? ''), url.searchParams.get('path') ?? '');
       if (!isPassiveMedia(file)) throw new HttpError(400, 'not a video');

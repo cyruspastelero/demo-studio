@@ -1,5 +1,5 @@
 import { Pause, Play, Repeat, StepBack, StepForward, SkipBack } from 'lucide-react';
-import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { captionAt, windowGeometry, type Geometry } from '../lib/geometry';
 import { mediaUrl, Player } from '../lib/player';
 import { timecode } from '../lib/timeline';
@@ -62,7 +62,7 @@ function CardView({ shot, brand }: { shot: TimelineShot; brand: Brand | undefine
   );
 }
 
-export function Preview({ kind, timeline, aspect, social, brand, missing, loop, onToggleLoop, onPlayer }: {
+export function Preview({ kind, timeline, aspect, social, brand, missing, loop, onToggleLoop, onPlayer, overlay }: {
   kind: FileKind;
   timeline: Timeline;
   aspect: Aspect;
@@ -72,6 +72,7 @@ export function Preview({ kind, timeline, aspect, social, brand, missing, loop, 
   loop: boolean;
   onToggleLoop: () => void;
   onPlayer: (player: Player | null) => void;
+  overlay?: ReactNode; // the raw take source viewer, drawn over the cut while open
 }) {
   const wrap = useRef<HTMLDivElement>(null);
   const videoA = useRef<HTMLVideoElement>(null);
@@ -145,11 +146,13 @@ export function Preview({ kind, timeline, aspect, social, brand, missing, loop, 
   };
   const caption = frame.social ? captionAt(social, snap.time) : undefined;
   const isMissing = shot?.kind === 'clip' && shot.file && missing.has(shot.file);
+  // Hidden, not unmounted, under the source viewer: the cut player and its playhead stay as they were.
+  const under: React.CSSProperties | undefined = overlay ? { visibility: 'hidden' } : undefined;
   const stageBg = frame.social ? (blur ? '#888' : social?.color ?? '#F3F3F6') : kind === 'demo' ? KEYNOTE.bg : '#000';
 
   return (
     <section className="preview" aria-label="Preview">
-      <div className="stage-wrap" ref={wrap}>
+      <div className="stage-wrap" ref={wrap} style={under}>
         <div
           className="stage" data-testid="stage" data-aspect={aspect}
           style={{ width: frame.W, height: frame.H, background: stageBg, transform: `translate(${box.left}px, ${box.top}px) scale(${box.scale})` }}
@@ -176,7 +179,7 @@ export function Preview({ kind, timeline, aspect, social, brand, missing, loop, 
           {!frame.social && kind === 'demo' && shot?.kind === 'clip' && shot.text && <div className="keynote-caption">{shot.text}</div>}
         </div>
       </div>
-      <div className="transport">
+      <div className="transport" style={under}>
         <button className="icon-btn" aria-label="Go to start" title="Go to start (Home)" onClick={() => player?.seek(0)}><SkipBack size={16} /></button>
         <button className="icon-btn" aria-label="Back one frame" title="Back one frame (Left)" onClick={() => player?.step(-1)}><StepBack size={16} /></button>
         <button className="icon-btn" aria-label={snap.playing ? 'Pause' : 'Play'} title="Play or pause (Space)" data-testid="play" onClick={() => player?.toggle()}>
@@ -188,6 +191,7 @@ export function Preview({ kind, timeline, aspect, social, brand, missing, loop, 
         <span className="spacer" />
         <span className="shot-label">{shot ? (shot.kind === 'card' ? shot.card : `${shot.file}  ${shot.in.toFixed(2)}s to ${shot.out.toFixed(2)}s${shot.speed !== 1 ? `  at ${shot.speed}x` : ''}`) : ''}</span>
       </div>
+      {overlay}
     </section>
   );
 }

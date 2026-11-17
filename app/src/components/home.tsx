@@ -1,7 +1,12 @@
 import { Check, Copy, ExternalLink, FileText, Film, FolderOpen, PencilRuler, Play, RefreshCw, Search } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { api, demoThumbUrl, type DemoEntry, type HomeSession } from '../api';
+import { fetchTemplates, type LookTemplate } from '../lib/templates';
+import { useCopyToast } from './library';
+import { PROMPT_COUNT, PromptsView } from './prompts-view';
+import { TemplatesView } from './templates-view';
 import { ThemeSwitch } from './theme-switch';
+import './library.css';
 
 const COPIED_MS = 1600;
 const FILTER_FROM = 7;  // a filter box only earns its space once the list is long
@@ -182,29 +187,39 @@ const DOCS = [
   { label: 'Roadmap', href: 'https://github.com/Cyvid7-Darus10/demo-studio/blob/main/docs/ROADMAP.md' },
 ];
 
-type Section = 'overview' | 'demos' | 'examples';
+type Section = 'overview' | 'demos' | 'examples' | 'prompts' | 'templates';
+// Prompts and Templates are views of their own; the other sections share one scrolling page.
+const VIEWS: Section[] = ['prompts', 'templates'];
 
 interface NavItem { id: Section; label: string; count?: number }
 
-function Sidebar({ items, active, onGo, root, onRefresh }: {
-  items: NavItem[]; active: Section; onGo: (id: Section) => void; root: string; onRefresh: () => void;
+function NavList({ items, active, onGo }: { items: NavItem[]; active: Section; onGo: (id: Section) => void }) {
+  return (
+    <ul>
+      {items.map((item) => (
+        <li key={item.id}>
+          <a href={`#${item.id}`} aria-current={active === item.id ? 'page' : undefined} data-testid={`nav-${item.id}`}
+            onClick={(e) => { e.preventDefault(); onGo(item.id); }}>
+            <span>{item.label}</span>
+            {item.count !== undefined && <span className="nav-count">{item.count}</span>}
+          </a>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function Sidebar({ items, library, active, onGo, root, onRefresh }: {
+  items: NavItem[]; library: NavItem[]; active: Section; onGo: (id: Section) => void; root: string; onRefresh: () => void;
 }) {
   return (
     <aside className="side" aria-label="Sections">
       <span className="home-brand"><span className="mark" aria-hidden />demo-studio</span>
       <nav className="side-nav">
         <p className="side-label">Workspace</p>
-        <ul>
-          {items.map((item) => (
-            <li key={item.id}>
-              <a href={`#${item.id}`} aria-current={active === item.id ? 'page' : undefined}
-                onClick={(e) => { e.preventDefault(); onGo(item.id); }}>
-                <span>{item.label}</span>
-                {item.count !== undefined && <span className="nav-count">{item.count}</span>}
-              </a>
-            </li>
-          ))}
-        </ul>
+        <NavList items={items} active={active} onGo={onGo} />
+        <p className="side-label">Library</p>
+        <NavList items={library} active={active} onGo={onGo} />
         <p className="side-label">Docs</p>
         <ul>
           {DOCS.map((doc) => (
@@ -226,7 +241,7 @@ function Sidebar({ items, active, onGo, root, onRefresh }: {
   );
 }
 
-function Stats({ demos }: { demos: DemoEntry[] }) {
+function Stats({ demos, templates }: { demos: DemoEntry[]; templates: LookTemplate[] | null }) {
   const finished = demos.filter((d) => !d.overview.next || d.status?.status === 'Delivered').length;
   const inProgress = demos.length - finished;
   const attention = demos.filter((d) => d.overview.attention.length > 0).length;
@@ -236,9 +251,10 @@ function Stats({ demos }: { demos: DemoEntry[] }) {
     { label: 'In progress', value: inProgress, note: inProgress === 1 ? 'demo still has a next step' : 'demos still have a next step' },
     { label: 'Needs attention', value: attention, note: attention ? 'see the list below' : 'nothing to check', flag: attention > 0 },
     { label: 'Videos', value: videos, note: 'cuts and reels on disk' },
+    ...(templates ? [{ label: 'Templates', value: templates.length, note: 'looks you can reuse' }] : []),
   ];
   return (
-    <dl className="stats" data-testid="stats">
+    <dl className={`stats${tiles.length > 4 ? ' five' : ''}`} data-testid="stats">
       {tiles.map((t) => (
         <div key={t.label} className={`stat${t.flag ? ' flag' : ''}`}>
           <dt className="eyebrow quiet">{t.label}</dt>
@@ -277,7 +293,18 @@ export function Home({ session, onOpen, onRefresh }: {
   const [filter, setFilter] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [active, setActive] = useState<Section>('overview');
+  const [templates, setTemplates] = useState<LookTemplate[] | null>(null);
+  const [templatesError, setTemplatesError] = useState<string | null>(null);
+  const { copy, toast } = useCopyToast();
+  const inner = useRef<HTMLDivElement>(null);
   const { demos, workspace } = session;
+  // Listed again whenever the home data refreshes, so a template Claude just saved shows up.
+  useEffect(() => {
+    let live = true;
+    fetchTemplates().then((list) => { if (live) { setTemplates(list); setTemplatesError(null); } })
+      .catch((e: Error) => { if (live) setTemplatesError(e.message); });
+    return () => { live = false; };
+  }, [session]);
   const mine = useMemo(() => demos.filter((d) => d.group !== 'Examples'), [demos]);
   const examples = useMemo(() => demos.filter((d) => d.group === 'Examples'), [demos]);
   const needle = filter.trim().toLowerCase();
@@ -289,9 +316,16 @@ export function Home({ session, onOpen, onRefresh }: {
     ...(mine.length ? [{ id: 'demos' as Section, label: 'Demos', count: mine.length }] : []),
     ...(examples.length ? [{ id: 'examples' as Section, label: 'Examples', count: examples.length }] : []),
   ];
+  const library: NavItem[] = [
+    { id: 'prompts', label: 'Prompts', count: PROMPT_COUNT },
+    { id: 'templates', label: 'Templates', count: templates?.length },
+  ];
+  const view = VIEWS.includes(active) ? active : null;
   const go = (id: Section) => {
     setActive(id);
-    document.getElementById(id)?.scrollIntoView({ block: 'start' });
+    if (VIEWS.includes(id)) inner.current?.scrollTo({ top: 0 });
+    // After the dashboard renders again, when coming back from a view.
+    else window.requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ block: 'start' }));
   };
   const revealDemo = (demo: DemoEntry) => {
     api.revealInDemo(demo.path, null, 'reveal').catch((e: Error) => setError(`Could not open ${demo.name}: ${e.message}`));
@@ -306,7 +340,7 @@ export function Home({ session, onOpen, onRefresh }: {
 
   return (
     <main className="home">
-      <Sidebar items={nav} active={active} onGo={go} root={workspace.root} onRefresh={onRefresh} />
+      <Sidebar items={nav} library={library} active={active} onGo={go} root={workspace.root} onRefresh={onRefresh} />
       <div className="home-col">
         <header className="home-bar">
           <span className="home-brand"><span className="mark" aria-hidden />demo-studio</span>
@@ -315,60 +349,69 @@ export function Home({ session, onOpen, onRefresh }: {
           <ThemeSwitch />
           <button className="icon-btn" onClick={onRefresh} aria-label="Refresh" title="Refresh"><RefreshCw size={15} /></button>
         </header>
+        <nav className="home-tabs" aria-label="Views">
+          <NavList items={[{ id: 'overview', label: 'Dashboard' }, ...library]} active={view ?? 'overview'} onGo={go} />
+        </nav>
 
-        <div className="home-inner">
+        <div className="home-inner" ref={inner}>
           {error && <p className="note bad" role="alert">{error}</p>}
-
-          <section id="overview" className="home-section">
-            <div className="home-heading">
-              <p className="eyebrow quiet">Overview</p>
-              <h1>{mine.length ? 'Your demos' : 'Make your first demo'}</h1>
-              <p className="home-summary">
-                {mine.length
-                  ? 'Where every demo in this folder stands, and what to ask Claude next.'
-                  : 'Nothing in this folder yet. A few steps take you from an empty folder to a planned demo.'}
-              </p>
-            </div>
-            {mine.length > 0 ? (
-              <>
-                <Stats demos={mine} />
-                <Attention demos={mine} onReveal={revealDemo} />
-              </>
-            ) : <GettingStarted session={session} />}
-          </section>
-
-          {mine.length > 0 && (
-            <section id="demos" className="home-section">
-              <div className="section-bar">
-                <h2>Demos</h2>
-                {filterBox}
-              </div>
-              {!workspace.hasPlaybook && (
-                <p className="note">
-                  This folder has no playbook yet. Add one, with an index and a drift check, by running:
-                  <Command text={`bash "${session.repo}/scripts/new-workspace.sh" "${workspace.root}"`} />
+          {view === 'prompts' && <PromptsView copy={copy} onTemplates={() => go('templates')} />}
+          {view === 'templates' && <TemplatesView templates={templates} error={templatesError} copy={copy} />}
+          {!view && (
+            <>
+            <section id="overview" className="home-section">
+              <div className="home-heading">
+                <p className="eyebrow quiet">Overview</p>
+                <h1>{mine.length ? 'Your demos' : 'Make your first demo'}</h1>
+                <p className="home-summary">
+                  {mine.length
+                    ? 'Where every demo in this folder stands, and what to ask Claude next.'
+                    : 'Nothing in this folder yet. A few steps take you from an empty folder to a planned demo.'}
                 </p>
-              )}
-              <div className="demo-grid">
-                {shown.map((demo) => <DemoCard key={demo.path} demo={demo} onOpen={onOpen} onError={setError} />)}
               </div>
-              {shown.length === 0 && <p className="muted">No demo matches "{filter}".</p>}
+              {mine.length > 0 ? (
+                <>
+                  <Stats demos={mine} templates={templates} />
+                  <Attention demos={mine} onReveal={revealDemo} />
+                </>
+              ) : <GettingStarted session={session} />}
             </section>
-          )}
 
-          {examples.length > 0 && (
-            <section id="examples" className="home-section">
-              <div className="section-bar">
-                <h2>Examples</h2>
-                <p className="section-note">Filled-in plans you can open and try the editor on.</p>
-              </div>
-              <div className="demo-grid">
-                {examples.map((demo) => <DemoCard key={demo.path} demo={demo} onOpen={onOpen} onError={setError} />)}
-              </div>
-            </section>
+            {mine.length > 0 && (
+              <section id="demos" className="home-section">
+                <div className="section-bar">
+                  <h2>Demos</h2>
+                  {filterBox}
+                </div>
+                {!workspace.hasPlaybook && (
+                  <p className="note">
+                    This folder has no playbook yet. Add one, with an index and a drift check, by running:
+                    <Command text={`bash "${session.repo}/scripts/new-workspace.sh" "${workspace.root}"`} />
+                  </p>
+                )}
+                <div className="demo-grid">
+                  {shown.map((demo) => <DemoCard key={demo.path} demo={demo} onOpen={onOpen} onError={setError} />)}
+                </div>
+                {shown.length === 0 && <p className="muted">No demo matches "{filter}".</p>}
+              </section>
+            )}
+
+            {examples.length > 0 && (
+              <section id="examples" className="home-section">
+                <div className="section-bar">
+                  <h2>Examples</h2>
+                  <p className="section-note">Filled-in plans you can open and try the editor on.</p>
+                </div>
+                <div className="demo-grid">
+                  {examples.map((demo) => <DemoCard key={demo.path} demo={demo} onOpen={onOpen} onError={setError} />)}
+                </div>
+              </section>
+            )}
+            </>
           )}
         </div>
       </div>
+      {toast}
     </main>
   );
 }

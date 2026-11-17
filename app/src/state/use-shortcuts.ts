@@ -16,6 +16,8 @@ export interface ShortcutHandlers {
   zoom: (factor: number) => void;
   aspect: (index: number) => void;
   help: () => void;
+  escape: () => void;
+  markIn: () => void;
 }
 
 function typing(target: EventTarget | null) {
@@ -66,6 +68,8 @@ export function useShortcuts(handlers: ShortcutHandlers, enabled: boolean) {
         2: () => h.aspect(1),
         3: () => h.aspect(2),
         '?': h.help,
+        Escape: h.escape,
+        i: h.markIn,
       };
       const action = actions[e.key.length === 1 ? e.key.toLowerCase() : e.key] ?? actions[e.key];
       if (!action) return;

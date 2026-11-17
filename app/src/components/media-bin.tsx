@@ -1,6 +1,8 @@
-import { Film, Layers, Type } from 'lucide-react';
+import { ExternalLink, Film, Layers, Type } from 'lucide-react';
+import { useRef } from 'react';
 import { thumbUrl } from '../api';
 import type { BinItem } from '../lib/edits';
+import { isClick, takeOf, type SourceTake } from '../lib/source';
 import { isDemoCard } from '../lib/timeline';
 import type { DemoDoc, FileKind, HandoffDoc, MediaIndex } from '../lib/types';
 
@@ -15,12 +17,18 @@ function seconds(value: number | null | undefined) {
   return value == null ? 'unknown length' : `${value.toFixed(1)}s`;
 }
 
-export function MediaBin({ kind, doc, media, onSelectCard }: {
+interface MediaBinProps {
   kind: FileKind;
   doc: HandoffDoc | DemoDoc | undefined;
   media: MediaIndex | null;
+  viewing: string | null; // file name of the take open in the source viewer
   onSelectCard: (name: string) => void;
-}) {
+  onViewTake: (take: SourceTake) => void;
+  onOpenTake: (take: SourceTake) => void;
+}
+
+export function MediaBin({ kind, doc, media, viewing, onSelectCard, onViewTake, onOpenTake }: MediaBinProps) {
+  const pressed = useRef<{ x: number; y: number } | null>(null);
   const handoff = kind === 'handoff' ? (doc as HandoffDoc | undefined) : undefined;
   const demo = kind === 'demo' ? (doc as DemoDoc | undefined) : undefined;
   const raw = media?.raw ?? [];
@@ -34,22 +42,43 @@ export function MediaBin({ kind, doc, media, onSelectCard }: {
       <div className="bin-body">
         <h3>Raw takes</h3>
         {raw.length === 0 && <div className="bin-empty">No takes in the raw folder yet.</div>}
-        {raw.map((m) => (
-          <div
-            key={m.file} className="bin-item" draggable data-testid="bin-take"
-            onDragStart={(e) => startDrag(e, { kind: 'raw', file: m.file, duration: m.duration })}
-            title={`${m.file}${m.notes ? `\n${m.notes}` : ''}\nDrag onto the timeline to add a shot.`}
-          >
-            <div className="thumb" style={{ backgroundImage: `url("${thumbUrl(m.path, Math.min(1, (m.duration ?? 2) / 2), 128)}")` }} />
-            <div>
-              <div className="name">{m.file}</div>
-              <div className="meta">
-                <span>{seconds(m.duration)}</span>
-                {m.status && <span className={`status-${m.status.toLowerCase()}`}>{m.status}</span>}
+        {raw.map((m) => {
+          const take = takeOf(m);
+          return (
+            <div key={m.file} className="bin-take">
+              <div
+                className={`bin-item${viewing === m.file ? ' viewing' : ''}`} draggable data-testid="bin-take" data-take={m.file}
+                role="button" tabIndex={0} aria-pressed={viewing === m.file}
+                aria-label={`${m.file}, ${seconds(m.duration)}${m.status ? `, ${m.status}` : ''}. Press Enter to view the take.`}
+                onDragStart={(e) => startDrag(e, { kind: 'raw', file: m.file, duration: m.duration })}
+                onPointerDown={(e) => { pressed.current = { x: e.clientX, y: e.clientY }; }}
+                onClick={(e) => { if (isClick(pressed.current, { x: e.clientX, y: e.clientY })) onViewTake(take); }}
+                onDoubleClick={() => onOpenTake(take)}
+                onKeyDown={(e) => {
+                  if (e.key !== 'Enter') return;
+                  e.preventDefault();
+                  onViewTake(take);
+                }}
+                title={`${m.file}${m.notes ? `\n${m.notes}` : ''}\nClick to view, double-click to open in the system player, drag onto the timeline to add a shot.`}
+              >
+                <div className="thumb" style={{ backgroundImage: `url("${thumbUrl(m.path, Math.min(1, (m.duration ?? 2) / 2), 128)}")` }} />
+                <div>
+                  <div className="name">{m.file}</div>
+                  <div className="meta">
+                    <span>{seconds(m.duration)}</span>
+                    {m.status && <span className={`status-${m.status.toLowerCase()}`}>{m.status}</span>}
+                  </div>
+                </div>
               </div>
+              <button
+                className="icon-btn bin-open" data-testid="bin-take-open" aria-label={`Open ${m.file} in the system player`}
+                title="Open in the system player" onClick={() => onOpenTake(take)}
+              >
+                <ExternalLink size={14} />
+              </button>
             </div>
-          </div>
-        ))}
+          );
+        })}
 
         {handoff && (
           <>

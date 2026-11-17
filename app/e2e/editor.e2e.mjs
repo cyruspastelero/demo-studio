@@ -107,6 +107,55 @@ try {
     assert.notEqual(tc?.split('/')[0].trim(), '0:00.00');
   });
 
+  await step('views a raw take in the source viewer and returns to the cut', async () => {
+    const cutBefore = await page.textContent('[data-testid="timecode"]');
+    const take = page.locator('[data-testid="bin-take"][data-take="01-the-thread-t1.mp4"]');
+    const binLength = Number.parseFloat((await take.locator('.meta span').first().textContent()) ?? '');
+    await take.click();
+    await page.waitForSelector('[data-testid="source-viewer"]');
+    assert.match((await page.textContent('[data-testid="source-label"]')) ?? '', /Raw take.*01-the-thread-t1\.mp4/);
+    const shown = await waitFor(async () => {
+      const text = await page.textContent('[data-testid="source-duration"]');
+      return text && text !== '-' ? text : null;
+    }, 'the take duration');
+    const [m, s] = shown.split(':');
+    assert.ok(Math.abs(Number(m) * 60 + Number(s) - binLength) < 0.1, `duration ${shown} matches the bin's ${binLength}s`);
+    assert.equal(await page.locator('[data-testid="source-set-in"]').count(), 0, 'no Set in without a shot of this take selected');
+    await page.click('[data-testid="source-play"]');
+    await page.waitForTimeout(1200);
+    const played = await page.locator('[data-testid="source-video"]').evaluate((v) => v.currentTime);
+    assert.ok(played > 0.5, `the take played to ${played}s`);
+    await page.keyboard.press('Escape');
+    await page.waitForSelector('[data-testid="source-viewer"]', { state: 'detached' });
+    assert.equal(await page.textContent('[data-testid="timecode"]'), cutBefore, 'the cut playhead is where it was');
+    await waitFor(async () => (await page.evaluate(() => document.activeElement?.getAttribute('data-take'))) === '01-the-thread-t1.mp4', 'focus back on the take', 2000);
+  });
+
+  await step('opens a take with Enter and sets the selected shot in point with I', async () => {
+    await page.click('[data-testid="video-tab-HOW-TO"]');
+    await page.locator('[data-shot-id="1:2:0"]').click();
+    await page.locator('[data-testid="bin-take"][data-take="03-add-key-t1.mp4"]').focus();
+    await page.keyboard.press('Enter');
+    await page.waitForSelector('[data-testid="source-set-in"]');
+    await page.locator('[data-testid="source-video"]').evaluate((v) => new Promise((resolve) => {
+      v.addEventListener('seeked', resolve, { once: true });
+      v.currentTime = 2.5;
+    }));
+    await page.keyboard.press('i');
+    await waitFor(() => readHandoff(folder).videos[1].scenes[2].shots[0].in === 2.5, 'the in point to be saved');
+    await page.keyboard.press('Escape');
+    await page.waitForSelector('[data-testid="source-viewer"]', { state: 'detached' });
+  });
+
+  await step('drags a raw take onto the timeline without opening it', async () => {
+    const count = () => readHandoff(folder).videos[1].scenes[2].shots.length;
+    const before = count();
+    await page.locator('[data-testid="bin-take"][data-take="03-add-key-t1.mp4"]').dragTo(page.locator('[data-shot-id="1:2:0"]'));
+    await waitFor(() => count() === before + 1, 'the dropped shot to be saved');
+    assert.equal(await page.locator('[data-testid="source-viewer"]').count(), 0);
+    await page.click('[data-testid="video-tab-PROMO"]');
+  });
+
   await step('frames 9:16 like social-cut.py', async () => {
     await page.click('[data-testid="aspect-9x16"]');
     const stage = await page.locator('[data-testid="stage"]').evaluate((el) => ({ w: el.style.width, h: el.style.height }));

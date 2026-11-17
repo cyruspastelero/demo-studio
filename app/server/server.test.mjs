@@ -276,3 +276,116 @@ describe('http server', () => {
     }
   });
 });
+
+describe('look templates', () => {
+  let studio;
+  let port;
+  let repo;
+  let demos;
+  const PNG = Buffer.from('89504e470d0a1a0a', 'hex');
+
+  function get(path, headers = {}) {
+    return new Promise((resolvePromise, reject) => {
+      const req = request({ host: '127.0.0.1', port, path, headers: { host: `127.0.0.1:${port}`, ...headers } }, (res) => {
+        let body = '';
+        res.on('data', (c) => { body += c; });
+        res.on('end', () => resolvePromise({ status: res.statusCode, headers: res.headers, body }));
+      });
+      req.on('error', reject);
+      req.end();
+    });
+  }
+
+  function template(root, id, json, previews = 2) {
+    const folder = join(root, id);
+    mkdirSync(join(folder, 'preview'), { recursive: true });
+    writeFileSync(join(folder, 'template.json'), typeof json === 'string' ? json : JSON.stringify(json));
+    writeFileSync(join(folder, 'README.md'), '# readme\n');
+    for (let i = 1; i <= previews; i += 1) writeFileSync(join(folder, 'preview', `0${i}.png`), PNG);
+    return folder;
+  }
+
+  beforeEach(async () => {
+    repo = join(dir, 'repo');
+    demos = join(dir, 'demos');
+    mkdirSync(join(repo, 'look-templates'), { recursive: true });
+    mkdirSync(join(demos, '_templates'), { recursive: true });
+    template(join(repo, 'look-templates'), 'house', {
+      id: 'house', name: 'House', description: 'The default look.', created: '2026-11-18',
+      source: 'built-in', look: { brand: { accent: '#FC5E32', background: { base: '#111111' } } },
+    }, 1);
+    const copied = template(join(demos, '_templates'), 'reference-cut', {
+      id: 'reference-cut', name: 'Reference cut', description: 'Copied look.', created: '2026-11-18', source: 'copied',
+      look: { brand: { accent: 'url(javascript:alert(1))', background: { base: '#fafafa' } } },
+    }, 3);
+    writeFileSync(join(copied, 'source.json'), JSON.stringify({ file: '/Users/me/Videos/reference.mp4', duration: 96 }));
+    studio = createStudio({ repo, cwd: dir });
+    const url = await studio.listen(20000 + Math.floor(Math.random() * 20000));
+    port = Number(new URL(url).port);
+  });
+  afterEach(async () => {
+    await studio.close();
+  });
+
+  it('lists templates from the workspace and the plugin', async () => {
+    const res = await get('/api/templates');
+    expect(res.status).toBe(200);
+    const list = JSON.parse(res.body);
+    expect(list.map((t) => [t.id, t.origin])).toEqual([['reference-cut', 'workspace'], ['house', 'built-in']]);
+    const [mine, house] = list;
+    expect(mine.source).toEqual({ file: 'reference.mp4', duration: 96 });
+    expect(mine.previews).toHaveLength(3);
+    expect(mine.colours).toEqual({ accent: null, background: '#fafafa' });
+    expect(house.colours).toEqual({ accent: '#FC5E32', background: '#111111' });
+    expect(house.source).toBeNull();
+    expect(house.previews).toEqual(['/api/template-preview/built-in/house/01.png']);
+  });
+
+  it('serves a preview PNG sandboxed, and nothing else', async () => {
+    const ok = await get('/api/template-preview/workspace/reference-cut/02.png');
+    expect(ok.status).toBe(200);
+    expect(ok.headers['content-type']).toBe('image/png');
+    expect(ok.headers['x-content-type-options']).toBe('nosniff');
+    expect(ok.headers['content-security-policy']).toMatch(/sandbox/);
+    for (const path of [
+      '/api/template-preview/workspace/reference-cut/07.png',
+      '/api/template-preview/workspace/reference-cut/template.json',
+      '/api/template-preview/workspace/reference-cut/..%2F..%2Ftemplate.json',
+      '/api/template-preview/workspace/..%2F..%2Fetc/01.png',
+      '/api/template-preview/elsewhere/house/01.png',
+      '/api/template-preview/built-in/HOUSE/01.png',
+    ]) expect((await get(path)).status, path).toBe(404);
+    expect((await get('/api/template-preview/built-in/house/01.png', { 'sec-fetch-site': 'cross-site' })).status).toBe(403);
+  });
+
+  it('skips symlinked folders, symlinked previews, bad ids and broken JSON', async () => {
+    const outside = mkdtempSync(join(tmpdir(), 'studio-outside-'));
+    try {
+      template(outside, 'stolen', { name: 'Stolen' });
+      symlinkSync(join(outside, 'stolen'), join(demos, '_templates', 'stolen'));
+      const linked = template(join(demos, '_templates'), 'linked-preview', { name: 'Linked' }, 0);
+      writeFileSync(join(outside, 'secret.png'), PNG);
+      symlinkSync(join(outside, 'secret.png'), join(linked, 'preview', '01.png'));
+      template(join(demos, '_templates'), 'Bad_Id', { name: 'Bad' });
+      template(join(demos, '_templates'), 'broken', '{ not json');
+      template(join(demos, '_templates'), 'array-json', '[1, 2]');
+      const list = JSON.parse((await get('/api/templates')).body);
+      const ids = list.map((t) => t.id);
+      expect(ids).not.toContain('stolen');
+      expect(ids).not.toContain('Bad_Id');
+      expect(ids).not.toContain('broken');
+      expect(ids).not.toContain('array-json');
+      expect(list.find((t) => t.id === 'linked-preview').previews).toEqual([]);
+      expect((await get('/api/template-preview/workspace/linked-preview/01.png')).status).toBe(404);
+      expect((await get('/api/template-preview/workspace/stolen/01.png')).status).toBe(404);
+    } finally {
+      rmSync(outside, { recursive: true, force: true });
+    }
+  });
+
+  it('answers an empty list when neither folder exists', async () => {
+    rmSync(join(repo, 'look-templates'), { recursive: true, force: true });
+    rmSync(join(demos, '_templates'), { recursive: true, force: true });
+    expect(JSON.parse((await get('/api/templates')).body)).toEqual([]);
+  });
+});

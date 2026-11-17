@@ -5,12 +5,14 @@ import { MediaBin } from './components/media-bin';
 import { Modal, ShortcutsOverlay, Toasts, type Toast } from './components/overlays';
 import { Preview } from './components/preview';
 import { RenderDrawer } from './components/render-drawer';
+import { SourceViewer } from './components/source-viewer';
 import { Timeline } from './components/timeline';
 import { renderOptions, TopBar } from './components/top-bar';
 import { applyEdit, EditError, refUses, type Edit, type RefMode, type ShotPatch } from './lib/edits';
 import { voiceoverFits } from './lib/fit';
 import { socialEntry } from './lib/geometry';
 import type { Player } from './lib/player';
+import { markPatch, markTarget, type Mark, type SourceControls, type SourceTake } from './lib/source';
 import { buildDemoTimeline, buildHandoffTimeline, isRefShot } from './lib/timeline';
 import type { Aspect, DemoDoc, FileKind, HandoffDoc, MediaIndex, Selection, Timeline as TimelineModel } from './lib/types';
 import { useDocuments } from './state/use-documents';
@@ -49,6 +51,10 @@ export function Editor({ session, onClose }: {
   const [refAsk, setRefAsk] = useState<{ scene: number; shot: number; patch: ShotPatch; ref: string } | null>(null);
   const refChoice = useRef(new Map<string, RefMode>());
   const [player, setPlayer] = useState<Player | null>(null);
+  // The raw take open in the source viewer, and the cut playhead to return to.
+  const [source, setSource] = useState<{ take: SourceTake; returnTo: number } | null>(null);
+  const sourceControls = useRef<SourceControls | null>(null);
+  const onSourceControls = useCallback((c: SourceControls | null) => { sourceControls.current = c; }, []);
 
   const doc = docs.docs[fileKind] as HandoffDoc | DemoDoc | undefined;
   const handoff = docs.docs.handoff as HandoffDoc | undefined;
@@ -130,7 +136,52 @@ export function Editor({ session, onClose }: {
     if (shot) runEdit({ op: 'split', scene: shot.sceneIndex, shot: shot.shotIndex, at: shot.in + (t - shot.start) * shot.speed });
   };
 
-  useShortcuts({
+  const viewTake = (take: SourceTake) => {
+    player?.pause();
+    setSource((open) => ({ take, returnTo: open?.returnTo ?? player?.time ?? 0 }));
+  };
+  const closeSource = () => {
+    if (!source) return;
+    const { take, returnTo } = source;
+    setSource(null);
+    player?.seek(returnTo);
+    // Back to the take in the bin, so the keyboard picks up where it left off.
+    requestAnimationFrame(() => document.querySelector<HTMLElement>(`[data-take="${CSS.escape(take.file)}"]`)?.focus());
+  };
+  const openTakeExternally = (take: SourceTake) => {
+    api.reveal(`${session.folder}/${take.path}`, 'open').catch((e: Error) => notify(`Could not open ${take.file}: ${e.message}`, 'error'));
+  };
+  const markShot = source ? markTarget(selectedShot, source.take.file) : undefined;
+  const mark = (which: Mark, time = sourceControls.current?.time() ?? 0) => {
+    if (!markShot) return;
+    const result = markPatch(markShot, which, time);
+    if ('error' in result) {
+      notify(result.error, 'error');
+      return;
+    }
+    onShotPatch(markShot.sceneIndex, markShot.shotIndex, result.patch);
+  };
+  const src = () => sourceControls.current;
+
+  useShortcuts(source ? {
+    toggle: () => src()?.toggle(),
+    play: () => src()?.play(),
+    pause: () => src()?.pause(),
+    seekBy: (s) => src()?.seekBy(s),
+    step: (f) => src()?.step(f),
+    home: () => src()?.home(),
+    end: () => src()?.end(),
+    loop: () => mark('out'),
+    markIn: () => mark('in'),
+    escape: closeSource,
+    split: () => undefined,
+    remove: () => undefined,
+    undo: docs.undo,
+    redo: docs.redo,
+    zoom: (f) => setPps((p) => Math.min(240, Math.max(8, p * f))),
+    aspect: (i) => setAspect(ASPECTS[i]),
+    help: () => setHelp((h) => !h),
+  } : {
     toggle: () => player?.toggle(),
     play: () => player?.play(),
     pause: () => player?.pause(),
@@ -146,6 +197,8 @@ export function Editor({ session, onClose }: {
     zoom: (f) => setPps((p) => Math.min(240, Math.max(8, p * f))),
     aspect: (i) => setAspect(ASPECTS[i]),
     help: () => setHelp((h) => !h),
+    escape: () => undefined,
+    markIn: () => undefined,
   }, !help && !refAsk && !docs.conflict);
 
   const has = {
@@ -168,9 +221,14 @@ export function Editor({ session, onClose }: {
         options={renderOptions(has, videoKey ?? '')} rendering={job?.status === 'running'}
         onRender={startRender} onShowRender={() => setDrawer(true)} onClose={onClose}
       />
-      <MediaBin kind={fileKind} doc={doc} media={media} onSelectCard={(name) => setSelection({ type: 'card', name })} />
+      <MediaBin kind={fileKind} doc={doc} media={media} viewing={source?.take.file ?? null}
+        onSelectCard={(name) => setSelection({ type: 'card', name })} onViewTake={viewTake} onOpenTake={openTakeExternally} />
       <Preview kind={fileKind} timeline={timeline} aspect={aspect} social={entry} brand={handoff?.brand}
-        missing={missing} loop={loop} onToggleLoop={() => setLoop((l) => !l)} onPlayer={setPlayer} />
+        missing={missing} loop={loop} onToggleLoop={() => setLoop((l) => !l)} onPlayer={setPlayer}
+        overlay={source && (
+          <SourceViewer take={source.take} markable={Boolean(markShot)} onMark={mark} onClose={closeSource}
+            onOpenExternal={() => openTakeExternally(source.take)} onControls={onSourceControls} />
+        )} />
       {doc ? (
         <Inspector kind={fileKind} doc={doc} videoIndex={videoIndex} timeline={timeline} selection={selection}
           onSelect={setSelection} onEdit={runEdit} onShotPatch={onShotPatch} durations={durations} fits={fits}

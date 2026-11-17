@@ -551,10 +551,21 @@ input[type='range']:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 1.5p
 .status-alt { color: var(--muted); }
 .status-reject { color: var(--dim); text-decoration: line-through; }
 .bin-empty { padding: 4px 8px; font-size: 12px; color: var(--quiet); }
+/* A raw take: click to view it in the source viewer, drag to add it; the open button shows on hover or focus. */
+.bin-take { position: relative; }
+.bin-take .bin-item { padding-right: 36px; }
+.bin-item:focus-visible { outline-offset: -2px; }
+.bin-item.viewing { background: var(--accent-tint); box-shadow: inset 2px 0 0 var(--accent); }
+.bin-open {
+  position: absolute; top: 50%; right: 6px; width: 24px; height: 24px; translate: 0 -50%;
+  opacity: 0; transition: opacity var(--fast) var(--ease), background-color var(--fast) var(--ease), color var(--fast) var(--ease);
+}
+.bin-take:hover .bin-open, .bin-take:focus-within .bin-open { opacity: 1; }
+@media (hover: none) { .bin-open { opacity: 1; } }
 
 /* ---------------------------------------------------------------- preview */
 
-.preview { grid-area: preview; display: flex; flex-direction: column; min-height: 0; background: var(--canvas); }
+.preview { grid-area: preview; position: relative; display: flex; flex-direction: column; min-height: 0; background: var(--canvas); }
 .stage-wrap { flex: 1; min-height: 0; position: relative; overflow: hidden; margin: 16px 16px 0; }
 /* The stage mirrors the rendered frame, so it keeps the output's own look and system font. */
 .stage {
@@ -592,6 +603,18 @@ input[type='range']:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 1.5p
 .transport .tc { padding: 0 12px; font-size: 13px; color: var(--quiet); white-space: nowrap; }
 .transport .tc b { font-weight: 500; color: var(--ink); }
 .transport .shot-label { min-width: 0; font-family: var(--mono); font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Raw take source viewer: covers the cut preview; the take plays in its own colours on black. */
+.source-viewer { position: absolute; inset: 0; display: flex; flex-direction: column; min-height: 0; background: var(--canvas); }
+.source-head { display: flex; align-items: center; gap: 8px; flex: none; height: 48px; padding: 0 16px; box-shadow: var(--hair-b); }
+.source-label { display: flex; align-items: baseline; gap: 8px; min-width: 0; white-space: nowrap; }
+.source-label .eyebrow { flex: none; }
+.source-sep { color: var(--dim); font-family: var(--mono); font-size: 12px; }
+.source-file { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-family: var(--mono); font-size: 12px; color: var(--ink); }
+.source-stage { flex: 1; min-height: 0; position: relative; margin: 16px 16px 0; }
+.source-stage video { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: contain; background: #000; box-shadow: var(--ring); cursor: pointer; }
+.source-scrub { flex: none; padding: 12px 16px 0; }
+.source-scrub input[type='range'] { display: block; width: 100%; margin: 0; }
 
 /* ---------------------------------------------------------------- inspector */
 
