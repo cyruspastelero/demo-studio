@@ -12,6 +12,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 PLUGIN_ROOT = Path(__file__).resolve().parent.parent
@@ -216,9 +217,14 @@ def safe_make_zip(root: Path, base: Path, root_dir: Path, base_dir: str) -> str:
     base = Path(base)
     ensure_inside(root, base.parent, "zip folder")
     target = base.with_name(base.name + ".zip")
-    temp = base.with_name(f".{base.name}.{os.getpid()}.tmp")
-    built = Path(shutil.make_archive(str(temp), "zip", str(root_dir), base_dir))
-    os.replace(built, target)
+    # mkdtemp creates a new, private (0700) folder with an unpredictable name, so nothing can be
+    # planted at the temporary path; the finished zip is then renamed over the target.
+    workdir = Path(tempfile.mkdtemp(prefix=f".{base.name}.", dir=base.parent))
+    try:
+        built = Path(shutil.make_archive(str(workdir / base.name), "zip", str(root_dir), base_dir))
+        os.replace(built, target)
+    finally:
+        shutil.rmtree(workdir, ignore_errors=True)
     return str(target)
 
 
