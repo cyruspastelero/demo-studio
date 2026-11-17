@@ -1,12 +1,19 @@
-/* demo-studio: one light design system for the home screen and the editor.
+/* demo-studio: one design system, in a light and a dark theme, for the home screen and the editor.
    Rules this file keeps:
-   - Greys: #fafafa page, #ffffff surfaces, #ebebeb hairline, #171717 headings, #4d4d4d body, #666666 captions,
-     then #7d7d7d, #8f8f8f, #a8a8a8, #c9c9c9. No other greys.
-   - One accent. #FC5E32 for marks, rings, dots, progress, the playhead and selection. #F5521F fill with white
-     text for primary buttons (hover #E8440F). No dark blocks; the preview frame shows the video as it renders.
+   - Every colour is a token on :root. The dark theme only redefines tokens, so every surface follows it.
+     <html data-theme> is system | light | dark (src/lib/theme.ts, set before first paint by index.html);
+     system follows the device through prefers-color-scheme.
+   - Light greys: #fafafa page, #ffffff surfaces, #ebebeb hairline, #171717 headings, #4d4d4d body, #666666 captions,
+     then #7d7d7d, #8f8f8f, #a8a8a8, #c9c9c9. Dark greys (the guide's dark theme): #111111 page, #1a1a1a surfaces,
+     #2c2c2c hairline, #ededed headings, #c4c4c4 body, #a3a3a3 captions, then #979797, #8c8c8c, #6b6b6b, #4d4d4d.
+     No other greys.
+   - One accent. --accent for marks, rings, dots, progress, the playhead and selection, never text. Primary buttons
+     are white text on --accent-fill, dark enough for WCAG AA (4.5:1) in both themes.
+     Contrast (AA): body, muted and quiet text are 4.5:1 or more on canvas and surface in the dark theme.
    - 6px radius. Depth by 1px hairline rings (box-shadow 0 0 0 1px), never drop shadows.
    - Geist for text, Geist Mono for labels, timecodes and numbers. Weights 400 to 550.
    - Warnings are ink text with a small accent marker, never a red chip.
+   - The preview stage shows the video as it renders, in its own colours, in both themes.
    - 44px controls on the home screen, 32px in the dense editor. Spacing on an 8px grid. */
 
 /* ---------------------------------------------------------------- fonts (SIL OFL 1.1, see fonts/OFL.txt) */
@@ -32,11 +39,15 @@
   --dim: #a8a8a8;
   --faint: #c9c9c9;
   --accent: #FC5E32;
-  --accent-fill: #F5521F;
-  --accent-hover: #E8440F;
+  --accent-fill: #d2430e;
+  --accent-hover: #b83a0b;
+  --on-accent: #ffffff;
   --accent-tint: rgb(252 94 50 / 0.08);
+  --selection: rgb(252 94 50 / 0.2);
   --hover-tint: rgb(0 0 0 / 0.04);
   --backdrop: rgb(23 23 23 / 0.24);
+  --stage-empty: var(--canvas);
+  --picture-filter: none;  /* posters, thumbnails and filmstrips; the preview stage is never filtered */
 
   --ring: 0 0 0 1px var(--line);
   --ring-strong: 0 0 0 1px var(--faint);
@@ -54,6 +65,55 @@
   --mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --ease: cubic-bezier(0.2, 0, 0, 1);
   --fast: 150ms;
+}
+
+/* Dark: the same tokens, redefined. Picked explicitly, or the device prefers dark and nothing else was picked.
+   Keep the two blocks identical. */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --canvas: #111111;
+  --surface: #1a1a1a;
+  --line: #2c2c2c;
+  --ink: #ededed;
+  --body: #c4c4c4;
+  --muted: #a3a3a3;
+  --soft: #979797;
+  --quiet: #8c8c8c;
+  --dim: #6b6b6b;
+  --faint: #4d4d4d;
+  --accent: #ff7043;
+  --accent-fill: #c8410e;
+  --accent-hover: #b83a0b;
+  --accent-tint: rgb(255 112 67 / 0.12);
+  --selection: rgb(255 112 67 / 0.3);
+  --hover-tint: rgb(255 255 255 / 0.06);
+  --backdrop: rgb(0 0 0 / 0.6);
+  --stage-empty: #0a0a0a;
+  --picture-filter: brightness(0.86);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --canvas: #111111;
+    --surface: #1a1a1a;
+    --line: #2c2c2c;
+    --ink: #ededed;
+    --body: #c4c4c4;
+    --muted: #a3a3a3;
+    --soft: #979797;
+    --quiet: #8c8c8c;
+    --dim: #6b6b6b;
+    --faint: #4d4d4d;
+    --accent: #ff7043;
+    --accent-fill: #c8410e;
+    --accent-hover: #b83a0b;
+    --accent-tint: rgb(255 112 67 / 0.12);
+    --selection: rgb(255 112 67 / 0.3);
+    --hover-tint: rgb(255 255 255 / 0.06);
+    --backdrop: rgb(0 0 0 / 0.6);
+    --stage-empty: #0a0a0a;
+  --picture-filter: brightness(0.86);
+  }
 }
 
 /* ---------------------------------------------------------------- base */
@@ -76,7 +136,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; }
 :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 :focus:not(:focus-visible) { outline: none; }
-::selection { background: rgb(252 94 50 / 0.2); }
+::selection { background: var(--selection); }
 .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
 .muted { color: var(--muted); }
 .faint { color: var(--quiet); }
@@ -104,7 +164,7 @@ button { cursor: pointer; }
   transition-duration: var(--fast); transition-timing-function: var(--ease);
 }
 .btn svg { flex: none; color: var(--muted); transition: color var(--fast) var(--ease); }
-.btn.primary { background: var(--accent-fill); color: #fff; box-shadow: none; font-weight: 550; }
+.btn.primary { background: var(--accent-fill); color: var(--on-accent); box-shadow: none; font-weight: 550; }
 .btn.primary svg { color: currentColor; }
 .btn.danger { color: var(--ink); }
 .btn:disabled { background: var(--surface); color: var(--faint); box-shadow: var(--ring); cursor: default; }
@@ -113,7 +173,7 @@ button { cursor: pointer; }
   .btn:not(:disabled):hover { box-shadow: var(--ring-strong); }
   .btn:not(:disabled):hover svg { color: var(--ink); }
   .btn.primary:not(:disabled):hover { background: var(--accent-hover); box-shadow: none; }
-  .btn.primary:not(:disabled):hover svg { color: #fff; }
+  .btn.primary:not(:disabled):hover svg { color: var(--on-accent); }
 }
 .btn:not(:disabled):active { scale: 0.97; }
 
@@ -135,6 +195,18 @@ button { cursor: pointer; }
 }
 @media (hover: hover) { .segmented button:hover { color: var(--ink); } }
 .segmented button[aria-pressed='true'] { background: var(--surface); color: var(--ink); box-shadow: var(--ring-strong); }
+
+/* Theme switch: System / Light / Dark as icon buttons in the same quiet well as .segmented. */
+.theme-switch { display: inline-flex; flex: none; gap: 2px; padding: 2px; border-radius: var(--radius); background: var(--canvas); box-shadow: var(--ring); }
+.theme-switch button {
+  display: inline-grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 4px;
+  background: transparent; color: var(--quiet);
+  transition: background-color var(--fast) var(--ease), color var(--fast) var(--ease), box-shadow var(--fast) var(--ease);
+}
+@media (hover: hover) { .theme-switch button:hover { color: var(--ink); } }
+.theme-switch button[aria-checked='true'] { background: var(--surface); color: var(--ink); box-shadow: var(--ring-strong); }
+.theme-switch button:focus-visible { outline-offset: 0; }
+@media (pointer: coarse) { .theme-switch button { width: 40px; height: 40px; } }
 
 /* ---------------------------------------------------------------- form fields */
 
@@ -231,6 +303,8 @@ input[type='range']:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 1.5p
   transition: background-color var(--fast) var(--ease), color var(--fast) var(--ease);
 }
 .side-util svg { color: var(--quiet); }
+.side-util-row { display: flex; align-items: center; gap: 8px; padding-right: 2px; }
+.side-util-row .side-util { flex: 1; width: auto; min-width: 0; }
 @media (hover: hover) { .side-util:hover { background: var(--hover-tint); color: var(--ink); } }
 
 .home-bar {
@@ -325,7 +399,7 @@ input[type='range']:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 1.5p
   background: var(--canvas); box-shadow: var(--hair-b); overflow: hidden;
 }
 .demo-poster:disabled { cursor: default; }
-.demo-poster img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.demo-poster img { width: 100%; height: 100%; object-fit: cover; display: block; filter: var(--picture-filter); }
 .demo-poster::after { content: ''; position: absolute; inset: 0; box-shadow: var(--hair-b); pointer-events: none; }
 .demo-poster-empty {
   position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 8px;
@@ -465,7 +539,7 @@ input[type='range']:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 1.5p
 @media (hover: hover) { .bin-item:hover { background: var(--hover-tint); } }
 .bin-item .thumb {
   width: 64px; height: 36px; border-radius: 4px; background: var(--canvas) center / cover no-repeat; box-shadow: var(--ring);
-  display: grid; place-items: center; color: var(--dim); overflow: hidden;
+  display: grid; place-items: center; color: var(--dim); overflow: hidden; filter: var(--picture-filter);
 }
 .bin-item .name { font-size: 13px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .bin-item .meta { display: flex; gap: 8px; min-width: 0; font-size: 12px; color: var(--quiet); white-space: nowrap; overflow: hidden; }
@@ -507,8 +581,8 @@ input[type='range']:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 1.5p
   position: absolute; left: 0; right: 0; top: 944px; height: 136px; display: grid; place-items: center;
   color: #1d1d1f; font-size: 48px; font-weight: 650; letter-spacing: -0.5px;
 }
-.stage .empty-stage { position: absolute; inset: 0; display: grid; place-items: center; background: var(--canvas); color: var(--quiet); font: 40px var(--sans); }
-.missing-media { position: absolute; inset: 0; display: grid; place-items: center; padding: 40px; text-align: center; background: var(--canvas); color: var(--muted); font: 36px var(--mono); }
+.stage .empty-stage { position: absolute; inset: 0; display: grid; place-items: center; background: var(--stage-empty); color: var(--quiet); font: 40px var(--sans); }
+.missing-media { position: absolute; inset: 0; display: grid; place-items: center; padding: 40px; text-align: center; background: var(--stage-empty); color: var(--muted); font: 36px var(--mono); }
 
 .transport {
   display: flex; align-items: center; gap: 4px; flex: none; height: 56px; padding: 0 16px;
@@ -584,7 +658,7 @@ input[type='range']:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 1.5p
 .tl-shot.dragging { opacity: 0.4; }
 .tl-shot .strip {
   position: absolute; inset: 0 0 22px 0; background-color: var(--canvas); background-repeat: repeat-x; background-size: auto 100%;
-  box-shadow: var(--hair-b);
+  box-shadow: var(--hair-b); filter: var(--picture-filter);
 }
 .tl-shot .card-strip {
   display: grid; place-items: center; padding: 4px 8px; overflow: hidden; text-align: center;

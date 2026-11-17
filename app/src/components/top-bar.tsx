@@ -1,5 +1,6 @@
 import { ChevronLeft, Clapperboard, Film, Gauge, Image, Keyboard, Layers, Package, Redo2, Smartphone, Undo2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { ThemeSwitch } from './theme-switch';
 import type { SaveStatus } from '../state/use-documents';
 import type { Aspect, FileKind } from '../lib/types';
 
@@ -96,6 +97,7 @@ export function TopBar({
         <span className={`dot${bad ? ' bad' : saveStatus === 'saved' ? '' : ' pending'}`} />{STATUS_TEXT[saveStatus]}
       </span>
       <span className="sep" />
+      <ThemeSwitch />
       <button className="icon-btn" aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)" onClick={onShortcuts}><Keyboard size={16} /></button>
       <div className="menu-wrap" ref={wrap}>
         <button className="btn primary" onClick={() => (rendering ? onShowRender() : setMenu(!menu))} aria-haspopup="menu" aria-expanded={menu} data-testid="render-button">

@@ -55,6 +55,14 @@ try {
     assert.equal(await page.locator('[data-testid="vo-bar"]').count(), 5);
   });
 
+  await step('switches theme from the top bar', async () => {
+    await page.click('.topbar [data-testid="theme-dark"]');
+    assert.equal(await page.evaluate(() => document.documentElement.dataset.theme), 'dark');
+    assert.equal(await page.evaluate(() => localStorage.getItem('demo-studio.theme')), 'dark');
+    await page.click('.topbar [data-testid="theme-system"]');
+    assert.equal(await page.evaluate(() => document.documentElement.dataset.theme), 'system');
+  });
+
   await step('trims a plain clip and saves handoff.json', async () => {
     await page.click('[data-testid="video-tab-HOW-TO"]');
     const before = readHandoff(folder).videos[1].scenes[1].shots[1].out;

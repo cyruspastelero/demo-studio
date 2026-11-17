@@ -1,6 +1,7 @@
 import { Check, Copy, ExternalLink, FileText, Film, FolderOpen, PencilRuler, Play, RefreshCw, Search } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { api, demoThumbUrl, type DemoEntry, type HomeSession } from '../api';
+import { ThemeSwitch } from './theme-switch';
 
 const COPIED_MS = 1600;
 const FILTER_FROM = 7;  // a filter box only earns its space once the list is long
@@ -216,7 +217,10 @@ function Sidebar({ items, active, onGo, root, onRefresh }: {
       <div className="side-foot">
         <p className="side-label">Folder</p>
         <p className="side-root home-root" title="Where demos are looked up ($DEMO_ROOT, default ./demos)">{root}</p>
-        <button className="side-util" onClick={onRefresh}><RefreshCw size={14} />Refresh</button>
+        <div className="side-util-row">
+          <button className="side-util" onClick={onRefresh}><RefreshCw size={14} />Refresh</button>
+          <ThemeSwitch />
+        </div>
       </div>
     </aside>
   );
@@ -308,6 +312,7 @@ export function Home({ session, onOpen, onRefresh }: {
           <span className="home-brand"><span className="mark" aria-hidden />demo-studio</span>
           <span className="home-root mono" title="Where demos are looked up ($DEMO_ROOT, default ./demos)">{workspace.root}</span>
           <span className="home-bar-space" />
+          <ThemeSwitch />
           <button className="icon-btn" onClick={onRefresh} aria-label="Refresh" title="Refresh"><RefreshCw size={15} /></button>
         </header>
 
