@@ -164,7 +164,7 @@ Measured the same way on an earlier sample cut (37.5 s), built by `scripts/build
 | Audio | **No audio stream at all** | Narration + bed, −14 LUFS, TP ≤ −1 | Missing entirely |
 | Font | `system-ui` → SF Pro (not licensed to bundle; Linux renders a fallback). Titles 600, captions 600 | Bundled Inter, 500 titles, 400 subtitles | Wrong family and weight, not portable |
 | Callouts | Bare text, SF 600 44 px `#171918`, no pill, avatar or accent. **On screen for the whole scene (8.3 s and 22.6 s).** | 68 px pill at y=962, 30 px Inter 500, 3 to 5 s, person or accent variant | No callout component |
-| Highlights | None | 3 px `#E2483C` box, radius 12, halo, eased in after a zoom | Missing |
+| Highlights | None | 3 px box in the product's brand accent, radius 12, halo, eased in after a zoom | Missing |
 | Zoom model | Content-only zoompan inside a fixed frame. 1.5x, smoothstep 1.6 s. It crops arbitrarily (logo cut to "rkitekto") and leaves about 30% of the frame as empty grey sidebar (t=33 s). | Whole window 1.15x, 1.1 s ease-in-out sine, window stays in frame | Wrong model; too deep and too slow |
 | Window | Fixed 1600x900 at (160,44) showing the full 16:9 viewport at 0.83x. Body text cap ≈ 13 px at rest. | 1560x800 tight crop at 1.15x, body cap ≥ 18 px | UI about 35% too small; no crop |
 | Background | Flat `#F2F3F5` at every sample point | Five-field pastel drift (`#C2CAD6` blue, `#E5C9C8` pink, `#FAF7F6` glow) | No colour, no depth |

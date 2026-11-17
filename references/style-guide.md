@@ -101,7 +101,7 @@ The frame shows the product and nothing else.
   (180, 100), app body text at least 18 px cap height, no empty sidebar over 15% of the window.
 - **The window rises in once** (0.7 s, ease-out) and clips cut inside it. Never a dip through an
   empty background between two window shots.
-- **Highlights:** a 3 px `#E2483C` outline, radius 12, on the one element the narration names,
+- **Highlights:** a 3 px outline in the product's brand accent (never a stock red), radius 12, on the one element the narration names,
   0.17 s after a zoom lands, glued to the UI while the window eases back. At most two at once.
 - **Callout pills** sit centred under the window at y = 962, 68 px tall, Inter 500 30 px, 3 to 5 s,
   one at a time, never during a zoom. Two kinds: a **person** (50 px avatar, "Name," in ink, role in
