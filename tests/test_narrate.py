@@ -240,7 +240,7 @@ class Mix(unittest.TestCase):
         self.assertIn("adelay=6250|6250", graph)
         self.assertIn("amix=inputs=2", graph)
         self.assertIn("atrim=0:14.000", graph)
-        self.assertIn("loudnorm=I=-16", graph)
+        self.assertIn("loudnorm=I=-14:TP=-2.0", graph)
         self.assertNotIn("sidechaincompress", graph)
 
     def test_second_pass_uses_the_measured_loudness(self):
@@ -248,8 +248,9 @@ class Mix(unittest.TestCase):
                  '"input_lra" : "3.2", "input_thresh" : "-34.5", "target_offset" : "0.4"\n}\n'
         measured = narrate.parse_loudnorm(stderr)
         graph = narrate.mix_filter([0.3], 5.0, None, 0.2, True, measured)
-        self.assertIn("measured_I=-24.1", graph)
-        self.assertIn("linear=true", graph)
+        self.assertIn("volume=10.10dB", graph)          # -14 LUFS target minus the measured -24.1
+        self.assertIn("alimiter=limit=0.7674", graph)   # peaks held under -2.3 dBFS (true peak <= -1)
+        self.assertNotIn("loudnorm", graph)             # no AGC fallback that pumps the bed
         self.assertIsNone(narrate.parse_loudnorm("no json here"))
         silent = stderr.replace('"-24.1"', '"-inf"')
         self.assertIsNone(narrate.parse_loudnorm(silent))
@@ -310,7 +311,7 @@ class ExportLines(unittest.TestCase):
             for hint in ("01.mp3", "--voice files", "text_to_speech", "generate_audio"):
                 self.assertIn(hint, readme)
             music = (demo / "music" / "README.txt").read_text()
-            for hint in ("assets/music.mp3", "compose_music", "generate_audio", "music_fade_out"):
+            for hint in ("music/bed.m4a", "make-bed.py", "compose_music", "generate_audio", "music_dips"):
                 self.assertIn(hint, music)
             self.assertEqual(len(written), 3)
             # the manifest and READMEs must not be mistaken for numbered recordings
@@ -460,7 +461,7 @@ class Help(unittest.TestCase):
             narrate.parse_args(["--help"])
         text = out.getvalue()
         for hint in ("--export-lines", "--voice files", "ELEVENLABS_KEYCHAIN_SERVICE",
-                     "export ELEVENLABS_API_KEY", "assets/music.mp3"):
+                     "export ELEVENLABS_API_KEY", "music/bed.m4a"):
             self.assertIn(hint, text)
 
 
@@ -478,6 +479,46 @@ class Schema(unittest.TestCase):
     def test_negative_fades_and_option_like_service_names_are_rejected(self):
         errors = self.check({"music_fade_out": -1, "elevenlabs": {"keychain_service": "-w"}})
         self.assertEqual(len(errors), 2, errors)
+
+
+class QualityBarAudio(unittest.TestCase):
+    def test_bed_is_set_a_gap_under_the_narration(self):
+        volume = narrate.bed_volume(voice_lufs=-16.0, music_lufs=-20.0, gap_db=13.0)
+        self.assertAlmostEqual(20 * __import__("math").log10(volume), -9.0, places=6)
+
+    def test_bed_stops_before_a_silent_tail_and_dips_on_key_moments(self):
+        graph = narrate.mix_filter([0.3], 20.0, 2, 0.3, True, fade_out=4.0, tail=3.0, dips=((8.0, 1.5),),
+                                   exact_level=True)
+        self.assertIn("atrim=0:17.000", graph)            # the bed ends 3 s before the cut
+        self.assertIn("afade=t=out:st=13.000:d=4.000", graph)
+        self.assertIn("apad,atrim=0:20.000[bed]", graph)  # then silence to the end
+        self.assertIn("volume='(1-0.650*clip(min((t-8.000)/0.3,(9.500-t)/0.3),0,1))':eval=frame", graph)
+        self.assertIn("volume=0.300", graph)              # exact level: not halved
+
+    def test_mix_targets_minus_14_lufs(self):
+        self.assertEqual(narrate.TARGET_LUFS, -14)
+        self.assertLessEqual(narrate.TARGET_TP, -1.0)
+
+    def test_timing_outro_is_read_and_old_files_mean_no_outro(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            new = Path(tmp) / "new.json"
+            new.write_text(json.dumps({"total": 20, "outro": 5.0, "items": []}))
+            old = Path(tmp) / "old.json"
+            old.write_text(json.dumps({"total": 20, "items": []}))
+            self.assertEqual(narrate.timing_outro(new), 5.0)
+            self.assertEqual(narrate.timing_outro(old), 0.0)
+            self.assertEqual(narrate.timing_outro(Path(tmp) / "missing.json"), 0.0)
+
+    def test_loudness_report_names_each_problem(self):
+        self.assertEqual(narrate.loudness_report({"I": -14.2, "TP": -1.6, "LRA": 9}), [])
+        problems = narrate.loudness_report({"I": -11.0, "TP": -0.2, "LRA": 18})
+        self.assertEqual(len(problems), 3)
+
+    def test_music_settings_from_the_config(self):
+        voice = narrate.Voice.from_config({"music_gap_db": 14, "music_dips": [{"at": 4, "dur": 2}],
+                                           "music_fade_out": 2})
+        self.assertEqual((voice.music_gap_db, voice.music_dips, voice.fade_out_set, voice.music_volume),
+                         (14, ((4.0, 2.0),), True, None))
 
 
 if __name__ == "__main__":

@@ -37,8 +37,8 @@ editor folder in `recordings/editor-handoff/` and the zip next to it. Nothing is
 plugin folder.
 
 **How long does it take?** Planning 15 to 30 minutes. Recording about 5 to 10 minutes per scene
-including QA, so a 10-scene demo is an afternoon. The keynote cut renders in about one second of CPU
-per second of output; the full handoff takes a few minutes.
+including QA, so a 10-scene demo is an afternoon. A 40-second keynote cut builds in one to two
+minutes on a laptop (graphics are cached, so rebuilds are faster); the full handoff takes a few minutes.
 
 **How much disk space?** Have 10 GB free. A 60-second take is 0.5 to 1 GB of frames until it is
 approved; the encoded clips are small. Delete `recordings/frames/` after sign-off (Claude asks first).
@@ -49,7 +49,8 @@ seeded data that changed, re-shoot every scene that depends on it (the shot list
 
 **How do I change branding?** Edit `brand` and `cards` in the demo's `handoff.json` (colours, font,
 logo, taglines), then `node "$P/scripts/title-cards.mjs" handoff.json` and rebuild. The keynote
-look's colours and type are in `scripts/mk-assets.py` and `scripts/build-keynote.py`.
+look's accent colour, background, outro gradient, font (bundled Inter or Geist) and dark-outro logo are
+`brand` in `demo.json`; every other look value is fixed by [the quality bar](quality-bar.md).
 
 **How do I add voiceover?** Put a `voiceover` line on the items in `demo.json` (or on each scene in
 `handoff.json`): spoken English, about 2.5 words per second, no symbols. `narrate.py` records and

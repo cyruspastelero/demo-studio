@@ -1,159 +1,187 @@
 #!/usr/bin/env python3
-"""Keynote-style cut from demo.json: footage in a floating rounded window on a soft background,
-eased zooms onto key UI, statement captions, dissolves through the background colour, title cards.
+"""Keynote cut from demo.json, built to docs/quality-bar.md: the product in one floating rounded
+window cropped to the UI that matters, rising in once and staying put while clips cut inside it;
+whole-window zooms (1.15x, ease-in-out sine); red highlight boxes glued to the UI; callout pills
+under the window; word-by-word title cards in bundled Inter; a timed end card with a brand sweep
+and logo outro; a soft drifting pastel background. Video only: run narrate.py next for voice and music.
 
-Usage (from the demo dir): build-keynote.py demo.json [item ...]
-  item = scene id or card-<name>; only those parts are rebuilt, the rest reuse existing renders.
-Needs: recordings/raw/<stem>-t<take>.mp4 and the PNGs from mk-assets.py in
-recordings/exports/.keynote/. Output: recordings/exports/<slug>-keynote-cut.mp4 (1920x1080, 30fps)
-and <slug>-keynote-cut.timing.json next to it (where each item starts; narrate.py reads it).
-demo.json is checked against schemas/demo.schema.json first. Prints PROGRESS and OUTPUT lines.
+Usage (from the demo dir): build-keynote.py [demo.json] [--strict]
+  --strict   treat quality-bar warnings (shot too long, pill too long, no accent word...) as errors
+Needs: recordings/raw/<stem>-t<take>.mp4, ffmpeg, node with playwright-core and Chrome.
+Output: recordings/exports/<slug>-keynote-cut.mp4 (1920x1080, 30 fps, H.264 High, BT.709, 2 s GOP)
+plus <slug>-keynote-cut.timing.json (narrate.py reads it) and <slug>-keynote-cut.plan.json (where
+every window, zoom, pill, box and card is; check-cut.py reads it). Prints PROGRESS and OUTPUT lines.
+Rebuilds are incremental: graphics are cached by content in recordings/exports/.keynote/png/.
 """
-import importlib.util
+from __future__ import annotations
+
+import argparse
 import json
-import re
 import shutil
-import subprocess
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # demolib, keynote/ and narration/ sit next to this file
 
-def load_demolib():
-    spec = importlib.util.spec_from_file_location("demolib", Path(__file__).resolve().parent / "demolib.py")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+import demolib as lib  # noqa: E402
+from keynote import spec  # noqa: E402
+from keynote.brand import background_keyframes, load_brand  # noqa: E402
+from keynote.compose import composite, encode  # noqa: E402
+from keynote.model import Card, PlanError  # noqa: E402
+from keynote.overlay import OverlayTimeline, pill_state, title_card_state  # noqa: E402
+from keynote.render import Renderer, RenderError, check_fonts, image_uri, window_statics  # noqa: E402
+from keynote.timeline import build_plan  # noqa: E402
+from keynote.voice_sync import sync_end_card  # noqa: E402
+from keynote.window import run_frames  # noqa: E402
 
-
-lib = load_demolib()
-
-PLUGIN_ASSETS = Path(__file__).resolve().parent.parent / "assets"
-FPS = 30
-FADE = 0.4
-BG_HEX = "0xF3F3F6"
-WIN_X, WIN_Y, WIN_W, WIN_H = 160, 44, 1600, 900
-ENC = ["-c:v", "libx264", "-preset", "medium", "-crf", "16", "-pix_fmt", "yuv420p",
-       "-r", str(FPS), "-video_track_timescale", "30000", "-an"]
+TOOL = "build-keynote"
 
 
-def run(cmd):
-    result = subprocess.run(cmd, capture_output=True, text=True)
-    if result.returncode:
-        sys.exit(f"ffmpeg failed: {' '.join(map(str, cmd[:8]))}...\n{result.stderr[-1500:]}")
+def fail(message: str) -> None:
+    sys.exit(f"{TOOL}: {message}")
 
 
-def duration(path):
-    out = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration",
-                          "-of", "csv=p=0", str(path)], capture_output=True, text=True, check=True)
-    return float(out.stdout.strip())
+def probe(path: Path) -> tuple[float, tuple[int, int]]:
+    return lib.duration(path), lib.probe_size(path)
 
 
-def fades(d):
-    return (f"fade=in:st=0:d={FADE}:color={BG_HEX},"
-            f"fade=out:st={max(0, d - FADE):.3f}:d={FADE}:color={BG_HEX}")
+def collect_images(cfg: dict, demo_dir: Path, plan) -> dict[str, str]:
+    images = {}
+    try:
+        if cfg.get("logo"):
+            images["logo"] = image_uri(demo_dir, cfg["logo"], "logo")
+        dark = cfg.get("brand", {}).get("logo_on_dark")
+        if dark:
+            images["logo-dark"] = image_uri(demo_dir, dark, "brand.logo_on_dark")
+        for callout in plan.callouts:
+            if callout.avatar and callout.avatar not in images:
+                images[callout.avatar] = image_uri(demo_dir, callout.avatar, "callouts[].avatar")
+    except lib.UnsafePath as error:
+        fail(f"{error}. Put the image inside the demo folder and use a relative path.")
+    return images
 
 
-def zoom_filter(zoom, d):
-    z, cx, cy, t0, dur = zoom if zoom else (1.05, 960, 540, 0.0, d)
-    progress = f"clip((on/{FPS}-{t0})/{dur},0,1)"
-    zexpr = f"1+({z}-1)*({progress})*({progress})*(3-2*({progress}))"  # smoothstep ease
-    # work at 2x so the pan does not step in whole pixels
-    x = f"min(max({cx * 2}-iw/zoom/2,0),iw-iw/zoom)"
-    y = f"min(max({cy * 2}-ih/zoom/2,0),ih-ih/zoom)"
-    return (f"scale=3840:2160:flags=lanczos,"
-            f"zoompan=z='{zexpr}':x='{x}':y='{y}':d=1:s=1920x1080:fps={FPS}")
+def font_probe(plan) -> dict:
+    from keynote.model import Callout
+    card = next((c for c in plan.cards), None)
+    state = {"pill": pill_state(Callout(0, 3, "statement", "Probe text"), 1.0)}
+    if card:
+        state["card"] = title_card_state(card, 5.0, 99.0, 0.4)
+    return state
 
 
-def build_card(assets, item, out):
-    d = item.get("duration", 2.4)
-    push = f"zoompan=z='1+0.03*on/{int(d * FPS)}':x='iw/2-iw/zoom/2':y='ih/2-ih/zoom/2':d=1:s=1920x1080:fps={FPS}"
-    run(["ffmpeg", "-y", "-loglevel", "error", "-loop", "1", "-framerate", str(FPS), "-t", str(d),
-         "-i", str(assets / f"card-{item['card']}.png"),
-         "-vf", f"scale=3840:2160:flags=lanczos,{push},{fades(d)}", *ENC, str(out)])
+def render_graphics(plan, brand, cfg, demo_dir: Path, work: Path) -> tuple[Path, tuple[Path, Path], dict, list[str]]:
+    images = collect_images(cfg, demo_dir, plan)
+    renderer = Renderer(work, brand, images, has_logo="logo" in images)
+    windows = {n: run_frames(run) for n, run in enumerate(plan.runs)}
+    by_frame = {run.start + i: f for n, run in enumerate(plan.runs) for i, f in enumerate(windows[n])}
+    end_card = plan.cards[-1] if plan.cards and plan.cards[-1].kind == "end" else None
+    timeline = OverlayTimeline(plan, by_frame, cfg["title"], sync_end_card(end_card, demo_dir, cfg),
+                               has_logo="logo" in images)
+    bg_keys = [renderer.add({"background": state}) for state in background_keyframes(brand, plan.seconds)]
+    statics = {s["name"]: renderer.add(s["state"], tuple(s["size"])) for s in window_statics()}
+    layers = [timeline.layers(f) for f in range(plan.total_frames)]
+    under_keys = [renderer.add(under) for under, _ in layers]
+    over_keys = [renderer.add(over) for _, over in layers]
+    print(f"overlay: {len(set(under_keys) | set(over_keys))} unique frame(s) for {plan.total_frames} frames",
+          flush=True)
+    try:
+        fonts = renderer.run(font_probe(plan))
+    except RenderError as error:
+        fail(str(error))
+    check_fonts(fonts, brand)
+    bg_dir = renderer.link_sequence("seq-bg", bg_keys, "k%04d.png")
+    under_dir = renderer.link_sequence("seq-under", under_keys, "f%05d.png")
+    over_dir = renderer.link_sequence("seq-over", over_keys, "f%05d.png")
+    static_dir = renderer.link_sequence("png-static", list(statics.values()), "static-%d.png")
+    for i, name in enumerate(statics):
+        (static_dir / f"static-{i}.png").rename(static_dir / name)
+    renderer.prune(set(bg_keys) | set(under_keys) | set(over_keys) | set(statics.values()))
+    return bg_dir, (under_dir, over_dir), windows, fonts
 
 
-def build_clip(rec, assets, item, out):
-    src = rec / "raw" / f"{item['stem']}-t{item.get('take', 1)}.mp4"
-    if not src.exists():
-        sys.exit(f"build-keynote: missing {src}")
-    ts, te = (item.get("trim") or [None, None])
-    speed = item.get("speed", 1)
-    rng = (["-ss", str(ts)] if ts is not None else []) + (["-to", str(te)] if te is not None else [])
-    raw_d = (te if te is not None else duration(src)) - (ts or 0)
-    d = raw_d / speed
-    cap = assets / f"cap-{item['scene']}.png"
-    cap_in = ["-loop", "1", "-framerate", str(FPS), "-i", str(cap)] if cap.exists() else [
-        "-f", "lavfi", "-i", "color=c=black@0.0:s=1920x1080,format=rgba"]
-    fc = (
-        f"[1:v]setpts=PTS/{speed},fps={FPS},{zoom_filter(item.get('zoom'), d)},"
-        f"scale={WIN_W}:{WIN_H}:flags=lanczos,format=rgba[w0];"
-        f"[3:v]format=gray,scale={WIN_W}:{WIN_H}[m];[w0][m]alphamerge[w];"
-        f"[4:v]format=rgba,fade=in:st=0.25:d=0.5:alpha=1[c];"
-        f"[0:v][2:v]overlay[b1];[b1][w]overlay={WIN_X}:{WIN_Y}:shortest=1[b2];"
-        f"[b2][c]overlay,format=yuv420p,{fades(d)}[out]"
-    )
-    run(["ffmpeg", "-y", "-loglevel", "error",
-         "-loop", "1", "-framerate", str(FPS), "-i", str(PLUGIN_ASSETS / "bg.png"),
-         *rng, "-i", str(src),
-         "-loop", "1", "-framerate", str(FPS), "-i", str(PLUGIN_ASSETS / "shadow.png"),
-         "-loop", "1", "-framerate", str(FPS), "-i", str(PLUGIN_ASSETS / "mask.png"),
-         *cap_in,
-         "-filter_complex", fc, "-map", "[out]", "-t", f"{d:.3f}", *ENC, str(out)])
-
-
-def item_key(item):
-    return f"card-{item['card']}" if "card" in item else item["scene"]
-
-
-def write_timing(final, cfg, parts):
-    """Writes where each sequence item starts in the cut, measured from the rendered parts."""
-    items, clock = [], 0.0
-    for index, (item, part) in enumerate(zip(cfg["sequence"], parts)):
-        length = duration(part)
-        items.append({"index": index, "key": item_key(item), "start": round(clock, 3),
-                      "duration": round(length, 3)})
-        clock += length
+def write_sidecars(final: Path, cfg: dict, plan, fonts: list[str]) -> Path:
+    """timing.json (narrate.py) and plan.json (check-cut.py)."""
+    items = []
+    for n, item in enumerate(plan.items):
+        frames = item.frames + (item.outro_frames if isinstance(item, Card) else 0)
+        items.append({"index": n, "key": item.key, "start": round(item.start / spec.FPS, 3),
+                      "duration": round(frames / spec.FPS, 3)})
     timing = final.with_suffix(".timing.json")
-    timing.write_text(json.dumps({"video": final.name, "total": round(duration(final), 3),
-                                  "items": items}, indent=2) + "\n")
+    timing.write_text(json.dumps({"video": final.name, "total": round(plan.seconds, 3),
+                                  "outro": round(plan.outro_frames / spec.FPS, 3), "items": items}, indent=2) + "\n")
+    runs = []
+    for run in plan.runs:
+        base = run.start / spec.FPS
+        runs.append({"start": round(base, 3), "end": round(run.end / spec.FPS, 3),
+                     "zooms": [{"start": round(base + z.at, 3), "landed": round(base + z.landed, 3),
+                                "out": round(base + z.out_start, 3), "end": round(base + z.end, 3),
+                                "scale": z.scale} for z in run.zooms],
+                     "cuts": [round(plan.shots[s].start / spec.FPS, 3) for s in run.shots[1:]]})
+    sidecar = {"video": final.name, "total": round(plan.seconds, 3), "runs": runs,
+               "cards": [{"key": c.key, "kind": c.kind, "start": round(c.start / spec.FPS, 3),
+                          "end": round((c.start + c.frames) / spec.FPS, 3), "accent": c.accent,
+                          "outro": round(c.outro_frames / spec.FPS, 3)} for c in plan.cards],
+               "callouts": [{"start": round(c.start, 3), "end": round(c.end, 3), "kind": c.kind, "text": c.text}
+                            for c in plan.callouts],
+               "highlights": [{"start": round(h.start, 3), "end": round(h.end, 3)} for h in plan.highlights],
+               "fonts": fonts, "warnings": list(plan.warnings)}
+    final.with_suffix(".plan.json").write_text(json.dumps(sidecar, indent=2) + "\n")
     return timing
 
 
-def main():
-    if not shutil.which("ffmpeg"):
-        sys.exit("build-keynote: ffmpeg not found")
-    cfg_path = Path(sys.argv[1] if len(sys.argv) > 1 else "demo.json").resolve()
-    cfg = lib.load_config(cfg_path, "demo", "build-keynote")
-    only = set(sys.argv[2:])
-    rec = cfg_path.parent / "recordings"
-    assets = rec / "exports/.keynote"
-    parts_dir = assets / "parts"
-    parts_dir.mkdir(parents=True, exist_ok=True)
+def card_stills(final: Path, plan, work: Path) -> None:
+    """A still of each card at full reveal, for keynote-handoff.py (04-graphics/title-cards)."""
+    for card in plan.cards:
+        at = (card.start + min(card.frames - 1, card.frames * 0.8)) / spec.FPS
+        lib.run(["ffmpeg", "-y", "-loglevel", "error", "-ss", f"{at:.3f}", "-i", final, "-frames:v", "1",
+                 work / f"{card.key}.png"])
 
-    parts = []
-    total = len(cfg["sequence"])
-    for i, item in enumerate(cfg["sequence"]):
-        key = item_key(item)
-        out = parts_dir / f"{i:02d}-{key}.mp4"
-        parts.append(out)
-        if only and key not in only and out.exists():
-            lib.progress("parts", i + 1, total)
-            continue
-        if "card" in item:
-            build_card(assets, item, out)
-        else:
-            build_clip(rec, assets, item, out)
-        print(f"built {out.name} ({duration(out):.1f}s)", flush=True)
-        lib.progress("parts", i + 1, total)
 
-    lst = parts_dir / "list.txt"
-    lst.write_text(lib.concat_list(parts))
-    slug = re.sub(r"[^a-z0-9]+", "-", cfg.get("title", "demo").lower()).strip("-") or "demo"
-    final = rec / "exports" / f"{slug}-keynote-cut.mp4"
-    run(["ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", str(lst),
-         "-c", "copy", "-movflags", "+faststart", str(final)])
-    timing = write_timing(final, cfg, parts)
-    print(f"{final} ({duration(final):.1f}s)\ntiming: {timing}")
+def main() -> None:
+    parser = argparse.ArgumentParser(prog="build-keynote.py", description=__doc__.split("\n\n")[0])
+    parser.add_argument("config", nargs="?", default="demo.json")
+    parser.add_argument("items", nargs="*", help=argparse.SUPPRESS)  # old per-item rebuild; caching replaces it
+    parser.add_argument("--strict", action="store_true", help="fail on quality-bar warnings")
+    parser.add_argument("--keep-work", action="store_true", help="keep the frame sequences and intermediate (debugging)")
+    args = parser.parse_args()
+    lib.require("ffmpeg", "ffprobe", "node")
+    cfg_path = Path(args.config).resolve()
+    cfg = lib.load_config(cfg_path, "demo", TOOL)
+    demo_dir = cfg_path.parent
+    rec = demo_dir / "recordings"
+    try:
+        brand = load_brand(cfg.get("brand"))
+        plan = build_plan(cfg, rec / "raw", probe)
+    except PlanError as error:
+        fail(f"{error}\nFix {cfg_path.name}, then run: python3 -I {Path(__file__).resolve()} {args.config}")
+    for warning in plan.warnings:
+        print(f"WARN {warning}", flush=True)
+    if args.strict and plan.warnings:
+        fail(f"{len(plan.warnings)} quality-bar warning(s) above; fix them or run without --strict")
+    work = rec / "exports" / ".keynote"
+    work.mkdir(parents=True, exist_ok=True)
+    try:
+        lib.refuse_symlinks_under(rec / "exports", "recordings/exports")
+    except lib.UnsafePath as error:
+        fail(str(error))
+    bg_dir, overlays, windows, fonts = render_graphics(plan, brand, cfg, demo_dir, work)
+    final = rec / "exports" / f"{lib.slugify(cfg['title'])}-keynote-cut.mp4"
+    intermediate = work / "composite.mkv"
+    composite(plan, windows, work, bg_dir, overlays, intermediate)
+    encode(intermediate, final, work, plan.total_frames)
+    if not args.keep_work:
+        intermediate.unlink(missing_ok=True)
+        for folder in ("seq-bg", "seq-under", "seq-over"):
+            lib.safe_rmtree(work, work / folder, f".keynote/{folder}")
+    timing = write_sidecars(final, cfg, plan, fonts)
+    card_stills(final, plan, work)
+    print(f"{final} ({lib.duration(final):.1f}s)\ntiming: {timing}\n"
+          f"Next: narrate it (voice + music):  python3 -I {Path(__file__).resolve().parent / 'narrate.py'} "
+          f"{args.config}\nThen check it against the bar:  python3 -I "
+          f"{Path(__file__).resolve().parent / 'check-cut.py'} {final.with_name(final.stem + '-narrated.mp4')}")
+    if shutil.which("say") is None:
+        print("(no macOS say here: narrate with --voice files or ElevenLabs)")
     lib.output(final)
 
 

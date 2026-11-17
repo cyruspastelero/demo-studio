@@ -60,6 +60,7 @@ async function record(p, take) {
   if (w !== W || h !== H || dpr !== 2) throw new Error(`bad viewport ${w}x${h}@${dpr}; call prep(p) first`);
   const started = await rxPost(`/start?take=${encodeURIComponent(take)}`);
   if (!started.ok()) throw new Error(`frame receiver refused start: ${await started.text()}`);
+  ctx._recStart = Date.now();
   const cdp = await ctx.newCDPSession(p);
   let chain = Promise.resolve();
   cdp.on('Page.screencastFrame', f => {
@@ -75,6 +76,24 @@ async function record(p, take) {
     await chain; await cdp.detach().catch(() => {});
     return (await rxPost('/stop')).json();
   };
+}
+
+// Measures elements for the edit (docs/quality-bar.md W2, Z, H): highlight rects, crop regions and
+// zoom focus points, in source px of the 1080p take (CSS px x 1920/1440 = 4/3; the 2x capture is
+// scaled to 1920 wide). t = seconds since record() started, about the raw take's time (null before).
+// Target the element's text where you can (getByText), since the box is padded around it in the cut.
+// Usage: return { ..., scout: await scoutRects(p, { answer: p.getByTestId('answer-figure') }) };
+const SOURCE_SCALE = 1920 / W;
+async function scoutRects(p, targets) {
+  const out = {};
+  for (const [name, loc] of Object.entries(targets)) {
+    const b = await loc.boundingBox();
+    if (!b) throw new Error(`scout target ${name} is not visible`);
+    out[name] = { rect: [b.x, b.y, b.width, b.height].map(v => Math.round(v * SOURCE_SCALE)),
+      focus: [Math.round((b.x + b.width / 2) * SOURCE_SCALE), Math.round((b.y + b.height / 2) * SOURCE_SCALE)],
+      t: ctx._recStart ? Math.round((Date.now() - ctx._recStart) / 100) / 10 : null };
+  }
+  return out;
 }
 
 // Post-encode blur box for secrets the in-page mask cannot catch (canvas, images).
@@ -128,10 +147,13 @@ async function park(p, x = W * 0.62, y = H * 0.4) { await moveHuman(p, x, y, 25)
 async function placeCursor(p, x = W * 0.62, y = H * 0.4) { await p.mouse.move(x, y); ctx._mouse = { x, y }; }
 
 // Visible cursor (headless screencasts have no OS cursor). PROJECT.cursor:
-//   'arrow' (default) the normal macOS arrow, tip is the hotspot, a slight press on click
-//   'hand'  a pointing hand whose fingertip is the hotspot (for app/marketing demos)
-//   'dot'   the old blue click dot; avoid, it reads as a screen recorder, not a person
-const CURSOR_STYLE = PROJECT.cursor || 'arrow';
+//   'dot'   (default) the quality-bar cursor (docs/quality-bar.md K1, K4): a soft blue #8FAFF5 disc
+//           with a 2 px white ring and a 1 px #A9ABAD hairline, 21 CSS px, which lands at about 24 px
+//           (30 px overall) in the cut, since the window shows UI at about 1.15x its CSS size. It presses
+//           to 0.86 for 0.16 s on click and sends out a white ring that grows to 60 px and fades in 0.5 s.
+//   'arrow' a macOS-style arrow, tip is the hotspot (not the bar: it reads as a raw screen grab)
+//   'hand'  a pointing hand whose fingertip is the hotspot (not the bar)
+const CURSOR_STYLE = PROJECT.cursor || 'dot';
 const CURSOR_FN = style => {
   if (document.getElementById('demo-cursor')) return;
   const c = document.createElement('div'); c.id = 'demo-cursor';
@@ -147,11 +169,22 @@ const CURSOR_FN = style => {
     Object.assign(c.style, base, { width: '19px', height: '27px', marginLeft: '-1.8px', marginTop: '-1.8px', transformOrigin: '1.8px 1.8px', filter: 'drop-shadow(0 1px 1.5px rgba(0,0,0,0.3))' });
     down = 'scale(0.92)';
   } else {
-    Object.assign(c.style, base, { width: '20px', height: '20px', marginLeft: '-10px', marginTop: '-10px', borderRadius: '50%', background: 'rgba(28,110,246,0.55)', border: '2px solid white', boxShadow: '0 0 0 1px rgba(0,0,0,0.35)' });
+    // K1: disc + white ring + hairline; the hotspot is the centre.
+    Object.assign(c.style, base, { width: '21px', height: '21px', marginLeft: '-12.5px', marginTop: '-12.5px', borderRadius: '50%', background: '#8FAFF5', border: '2px solid #FFFFFF', boxShadow: '0 0 0 1px #A9ABAD', transition: 'transform 160ms ease-out' });
+    down = 'scale(0.86)';
   }
   document.body.appendChild(c);
+  // K4: a ring that grows to 60 px and fades over 0.5 s on each click (dot style only).
+  const ripple = (x, y) => {
+    if (style !== 'dot' && style) return;
+    const r = document.createElement('div');
+    Object.assign(r.style, { position: 'fixed', left: x + 'px', top: y + 'px', width: '52px', height: '52px', marginLeft: '-26px', marginTop: '-26px', borderRadius: '50%', border: '2px solid rgba(255,255,255,0.85)', boxShadow: '0 0 0 1px rgba(169,171,173,0.5)', zIndex: 2147483646, pointerEvents: 'none', transform: 'scale(0.45)', opacity: '1', transition: 'transform 500ms cubic-bezier(0.33,1,0.68,1), opacity 500ms linear' });
+    document.body.appendChild(r);
+    requestAnimationFrame(() => { r.style.transform = 'scale(1)'; r.style.opacity = '0'; });
+    setTimeout(() => r.remove(), 600);
+  };
   document.addEventListener('mousemove', e => { c.style.left = e.clientX + 'px'; c.style.top = e.clientY + 'px'; }, true);
-  document.addEventListener('mousedown', () => { c.style.transform = down; }, true);
+  document.addEventListener('mousedown', e => { c.style.transform = down; ripple(e.clientX, e.clientY); }, true);
   document.addEventListener('mouseup', () => { c.style.transform = 'scale(1)'; }, true);
 };
 

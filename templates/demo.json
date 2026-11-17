@@ -1,15 +1,21 @@
 {
   "title": "Product name, short",
   "logo": "",
-  "voice": { "rate_wpm": 165, "lead_in": 0.3, "music_volume": 0.18 },
-  "_comment": "sequence runs top to bottom. Cards are full-frame titles; scenes point at raw/<stem>-t<take>.mp4. zoom = [factor, centerX, centerY, startSec, durationSec] in 1920x1080 coords of the output clip; omit for a gentle 1.05 push-in. trim = [inSec, outSec] of the raw clip. speed > 1 speeds the clip up. voiceover (optional) = narration that starts voice.lead_in (0.3s) into that item and must finish before the next voiceover item; put it on a card to let it run over the card and the scenes after it. narrate.py reads the voice object (provider say, elevenlabs or files) and adds the narration to the keynote cut.",
+  "brand": { "font": "inter" },
+  "voice": { "rate_wpm": 165, "lead_in": 0.3, "music": "music/bed.m4a" },
+  "_comment": "sequence runs top to bottom; build-keynote.py turns it into a cut that meets docs/quality-bar.md. Cards: kind hero (title + subtitle), section (one title) or end (last item: logo, title, tagline timed to its voiceover, brand sweep, logo outro). accent = the one key word of the title. Scenes point at raw/<stem>-t<take>.mp4; trim = [inSec, outSec] of the raw take; speed > 1 speeds it up. crop = [x, y, w, h] in source px around the UI that matters (widened to 1.95:1). Times in callouts, zooms and highlights are seconds into the scene after trim and speed; focus and rect are source px (rects from recordings/scout/<stem>.json). voiceover starts voice.lead_in (0.3 s) into its item and must finish before the next voiced item. Make a free music bed with scripts/make-bed.py music/bed.m4a.",
   "sequence": [
-    { "card": "intro", "title": "Product in one line.", "subtitle": "What it does, in plain words.", "logo": true, "duration": 3.2, "voiceover": "You have probably been here. Describe the everyday pain in one or two sentences, then promise the fix." },
-    { "scene": "01", "stem": "01-the-problem", "take": 1, "caption": "It starts where the work happens.", "speed": 1 },
-    { "card": "setup", "title": "Set it up.", "subtitle": "The two or three tools involved.", "duration": 2.4 },
-    { "scene": "02", "stem": "02-install", "take": 1, "caption": "Install it in one click.", "speed": 1.5 },
-    { "card": "use", "title": "Then just use it.", "subtitle": "Where the user lives.", "duration": 2.4 },
-    { "scene": "03", "stem": "03-hero-moment", "take": 1, "caption": "The one thing it does best.", "speed": 1, "zoom": [1.6, 1640, 560, 0.5, 1.4] },
-    { "card": "outro", "title": "Product in one line.", "subtitle": "where-to-get-it.com", "logo": true, "duration": 3.8 }
+    { "card": "intro", "kind": "hero", "title": "Product in one line.", "accent": "line.", "subtitle": "What it does, in plain words.", "duration": 3.2,
+      "voiceover": "You have probably been here. Describe the everyday pain in one or two sentences, then promise the fix." },
+    { "scene": "01", "stem": "01-the-problem", "take": 1, "speed": 1, "crop": [320, 120, 1280, 656],
+      "callouts": [{ "at": 0.76, "dur": 4.0, "kind": "statement", "text": "It starts where work happens." }] },
+    { "card": "setup", "kind": "section", "title": "How does it get set up?", "accent": "set", "duration": 2.4 },
+    { "scene": "02", "stem": "02-install", "take": 1, "speed": 1.5, "crop": [320, 120, 1280, 656] },
+    { "scene": "03", "stem": "03-hero-moment", "take": 1, "speed": 1, "crop": [320, 120, 1280, 656],
+      "zooms": [{ "at": 1.0, "focus": [1340, 560], "dur": 3.0 }],
+      "highlights": [{ "rect": [1260, 540, 160, 40] }],
+      "voiceover": "Then the one thing it does best, said in a single sentence." },
+    { "card": "outro", "kind": "end", "title": "Product in one line.", "accent": "line.", "subtitle": "where-to-get-it.com", "duration": 7.9, "outro": 5.0,
+      "voiceover": "Product in one line. Get it at where to get it dot com." }
   ]
 }

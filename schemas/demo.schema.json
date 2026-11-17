@@ -2,106 +2,556 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "demo-studio/demo.schema.json",
   "title": "demo.json",
-  "description": "The keynote cut: title cards and scenes in story order. Read by build-keynote.py, mk-assets.py, keynote-handoff.py, narrate.py and rec.mjs.",
+  "description": "The keynote cut: title cards and scenes in story order. Read by build-keynote.py, keynote-handoff.py, narrate.py and rec.mjs. Every look value defaults to docs/quality-bar.md.",
   "type": "object",
-  "required": ["title", "sequence"],
+  "required": [
+    "title",
+    "sequence"
+  ],
   "additionalProperties": false,
-  "patternProperties": { "^_": {} },
+  "patternProperties": {
+    "^_": {}
+  },
   "properties": {
-    "title": { "type": "string", "minLength": 1, "description": "Product name, short. Also names the output file." },
-    "logo": { "type": "string", "pattern": "^$|^(?![/\\\\])(?![A-Za-z]:)(?!.*(^|[/\\\\])\\.\\.([/\\\\]|$)).+$", "description": "Logo path relative to demo.json (PNG or SVG). Empty for none." },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Product name, short. Also names the output file."
+    },
+    "logo": {
+      "type": "string",
+      "pattern": "^$|^(?![/\\\\])(?![A-Za-z]:)(?!.*(^|[/\\\\])\\.\\.([/\\\\]|$)).+$",
+      "description": "Logo path relative to demo.json (PNG or SVG). Empty for none."
+    },
     "browser": {
       "type": "object",
       "additionalProperties": false,
       "description": "Recording context options for rec.mjs (mk-setup.sh reads DEMO_TIMEZONE and DEMO_LOCALE instead).",
       "properties": {
-        "timezone": { "type": "string", "description": "IANA zone, for example Europe/London." },
-        "locale": { "type": "string", "description": "For example en-GB." }
+        "timezone": {
+          "type": "string",
+          "description": "IANA zone, for example Europe/London."
+        },
+        "locale": {
+          "type": "string",
+          "description": "For example en-GB."
+        }
       }
     },
     "windows": {
       "type": "object",
       "description": "Named Chrome windows for multi-window recording with rec.mjs and run.mjs.",
-      "additionalProperties": { "$ref": "#/$defs/window" }
+      "additionalProperties": {
+        "$ref": "#/$defs/window"
+      }
     },
-    "voice": { "$ref": "#/$defs/voice" },
-    "sequence": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/item" } }
+    "voice": {
+      "$ref": "#/$defs/voice"
+    },
+    "sequence": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/item"
+      }
+    },
+    "brand": {
+      "$ref": "#/$defs/brand"
+    }
   },
   "$defs": {
     "voice": {
       "type": "object",
       "additionalProperties": false,
-      "patternProperties": { "^_": {} },
+      "patternProperties": {
+        "^_": {}
+      },
       "description": "Narration for narrate.py. Every field is optional.",
       "properties": {
-        "provider": { "enum": ["say", "elevenlabs", "files"], "description": "say (macOS, free), elevenlabs (needs ELEVENLABS_API_KEY in the environment, or a macOS Keychain item named by ELEVENLABS_KEYCHAIN_SERVICE or elevenlabs.keychain_service) or files (ready-made voiceover/NN.mp3|wav|m4a: your own recordings, or files made with an MCP voice tool from narrate.py --export-lines). Default: files when voiceover/ has them, else elevenlabs when a key is found, else say." },
-        "rate_wpm": { "type": "number", "exclusiveMinimum": 0, "description": "Words per minute for say and for estimates. Default 165." },
-        "say_voice": { "type": "string", "description": "macOS say voice, for example Samantha. Default: system voice." },
+        "provider": {
+          "enum": [
+            "say",
+            "elevenlabs",
+            "files"
+          ],
+          "description": "say (macOS, free), elevenlabs (needs ELEVENLABS_API_KEY in the environment, or a macOS Keychain item named by ELEVENLABS_KEYCHAIN_SERVICE or elevenlabs.keychain_service) or files (ready-made voiceover/NN.mp3|wav|m4a: your own recordings, or files made with an MCP voice tool from narrate.py --export-lines). Default: files when voiceover/ has them, else elevenlabs when a key is found, else say."
+        },
+        "rate_wpm": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Words per minute for say and for estimates. Default 165."
+        },
+        "say_voice": {
+          "type": "string",
+          "description": "macOS say voice, for example Samantha. Default: system voice."
+        },
         "elevenlabs": {
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "voice_id": { "type": "string", "minLength": 1, "description": "ElevenLabs voice id. Default: a stock premade voice." },
-            "model_id": { "type": "string", "minLength": 1, "description": "Default eleven_multilingual_v2." },
-            "stability": { "type": "number", "minimum": 0, "maximum": 1, "description": "Default 0.5." },
-            "similarity_boost": { "type": "number", "minimum": 0, "maximum": 1, "description": "Default 0.75." },
-            "keychain_service": { "type": "string", "pattern": "^[Ee][Ll][Ee][Vv][Ee][Nn][Ll][Aa][Bb][Ss][A-Za-z0-9._ -]{0,117}$", "description": "macOS Keychain service name holding the ElevenLabs key; must start with elevenlabs. Read with `security find-generic-password -s <name> -w` only when ELEVENLABS_API_KEY is unset and you ran narrate.py with --voice elevenlabs. The env var ELEVENLABS_KEYCHAIN_SERVICE wins over this. Holds a name, never the key." }
+            "voice_id": {
+              "type": "string",
+              "minLength": 1,
+              "description": "ElevenLabs voice id. Default: a stock premade voice."
+            },
+            "model_id": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Default eleven_multilingual_v2."
+            },
+            "stability": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "description": "Default 0.5."
+            },
+            "similarity_boost": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "description": "Default 0.75."
+            },
+            "keychain_service": {
+              "type": "string",
+              "pattern": "^[Ee][Ll][Ee][Vv][Ee][Nn][Ll][Aa][Bb][Ss][A-Za-z0-9._ -]{0,117}$",
+              "description": "macOS Keychain service name holding the ElevenLabs key; must start with elevenlabs. Read with `security find-generic-password -s <name> -w` only when ELEVENLABS_API_KEY is unset and you ran narrate.py with --voice elevenlabs. The env var ELEVENLABS_KEYCHAIN_SERVICE wins over this. Holds a name, never the key."
+            }
           }
         },
-        "lead_in": { "type": "number", "minimum": 0, "description": "Seconds into an item before its line starts. Default 0.3." },
-        "music": { "type": "string", "pattern": "^(?![/\\\\])(?![A-Za-z]:)(?!.*(^|[/\\\\])\\.\\.([/\\\\]|$)).+$", "description": "Music bed path relative to demo.json. Looped, ducked under speech." },
-        "music_volume": { "type": "number", "minimum": 0, "maximum": 1, "description": "Music level before ducking. Default 0.18." },
-        "music_fade_in": { "type": "number", "minimum": 0, "maximum": 30, "description": "Seconds the music fades in at the start. Default 0 (no fade)." },
-        "music_fade_out": { "type": "number", "minimum": 0, "maximum": 30, "description": "Seconds the music fades out at the end. Default 1.5." }
+        "lead_in": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Seconds into an item before its line starts. Default 0.3."
+        },
+        "music": {
+          "type": "string",
+          "pattern": "^(?![/\\\\])(?![A-Za-z]:)(?!.*(^|[/\\\\])\\.\\.([/\\\\]|$)).+$",
+          "description": "Music bed path relative to demo.json. Looped, ducked under speech."
+        },
+        "music_volume": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Fixed bed level before ducking (0 to 1). Leave it out: narrate.py sets the bed music_gap_db under the narration."
+        },
+        "music_fade_in": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 30,
+          "description": "Seconds the music fades in at the start. Default 0 (no fade)."
+        },
+        "music_fade_out": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 30,
+          "description": "Seconds the music fades out at the end. Default 1.5, or 4.0 before a silent outro."
+        },
+        "music_gap_db": {
+          "type": "number",
+          "minimum": 6,
+          "maximum": 24,
+          "description": "dB the bed sits under the narration between lines. Default 13 (bar: 12 to 14)."
+        },
+        "music_dips": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "at"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "at": {
+                "type": "number",
+                "minimum": 0,
+                "description": "Cut seconds."
+              },
+              "dur": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "maximum": 30,
+                "description": "Seconds. Default 1.5."
+              }
+            }
+          },
+          "description": "Deliberate drops of the bed (about -9 dB) under key moments (A6)."
+        }
       }
     },
     "window": {
       "type": "object",
-      "required": ["port"],
+      "required": [
+        "port"
+      ],
       "additionalProperties": false,
       "properties": {
-        "port": { "type": "integer", "minimum": 1024, "maximum": 65535, "description": "Chrome remote debugging port." },
-        "match": { "type": "string", "description": "URL part of the tab to drive. Defaults to the first tab." },
-        "rx_port": { "type": "integer", "minimum": 1024, "maximum": 65535, "description": "Frame receiver port for this window, so two windows can record at once." }
+        "port": {
+          "type": "integer",
+          "minimum": 1024,
+          "maximum": 65535,
+          "description": "Chrome remote debugging port."
+        },
+        "match": {
+          "type": "string",
+          "description": "URL part of the tab to drive. Defaults to the first tab."
+        },
+        "rx_port": {
+          "type": "integer",
+          "minimum": 1024,
+          "maximum": 65535,
+          "description": "Frame receiver port for this window, so two windows can record at once."
+        }
       }
     },
-    "item": { "oneOf": [{ "$ref": "#/$defs/card" }, { "$ref": "#/$defs/scene" }] },
+    "item": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/card"
+        },
+        {
+          "$ref": "#/$defs/scene"
+        }
+      ]
+    },
     "card": {
       "type": "object",
-      "required": ["card", "title"],
+      "required": [
+        "card",
+        "title"
+      ],
       "additionalProperties": false,
-      "patternProperties": { "^_": {} },
+      "patternProperties": {
+        "^_": {}
+      },
       "properties": {
-        "card": { "type": "string", "pattern": "^[a-z0-9-]+$", "description": "Card name; renders card-<name>.png." },
-        "title": { "type": "string" },
-        "subtitle": { "type": "string" },
-        "logo": { "type": "boolean" },
-        "duration": { "type": "number", "exclusiveMinimum": 0, "description": "Seconds, default 2.4." },
-        "voiceover": { "type": "string" }
+        "card": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+$",
+          "description": "Card name; renders card-<name>.png."
+        },
+        "title": {
+          "type": "string"
+        },
+        "subtitle": {
+          "type": "string"
+        },
+        "logo": {
+          "type": "boolean"
+        },
+        "duration": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Seconds on screen. Defaults: hero 3.0, section 2.4, end 7.9."
+        },
+        "voiceover": {
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "hero",
+            "section",
+            "end"
+          ],
+          "description": "hero: title, settle, subtitle (default when there is a subtitle). section: one title (default otherwise). end: logo, title and tagline timed to its voiceover, then the brand sweep and logo outro (default for the last item)."
+        },
+        "accent": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The one word of title shown in the accent colour (T9)."
+        },
+        "subtitle_accent": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The one word of subtitle shown in the accent colour."
+        },
+        "outro": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 15,
+          "description": "End card only: seconds of brand sweep and logo outro after it. Default 5.0; 0 for none."
+        }
       }
     },
     "scene": {
       "type": "object",
-      "required": ["scene", "stem"],
+      "required": [
+        "scene",
+        "stem"
+      ],
       "additionalProperties": false,
-      "patternProperties": { "^_": {} },
+      "patternProperties": {
+        "^_": {}
+      },
       "properties": {
-        "scene": { "type": "string", "pattern": "^[0-9]{2}[a-z]?$", "description": "Scene id, for example 03 or 03b." },
-        "stem": { "type": "string", "pattern": "^[0-9]{2}[a-z]?-[a-z0-9-]+$", "description": "Raw take stem: recordings/raw/<stem>-t<take>.mp4." },
-        "take": { "type": "integer", "minimum": 1 },
-        "caption": { "type": "string" },
-        "speed": { "type": "number", "exclusiveMinimum": 0 },
+        "scene": {
+          "type": "string",
+          "pattern": "^[0-9]{2}[a-z]?$",
+          "description": "Scene id, for example 03 or 03b."
+        },
+        "stem": {
+          "type": "string",
+          "pattern": "^[0-9]{2}[a-z]?-[a-z0-9-]+$",
+          "description": "Raw take stem: recordings/raw/<stem>-t<take>.mp4."
+        },
+        "take": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "caption": {
+          "type": "string",
+          "description": "Old form: becomes a statement pill at the start of the scene. Prefer callouts."
+        },
+        "speed": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
         "trim": {
-          "type": "array", "minItems": 2, "maxItems": 2,
-          "items": { "type": ["number", "null"] },
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
           "description": "[in, out] seconds of the raw take; null keeps that end."
         },
         "zoom": {
-          "type": "array", "minItems": 5, "maxItems": 5,
-          "items": { "type": "number" },
-          "description": "[factor, centerX, centerY, startSec, durationSec] in 1920x1080 output coordinates."
+          "type": "array",
+          "minItems": 5,
+          "maxItems": 5,
+          "items": {
+            "type": "number"
+          },
+          "description": "Old form [factor, x, y, start, seconds]; becomes one 1.15x whole-window zoom. Prefer zooms."
         },
-        "voiceover": { "type": "string" }
+        "voiceover": {
+          "type": "string"
+        },
+        "crop": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": {
+            "type": "number",
+            "minimum": 0
+          },
+          "description": "[x, y, w, h] in source px (the 1920x1080 take) around the UI that matters. Widened to the window's 1.95:1 shape. App body text should end up >= 18 px cap height: w <= 1560 x (cap px in the take) / 18."
+        },
+        "zooms": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/zoomTarget"
+          },
+          "description": "Whole-window zooms (1.15x, 1.1 s ease-in-out sine in and out)."
+        },
+        "callouts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/callout"
+          },
+          "description": "Pills under the window, one at a time, 3 to 5 s each."
+        },
+        "highlights": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/highlight"
+          },
+          "description": "Red outline boxes on one UI element, after a zoom lands."
+        }
+      }
+    },
+    "color": {
+      "type": "string",
+      "pattern": "^#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$",
+      "description": "#RRGGBB or #RRGGBBAA."
+    },
+    "imagePath": {
+      "type": "string",
+      "pattern": "^(?![/\\\\])(?![A-Za-z]:)(?!.*(^|[/\\\\])\\.\\.([/\\\\]|$)).+$",
+      "description": "Image path relative to demo.json (.png, .jpg, .webp or .svg); must stay inside the demo folder."
+    },
+    "brand": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": {
+        "^_": {}
+      },
+      "description": "Look of the cut. Every field is optional; defaults are the quality bar's.",
+      "properties": {
+        "font": {
+          "enum": [
+            "inter",
+            "geist"
+          ],
+          "description": "Bundled family for every rendered word (assets/fonts). Default inter (titles in Inter Display)."
+        },
+        "accent": {
+          "$ref": "#/$defs/color",
+          "description": "The one accent word per title, and statement pills. Default #D9463B."
+        },
+        "ink": {
+          "$ref": "#/$defs/color",
+          "description": "Title and name text. Default #24272B."
+        },
+        "secondary": {
+          "$ref": "#/$defs/color",
+          "description": "Subtitles and taglines. Default #5F656D."
+        },
+        "background": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "base": {
+              "$ref": "#/$defs/color",
+              "description": "Base fill. Default #E3E3E4."
+            },
+            "fields": {
+              "type": "array",
+              "minItems": 5,
+              "maxItems": 5,
+              "items": {
+                "$ref": "#/$defs/color"
+              },
+              "description": "Five soft colour fields: glow top left, blue top right, pink bottom right, grey bottom left, centre."
+            }
+          }
+        },
+        "sweep": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "$ref": "#/$defs/color"
+          },
+          "description": "Outro brand gradient [from, to]. Default [#EF4849, #F68C41]."
+        },
+        "dark": {
+          "$ref": "#/$defs/color",
+          "description": "Outro field behind the logo lockup. Default #1B1D21."
+        },
+        "logo_on_dark": {
+          "$ref": "#/$defs/imagePath",
+          "description": "Logo variant for the dark outro (a light mark). Default: logo."
+        }
+      }
+    },
+    "zoomTarget": {
+      "type": "object",
+      "required": [
+        "at",
+        "focus"
+      ],
+      "additionalProperties": false,
+      "patternProperties": {
+        "^_": {}
+      },
+      "properties": {
+        "at": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Seconds into the scene (after trim and speed) when the zoom-in starts."
+        },
+        "scale": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 1.15,
+          "description": "Default and maximum 1.15 (Z2)."
+        },
+        "focus": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "number",
+            "minimum": 0
+          },
+          "description": "[x, y] in source px: what the zoom points at. The window moves up to 70 px toward it."
+        },
+        "dur": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 10,
+          "description": "Seconds held at full zoom before easing back. Default 3.0; the bar wants 2.4 to 4.5."
+        }
+      }
+    },
+    "callout": {
+      "type": "object",
+      "required": [
+        "at",
+        "text"
+      ],
+      "additionalProperties": false,
+      "patternProperties": {
+        "^_": {}
+      },
+      "properties": {
+        "at": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Seconds into the scene when the pill enters."
+        },
+        "dur": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 20,
+          "description": "Seconds on screen before the exit. Default 4; the bar wants 3 to 5."
+        },
+        "kind": {
+          "enum": [
+            "person",
+            "statement"
+          ],
+          "description": "statement (default): accent text, at most 6 words. person: avatar + \"Name,\" + role."
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The statement, or the person's name."
+        },
+        "role": {
+          "type": "string",
+          "description": "Person pills: the role, shown in grey after the name."
+        },
+        "avatar": {
+          "$ref": "#/$defs/imagePath",
+          "description": "Person pills: a square photo, shown as a 50 px circle."
+        }
+      }
+    },
+    "highlight": {
+      "type": "object",
+      "required": [
+        "rect"
+      ],
+      "additionalProperties": false,
+      "patternProperties": {
+        "^_": {}
+      },
+      "properties": {
+        "at": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Seconds into the scene. Leave it out to show 0.17 s after the next zoom lands (H5)."
+        },
+        "dur": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 20,
+          "description": "Seconds before it fades. Default: until its zoom has eased back."
+        },
+        "rect": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": {
+            "type": "number",
+            "minimum": 0
+          },
+          "description": "[x, y, w, h] of the element's text box in source px (from the record step's scout: CSS box x 4/3 at DPR 2 -> 1080p)."
+        }
       }
     }
   }

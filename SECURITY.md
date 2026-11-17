@@ -24,16 +24,22 @@ Two assumptions shape everything below:
 - **Secrets written to disk.** Skills and templates keep secrets out of every file except a demo's
   gitignored `app/.env`. The starter `check.py` reports `.env` files anywhere else.
 - **Config paths reaching outside the demo folder.** Every path read from `handoff.json`,
-  `demo.json` or `takes.csv` (raw and output folders, title cards, logos, headshots, reference
-  files, social inputs and outputs, caption images, the music bed, voiceover recordings) must be
-  relative, without `..`, and must resolve (symlinks included) inside the demo folder. The schemas
+  `demo.json` or `takes.csv` (raw and output folders, title cards, logos, headshots, callout
+  avatars, the dark-outro logo, reference files, social inputs and outputs, caption images, the
+  music bed, voiceover recordings) must be relative, without `..`, and must resolve (symlinks
+  included) inside the demo folder. The schemas
   reject absolute and `..` paths, and the scripts check again after resolving, then stop with an
   error that names the field. Folders are only deleted when they are inside the demo's output
   folder, and never through a symlink. Paths you type on the command line (such as
   `narrate.py --music`) are yours and are not restricted.
 - **Config values running as code.** Title-card colours and fonts must pass a strict whitelist
   (hex, `rgb()` or a colour name; a font-family list), all wording is HTML-escaped, and the card
-  page renders with JavaScript off and every request blocked except inline `data:` images. Paths
+  page renders with JavaScript off and every request blocked except inline `data:` images. The
+  keynote renderer (`keynote-render.mjs`) runs only its own script on a page it writes: demo.json
+  wording reaches it as data and is set with `textContent`, never parsed as HTML; colours must be
+  `#hex` (checked by the schema, by Python and again in Node); fonts load only from the plugin's
+  `assets/fonts/`; images are `data:` URIs made from files inside the demo folder; every request is
+  blocked; and every PNG it writes must land inside the build's work folder, never through a symlink. Paths
   in ffmpeg concat lists are quoted per ffmpeg's rules, and scripts pass values to Python as
   arguments, never inside its source.
 - **The local editor being used by other sites.** It binds to `127.0.0.1` only, accepts only

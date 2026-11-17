@@ -12,7 +12,7 @@ mkdir -p "$out_dir"
   cat scenes/_project.js; echo
   node "$here/rx-tokens.mjs"   # the running receiver's token; re-run after restarting it
   cat "$here/lib.js"; echo
-  echo 'ctx._L = { PROJECT, sleep, W, H, api, findTab, openTab, tabFor, ensure, prep, hideClutter, record, now, blur, blurRect, glide, tap, click, typeHuman, smoothScroll, scrollIntoCenter, park, moveHuman, placeCursor, maskSecrets, maskedSummary };'
+  echo 'ctx._L = { PROJECT, sleep, W, H, api, findTab, openTab, tabFor, ensure, prep, hideClutter, record, now, blur, blurRect, glide, tap, click, typeHuman, smoothScroll, scrollIntoCenter, park, moveHuman, placeCursor, maskSecrets, maskedSummary, scoutRects };'
   echo 'return "lib installed";'
   echo '}'
 } > "$out_dir/_lib.run.js"

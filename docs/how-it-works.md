@@ -9,8 +9,8 @@
 | Plan | BRIEF, RUN-SHEET (beats and exact on-camera text), SHOT-LIST, VOICEOVER draft, PREP checklist |
 | Raw takes | One clean clip per scene: 1920x1080, 30fps, H.264, crisp 2x capture, secrets blurred in the page, logged in `takes.csv` |
 | Review reel | The keeper takes joined uncut in story order, for the first review |
-| Keynote cut | Footage in a floating rounded window, captions, title cards, eased zooms |
-| Narrated cut | The keynote cut with the voiceover recorded and placed, optional music bed, loudness-normalised |
+| Keynote cut | Built to the [quality bar](quality-bar.md): footage cropped into a floating window on a soft pastel background, whole-window zooms, highlight boxes, callout pills, word-by-word Inter titles, end card and logo outro |
+| Narrated cut | The keynote cut with the voiceover recorded and placed over a music bed 13 dB under it, -14 LUFS, true peak under -1 dBTP |
 | Promo cut | About 1:30, the story, as numbered clips plus a rough assembly |
 | How-to cut | About 3:00, the story plus setup steps and an edge case |
 | Voiceover scripts | Spoken lines per scene with start times, a fit check, and a timing preview |
@@ -43,13 +43,18 @@ The house look, in short. The full guide an agent follows is
 
 - **Crisp capture.** A 1440x810 viewport at 2x pixel density, downscaled to 1080p, so UI text reads.
 - **A clean frame.** No banners, toasts, cookie bars or personal history. One consistent, seeded world.
-- **A calm pointer.** The normal arrow, gliding on an eased arc, a short pause before each click,
-  then parked out of the way. Never a teleport, never a click dot.
+- **A calm pointer.** A soft blue disc with a white ring (drawn into the page, so it scales with the
+  window), gliding on an eased arc, a short pause before each click, then parked out of the way.
+  Never a teleport, never the OS arrow.
 - **Human typing.** 45 to 75ms a key for short text; long text is pasted.
 - **Room to breathe.** A still second at the start of every take, a hold at the end, and about two
   seconds on every result. Waits are trimmed in the edit, not hidden.
-- **Restrained zooms.** 1.5 to 1.75x, eased, on the hero moment only.
-- **Short captions.** One plain sentence per scene, sentence case, with a period.
+- **Restrained zooms.** The whole window to 1.15x over 1.1 s, about one every 11 s, only where the
+  narration makes a point, with a red box on the element it names.
+- **Short callouts.** A pill under the window for 3 to 5 s: a person (name, role) or a statement of
+  six words at most.
+- **A measured bar.** Every number above is in [docs/quality-bar.md](quality-bar.md), and
+  `scripts/check-cut.py` runs its checklist on a finished cut.
 - **A voice like a colleague.** Second person, present tense, about 2.5 words a second, numbers and
   URLs spelled out, music quiet under it.
 
@@ -72,8 +77,9 @@ on a few things, written out in [references/quality-gates.md](../references/qual
 The video is finished on your machine in two commands:
 
 ```bash
-python3 -I "$P/scripts/build-keynote.py" demo.json      # the cut: window, captions, cards, zooms
+python3 -I "$P/scripts/build-keynote.py" demo.json      # the cut: window, pills, boxes, zooms, cards
 python3 -I "$P/scripts/narrate.py" demo.json            # adds the voiceover and music bed
+python3 -I "$P/scripts/check-cut.py" recordings/exports/<slug>-keynote-cut-narrated.mp4   # the bar's checklist
 ```
 
 `narrate.py` reads the `voiceover` lines in `demo.json`, renders each one, places it at its item's
@@ -97,12 +103,13 @@ Claude reads it, makes each file with the ElevenLabs MCP (`text_to_speech`) or t
 number with the next command. Higgsfield works only this way, since its public API has no text to
 speech endpoint.
 
-**Music.** Save a bed as `assets/music.mp3`: your own instrumental, or one made with the ElevenLabs
-MCP (`compose_music`) or the Higgsfield MCP (`generate_audio` with a music model).
+**Music.** Save a bed as `music/bed.m4a`: your own instrumental, a free one from
+`scripts/make-bed.py`, or one made with the ElevenLabs MCP (`compose_music`) or the Higgsfield MCP
+(`generate_audio` with a music model). narrate.py sets it 13 dB under the voice.
 `--export-lines` also writes `music/README.txt` with the length to ask for.
 
 Optional settings go in a `voice` object in `demo.json`, for example
-`{"provider": "files", "music": "assets/music.mp3", "music_volume": 0.12, "music_fade_in": 1.0, "music_fade_out": 2.0}`.
+`{"provider": "files", "music": "music/bed.m4a", "music_dips": [{"at": 12.0, "dur": 1.5}], "music_fade_in": 1.0}`.
 
 For a human editor, `build-handoff.py handoff.json` builds the promo and how-to as numbered clips
 and rough assemblies, the voiceover scripts with start times, and the handoff zip.

@@ -18,7 +18,7 @@ complete example: three scenes, no login, no secrets, nothing to clean up afterw
 | `recordings/scenes/*.body.js` | The scene scripts that drove the browser |
 | `recordings/scenes/_project.js` | Cursor and masking settings |
 | `recordings/takes.csv` | The take log, each take marked `keep` |
-| `demo.json` | The keynote-style cut: trims, speed, zoom, captions, cards |
+| `demo.json` | The keynote cut, planned to [the quality bar](../../docs/quality-bar.md): trims, speed, crop, zooms, highlight boxes, callout pills, hero and end cards, voice and music |
 | `handoff.json` | The promo cut for an editor: shots, voiceover lines, brief, claims |
 
 The three raw takes (about 400 KB) are in `recordings/raw/`, so the editor can open and play this
@@ -46,9 +46,10 @@ Then cut it:
 ```bash
 cd .. && python3 -I "$P/scripts/review-reel.py" recordings --config demo.json
 node "$P/scripts/title-cards.mjs" handoff.json && python3 -I "$P/scripts/build-handoff.py" handoff.json
-python3 -I "$P/scripts/mk-assets.py" demo.json              # run the printed file with the MCP
 python3 -I "$P/scripts/build-keynote.py" demo.json
+python3 -I "$P/scripts/make-bed.py" music/bed.m4a --seconds 40   # a free music bed (or use your own)
 python3 -I "$P/scripts/narrate.py" demo.json                # adds the voiceover (macOS say by default)
+python3 -I "$P/scripts/check-cut.py" recordings/exports/todo-app-sample-keynote-cut-narrated.mp4 --frames recordings/exports/checklist
 ```
 
 ## Test sweep
@@ -65,9 +66,17 @@ python3 -I "$P/scripts/narrate.py" demo.json                # adds the voiceover
 - The site shows a side panel about the framework on wide screens. It is not part of the app, so
   scene 01 hides it with one line of CSS before recording.
 - The pointer clicks the right end of the input, so it does not sit on top of the text being typed.
-- The app is small in a 1440 wide page. The raw takes are left unzoomed and `demo.json` zooms to
-  1.7x in the edit.
+- The app is small in a 1440 wide page. The raw takes are left unzoomed; `demo.json` crops the
+  window to the list (`crop: [540, 150, 840, 430]`, so body text lands near 40 px cap height) and
+  zooms the whole window to 1.15x on the second tick and on Clear completed, each with a highlight box.
+- The shipped takes were recorded with the old arrow cursor, so a cut made from them fails the
+  bar's cursor item (K1). Re-recording uses the bar's blue disc (`cursor: 'dot'` in `_project.js`).
+- While the list is short (scene 01 before the first todo, scene 03 after Clear completed) the
+  window shows a lot of empty page, which the bar's W2 item flags. A tighter crop would cut the
+  list once it grows; the honest fix is to start scene 01 with one todo already there.
 
 ## Status
 
 - 2026-11-12: recorded, reviewed and cut. Nothing was created outside the page, so there are no throwaways.
+- 2026-11-18: re-cut with the quality-bar engine: 37.2 s, `check-cut.py` 44 pass, 0 fail; the cursor
+  and empty-panel items are the known gaps above.

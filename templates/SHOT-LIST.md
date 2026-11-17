@@ -27,3 +27,18 @@ why / setup / use / proof / edge / close.
 - [ ] Logged in (Playwright MCP browser or demo windows): <sites>
 - [ ] Sandbox or test accounts only
 - [ ] Seed data: <names, records, numbers>
+
+## Edit plan (what the cut does on screen, to the quality bar)
+
+"Window region" becomes `crop`. "Highlight" is a selector the record step's scout measures; its
+rect becomes `highlights[].rect`. About one zoom per 11 s of footage, only on a point the
+voiceover makes. A pill is 3 to 5 s and never runs during a zoom. Every title has one accent word.
+
+| # | Window region (crop) | Callout pill (3 to 5 s) | Zoom target (when, what) | Highlight (selector) | Music |
+| --- | --- | --- | --- | --- | --- |
+| 01 | | | | | bed from frame 0 |
+
+| Card | Kind (hero / section / end) | Title (accent word in bold) | Subtitle or tagline |
+| --- | --- | --- | --- |
+| intro | hero | | |
+| outro | end | | |

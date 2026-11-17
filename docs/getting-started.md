@@ -91,7 +91,7 @@ or, handing over the account:
 > The sandbox login is demo@example.com; the password is in Keychain as demo-acme.
 
 **What you get:** one report at the end with a written plan, a clean 1080p take per scene, a
-review reel, a keynote-style cut with captions and zooms, and a narrated version. Ask for promo and
+review reel, a keynote-style cut built to the quality bar, and a narrated version. Ask for promo and
 how-to cuts, 4:5 and 9:16 social versions and a zip for a human editor too. Claude stops early only
 for a login or 2FA code, a step that would cost money or create something that cannot be deleted,
 or deleting your data. Want to check the plan or the reel first? Say so, and it stops there.
@@ -110,7 +110,8 @@ Claude then:
 1. Copies the sample into `demos/todo-sample/` (its plan and three scene scripts are already written).
 2. Starts the recorder and opens the todo app in the Playwright browser at 2x.
 3. Records the three scenes, checks each one on a contact sheet, and encodes the takes.
-4. Shows you the review reel, then builds the keynote cut with captions, cards and zooms.
+4. Shows you the review reel, then builds the keynote cut (window, pills, highlight boxes, zooms,
+   cards), narrates it and runs the quality-bar checklist on it.
 5. Narrates it with macOS `say` (or your own voice or ElevenLabs, if set up) and opens
    `demos/todo-sample/recordings/exports/todo-app-sample-keynote-cut-narrated.mp4`.
 

@@ -4,6 +4,7 @@
 # Needs ffmpeg with libx264, python3 and node. Uses real Chrome for title cards when playwright-core
 # and Chrome are installed, else placeholder PNGs. macOS `say` is used when present.
 # Usage: bash tests/smoke.sh        (KEEP=1 keeps the temp folder)
+# On a shared laptop run it through the heavy-job lock: one render at a time.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 S="$ROOT/scripts"
@@ -37,7 +38,7 @@ for tool in ffmpeg ffprobe python3 node; do command -v "$tool" >/dev/null || die
 ffmpeg -hide_banner -encoders 2>/dev/null | grep -q libx264 || die "ffmpeg lacks libx264"
 
 step "syntax"
-for f in "$S"/*.py; do python3 -m py_compile "$f"; done; ok "python scripts compile"
+for f in "$S"/*.py "$S"/keynote/*.py "$S"/narration/*.py; do python3 -m py_compile "$f"; done; ok "python scripts compile"
 for f in "$S"/*.mjs "$ROOT"/app/server/*.mjs "$ROOT"/app/bin/*.mjs "$ROOT"/app/scripts/*.mjs; do node --check "$f"; done; ok "node scripts parse"
 for f in "$S"/*.sh "$ROOT"/tests/*.sh; do bash -n "$f"; done; ok "shell scripts parse"
 
@@ -132,8 +133,10 @@ ok "7 synthetic takes logged as keep"
 
 step "title cards"
 CARDS="$R/editor-handoff/assets/title-cards"
+HAVE_CHROME=0
 if (cd "$ROOT" && node -e "require.resolve('playwright-core')" >/dev/null 2>&1) && [ "${SMOKE_NO_CHROME:-0}" != 1 ] && \
    { [ -n "${CHROME_PATH:-}" ] || [ -x "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" ] || command -v google-chrome >/dev/null; }; then
+  HAVE_CHROME=1
   (cd "$D" && node "$S/title-cards.mjs" handoff.json --social) | grep -c '^OUTPUT' | xargs -I{} echo "  rendered {} images with headless Chrome"
   size_is "$CARDS/card-open.png" 1920x1080
   size_is "$R/editor-handoff/assets/social-captions/PROMO-4x5-1.png" 1080x250
@@ -145,56 +148,98 @@ else
   ok "placeholder cards made"
 fi
 
-step "keynote cut"
-K="$R/exports/.keynote"; mkdir -p "$K"
-for c in intro outro; do solid_png "$K/card-$c.png" 1920x1080 0xF3F3F6; done
-ffmpeg -y -loglevel error -f lavfi -i "color=c=black@0.0:s=1920x1080,format=rgba" -frames:v 1 "$K/cap-01.png"
+if [ "$HAVE_CHROME" = 1 ]; then
+step "keynote cut (quality-bar engine: title, callout, zoom, highlight, end card)"
 # A short sequence keeps the test quick; the full example demo.json is schema-checked above.
 cat > "$D/demo-short.json" <<'EOF2'
 { "title": "Acme Invoice Bot", "sequence": [
-  { "card": "intro", "title": "Invoices from the thread.", "duration": 1.0, "voiceover": "Invoices from the thread." },
-  { "scene": "01", "stem": "01-the-thread", "take": 1, "caption": "The deal is agreed in chat.", "trim": [1.0, 3.0] },
-  { "scene": "05", "stem": "05-approve", "take": 1, "trim": [0.5, 2.5], "speed": 2, "zoom": [1.6, 1500, 600, 0.2, 0.6], "voiceover": "Approve it." },
-  { "card": "outro", "title": "Acme Invoice Bot", "duration": 1.0 } ] }
+  { "card": "intro", "kind": "hero", "title": "Invoices from the thread.", "accent": "thread.", "subtitle": "Acme", "duration": 2.4,
+    "voiceover": "Invoices from the thread." },
+  { "scene": "01", "stem": "01-the-thread", "take": 1, "trim": [1.0, 5.0], "crop": [160, 150, 1400, 718],
+    "callouts": [{ "at": 0.76, "dur": 3.0, "kind": "statement", "text": "The deal is agreed." }] },
+  { "scene": "05", "stem": "05-approve", "take": 1, "trim": [0.5, 6.5], "crop": [160, 150, 1400, 718],
+    "zooms": [{ "at": 0.5, "focus": [700, 420], "dur": 2.5 }],
+    "highlights": [{ "rect": [600, 400, 240, 40] }], "voiceover": "Approve it." },
+  { "card": "outro", "kind": "end", "title": "Acme Invoice Bot", "accent": "Invoice", "subtitle": "acme.example.com", "duration": 3.0, "outro": 3.5,
+    "voiceover": "Acme invoice bot." } ] }
 EOF2
-(cd "$D" && python3 -I "$S/build-keynote.py" demo-short.json > "$TMP/keynote.log")
-grep -q '^PROGRESS parts 4/4' "$TMP/keynote.log" || die "no PROGRESS lines from build-keynote"; ok "build-keynote prints PROGRESS"
+(cd "$D" && python3 -I "$S/build-keynote.py" demo-short.json > "$TMP/keynote.log" 2>&1) || { cat "$TMP/keynote.log"; die "build-keynote failed"; }
+grep -q '^PROGRESS composite' "$TMP/keynote.log" || die "no PROGRESS lines from build-keynote"; ok "build-keynote prints PROGRESS"
 grep -q '^OUTPUT .*acme-invoice-bot-keynote-cut.mp4' "$TMP/keynote.log" || die "no OUTPUT line"; ok "build-keynote prints OUTPUT"
+grep -q '^fonts: painted .*Inter' "$TMP/keynote.log" || { cat "$TMP/keynote.log"; die "titles not painted in the bundled Inter"; }
+ok "titles and pills painted in the bundled Inter"
 CUT="$R/exports/acme-invoice-bot-keynote-cut.mp4"
 exists "$CUT"; size_is "$CUT" 1920x1080; fps_is "$CUT"
-exists "$R/exports/acme-invoice-bot-keynote-cut.timing.json"
-python3 -I -c 'import json,sys; t=json.load(open(sys.argv[1])); assert [i["key"] for i in t["items"]]==["card-intro","01","05","card-outro"] and t["total"]>0, t' \
+exists "$R/exports/acme-invoice-bot-keynote-cut.timing.json"; exists "$R/exports/acme-invoice-bot-keynote-cut.plan.json"
+python3 -I -c 'import json,sys; t=json.load(open(sys.argv[1])); assert [i["key"] for i in t["items"]]==["card-intro","01","05","card-outro"] and abs(t["total"]-18.9)<0.05 and t["outro"]==3.5, t' \
   "$R/exports/acme-invoice-bot-keynote-cut.timing.json" || die "timing file does not match the sequence"
-ok "build-keynote writes the timing file"
+ok "build-keynote writes the timing file (18.9 s, 3.5 s outro)"
+python3 -I -c 'import sys; d=float(sys.argv[1]); assert abs(d-18.9)<0.1, d' \
+  "$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$CUT")" || die "cut is not 18.9 s long"; ok "cut is 18.9 s"
 (cd "$D" && python3 -I "$S/keynote-handoff.py" demo-short.json >/dev/null)
 exists "$D/editor-handoff/SCRIPT.txt"; exists "$D/editor-handoff/VOICEOVER.txt"; exists "$D/acme-invoice-bot-editor-handoff.zip"
+exists "$D/editor-handoff/03-edited-segments/02-05.mp4"
 
 step "narrate (own voice files, so it runs without say or an API key)"
-tone() {  # out seconds frequency
-  ffmpeg -y -loglevel error -f lavfi -i "sine=frequency=$3:sample_rate=44100:duration=$2" "$1"
+tone() {  # out seconds frequency: a speech-like test line (tone + soft pink noise, 4 syllables a second)
+  ffmpeg -y -loglevel error -f lavfi -i "sine=frequency=$3:sample_rate=44100:duration=$2" \
+    -f lavfi -i "anoisesrc=color=pink:amplitude=0.08:sample_rate=44100:duration=$2:seed=7" \
+    -filter_complex "[0][1]amix=inputs=2,tremolo=f=4:d=0.6" "$1"
 }
 mkdir -p "$D/voiceover"
 NARRATED="$R/exports/acme-invoice-bot-keynote-cut-narrated.mp4"
-tone "$D/voiceover/01.wav" 4 440; tone "$D/voiceover/02.m4a" 0.6 660
+tone "$D/voiceover/01.wav" 7 440; tone "$D/voiceover/02.m4a" 2.5 660; tone "$D/voiceover/03.wav" 1.6 550
 if (cd "$D" && python3 -I "$S/narrate.py" demo-short.json --voice files --dry-run >"$TMP/narrate.log" 2>&1); then
   die "narrate accepted a line that runs long"; fi
-grep -q 'line 1 (card-intro) runs 4.0s but has 2.7s' "$TMP/narrate.log" || { cat "$TMP/narrate.log"; die "overrun not reported"; }
+grep -q 'line 1 (card-intro) runs 7.0s but has 6.1s' "$TMP/narrate.log" || { cat "$TMP/narrate.log"; die "overrun not reported"; }
 ok "narrate reports a line that runs long"
 (cd "$D" && python3 -I "$S/narrate.py" demo-short.json --voice files --dry-run --allow-overrun >/dev/null 2>&1) || die "--allow-overrun still failed"
 [ -e "$NARRATED" ] && die "dry run wrote a video"; ok "dry run writes no video"
-tone "$D/voiceover/01.wav" 1.5 440; tone "$TMP/music.wav" 1.5 220
-(cd "$D" && python3 -I "$S/narrate.py" demo-short.json --voice files --music "$TMP/music.wav" > "$TMP/narrate.log") \
+tone "$D/voiceover/01.wav" 4.5 440; python3 -I "$S/make-bed.py" "$TMP/music.m4a" --seconds 20 >/dev/null
+(cd "$D" && python3 -I "$S/narrate.py" demo-short.json --voice files --music "$TMP/music.m4a" > "$TMP/narrate.log") \
   || { cat "$TMP/narrate.log"; die "narrate failed"; }
 grep -q '^OUTPUT .*keynote-cut-narrated.mp4' "$TMP/narrate.log" || die "no OUTPUT from narrate"; ok "narrate prints OUTPUT"
+grep -q '^narrate: bed set 13 dB under the narration' "$TMP/narrate.log" || die "bed not levelled under the voice"; ok "bed levelled 13 dB under the voice"
 exists "$NARRATED"; size_is "$NARRATED" 1920x1080
-[ "$(ffprobe -v error -select_streams a:0 -show_entries stream=codec_name -of csv=p=0 "$NARRATED")" = aac ] \
-  || die "narrated cut has no AAC audio"; ok "narrated cut has AAC audio"
 video_md5() { ffmpeg -loglevel error -i "$1" -map 0:v -c copy -f md5 -; }
 [ "$(video_md5 "$CUT")" = "$(video_md5 "$NARRATED")" ] || die "video stream was re-encoded"; ok "video stream copied untouched"
 python3 -I -c 'import sys; a, b = map(float, sys.argv[1:]); assert abs(a - b) < 0.15, (a, b)' \
   "$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$CUT")" \
   "$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$NARRATED")" || die "narrated length differs from the cut"
 ok "narrated cut is as long as the cut"
+
+step "quality bar (docs/quality-bar.md checklist on the synthetic cut)"
+python3 -I "$S/check-cut.py" "$NARRATED" --json "$TMP/bar.json" > "$TMP/bar.log" 2>&1 || true
+bar() {  # item description: the checklist line for that item must be PASS
+  python3 -I - "$TMP/bar.json" "$1" <<'PYEOF' || { grep -E "^(PASS|FAIL) +$1 " "$TMP/bar.log"; die "$2"; }
+import json, sys
+rows = [r for r in json.load(open(sys.argv[1])) if r["item"] == sys.argv[2]]
+assert rows and all(r["status"] == "PASS" for r in rows), rows
+PYEOF
+  ok "$2: $(grep -E "^PASS +$1 " "$TMP/bar.log" | head -1 | sed -E 's/^PASS +[^ ]+ +//')"
+}
+bar E1 "H.264 High"
+bar E2 "1920x1080 at 30 fps"
+bar E3 "yuv420p tagged BT.709"
+bar E4 "video bitrate >= 3.5 Mbps"
+bar E5 "keyframe every 2.0 s"
+bar E6 "AAC 48 kHz stereo >= 160 kbps"
+bar E7 "faststart (moov before mdat)"
+bar A2 "loudness -14 +-1 LUFS"
+bar A3 "true peak <= -1 dBTP"
+bar O1 "frame 0 shows the title, not a blank"
+bar W1 "rest window 1560x800 at (180, 100)"
+bar W6 "window rises in over 0.7 s"
+bar W7 "no background-only frame at the cut"
+bar Z2-Z3 "zoom peaks at 1.15x inside the frame"
+bar Z4 "zoom eases over 1.1 s"
+bar H1-H5 "highlight box 0.17 s after the zoom lands"
+bar C1-C2 "callout pill at y 962, 68 px"
+bar X2 "brand sweep"
+bar T1 "bundled font painted"
+else
+  echo "  (playwright-core or Chrome missing: keynote cut, narration and the bar check skipped)"
+fi
 
 step "review reel"
 (cd "$D" && python3 -I "$S/review-reel.py" recordings --config demo.json > "$TMP/reel.log")
@@ -229,6 +274,7 @@ grep -q '^OUTPUT .*PROMO-quick-preview.mp4' "$TMP/quick.log" || die "no OUTPUT f
 size_is "$R/exports/PROMO-quick-preview.mp4" 960x540; fps_is "$R/exports/PROMO-quick-preview.mp4"
 
 step "social-cut from the command line"
+[ -n "${CUT:-}" ] || CUT="$R/raw/01-the-thread-t1.mp4"
 python3 -I "$S/social-cut.py" "$CUT" "$TMP/cut-9x16.mp4" --aspect 9:16 --fit crop --focus-x 0.4 --zoom 1.2 >/dev/null
 size_is "$TMP/cut-9x16.mp4" 1080x1920
 if python3 -I "$S/social-cut.py" "$CUT" "$TMP/bad.mp4" --aspect 1:1 2>/dev/null; then die "bad aspect accepted"; fi
@@ -237,6 +283,7 @@ ok "bad aspect rejected"
 step "starter kit"
 python3 -I "$ROOT/tests/test_check.py" 2>/dev/null || die "check.py unit tests"; ok "check.py unit tests"
 python3 -I "$ROOT/tests/test_narrate.py" 2>/dev/null || die "narrate unit tests"; ok "narrate unit tests"
+python3 -I "$ROOT/tests/test_keynote.py" 2>/dev/null || die "keynote engine unit tests"; ok "keynote engine unit tests"
 node "$ROOT/tests/test_lib.mjs" >/dev/null || die "lib.js unit tests"; ok "lib.js unit tests"
 bash "$S/new-workspace.sh" "$TMP/ws" >/dev/null
 for f in AGENTS.md CLAUDE.md README.md check.py .gitignore; do exists "$TMP/ws/$f"; done

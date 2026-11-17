@@ -5,8 +5,9 @@
 // VERIFY AFTER THE FIRST TAKE: the cursor style is right, no banner or toast shows, and any
 //   secret on screen is blurred (the scene's maskedSummary(p) lists its prefix).
 const PROJECT = {
-  // 'arrow' (default) for most products; 'hand' for a consumer app (shopping, social, games).
-  cursor: 'arrow',  // CHANGE: only if the product is a consumer app
+  // 'dot' (default): the quality-bar cursor, a blue disc with a white ring and a click ripple
+  // (docs/quality-bar.md K1). 'arrow' and 'hand' do not meet the bar; use them only on request.
+  cursor: 'dot',
   // Regex sources for the product's own token shapes. lib.js already masks common ones
   // (sk-..., ghp_..., JWTs, long hex). This example masks keys like wf_test_abc123...
   maskPatterns: ['\\bwf_(live|test)_\\w{16,}'],  // CHANGE: your product's key prefix, or []

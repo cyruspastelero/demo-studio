@@ -101,6 +101,8 @@ and list them under `windows` in `<demo>/demo.json`. Record with `rec.mjs` (Step
    ```
    Recipe list and when to use each: `$P/samples/README.md`. Also copy
    `$P/samples/scenes/_project.js` to `<demo>/recordings/scenes/_project.js` if it is still the template.
+   Keep `cursor: 'dot'` there: the cursor is drawn into the footage at record time and cannot be
+   changed in the edit.
 2. **Scout, then adapt.** For an unfamiliar page, run the scout body from
    `$P/references/scene-patterns.md` ("Scout run") to get the real button names. Then change every
    line marked `// CHANGE:` in the copied file, and rename `'_tmpNN'` to this scene's number.
@@ -145,7 +147,40 @@ and list them under `windows` in `<demo>/demo.json`. Record with `rec.mjs` (Step
    `reject`, and say why in the notes. Exactly one `keep` per scene.
 7. **Throwaways:** add every item created on camera (keys, records, invites) to THROWAWAYS.md now.
 
-Scene done when: one `keep` row, the recipe's verify list passed, THROWAWAYS.md updated.
+8. **Scout the edit targets** (for the cut's crop, zooms and highlights; quality bar W2, Z, H).
+   Look up this scene's row in the SHOT-LIST.md **Edit plan**. In the scene body, right after the
+   moment each target is on screen (after its `waitFor`, before `park`), measure it, and return the
+   result with the take:
+   ```js
+   const scout = {
+     ...await scoutRects(p, { region: p.locator('main') }),                    // CHANGE: the window region
+     ...await scoutRects(p, { answer: p.getByText('471 of 1,240 signups') }),  // CHANGE: the highlight target
+   };
+   // ... rest of the scene ...
+   return { frames: r.frames, scout };
+   ```
+   `scoutRects` returns, per name, `rect: [x, y, w, h]` and `focus: [x, y]` in **source px of the
+   1080p take** (CSS px x 4/3, because the 1440 px wide page at DPR 2 is encoded 1920 wide) and `t`,
+   the seconds since `record()` started. Target the element's **text** (`getByText`, a label), not
+   its padded container: the cut pads the box by 15 and 9 px itself.
+   Save what the run returned as `<demo>/recordings/scout/<NN-name>.json` (Write tool), e.g.
+   `{"take": 1, "region": {"rect": [300, 120, 1320, 640], "t": 1.2}, "answer": {"rect": [1012, 598, 336, 44], "focus": [1180, 620], "t": 8.6}}`.
+
+   | Measured | Goes into demo.json (skill `demo-edit`) |
+   | --- | --- |
+   | `region.rect` | scene `crop` (the engine widens it to 1.95:1) |
+   | a target's `focus` | `zooms[].focus` |
+   | a target's `rect` | `highlights[].rect` |
+   | a target's `t` | `zooms[].at` is about `(t - trim_in) / speed - 1.1`, so the zoom lands as it appears |
+
+   | If you see | Do this |
+   | --- | --- |
+   | `scout target answer is not visible` | Measure after its `waitFor`, or scroll it into view first |
+   | a rect much wider than the text | You measured the container; use `getByText` or a tighter locator |
+   | the element moves later in the take (a list grows, a filter reflows) | Measure again at the moment it is highlighted, under a second name |
+
+Scene done when: one `keep` row, the recipe's verify list passed, THROWAWAYS.md updated, and
+`recordings/scout/<NN-name>.json` holds every crop region and highlight target in its Edit plan row.
 
 ## Step 3: re-shoot
 
@@ -168,4 +203,6 @@ frames until the take is approved; re-encodes are cheap, re-shoots are not.
 - [ ] No take shows a login form, a password field or a 2FA screen
 - [ ] No password appears in any file in `<demo>` (only a gitignored `app/.env` the user asked for)
 - [ ] THROWAWAYS.md lists everything created on camera
+- [ ] Every scene has `recordings/scout/<NN-name>.json` with its crop region and highlight rects
+- [ ] `_project.js` has `cursor: 'dot'` (the quality-bar cursor; an OS-style arrow fails the bar)
 - [ ] Next: skill `demo-edit`, Step 1 (review reel)

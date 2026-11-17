@@ -10,3 +10,12 @@ you must include this NOTICE file with it.
 The editor UI bundles the Geist and Geist Mono typefaces (app/src/fonts/), Copyright 2026 The Geist
 Project Authors (https://github.com/vercel/geist-font), licensed under the SIL Open Font License,
 Version 1.1. The full licence is in app/src/fonts/OFL.txt.
+
+The keynote renderer bundles typefaces in assets/fonts/, all licensed under the SIL Open Font
+License, Version 1.1:
+- Inter 4.1 (InterVariable.woff2, InterDisplay-Regular.woff2, InterDisplay-Medium.woff2),
+  Copyright (c) 2016 The Inter Project Authors (https://github.com/rsms/inter).
+  The full licence is in assets/fonts/OFL.txt.
+- Geist and Geist Mono 1.9.0 (GeistVariable.woff2, GeistMonoVariable.woff2),
+  Copyright 2024 The Geist Project Authors (https://github.com/vercel/geist-font).
+  The full licence is in assets/fonts/OFL-Geist.txt.

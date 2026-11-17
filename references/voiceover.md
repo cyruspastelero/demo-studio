@@ -56,12 +56,14 @@ Each line still has to fit its budget; narrate.py reports a long line, it never 
 
 ## Music bed
 
-A quiet instrumental bed under the voice makes the cut feel finished. Use your own file, or make
-one with the ElevenLabs MCP (`compose_music`, instrumental) or the Higgsfield MCP
-(`generate_audio` with a music model), and save it as `assets/music.mp3`. Then set
-`"voice": {"music": "assets/music.mp3", "music_volume": 0.12, "music_fade_in": 1.0, "music_fade_out": 2.0}`.
-narrate.py loops it, ducks it while someone speaks, fades it in and out and balances the loudness.
-No vocals, and only music you have the rights to.
+The quality bar asks for a bed under every narrated cut (`docs/quality-bar.md` A6). Use your own
+file, make a free one with `python3 -I "$P/scripts/make-bed.py" music/bed.m4a --seconds 60`, or
+make one with the ElevenLabs MCP (`compose_music`, instrumental) or the Higgsfield MCP
+(`generate_audio` with a music model), and save it as `music/bed.m4a`. Then set
+`"voice": {"music": "music/bed.m4a", "music_dips": [{"at": 12.0, "dur": 1.5}]}`. narrate.py loops
+it, sets it 13 dB under the narration, ducks it while someone speaks, dips it on the key moment,
+fades it out (silent for the last 3 s of an outro) and brings the mix to -14 LUFS with true peak
+under -1 dBTP. No vocals, and only music you have the rights to.
 
 ## Promo vs how-to
 

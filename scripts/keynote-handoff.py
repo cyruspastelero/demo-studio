@@ -6,8 +6,10 @@ This is the handoff for a single keynote cut made from demo.json. For a promo an
 from in/out points, use build-handoff.py with handoff.json instead.
 
 Usage (from the demo dir, after build-keynote.py): keynote-handoff.py demo.json
+Segments are cut from the finished cut at the times in <slug>-keynote-cut.timing.json.
 """
 import csv
+import json
 import importlib.util
 import re
 import shutil
@@ -26,7 +28,6 @@ def load_demolib():
 
 lib = load_demolib()
 
-PLUGIN_ASSETS = Path(__file__).resolve().parent.parent / "assets"
 WPS = 2.5  # typical AI narrator pace, words per second
 VO_LEAD = 0.5  # a voiceover line starts this far into its segment
 
@@ -77,6 +78,33 @@ def write_voiceover(path, cfg, seq, keys, vo):
         + "\n\n\nFULL READ (one take)\n\n" + "\n\n".join(text for _, text in blocks) + "\n")
 
 
+def cut_segment(demo, final, start, seconds, dest):
+    """One sequence item, cut from the finished cut (re-encoded so it starts on its first frame)."""
+    lib.ensure_inside(demo, final, "keynote-handoff source")
+    lib.run(["ffmpeg", "-y", "-loglevel", "error", "-ss", f"{start:.3f}", "-i", final, "-t", f"{seconds:.3f}",
+             "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-pix_fmt", "yuv420p", "-an",
+             "-movflags", "+faststart", dest])
+
+
+def motion_note(item):
+    zooms = item.get("zooms") or []
+    parts = [f"zoom 1.15x at {z['at']}s onto ({z['focus'][0]}, {z['focus'][1]}), held {z.get('dur', 3.0)}s"
+             for z in zooms]
+    legacy = item.get("zoom")
+    if legacy and not zooms:
+        parts.append(f"zoom 1.15x from {legacy[3]}s onto ({legacy[1]}, {legacy[2]})")
+    parts += [f"highlight box on {h['rect']}" for h in item.get("highlights", [])]
+    return "; ".join(parts) or "none (window at rest)"
+
+
+def callout_note(item):
+    pills = [f"{c.get('kind', 'statement')} \"{c['text']}{', ' + c['role'] if c.get('role') else ''}\" at {c['at']}s"
+             for c in item.get("callouts", [])]
+    if not pills and item.get("caption"):
+        pills = [f"statement \"{item['caption']}\""]
+    return "; ".join(pills) or "none"
+
+
 def copy_in(demo, src, dest):
     """Copies a file from the demo folder, refusing anything (such as a planted symlink) that resolves outside it."""
     try:
@@ -107,8 +135,9 @@ def main():
         d.mkdir(parents=True)
 
     copy_in(demo, final, dirs["01-final-cut"] / final.name)
-    for f in ["bg.png", "shadow.png", "mask.png"]:
-        shutil.copy2(PLUGIN_ASSETS / f, dirs["04-graphics/layout"] / f)
+    for f in ["window-card.png", "window-mask.png"]:
+        if (assets / "png-static" / f).exists():
+            copy_in(demo, assets / "png-static" / f, dirs["04-graphics/layout"] / f)
     if cfg.get("logo"):
         logo = lib.config_path(demo, cfg["logo"], "logo", "keynote-handoff")
         if not logo.is_file():
@@ -121,19 +150,25 @@ def main():
 
     seq = cfg["sequence"]
     keys = [f"card-{item['card']}" if "card" in item else item["scene"] for item in seq]
-    parts = [assets / "parts" / f"{i:02d}-{k}.mp4" for i, k in enumerate(keys)]
-    durs = [duration(p) for p in parts]
-    starts = [sum(durs[:i]) for i in range(len(durs))]
-    vo = voiceover_windows(seq, keys, starts, sum(durs))
+    timing_path = final.with_suffix(".timing.json")
+    if not timing_path.exists():
+        sys.exit(f"handoff: {timing_path.name} missing; run build-keynote.py again")
+    timing = json.loads(timing_path.read_text())
+    if [i["key"] for i in timing["items"]] != keys:
+        sys.exit("handoff: demo.json changed since the cut was built; run build-keynote.py again")
+    durs = [float(i["duration"]) for i in timing["items"]]
+    starts = [float(i["start"]) for i in timing["items"]]
+    vo = voiceover_windows(seq, keys, starts, sum(durs) - float(timing.get("outro", 0)))
 
     lines, captions, t, n = [], [], 0.0, 0
     for i, item in enumerate(seq):
-        key, part, d = keys[i], parts[i], durs[i]
+        key, d = keys[i], durs[i]
         lib.progress("segments", i + 1, len(seq))
-        copy_in(demo, part, dirs["03-edited-segments"] / part.name)
+        cut_segment(demo, final, starts[i], d, dirs["03-edited-segments"] / f"{i:02d}-{key}.mp4")
         head = f"[{tc(t)} - {tc(t + d)}]  ({d:.1f}s)"
         if "card" in item:
-            copy_in(demo, assets / f"{key}.png", dirs["04-graphics/title-cards"] / f"{key}.png")
+            if (assets / f"{key}.png").exists():
+                copy_in(demo, assets / f"{key}.png", dirs["04-graphics/title-cards"] / f"{key}.png")
             lines += [f"{head}  TITLE CARD  {key}", f"    Title:    {item['title']}",
                       f"    Subtitle: {item.get('subtitle', '')}",
                       f"    Graphic:  04-graphics/title-cards/{key}.png"]
@@ -147,14 +182,13 @@ def main():
             if cap.exists():
                 copy_in(demo, cap, dirs["04-graphics/captions"] / cap.name)
             trim = item.get("trim")
-            zoom = item.get("zoom")
-            captions.append(f"  {key:>4}  {item.get('caption', '')}")
-            lines += [f"{head}  SCENE {key}", f"    Caption:  {item.get('caption', '')}",
+            captions.append(f"  {key:>4}  {callout_note(item)}")
+            lines += [f"{head}  SCENE {key}", f"    Callouts: {callout_note(item)}",
                       f"    On screen: {notes.get(raw_name, {}).get('notes', '')}",
                       f"    Source:   02-raw-footage/{dest}  "
                       f"({f'{trim[0]}s-{trim[1]}s' if trim else 'full'}, {item.get('speed', 1)}x speed)",
-                      f"    Motion:   {f'zoom {zoom[0]}x at ({zoom[1]},{zoom[2]}) from {zoom[3]}s' if zoom else 'slow push-in 1.05x'}",
-                      f"    Graphic:  04-graphics/captions/cap-{key}.png"]
+                      f"    Crop:     {item.get('crop', 'full width')} (source px)",
+                      f"    Motion:   {motion_note(item)}"]
         if vo:
             lines += voiceover_lines(item, vo.get(key))
         lines.append("")
@@ -169,27 +203,30 @@ def main():
         "01-final-cut/ is the finished reference cut. Each segment is also rendered on its own in\n"
         "03-edited-segments/, and the untouched screen recordings are in 02-raw-footage/.\n"
         "Speeds and zooms below are what the reference cut uses; change freely.\n\n"
-        "CAPTIONS (copy-paste list)\n" + "\n".join(captions) + "\n\n\nTIMELINE\n\n" + "\n".join(lines))
+        "CALLOUTS (copy-paste list)\n" + "\n".join(captions) + "\n\n\nTIMELINE\n\n" + "\n".join(lines))
 
     (out / "README.txt").write_text(f"""{cfg.get('title', 'DEMO').upper()}: EDITOR HANDOFF
 
 WHAT'S HERE
-  SCRIPT.txt              Timeline with timecodes, captions, voiceover, source clip, speed and zoom
+  SCRIPT.txt              Timeline with timecodes, callouts, voiceover, source clip, speed, crop and zooms
   VOICEOVER.txt           Narration for an AI voice, one timed block per line (when written)
   01-final-cut/           Finished reference cut ({tc(t)}), keynote style
   02-raw-footage/         {n} clean screen recordings in story order, 1920x1080 30fps, no overlays
   03-edited-segments/     Each segment of the reference cut rendered separately
-  04-graphics/            Title cards, transparent caption PNGs, logo, layout (bg, shadow, window mask)
+  04-graphics/            Title card stills, logo, layout (window card with its shadow, window mask)
   takes.csv               Recording log for the takes used
 
-STYLE (Apple keynote look)
-  Font:     SF Pro Display (San Francisco). Titles semibold 600, tracking -1.5%.
-            Subtitles regular 400, tracking +0.4%. Captions semibold 600, 44px, tracking -1%.
-  Colours:  Text #1D1D1F, secondary text #6E6E73, background #F3F3F6
-  Layout:   Footage scaled to 1600x900 at x=160 y=44, rounded corners 26px, soft drop shadow,
-            caption centred below the window
-  Motion:   0.4s fades through the background colour between segments; slow 1.05x push-in,
-            eased (smoothstep) zooms on key moments
+STYLE (docs/quality-bar.md in demo-studio is the full spec)
+  Font:     Inter (bundled, SIL OFL); titles Inter Display 500 with tight tracking (132 px hero,
+            104 px end card), subtitles 400, callout pills Inter 500 30 px.
+  Colours:  Ink #24272B, secondary #5F656D, one accent word per title #D9463B, pastel background
+            (#E3E3E4 base with soft blue, pink and warm fields), outro gradient #EF4849 to #F68C41
+            over #1B1D21.
+  Layout:   Footage cropped to the UI that matters, in a 1560x800 window at x=180 y=100, corners
+            22 px, soft shadow; pills centred under it at y=962, 68 px tall.
+  Motion:   the window rises in over 0.7 s and clips cut inside it; whole-window zooms to 1.15x
+            (1.1 s ease-in-out sine); red highlight boxes 0.17 s after a zoom lands; words blur in
+            one by one; end card, brand sweep and logo lockup.
 
 SECRETS
   Tokens, API keys and secret values are blurred in the footage itself. Do not sharpen or

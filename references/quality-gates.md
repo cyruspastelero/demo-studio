@@ -62,6 +62,34 @@ in the final scripts and cards.
 
 Done when: the cold run reaches the end result, the voiceover fits, and every claim is ticked.
 
+## 4b. Quality bar (before any cut is called finished)
+
+The bar is [`../docs/quality-bar.md`](../docs/quality-bar.md): measured from a reference cut, it is
+the bare minimum. Its section 4 is the checklist; `scripts/check-cut.py` runs it.
+
+```bash
+python3 -I "$P/scripts/check-cut.py" recordings/exports/<slug>-keynote-cut-narrated.mp4 --frames recordings/exports/checklist
+```
+
+The numbers it holds a cut to (same as the bar):
+
+| Area | Bar |
+| --- | --- |
+| Encode | H.264 High 4.1, 1920x1080, 30 fps CFR, yuv420p tagged BT.709/tv, >= 3.5 Mbps, keyframe every 2.0 s, `moov` before `mdat`; AAC 48 kHz stereo >= 160 kbps |
+| Loudness | -14 LUFS +-1, true peak <= -1 dBTP, LRA <= 15 LU; bed between lines -24 to -32 LUFS momentary; narration >= 50% of the runtime; silent last 3 s |
+| Opening | frame 0 already shows the title blurring in; words reveal one by one; one accent word; 132 px hero (96 px cap); first UI by 6 s |
+| Window | rest 1560x800 at (180, 100) +-4, radius 20 to 24, shadow >= 20 levels; rises from y >= 860 to 100 in 0.7 s; window present on both sides of every cut; no shot over 8 s |
+| Zoom | the whole window to 1794 +-10 wide, >= 40 px clear, 1.0 to 1.2 s symmetric moves, hold 2.4 to 4.5 s |
+| Highlights, pills | 3 px `#E2483C` box 0.1 to 0.3 s after a zoom lands; pill centred at y 962 +-3, 68 +-2 tall, 3 to 5 s, never over a zoom, statements <= 6 words |
+| Ending | brand sweep, then a logo lockup held >= 3 s, last frame the logo |
+| Type | the painted font is the bundled Inter (or Geist) |
+
+`LOOK` lines need eyes: read the frames it saved (body text size and empty panels, W2; the blue
+disc cursor, K1; end-card words in step with the voice, X1).
+
+Done when: 0 FAIL, every LOOK frame read and fine, and anything accepted below the bar is named in
+the final report with its measured value.
+
 ## 5. After the edit comes back
 
 - Save the finished videos to `<demo>/final/` and point the index at them.

@@ -56,9 +56,10 @@ reveal; sandbox accounts only; list everything created on camera in THROWAWAYS.m
 ## Making it look human
 
 - Always `glide()` the pointer to a target, pause about 300-600ms, then `tap()`. Never teleport-click.
-- **The cursor is the normal arrow** (the default). A blue click dot reads as a screen recorder, not
-  a person. `PROJECT.cursor = 'hand'` gives a pointing hand whose fingertip is the hotspot, for
-  consumer apps.
+- **The cursor is the quality-bar disc** (`PROJECT.cursor = 'dot'`, the default): a soft blue
+  `#8FAFF5` disc with a white ring and a click ripple, measured from the reference cut. An arrow
+  captured in the footage reads as a raw screen grab and cannot be changed in the edit, so set the
+  cursor before the first take.
 - **Moves are eased on a slight arc** by `moveHuman` (used by `glide`, `click` and `park`). A straight
   constant-speed `p.mouse.move(..., { steps })` looks robotic, so do not call it on camera. Use
   `placeCursor(p)` to put the pointer at its resting spot before `record()` starts.
@@ -122,13 +123,20 @@ reveal; sandbox accounts only; list everything created on camera in THROWAWAYS.m
 
 - Encode raw at CRF 14, `-preset slow`, constant 30fps, yuv420p, faststart. Keep frames until
   the take is approved, because re-encodes are cheap and re-shoots are not.
-- The keynote look works best when it is restrained: a light radial background, the footage in a
-  1600x900 rounded window (radius 26) with a soft shadow, one short statement caption per scene,
-  0.4s fades through #F3F3F6, a slow 1.05 push-in, and eased 1.5-1.75x zooms only on the hero moments.
-- Some ffmpeg builds lack `drawtext`, so text is rendered to PNG in the browser (`mk-assets.py`,
-  `title-cards.mjs`). Font: `system-ui` resolves to San Francisco on macOS. Verify with CDP
-  `CSS.getPlatformFontsForNode` (expect `.SFNS`). Titles 600 / -0.015em, subtitles 400 #6e6e73
-  / 0.004em, captions 600 44px / -0.01em, text #1d1d1f.
+- The keynote look is set by [`docs/quality-bar.md`](../docs/quality-bar.md), measured from a
+  reference cut the owner set as the bare minimum. The old look (flat grey, a 1600x900 window
+  showing the whole viewport, content-only 1.5x zooms, captions for a whole scene, dips through an
+  empty background, SF Pro) was judged "very basic"; do not bring it back.
+- All text is rendered in headless Chrome with the bundled Inter (`assets/fonts`), never
+  `system-ui`: SF Pro cannot be bundled and falls back on Linux. build-keynote.py checks the painted
+  font with CDP `CSS.getPlatformFontsForNode` and stops if it is not the bundled one.
+- Chrome saves a fully opaque frame as an RGB PNG and the rest as RGBA. Fed to ffmpeg as one image
+  sequence, that format change rebuilds the filter graph mid-cut and resets every trim (the cut came
+  out 4 s short); `-reinit_filter 0` on those inputs fixes it. One big graph with concatenated clips
+  and endless `-loop 1` stills also stalled in ffmpeg 8, so each window run is rendered on its own first.
+- loudnorm's two-pass "linear" mode silently falls back to a slow AGC when its gain would clip, and
+  that AGC pumps the music bed up in every pause. narrate.py measures once, applies one fixed gain,
+  and limits the peaks instead.
 - Caption copy: short declarative statements, sentence case, ending in a period ("Approve. The
   invoice is sent."). No em dashes.
 - zsh modifiers (`$i:l`) and `$` inside ffmpeg expressions bite in inline shell. Put anything

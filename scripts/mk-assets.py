@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Builds a Playwright MCP run_code file that renders the keynote graphics from demo.json:
+"""LEGACY: build-keynote.py now renders every graphic itself (bundled Inter, headless Chrome, no MCP
+step) to docs/quality-bar.md, so this script is no longer part of the pipeline. It is kept for old
+workflows only and still uses system fonts.
+
+Builds a Playwright MCP run_code file that renders the old keynote graphics from demo.json:
 title cards (card-<name>.png) and transparent caption overlays (cap-<scene>.png), 1920x1080,
 set in San Francisco (SF Pro) with Apple-style weights and tracking.
 

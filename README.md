@@ -18,7 +18,7 @@ or create something that cannot be deleted.
   masked in the page before a frame is captured, and credentials are never written to the repo.
   The editor listens on 127.0.0.1 only, and demo folders from other people are treated as
   untrusted (paths stay inside the demo folder, title cards render sandboxed). See [SECURITY.md](SECURITY.md).
-- **Looks professional by default.** Crisp 2x capture, a human-paced cursor, eased zooms, captions and title cards.
+- **Looks professional by default.** Every cut is built to a [measured quality bar](docs/quality-bar.md): a cropped floating window on a soft pastel background, whole-window zooms, highlight boxes, callout pills, word-by-word titles in bundled Inter, an end card and logo outro, and a mix at -14 LUFS. `check-cut.py` proves it.
 
 ## Sample videos
 
@@ -59,7 +59,7 @@ no login needed ([10 minute walkthrough](docs/getting-started.md#first-demo-in-1
 ## What you get
 
 One report at the end with a written plan, a clean 1080p take per scene, a review reel, a
-keynote-style cut with captions and zooms, and a narrated version. Ask for promo and how-to cuts,
+keynote-style cut built to the quality bar, and a narrated version. Ask for promo and how-to cuts,
 4:5 and 9:16 social versions and a zip for a human editor too. Want to check the plan or the reel
 before Claude goes on? Say so, and it stops there.
 
@@ -70,7 +70,8 @@ before Claude goes on? Say so, and it stops there.
 | [Getting started](docs/getting-started.md) | Requirements, install, the first demo, the starter kit for a demos folder |
 | [How it works](docs/how-it-works.md) | Stages, deliverables, quality gates, narration and music |
 | [Studio](docs/studio.md) | The local dashboard and the editor |
-| [Style guide](references/style-guide.md) | The house look: pointer, typing, pacing, zooms, captions, voice |
+| [Style guide](references/style-guide.md) | The house look: pointer, typing, pacing, zooms, callouts, voice |
+| [Quality bar](docs/quality-bar.md) | The measured minimum every finished cut must pass, with its checklist |
 | [Samples](samples/README.md) | Scene recipes and a full sample plan to copy from |
 | [FAQ](docs/faq.md) | Passwords, cost, what stays local, files, timing, re-shoots, branding, safety |
 | [Development](docs/development.md) | Repo layout and tests |

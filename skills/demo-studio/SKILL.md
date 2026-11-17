@@ -61,10 +61,13 @@ Records and cuts `$P/examples/todo-sample` (a public todo app) so the user sees 
 2. Follow skill `demo-record` from its Step 1 with the URL `https://todomvc.com/examples/react/dist/`
    and the scenes `01-add-todos`, `02-complete-and-filter`, `03-clear-completed`, in that order.
    The scene bodies already exist in `recordings/scenes/`.
-3. Follow skill `demo-edit` Steps 1, 2 and 3 (review reel, keynote cut, narration).
+3. Follow skill `demo-edit` Steps 1, 2, 3 and 2b (review reel, keynote cut, narration with
+   `python3 -I "$P/scripts/make-bed.py" music/bed.m4a --seconds 40` for the bed, then the
+   quality-bar checklist). The sample's demo.json already plans the crop, zooms, highlights, pills
+   and cards; after recording, update its rects from `recordings/scout/`.
 4. Open `recordings/exports/todo-app-sample-keynote-cut-narrated.mp4` for the user.
 
-Done when: the narrated cut plays and the user has seen it.
+Done when: `check-cut.py` reports 0 FAIL on the narrated cut and the user has seen it.
 
 ## Full route
 
@@ -153,11 +156,19 @@ that the footage cannot prove. If the user asked for review gates ("check with m
 | 4 | Plan | `demo-plan` Steps 1 to 8 | BRIEF, SHOT-LIST, RUN-SHEET, VOICEOVER, PREP and demo.json filled; every claim maps to a scene |
 | 5 | Prep and test sweep | `demo-plan` Steps 7 and 9 | Every PREP.md box ticked; the test sweep table in README.md has `pass` on every row |
 | 6 | Record and QA | `demo-record` | One `keep` row per scene in `recordings/takes.csv`, none `new`; THROWAWAYS.md lists everything created |
-| 7 | Review reel and cuts | `demo-edit` Steps 1 to 3 (4 and 5 if asked) | `review-reel.mp4` and every cut asked for exist in `recordings/exports/`. **Stop here if the user asked only for raw footage** |
+| 7 | Review reel and cuts | `demo-edit` Steps 1 to 3 and 2b (4 and 5 if asked) | `review-reel.mp4` and every cut asked for exist in `recordings/exports/`, and `check-cut.py` reports **0 FAIL** on the narrated keynote cut with every LOOK frame read. **Stop here if the user asked only for raw footage** |
 | 8 | Handoff and wrap-up | `demo-handoff` | Its wrap-up checklist is ticked, except boxes that need the user's go-ahead |
 
 Build the review reel first and check it yourself on a contact sheet. Do not wait for the user to
 watch it; it goes in the final report.
+
+### The quality bar gate (before any video is called finished)
+
+A video is **not finished** until `python3 -I "$P/scripts/check-cut.py" <cut> --frames <dir>`
+reports 0 FAIL and you have read every frame it saved (skill `demo-edit` Step 2b). Until then, say
+"draft" in every message about it, never "done" or "finished". If an item cannot pass (for example
+the take was recorded with another cursor), name the item, the measured value and the bar in the
+final report, and offer the fix (usually a re-shoot). The bar is `$P/docs/quality-bar.md`.
 
 ### Step 8b: the final report (one message)
 
@@ -167,6 +178,8 @@ watch it; it goes in the final report.
    - the path of every video made, review reel first
    - the scene table with one line per scene
    - the decisions you made on your own (from README.md "Decisions")
+   - the checklist summary line from `check-cut.py` (`N pass, 0 fail, M to look at`) and any item
+     accepted below the bar, with its measured value
    - anything that failed or was cut, and why
    - what is still open, with the exact words to say: "Say clean up and I will delete the N
      throwaways in THROWAWAYS.md and the frames in `recordings/frames/` (about X GB)."
@@ -192,14 +205,16 @@ It only reads files. Stop it when the session ends. If it fails with a missing m
 | Viewport | 1440x810 CSS, DPR 2 (2880x1620 capture) |
 | Raw takes | 1920x1080, 30fps constant, H.264 CRF 14 `-preset slow`, lanczos, silent |
 | Take handles | 1 to 1.5s still at start, 2 to 3s hold at end |
-| Pointer | normal arrow; `PROJECT.cursor = 'hand'` only for a consumer app |
+| Pointer | `PROJECT.cursor = 'dot'`: blue disc, white ring, click ripple (bar K1) |
 | Pointer motion | eased glides on a slight arc, 300 to 600ms pause before clicks, park after |
 | Typing | 45 to 75ms per key; paste anything longer than about 2 lines |
-| Zoom | none except the 1.05 push-in; 1.5 to 1.75x on the hero moment only |
-| Captions | one short declarative sentence per scene, sentence case, period, no em dashes |
+| Look of the cut | `$P/docs/quality-bar.md`: pastel background, 1560x800 window cropped to the UI, rise-in, Inter titles with one accent word |
+| Zoom | whole window to 1.15x, 1.1 s ease, about one per 11 s, only where the narration makes a point |
+| Callouts | pills under the window, 3 to 5 s: person (name, role) or a statement of 6 words at most |
+| Highlights | red outline on the one element the narration names, 0.17 s after a zoom lands |
 | Voiceover | spoken English, about 2.5 words per second, URLs and amounts spelled out |
 | Narration voice | own recordings in `voiceover/`, else ElevenLabs if `ELEVENLABS_API_KEY` is set, else macOS `say` |
-| Music | none unless asked; then `voice.music` at 0.12 to 0.18, ducked |
+| Music | always a bed (`make-bed.py` when nothing else), 13 dB under the voice, ducked, one dip; mix at -14 LUFS, true peak under -1 dBTP |
 | Videos | keynote cut + narration; promo about 1:30 and how-to about 3:00 for an editor |
 | Social | 4:5 1080x1350 and 9:16 1080x1920, blurred footage background, caption band |
 | Demo folder | `$DEMO_ROOT/<name>`, default `./demos/<name>` |
@@ -209,7 +224,7 @@ It only reads files. Stop it when the session ends. If it fails with a missing m
 | Review reel | shown in the final report, not a gate, unless the user asked for review gates |
 | Things created on camera | created for real, listed in THROWAWAYS.md, deleted when the user says clean up |
 | Footage | real screen recordings only, no AI-generated clips or imagery |
-| Finishing | free path (`build-keynote.py`, `narrate.py`) |
+| Finishing | free path (`build-keynote.py`, `narrate.py`), then `check-cut.py` until 0 FAIL |
 
 ## Where things are
 
@@ -220,6 +235,7 @@ It only reads files. Stop it when the session ends. If it fails with a missing m
 | Scene recipes and a sample plan | `$P/samples/README.md` |
 | Gotchas from real shoots | `$P/references/learnings.md` |
 | Gates between stages | `$P/references/quality-gates.md` |
+| The bar every finished cut must pass | `$P/docs/quality-bar.md` (checklist in section 4, run by `scripts/check-cut.py`) |
 | More scene code | `$P/references/scene-patterns.md` |
 | Voiceover rules | `$P/references/voiceover.md` |
 | Secrets | `$P/references/secrets.md` |

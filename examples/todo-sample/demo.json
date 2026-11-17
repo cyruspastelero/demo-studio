@@ -1,12 +1,34 @@
 {
   "title": "Todo app sample",
   "logo": "",
-  "_comment": "The sample demo made with demo-studio: a public todo app (TodoMVC, React), three scenes. zoom = [factor, centerX, centerY, startSec, durationSec] in 1920x1080 coords of the output clip; trim = [inSec, outSec] of the raw clip.",
+  "_comment": "The sample demo made with demo-studio: a public todo app (TodoMVC, React), three scenes, built to docs/quality-bar.md. Times in callouts/zooms/highlights are seconds into the scene after trim and speed; crop, focus and rect are source px of the 1920x1080 take. The three scenes form one window run, so the window rises once and the clips cut inside it.",
+  "voice": {
+    "rate_wpm": 175,
+    "music": "music/bed.m4a",
+    "music_dips": [{ "at": 20.3, "dur": 1.6 }]
+  },
   "sequence": [
-    { "card": "intro", "title": "A todo list in three moves.", "subtitle": "Recorded and cut with demo-studio.", "duration": 3.0, "voiceover": "A todo list should take seconds. Type what needs doing and press Enter." },
-    { "scene": "01", "stem": "01-add-todos", "take": 1, "caption": "Type it. Press Enter.", "trim": [0.8, 10.2], "speed": 1.5, "zoom": [1.7, 960, 250, 0.2, 0.9] },
-    { "scene": "02", "stem": "02-complete-and-filter", "take": 1, "caption": "Tick things off. Filter what is left.", "trim": [0.8, 12.8], "speed": 1.25, "zoom": [1.7, 960, 250, 0.0, 0.6], "voiceover": "Tick things off as you finish them. Filters show what is still active and what is done." },
-    { "scene": "03", "stem": "03-clear-completed", "take": 1, "caption": "Clear the finished ones in one click.", "trim": [0.5, 5.3], "speed": 1, "zoom": [1.7, 960, 250, 0.0, 0.6], "voiceover": "Clear the finished ones in one click." },
-    { "card": "outro", "title": "Real app. Real clicks.", "subtitle": "github.com/Cyvid7-Darus10/demo-studio", "duration": 3.6 }
+    { "card": "intro", "kind": "hero", "title": "A todo list in three moves.", "accent": "three", "subtitle": "Recorded and cut with demo-studio.", "duration": 3.0,
+      "voiceover": "A todo list should take seconds. Type what needs doing, press Enter, and it lands in the list." },
+    { "scene": "01", "stem": "01-add-todos", "take": 1, "trim": [0.8, 10.2], "speed": 1.5,
+      "crop": [540, 150, 840, 430],
+      "callouts": [{ "at": 0.76, "dur": 3.5, "kind": "statement", "text": "Type it. Press Enter." }] },
+    { "scene": "02", "stem": "02-complete-and-filter", "take": 1, "trim": [0.8, 12.8], "speed": 1.25,
+      "crop": [540, 150, 840, 430],
+      "zooms": [
+        { "at": 0.3, "focus": [800, 380], "dur": 2.4 },
+        { "at": 6.4, "focus": [1150, 528], "dur": 2.6 }
+      ],
+      "highlights": [
+        { "rect": [673, 366, 268, 32], "dur": 2.4 },
+        { "rect": [1164, 515, 143, 26], "dur": 3.3 }
+      ],
+      "voiceover": "Tick things off as you finish them. The filters show what is still active, and what is already done." },
+    { "scene": "03", "stem": "03-clear-completed", "take": 1, "trim": [0.0, 5.4], "speed": 1,
+      "crop": [540, 150, 840, 430],
+      "callouts": [{ "at": 1.7, "dur": 3.2, "kind": "statement", "text": "Done ones, gone." }],
+      "voiceover": "Then clear the finished ones in one click, and the list is clean again." },
+    { "card": "outro", "kind": "end", "title": "Real app. Real clicks.", "accent": "clicks.", "subtitle": "github.com/Cyvid7-Darus10/demo-studio", "duration": 7.9, "outro": 5.0,
+      "voiceover": "Real app, real clicks. Every frame here was recorded and cut on a laptop, for free." }
   ]
 }

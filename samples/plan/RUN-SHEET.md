@@ -51,6 +51,9 @@ Story: why (card) -> set it up (01, 02) -> use it (03, 04, 05) -> proof (06, 07)
 - Expected result: "The newsletter: 471 of 1,240 signups, 38%, up from 29% the week before."
   Reply in 6 to 10s; trim the wait to about 1s in the edit.
 - Voiceover draft: Or just ask. The answer comes from your own numbers, so you can check it.
+- Edit plan: window region = the assistant panel and its reply (no sidebar). Pill "Ask in plain
+  words." as the beat starts. Zoom as the reply lands, onto the figure; highlight
+  `[data-testid=answer-figure]` (scout it after the reply renders); bed dips under the answer.
 
 ### Beat 5: hide test traffic (1:11 to 1:23)
 
@@ -58,6 +61,9 @@ Story: why (card) -> set it up (01, 02) -> use it (03, 04, 05) -> proof (06, 07)
 - Action: point at visits, flip "Hide test traffic", point at visits again.
 - Expected result: 18,960 visits becomes 17,402.
 - Voiceover draft: One switch hides your own test traffic.
+
+- Edit plan: window region = Settings, Reports. Zoom onto the switch as it flips; highlight
+  `role=switch[name="Hide test traffic"]`. No pill (the zoom carries it).
 
 ### Beat 6: invite a viewer (1:23 to 1:35)
 

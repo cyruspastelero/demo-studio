@@ -22,9 +22,15 @@ docs/             ROADMAP.md, img/ (screenshots and the sample GIF)
 
 ## Tests
 
+The keynote engine is `scripts/build-keynote.py` with its modules in `scripts/keynote/` (spec,
+easing, model, timeline, window, overlay, brand, render, compose, voice_sync, measure) and the
+Chrome page in `scripts/keynote-page.mjs` + `keynote-render.mjs`. Every look value comes from
+`docs/quality-bar.md`; change the bar first, then `keynote/spec.py`, then the tests.
+
 ```bash
-npm install && bash tests/smoke.sh   # pipeline, on synthetic footage
-python3 -I tests/test_check.py && python3 -I tests/test_narrate.py
+npm install && bash tests/smoke.sh   # pipeline on synthetic footage, ending in the quality-bar checklist
+python3 -I tests/test_check.py && python3 -I tests/test_narrate.py && python3 -I tests/test_keynote.py
+node tests/test_lib.mjs && node tests/test_card_safety.mjs && node tests/test_frame_receiver.mjs
 npm run test:app                     # editor unit tests (vitest)
 npm run test:e2e                     # editor end to end, headless Chrome on a temp copy of the example
 npm run screenshots -w app           # refresh docs/img/

@@ -27,6 +27,27 @@ Recipe = the file in `samples/scenes/` the scene body starts from.
 | 07 | proof | 07-sam-sees-report | Sam's window: the same dashboard, read only | Same numbers, no extra seat. | 10s | 06 | two-person-handoff |
 | 08 | edge | 08-assistant-no-data | Riley asks about February; answer: no data before 3 March | It says when it doesn't know. | 14s | seed | ai-chat-reply |
 
+## Edit plan (what the cut does on screen, to docs/quality-bar.md)
+
+One row per scene in the promo. "Window region" becomes `crop`; the selector is what the record
+step's scout measures (`recordings/scout/<stem>.json`), and its rect becomes `highlights[].rect`.
+Zoom about once every 11 s of footage, only where the voiceover makes a point; a pill never runs
+during a zoom.
+
+| # | Window region (crop) | Callout pill (3 to 5 s) | Zoom target (when, what) | Highlight (selector) | Music |
+| --- | --- | --- | --- | --- | --- |
+| 03 | Dashboard body, no sidebar | person: Riley Chen, growth lead (as the window lands) | none | none | bed from frame 0 |
+| 04 | Assistant panel and answer | statement: "Ask in plain words." | 5.2 s, the answer card | `[data-testid=answer-figure]` (the 471 figure) | dip as the answer lands |
+| 05 | Settings, Reports section | none (the zoom carries it) | 1.0 s, the switch | `role=switch[name="Hide test traffic"]` | |
+| 06 | Team list and invite dialog | statement: "Viewers need no seat." | none | none | |
+| 07 | Sam's dashboard | person: Sam Ortiz, founder | none | none | |
+
+| Card | Kind | Title (accent word in bold) | Subtitle or tagline |
+| --- | --- | --- | --- |
+| intro | hero | Last week, in one **answer.** | Wrenfield Analytics |
+| use | section | Where did **signups** come from? | |
+| outro | end | Your week, **answered.** | wrenfield.example.com (logo, then the brand sweep and logo outro) |
+
 Scenes 03, 04 and 05 quote the same numbers. If you re-seed, re-shoot all three in one pass.
 Scene 07 is recorded in a second window ("sam") with `rec.mjs`.
 

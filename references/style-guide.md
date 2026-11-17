@@ -7,6 +7,11 @@ gotchas in `learnings.md`; where this guide is short on detail, those two files 
 The aim is simple: a viewer should feel they are watching a calm, capable person use a real
 product. Nothing flashy, nothing faked, nothing they have to squint at.
 
+**The numbers for the finished cut live in [`../docs/quality-bar.md`](../docs/quality-bar.md)**
+(the bare minimum, measured from a reference cut; ids like W1 or C8 point at its rows). Where this
+guide and the bar disagree, the bar wins. `scripts/build-keynote.py` builds every look value in,
+and `scripts/check-cut.py` runs the bar's checklist on a finished cut.
+
 ## 1. Capture
 
 - **Viewport 1440x810 CSS at DPR 2.** That captures 2880x1620 frames, downscaled with lanczos to
@@ -35,8 +40,11 @@ The frame shows the product and nothing else.
 
 ## 3. Pointer
 
-- **The normal arrow cursor by default.** `PROJECT.cursor = 'hand'` (a pointing hand) only when it
-  suits a consumer app. Never a click dot or a ripple: it reads as a screen recorder, not a person.
+- **The quality-bar cursor by default** (K1, K4): `PROJECT.cursor = 'dot'`, a soft blue `#8FAFF5`
+  disc with a 2 px white ring and a 1 px `#A9ABAD` hairline, about 24 px in the cut; it presses to
+  0.86 for 0.16 s and sends out a white ring that grows to 60 px and fades in 0.5 s. It is drawn
+  into the page at record time, so it scales with the window in the edit. Never the OS arrow or
+  hand (K2); `'arrow'` and `'hand'` exist only for a user who asks for them.
 - **Glide, never teleport.** `glide`, `click` and `park` move on a slight eased arc (`moveHuman`).
   Never call `p.mouse.move(..., { steps })` on camera; constant speed looks robotic.
 - **Pause before every click,** 300 to 600ms. `click()` waits 350ms; add a `sleep` when the viewer
@@ -65,6 +73,8 @@ The frame shows the product and nothing else.
 - **Wait on real UI signals** (`locator.waitFor`), never a fixed sleep, and log the latency. Long
   waits are cut in the edit with `trim`, not hidden by recording less.
 - **Scenes are 10 to 40 seconds and single purpose.** One idea per scene.
+- **In the cut, 2 to 6 s between cuts or framing changes,** never more than 8 s of one
+  uninterrupted window shot (bar P2), and at least 0.6 s of still UI after each result (P4).
 - **Speed up the boring parts in the edit,** not on camera: `speed` 1.25 to 1.5 for form filling,
   up to 3 for a long wait you want to show passing. Never speed up the hero moment.
 
@@ -75,45 +85,52 @@ The frame shows the product and nothing else.
 - Scroll, stop, let it settle for a beat, then point. Never point while scrolling.
 - Scroll in a few deliberate moves, not one long fling.
 
-## 7. Zoom
+## 7. Zoom (bar 2.4)
 
-- **Default: no zoom, just the gentle 1.05 push-in** the keynote cut adds on its own.
-- **Zoom only on the hero moment** of a scene: the result appearing, the number that matters, the
-  small button the story depends on. Two or three zooms in a 90 second cut is plenty.
-- **How much:** 1.5 to 1.75x. Up to 1.7 for a small app in a wide page (the todo sample). Past 2x
-  the UI gets soft.
-- **How:** `zoom: [factor, cx, cy, start, duration]` in demo.json, in 1920x1080 output coordinates.
-  The ease is a smoothstep. A 0.6 to 1.4s ease reads as calm; under 0.5s feels like a jump cut.
-- Start the zoom just before the thing happens, so the viewer is already looking when it changes.
-- Pick the centre from a contact sheet, not by guessing.
+- **The whole window zooms,** frame, shadow and all, to **1.15x** (1560x800 to 1794x920), never
+  more; the window stays 40 px inside the frame and its centre moves at most 70 px toward the
+  target. Content never zooms inside a fixed frame.
+- **1.1 s in and 1.1 s out, ease-in-out sine**, held **2.4 to 4.5 s**.
+- **About one zoom per 11 s of footage,** only to land a point the narration is making. Start it
+  about 1.1 s before the thing appears so it lands as it happens.
+- **How:** `zooms: [{"at": 5.2, "focus": [x, y], "dur": 3.0}]` on the scene in demo.json; `at` is
+  seconds into the scene after trim and speed, `focus` is source px from the record step's scout.
 
-## 8. Captions
+## 8. Window, highlights and callouts (bar 2.3, 2.5, 2.6)
 
-- **One short declarative sentence per scene,** sentence case, ending in a period.
-- Under about eight words. Say what happened or why it matters: "Approve. The invoice is sent."
-  "Your key stays private." "It asks instead of guessing."
-- No em dashes, no exclamation marks, no emoji, no "simply" or "just" filler (except a brand line
-  the client wrote).
-- Claim only what that scene's footage shows.
-- Captions sit below the window, never over the UI being shown.
+- **Crop to the UI that matters** (`crop: [x, y, w, h]` in source px): the window is 1560x800 at
+  (180, 100), app body text at least 18 px cap height, no empty sidebar over 15% of the window.
+- **The window rises in once** (0.7 s, ease-out) and clips cut inside it. Never a dip through an
+  empty background between two window shots.
+- **Highlights:** a 3 px `#E2483C` outline, radius 12, on the one element the narration names,
+  0.17 s after a zoom lands, glued to the UI while the window eases back. At most two at once.
+- **Callout pills** sit centred under the window at y = 962, 68 px tall, Inter 500 30 px, 3 to 5 s,
+  one at a time, never during a zoom. Two kinds: a **person** (50 px avatar, "Name," in ink, role in
+  grey) or a **statement** in the accent colour, at most six words, sentence case, a period, no em
+  dashes, exclamation marks or filler. Claim only what that scene's footage shows.
 
-## 9. Title cards
+## 9. Title cards (bar 2.7, 2.9, 2.10)
 
-- Use cards to mark the parts of the story: intro, setup, use, outro. Not between every scene.
-- **Title:** a short statement, sentence case, with a period ("Just ask."). **Subtitle:** one plain
-  line of context ("Right in the thread.").
-- Intro card 3 to 3.5s, part cards about 2.4s, outro card 3.5 to 4s.
-- The outro says what it is and where to get it, with a URL that works (checked in the test sweep).
+- **Hero** (opening): 132 px, words blur in one by one (0.13 s apart), settle to 0.52x, then the
+  subtitle; about 3.4 s. The first title is already blurring in on frame 0. First UI by 6 s.
+- **Section** cards mid-cut ask a question ("Who is on the team?"), 2.2 to 2.6 s.
+- **Exactly one accent word** per title or subtitle (`accent`), the key noun. Never two colours.
+- **End card** (`kind: end`, the last item): logo, a 104 px title whose words appear just before
+  the narration says them, a 40 px tagline, about 7.9 s; then a brand-gradient sweep into a dark
+  field and a logo lockup held 3 s or more, silent at the very end. The tagline says where to get
+  the product, with a URL that works (checked in the test sweep).
 
-## 10. Colour, type and brand
+## 10. Colour, type and brand (bar 2.2, 2.7)
 
-- **The keynote look is restrained:** a light radial background, the footage in a 1600x900 window
-  with a 26px radius and a soft shadow, 0.4s fades through #F3F3F6.
-- **Type:** San Francisco (`system-ui` on macOS). Titles 600 weight at -0.015em, subtitles 400 in
-  #6e6e73, captions 600 at 44px, text #1d1d1f.
-- **Brand:** one accent colour from the product, used on cards and social bands only. The product's
-  own UI carries the rest of the brand. Logos go on the intro and outro cards, not every frame.
-- Spell product names exactly as the brand does, everywhere (`brand.spelling` in handoff.json).
+- **Background:** the soft pastel field (`#E3E3E4` base with five drifting colour fields), the same
+  under every title, window and end card. No grain, no vignette, no flat grey.
+- **Type:** bundled **Inter** (Inter Display for titles), never `system-ui` or SF Pro, which cannot
+  be bundled and fall back on Linux. Titles 500 weight with tight tracking (-4 px at 132 px),
+  subtitles 400. Ink `#24272B`, secondary `#5F656D`, accent `#D9463B`. `brand.font: "geist"` for a
+  product whose own UI is a geometric sans.
+- **Brand:** `brand.accent` for the product's accent colour, `brand.sweep` for the outro gradient,
+  `logo` and `brand.logo_on_dark` for the end card and the lockup. The product's own UI carries the
+  rest. Spell product names exactly as the brand does, everywhere (`brand.spelling` in handoff.json).
 
 ## 11. Voiceover
 
@@ -131,11 +148,14 @@ The frame shows the product and nothing else.
   `ELEVENLABS_API_KEY` is set in their shell, else macOS `say`. Full rules in `voiceover.md`; the
   narrate step is in the `demo-edit` skill.
 
-## 12. Music
+## 12. Music and loudness (bar 2.12)
 
-- Optional, and quiet. A simple bed with no vocals, at 0.12 to 0.18 of full volume
-  (`voice.music_volume`, default 0.18), ducked under speech. The narrate step normalises the mix
-  to about -16 LUFS. If a viewer notices the music, it is too loud.
+- **Always a bed** from frame 0, instrumental, no vocals: the user's file, an MCP-made track, or
+  the free one from `scripts/make-bed.py`. narrate.py sets it **13 dB under the narration**
+  (`voice.music_gap_db`), ducks it under speech, dips it on one key moment (`voice.music_dips`) and
+  fades it so the last 3 s of the outro are silent.
+- **The mix:** -14 LUFS integrated (+-1), true peak at most -1 dBTP, loudness range at most 15 LU.
+  Narration covers at least half the runtime. If a viewer notices the music, it is too loud.
 - Use music you have the rights to. Never a popular track.
 - A promo can have music; a how-to usually does not.
 
@@ -154,15 +174,17 @@ The frame shows the product and nothing else.
 | Do | Don't |
 | --- | --- |
 | Record at 1440x810, DPR 2 | Record at 1920 wide, or zoom the page |
-| Normal arrow, eased arcs, pause, then click | Teleport clicks, constant-speed moves, a click dot |
+| The blue disc cursor, eased arcs, pause, then click | Teleport clicks, constant-speed moves, an OS arrow |
 | Park the pointer after every action | Leave the pointer on the text being read |
 | Type short text, paste long text | Type a whole config file on camera |
 | Wait on real UI signals, trim waits in the edit | Fixed sleeps, or cutting the take short |
 | 1 to 1.5s head, 2 to 3s tail on every take | Start moving on frame one |
 | Hide banners, toasts and personal history | Film a real or personal account |
 | Mask secrets in the page, check every frame | Blur them in post |
-| Zoom 1.5 to 1.75x on the hero moment only | Zoom every scene, or past 2x |
-| One short caption sentence per scene | Two lines of caption, or marketing copy |
+| Whole-window zoom to 1.15x where the narration makes a point | Zoom inside a fixed frame, or past 1.15x |
+| A 3 to 5 s pill: a person or a 6-word statement | A caption on screen for a whole scene |
+| Crop the window to the UI that matters | Show the whole viewport with empty sidebars |
+| Run `check-cut.py` until 0 FAIL | Call a cut finished from one look |
 | Claim only what the footage proves | "Instant", "magic", "effortless" without proof |
 | Create real things on camera, delete them after | Fake a step or stage a result |
 | Quiet music, ducked under speech | Music that competes with the voice |
@@ -174,4 +196,5 @@ The frame shows the product and nothing else.
 - `scene-patterns.md` and `../samples/`: scene code to copy
 - `voiceover.md`: writing and timing the voiceover
 - `quality-gates.md`: what must pass before each stage
+- `../docs/quality-bar.md`: the measured bar every finished cut must pass
 - `secrets.md`: masking and checking secrets
