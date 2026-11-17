@@ -156,7 +156,7 @@ A finished cut opens directly on a title, with no black frame. It sits on a soft
 
 ## 3. Gap table: current story-mode keynote cut vs the bar
 
-Measured the same way on `arkitekto-story-mode-keynote-cut.mp4` (37.5 s), built by `scripts/build-keynote.py` and `scripts/mk-assets.py`.
+Measured the same way on an earlier sample cut (37.5 s), built by `scripts/build-keynote.py` and `scripts/mk-assets.py`.
 
 | Area | Ours (measured) | Bar | Gap |
 |---|---|---|---|
