@@ -13,7 +13,7 @@ this file says which one to open and when a stage is done.
 Every command uses `$P`, the plugin's root. Set it once in each shell command you run:
 
 ```bash
-P="${CLAUDE_PLUGIN_ROOT:-$(ls -d ~/.claude/plugins/cache/*/demo-studio/*/ | tail -1)}"; echo "$P"
+P="${CLAUDE_PLUGIN_ROOT:-$(d=$PWD; while [ "$d" != / ] && [ ! -f "$d/.claude-plugin/plugin.json" ]; do d=$(dirname "$d"); done; [ -f "$d/.claude-plugin/plugin.json" ] && echo "$d" || ls -d ~/.claude/plugins/cache/*/demo-studio/*/ | tail -1)}"; echo "$P"
 ```
 
 Expected: a path ending in `/demo-studio/<version>/`. If it prints nothing, the plugin is not
@@ -24,7 +24,7 @@ Shell state does not carry between commands, so start each command with that `P=
 ## Step 1: health check
 
 ```bash
-P="${CLAUDE_PLUGIN_ROOT:-$(ls -d ~/.claude/plugins/cache/*/demo-studio/*/ | tail -1)}"
+P="${CLAUDE_PLUGIN_ROOT:-$(d=$PWD; while [ "$d" != / ] && [ ! -f "$d/.claude-plugin/plugin.json" ]; do d=$(dirname "$d"); done; [ -f "$d/.claude-plugin/plugin.json" ] && echo "$d" || ls -d ~/.claude/plugins/cache/*/demo-studio/*/ | tail -1)}"
 bash "$P/scripts/doctor.sh"
 ```
 
@@ -46,6 +46,7 @@ Expected last line: `All required checks passed.`
 | "cut it", "add voiceover", "make a vertical version" | Open skill `demo-edit` |
 | "send it to the editor", "wrap up" | Open skill `demo-handoff` |
 | "where are my demos", "what state is X in" | The home screen, Step 9 |
+| "organise my demos", "clean up", "tidy the folder" | Open skill `demo-organize` |
 
 ## Try-it route: the todo sample (about 10 minutes, no login)
 
@@ -53,7 +54,7 @@ Records and cuts `$P/examples/todo-sample` (a public todo app) so the user sees 
 
 1. Copy it into the demos folder, then clear its take log and the shipped takes:
    ```bash
-   P="${CLAUDE_PLUGIN_ROOT:-$(ls -d ~/.claude/plugins/cache/*/demo-studio/*/ | tail -1)}"
+   P="${CLAUDE_PLUGIN_ROOT:-$(d=$PWD; while [ "$d" != / ] && [ ! -f "$d/.claude-plugin/plugin.json" ]; do d=$(dirname "$d"); done; [ -f "$d/.claude-plugin/plugin.json" ] && echo "$d" || ls -d ~/.claude/plugins/cache/*/demo-studio/*/ | tail -1)}"
    mkdir -p demos && command cp -R "$P/examples/todo-sample" demos/todo-sample
    cd demos/todo-sample/recordings && mkdir -p raw frames exports && head -1 takes.csv > t && command mv t takes.csv
    command rm -f raw/*.mp4   # the example ships its takes; record fresh ones
@@ -191,7 +192,7 @@ final report, and offer the fix (usually a re-shoot). The bar is `$P/docs/qualit
 Offer it when someone starts out, comes back, or asks what state the demos are in:
 
 ```bash
-P="${CLAUDE_PLUGIN_ROOT:-$(ls -d ~/.claude/plugins/cache/*/demo-studio/*/ | tail -1)}"
+P="${CLAUDE_PLUGIN_ROOT:-$(d=$PWD; while [ "$d" != / ] && [ ! -f "$d/.claude-plugin/plugin.json" ]; do d=$(dirname "$d"); done; [ -f "$d/.claude-plugin/plugin.json" ] && echo "$d" || ls -d ~/.claude/plugins/cache/*/demo-studio/*/ | tail -1)}"
 npm --prefix "$P" run studio        # run_in_background: true; opens http://127.0.0.1:4317
 ```
 
@@ -230,7 +231,7 @@ It only reads files. Stop it when the session ends. If it fails with a missing m
 
 | What | Path |
 | --- | --- |
-| Stage skills | `demo-plan`, `demo-record`, `demo-edit`, `demo-handoff` |
+| Stage skills | `demo-plan`, `demo-record`, `demo-edit`, `demo-handoff`; housekeeping: `demo-organize` |
 | The house look | `$P/references/style-guide.md` |
 | Scene recipes and a sample plan | `$P/samples/README.md` |
 | Gotchas from real shoots | `$P/references/learnings.md` |

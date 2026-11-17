@@ -8,7 +8,7 @@ description: Package a demo for the video editor and wrap the shoot up. Builds t
 Run every command from the demo folder (`<demo>`, the one with `handoff.json`). Start each with:
 
 ```bash
-P="${CLAUDE_PLUGIN_ROOT:-$(ls -d ~/.claude/plugins/cache/*/demo-studio/*/ | tail -1)}"
+P="${CLAUDE_PLUGIN_ROOT:-$(d=$PWD; while [ "$d" != / ] && [ ! -f "$d/.claude-plugin/plugin.json" ]; do d=$(dirname "$d"); done; [ -f "$d/.claude-plugin/plugin.json" ] && echo "$d" || ls -d ~/.claude/plugins/cache/*/demo-studio/*/ | tail -1)}"
 ```
 
 What the editor receives and why: `$P/references/handoff-spec.md`.

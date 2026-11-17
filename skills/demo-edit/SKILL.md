@@ -8,7 +8,7 @@ description: Edit recorded demo takes into videos. Builds the review reel of kee
 Run every command from the demo folder (`<demo>`, the one with `demo.json`). Start each one with:
 
 ```bash
-P="${CLAUDE_PLUGIN_ROOT:-$(ls -d ~/.claude/plugins/cache/*/demo-studio/*/ | tail -1)}"
+P="${CLAUDE_PLUGIN_ROOT:-$(d=$PWD; while [ "$d" != / ] && [ ! -f "$d/.claude-plugin/plugin.json" ]; do d=$(dirname "$d"); done; [ -f "$d/.claude-plugin/plugin.json" ] && echo "$d" || ls -d ~/.claude/plugins/cache/*/demo-studio/*/ | tail -1)}"
 ```
 
 Every render script checks its config against `$P/schemas/` first and prints `PROGRESS` and

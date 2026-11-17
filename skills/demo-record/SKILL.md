@@ -11,7 +11,7 @@ Read once before the first take: `$P/references/learnings.md` (gotchas), `$P/ref
 Start every shell command with this line (it finds the plugin folder):
 
 ```bash
-P="${CLAUDE_PLUGIN_ROOT:-$(ls -d ~/.claude/plugins/cache/*/demo-studio/*/ | tail -1)}"
+P="${CLAUDE_PLUGIN_ROOT:-$(d=$PWD; while [ "$d" != / ] && [ ! -f "$d/.claude-plugin/plugin.json" ]; do d=$(dirname "$d"); done; [ -f "$d/.claude-plugin/plugin.json" ] && echo "$d" || ls -d ~/.claude/plugins/cache/*/demo-studio/*/ | tail -1)}"
 ```
 
 `<cwd>` below means the folder Claude Code was started in. `<demo>` is the demo folder.

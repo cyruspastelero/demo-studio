@@ -14,7 +14,7 @@ something that cannot be deleted; something that costs money; deleting data you 
 Start every shell command with this line (it finds the plugin folder):
 
 ```bash
-P="${CLAUDE_PLUGIN_ROOT:-$(ls -d ~/.claude/plugins/cache/*/demo-studio/*/ | tail -1)}"
+P="${CLAUDE_PLUGIN_ROOT:-$(d=$PWD; while [ "$d" != / ] && [ ! -f "$d/.claude-plugin/plugin.json" ]; do d=$(dirname "$d"); done; [ -f "$d/.claude-plugin/plugin.json" ] && echo "$d" || ls -d ~/.claude/plugins/cache/*/demo-studio/*/ | tail -1)}"
 ```
 
 **Before you write anything, open the sample plan** at `$P/samples/plan/` (BRIEF.md, SHOT-LIST.md,
