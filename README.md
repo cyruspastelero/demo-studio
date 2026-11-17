@@ -69,7 +69,7 @@ before Claude goes on? Say so, and it stops there.
 All free, all local. Required: Claude Code, Node.js 20+, Python 3.10+ (standard library only),
 ffmpeg, Google Chrome and the Playwright MCP (`@playwright/mcp@0.0.84`). npm installs one runtime
 package for recording (`playwright-core`) plus React, ajv and Vite for the local studio, all pinned;
-`npm audit` is clean. Fonts (Inter, Geist) are bundled under the SIL Open Font License. Optional:
+`npm audit --omit=dev` reports no known vulnerabilities in runtime packages. Fonts (Inter, Geist) are bundled under the SIL Open Font License. Optional:
 ElevenLabs or Higgsfield for voice and music. Full list with versions and licences:
 [docs/dependencies.md](docs/dependencies.md).
 

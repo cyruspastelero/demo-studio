@@ -1,10 +1,10 @@
-# Plan: an editor on par with Cardboard, free and local
+# Plan: an editor on par with paid desktop editors, free and local
 
-Owner request (2026-11-17): demo-studio's editor must do what the owner used Cardboard for, so finished
+Goal: demo-studio's editor must do what people use paid desktop editors for, so finished
 videos never need a paid app. Everything stays local and free; ElevenLabs and Higgsfield are optional
 voice and music sources (API key or MCP).
 
-## What Cardboard did for us (from the owner's projects in ~/Movies/Cardboard)
+## What a paid desktop editor gave us
 
 - Multi-track timeline: video, audio (narration lines, scene audio, sound effects, music), captions, text.
 - Clips with in/out, start/end, volume, audio fades, transitions.
@@ -20,7 +20,7 @@ voice and music sources (API key or MCP).
   inside the demo folder, checked with the same path rules as everything else), `volume`, `fade_in`,
   `fade_out`, `transition`, `keyframes`, `grade`, `text`, `caption`.
 - **Converters, so nothing is lost:** `demo.json` (keynote cut) to timeline, `handoff.json` video to
-  timeline (the owner's own Cardboard projects are migrated with a private one-off script, not shipped).
+  timeline.
 - **One renderer:** `scripts/render-timeline.py` builds a single ffmpeg filter graph from the
   timeline (video, overlays, keyframes, grade, captions, mixed audio with ducking, loudness) and
   writes the MP4 plus an .srt. The editor's preview plays the same model in the browser with audio.
@@ -31,10 +31,8 @@ voice and music sources (API key or MCP).
 
 ## Phases (one at a time, each ends green: typecheck, unit tests, smoke, e2e)
 
-1. **Timeline core:** schema, converters (demo.json, handoff.json, Cardboard import), renderer
-   with video, audio tracks, volume, fades, music ducking, captions and .srt. Migrate the owner's
-   Cardboard demos (AgentOS clips, Arkitekto and Akawntant walkthroughs) and check the renders
-   match the delivered videos.
+1. **Timeline core:** schema, converters (demo.json, handoff.json), renderer
+   with video, audio tracks, volume, fades, music ducking, captions and .srt.
 2. **Editor tracks:** the editor opens timelines: multiple video and audio tracks with waveforms,
    audio playback in the preview, drag, trim, split, ripple, snapping, volume and fade handles,
    caption track editing, render to MP4 from the editor.

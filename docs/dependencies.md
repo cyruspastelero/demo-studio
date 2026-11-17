@@ -21,7 +21,10 @@ each item below and prints the exact fix for anything missing.
 ## npm packages
 
 Installed with `npm install` in the repo (or the plugin folder). All versions are pinned exactly and
-locked in `package-lock.json`. `npm audit` reports no known vulnerabilities.
+locked in `package-lock.json`. `npm audit --omit=dev` reports no known vulnerabilities in the runtime
+packages. The dev and build tools (Vite, Vitest) currently carry one advisory through `picomatch`
+(a ReDoS in glob matching, GHSA-fc5q-39xc-vjpf) with no fixed release yet; it only affects running
+the tests or the dev server on your own files.
 
 | Package | Version | Used for | Kind | Licence |
 | --- | --- | --- | --- | --- |
