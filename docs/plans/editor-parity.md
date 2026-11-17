@@ -20,8 +20,7 @@ voice and music sources (API key or MCP).
   inside the demo folder, checked with the same path rules as everything else), `volume`, `fade_in`,
   `fade_out`, `transition`, `keyframes`, `grade`, `text`, `caption`.
 - **Converters, so nothing is lost:** `demo.json` (keynote cut) to timeline, `handoff.json` video to
-  timeline, and `cardboard-import.py <project.cardboard> <demo>` that copies the media a Cardboard
-  project uses into the demo folder and writes the matching timeline.
+  timeline (the owner's own Cardboard projects are migrated with a private one-off script, not shipped).
 - **One renderer:** `scripts/render-timeline.py` builds a single ffmpeg filter graph from the
   timeline (video, overlays, keyframes, grade, captions, mixed audio with ducking, loudness) and
   writes the MP4 plus an .srt. The editor's preview plays the same model in the browser with audio.

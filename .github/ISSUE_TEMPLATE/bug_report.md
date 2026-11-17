@@ -11,7 +11,7 @@ labels: bug
 **Steps to reproduce**
 1.
 
-**Stage** (plan, prep, record, edit, handoff, Cardboard, local editor)
+**Stage** (plan, prep, record, edit, handoff, local editor)
 
 **Output of `bash scripts/doctor.sh`**
 

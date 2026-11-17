@@ -234,21 +234,8 @@ size_is "$TMP/cut-9x16.mp4" 1080x1920
 if python3 -I "$S/social-cut.py" "$CUT" "$TMP/bad.mp4" --aspect 1:1 2>/dev/null; then die "bad aspect accepted"; fi
 ok "bad aspect rejected"
 
-step "cardboard timeline (optional path; the script needs no Cardboard)"
-(cd "$D" && python3 -I "$S/cardboard-timeline.py" handoff.json PROMO > "$TMP/cardboard.log")
-exists "$H/cardboard/PROMO.timeline.tsx"; exists "$H/cardboard/PROMO.narration.json"
-grep -q '01_scene1_the-deal-is-in-chat.mp4' "$H/cardboard/PROMO.timeline.tsx" || die "timeline lacks the first clip"
-if grep -q 'ROUGH-ASSEMBLY' "$H/cardboard/PROMO.timeline.tsx"; then die "timeline includes the rough assembly"; fi
-ok "timeline lists the numbered clips only"
-python3 -I -c 'import json,sys; plan=json.load(open(sys.argv[1])); assert plan and all(e["window"] > 0 and e["text"] for e in plan), plan' \
-  "$H/cardboard/PROMO.narration.json" || die "narration plan is empty or has a line with no room"
-ok "narration plan has a window for every line"
-if (cd "$D" && python3 -I "$S/cardboard-timeline.py" handoff.json NOPE >/dev/null 2>&1); then die "unknown video key accepted"; fi
-ok "cardboard-timeline rejects an unknown video"
-
 step "starter kit"
 python3 -I "$ROOT/tests/test_check.py" 2>/dev/null || die "check.py unit tests"; ok "check.py unit tests"
-python3 -I "$ROOT/tests/test_cardboard_timeline.py" 2>/dev/null || die "cardboard-timeline unit tests"; ok "cardboard-timeline unit tests"
 python3 -I "$ROOT/tests/test_narrate.py" 2>/dev/null || die "narrate unit tests"; ok "narrate unit tests"
 node "$ROOT/tests/test_lib.mjs" >/dev/null || die "lib.js unit tests"; ok "lib.js unit tests"
 bash "$S/new-workspace.sh" "$TMP/ws" >/dev/null

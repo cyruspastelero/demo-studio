@@ -24,7 +24,6 @@ claude --plugin-dir "$PWD"      # load your working copy instead of the installe
 | When Claude should do or ask something | the stage's `skills/<name>/SKILL.md` |
 | A gate a stage must pass | `references/quality-gates.md`, and the skill that enforces it |
 | Workspace playbook, index or drift checks | `starter/` (`check.py` has tests in `tests/test_check.py`) |
-| Anything Cardboard | `references/cardboard.md`, `skills/demo-cardboard/`; it must stay optional |
 | A tool | `scripts/`, referenced from skills as `$P/scripts/...` (`P` = `${CLAUDE_PLUGIN_ROOT}`) |
 | A new config field | `schemas/*.schema.json` first, then the script, the template and the example |
 | The home screen and local editor | `app/`; run `npm run test:app` and `npm run test:e2e`, and refresh `docs/img/` with `npm run screenshots -w app` after visible changes |
@@ -56,7 +55,6 @@ own `tools/` folder, not here.
 ```bash
 bash tests/smoke.sh            # KEEP=1 keeps the temp folder to inspect outputs
 python3 -I tests/test_check.py
-python3 -I tests/test_cardboard_timeline.py
 python3 -I tests/test_narrate.py
 claude plugin validate .
 ```

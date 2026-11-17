@@ -68,11 +68,6 @@ if [ "$free_gb" -ge 10 ]; then ok "${free_gb} GB free at $target"
 else bad "only ${free_gb} GB free at $target (10 GB+ needed; frames take several GB per demo)" \
   "free disk space, or delete approved demos' recordings/frames/ folders"; fi
 
-cb_bin="$(command -v cb 2>/dev/null || command -v cardboard 2>/dev/null || true)"
-[ -z "$cb_bin" ] && [ -x "/Applications/Cardboard.app/Contents/Resources/cli/bin/cardboard" ] && cb_bin="/Applications/Cardboard.app/Contents/Resources/cli/bin/cardboard"
-if [ -n "$cb_bin" ]; then ok "Cardboard CLI at $cb_bin (optional finishing path)"
-else warn "Cardboard CLI not found" "Optional. Without it you get rough cuts and an editor handoff; with it Claude can also add narration, captions and music. See references/cardboard.md"; fi
-
 if command -v say >/dev/null 2>&1; then ok "macOS say (free narration with narrate.py, voiceover timing previews)"
 else warn "macOS say not available" "Optional. Voiceover fit is estimated from words per minute and no timing preview is made. For narration use ELEVENLABS_API_KEY or your own voiceover/NN.wav files."; fi
 
