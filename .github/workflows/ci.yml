@@ -42,6 +42,8 @@ jobs:
           python3 -I tests/test_narrate.py
           python3 -I tests/test_paths.py
           python3 -I tests/test_keynote.py
+          python3 -I tests/test_motion.py
+          python3 -I tests/test_templates.py
       - name: Node unit tests (title card inputs, frame receiver, scene helpers)
         run: |
           node tests/test_card_safety.mjs
@@ -49,6 +51,8 @@ jobs:
           node tests/test_lib.mjs
       - name: Smoke test on synthetic footage (includes the quality-bar checklist on a rendered cut)
         run: bash tests/smoke.sh
+      - name: Look templates smoke test (house template matches the default look)
+        run: bash tests/smoke-templates.sh
 
   editor:
     name: Local editor
