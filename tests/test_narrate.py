@@ -2,6 +2,7 @@
 request, with the network mocked. Run: python3 -I tests/test_narrate.py"""
 
 import importlib.util
+import sys
 import io
 import json
 import tempfile
@@ -16,6 +17,7 @@ REPO = Path(__file__).resolve().parent.parent
 def load_narrate():
     spec = importlib.util.spec_from_file_location("narrate", REPO / "scripts" / "narrate.py")
     module = importlib.util.module_from_spec(spec)
+    sys.modules["narrate"] = module  # dataclasses look their module up here while a class is being built
     spec.loader.exec_module(module)
     return module
 
