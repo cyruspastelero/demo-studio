@@ -210,6 +210,18 @@ def inside_only(root: Path, files: list, what: str) -> list:
     return kept
 
 
+def safe_make_zip(root: Path, base: Path, root_dir: Path, base_dir: str) -> str:
+    """shutil.make_archive, but never through a planted symlink: the zip is built under a temporary
+    name in the target folder and renamed into place (os.replace swaps a symlink, it does not follow it)."""
+    base = Path(base)
+    ensure_inside(root, base.parent, "zip folder")
+    target = base.with_name(base.name + ".zip")
+    temp = base.with_name(f".{base.name}.{os.getpid()}.tmp")
+    built = Path(shutil.make_archive(str(temp), "zip", str(root_dir), base_dir))
+    os.replace(built, target)
+    return str(target)
+
+
 def config_path(root: Path, value, field: str, tool: str) -> Path:
     """safe_join for scripts: exits with a clear message instead of raising."""
     try:

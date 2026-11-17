@@ -202,7 +202,7 @@ SECRETS
             writer.writeheader()
             writer.writerows(r for name, r in notes.items() if name in used)
 
-    zip_path = shutil.make_archive(str(demo / f"{slug}-editor-handoff"), "zip", demo, "editor-handoff")
+    zip_path = lib.safe_make_zip(demo, demo / f"{slug}-editor-handoff", demo, "editor-handoff")
     print(f"{out}  ({tc(t)}, {n} raw clips)\n{zip_path}")
     lib.output(zip_path)
 

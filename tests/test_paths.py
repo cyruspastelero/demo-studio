@@ -179,6 +179,15 @@ class OutputSymlinks(Folder):
         escaped = raw / "02-t1.mp4"; escaped.symlink_to(self.outside / "secret.mp4")
         self.assertEqual(lib.inside_only(self.root, [inside, escaped], "test"), [inside])
 
+class SafeZip(Folder):
+    def test_a_symlink_at_the_zip_path_is_replaced_not_followed(self) -> None:
+        (self.root / "out").mkdir(); (self.root / "out" / "a.txt").write_text("x")
+        victim = self.outside / "victim.zip"; victim.write_text("keep me")
+        (self.root / "handoff.zip").symlink_to(victim)
+        made = lib.safe_make_zip(self.root, self.root / "handoff", self.root, "out")
+        self.assertEqual(victim.read_text(), "keep me")
+        self.assertFalse(Path(made).is_symlink())
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

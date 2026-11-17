@@ -449,7 +449,7 @@ def main() -> None:
     if "--no-zip" not in flags:
         zip_base = paths.out.parent / f"{lib.slugify(cfg['title'])}-editor-handoff"
         lib.progress("zip", 0, 1)
-        zip_path = shutil.make_archive(str(zip_base), "zip", paths.out.parent, paths.out.name)
+        zip_path = lib.safe_make_zip(paths.root, zip_base, paths.out.parent, paths.out.name)
         lib.progress("zip", 1, 1)
         lib.output(zip_path)
     lib.output(paths.out)
