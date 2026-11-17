@@ -146,7 +146,7 @@ class Renderer:
             if line.startswith("PROGRESS"):
                 print(line, flush=True)
             elif line.startswith("FONTS "):
-                fonts = json.loads(line[6:])
+                fonts = sorted({str(f) for f in json.loads(line[6:])})
         stderr = proc.stderr.read()
         if proc.wait():
             raise RenderError(f"keynote-render.mjs failed:\n{stderr[-1500:]}\nCheck Chrome with: bash "

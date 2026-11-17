@@ -111,15 +111,23 @@ try {
   // Which font Chrome actually painted (quality-bar typography check).
   if (job.font_probe) {
     await draw(job.font_probe);
+    // Wait until the bundled faces are loaded and the probe text has painted: on a busy machine
+    // the platform-font query can otherwise answer before layout uses them (and return nothing).
+    await page.evaluate(() => document.fonts.ready);
     const cdp = await context.newCDPSession(page);
     await cdp.send('DOM.enable');
     await cdp.send('CSS.enable');
-    const { root } = await cdp.send('DOM.getDocument');
-    for (const selector of ['#title .w', '#pilltext .w']) {
-      const { nodeId } = await cdp.send('DOM.querySelector', { nodeId: root.nodeId, selector });
-      if (!nodeId) continue;
-      const { fonts } = await cdp.send('CSS.getPlatformFontsForNode', { nodeId });
-      painted = painted.concat(fonts.map((f) => f.familyName));
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      const found = [];
+      const { root } = await cdp.send('DOM.getDocument');
+      for (const selector of ['#title .w', '#pilltext .w']) {
+        const { nodeId } = await cdp.send('DOM.querySelector', { nodeId: root.nodeId, selector });
+        if (!nodeId) continue;
+        const { fonts } = await cdp.send('CSS.getPlatformFontsForNode', { nodeId });
+        found.push(...fonts.map((f) => f.familyName));
+      }
+      if (found.length) { painted = found; break; }
+      await page.waitForTimeout(150);
     }
   }
 } finally {
