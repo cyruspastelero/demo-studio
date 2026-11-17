@@ -141,7 +141,7 @@ class Provider(unittest.TestCase):
             self.pick()
         message = narrate.explain(caught.exception, narrate.parse_args(["demo.json"]))
         for hint in ("--voice say", "export ELEVENLABS_API_KEY=", "--voice elevenlabs",
-                     "voiceover/01.wav", "--voice files", "narrate.py demo.json --dry-run"):
+                     "voiceover/01.mp3", "--export-lines", "--voice files", "narrate.py demo.json --dry-run"):
             self.assertIn(hint, message)
         self.assertNotIn("{cmd}", message)
 
@@ -150,6 +150,14 @@ class Provider(unittest.TestCase):
             self.pick("say")
         with self.assertRaisesRegex(narrate.NarrateError, "ELEVENLABS_API_KEY"):
             self.pick("elevenlabs", say=True)
+
+    def test_missing_key_error_offers_env_and_keychain_and_ends_with_the_command(self):
+        with self.assertRaises(narrate.NarrateError) as caught:
+            self.pick("elevenlabs", say=True)
+        message = narrate.explain(caught.exception, narrate.parse_args(["demo.json", "--voice", "elevenlabs"]))
+        self.assertIn("export ELEVENLABS_API_KEY=", message)
+        self.assertIn("ELEVENLABS_KEYCHAIN_SERVICE", message)
+        self.assertTrue(message.rstrip().endswith("--voice elevenlabs"))
 
     def test_voice_files_are_found_by_number(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -253,6 +261,200 @@ class Mix(unittest.TestCase):
         plain = narrate.mix_filter([0.3], 14.0, 2, 0.2, False)
         self.assertNotIn("sidechaincompress", plain)
         self.assertIn("volume=0.100", plain)
+
+    def test_music_fades_in_and_out_when_set(self):
+        graph = narrate.mix_filter([0.3], 14.0, 2, 0.2, True, fade_in=2.0, fade_out=3.0)
+        self.assertIn("afade=t=in:st=0:d=2.000", graph)
+        self.assertIn("afade=t=out:st=11.000:d=3.000", graph)
+
+    def test_default_music_has_a_fade_out_and_no_fade_in(self):
+        graph = narrate.mix_filter([0.3], 14.0, 2, 0.2, True)
+        self.assertNotIn("afade=t=in", graph)
+        self.assertIn("afade=t=out:st=12.500:d=1.500", graph)
+
+    def test_zero_fades_leave_the_bed_untouched_and_long_fades_are_clamped(self):
+        graph = narrate.mix_filter([0.3], 14.0, 2, 0.2, True, fade_in=0, fade_out=0)
+        self.assertNotIn("afade", graph)
+        short = narrate.mix_filter([0.3], 4.0, 2, 0.2, True, fade_in=10, fade_out=10)
+        self.assertIn("afade=t=in:st=0:d=2.000", short)
+        self.assertIn("afade=t=out:st=2.000:d=2.000", short)
+
+    def test_fade_settings_come_from_the_voice_config(self):
+        voice = narrate.Voice.from_config({"music_fade_in": 1.0, "music_fade_out": 4.0})
+        self.assertEqual((voice.music_fade_in, voice.music_fade_out), (1.0, 4.0))
+        self.assertEqual((VOICE.music_fade_in, VOICE.music_fade_out), (0.0, narrate.MUSIC_FADE))
+
+
+class ExportLines(unittest.TestCase):
+    def manifest(self):
+        lines = narrate.plan_lines(SEQUENCE, TIMINGS, 14.0, 0.3)
+        return narrate.lines_manifest(lines, SEQUENCE, 14.0, 165, "Acme")
+
+    def test_each_voiced_line_gets_index_label_text_file_timing_and_word_budget(self):
+        manifest = self.manifest()
+        self.assertEqual(manifest["lines"], [
+            {"index": 1, "item": "card-intro", "label": "Hi", "text": "One two three four five.",
+             "file": "voiceover/01.mp3", "start": 0.3, "budget": 5.7, "suggested_words": 15},
+            {"index": 2, "item": "02", "label": "02", "text": "Six seven eight.",
+             "file": "voiceover/02.mp3", "start": 6.3, "budget": 7.7, "suggested_words": 21}])
+        self.assertEqual(manifest["total"], 14.0)
+        self.assertEqual(manifest["music_length_ms"], 15000)
+
+    def test_export_writes_lines_json_and_both_readmes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            demo = Path(tmp)
+            written = narrate.write_exports(self.manifest(), demo)
+            data = json.loads((demo / "voiceover" / "lines.json").read_text())
+            self.assertEqual([l["file"] for l in data["lines"]], ["voiceover/01.mp3", "voiceover/02.mp3"])
+            readme = (demo / "voiceover" / "README.txt").read_text()
+            for hint in ("01.mp3", "--voice files", "text_to_speech", "generate_audio"):
+                self.assertIn(hint, readme)
+            music = (demo / "music" / "README.txt").read_text()
+            for hint in ("assets/music.mp3", "compose_music", "generate_audio", "music_fade_out"):
+                self.assertIn(hint, music)
+            self.assertEqual(len(written), 3)
+            # the manifest and READMEs must not be mistaken for numbered recordings
+            self.assertFalse(narrate.has_voice_files(demo / "voiceover"))
+
+    def test_export_refuses_a_voiceover_folder_that_symlinks_out(self):
+        with tempfile.TemporaryDirectory() as tmp, tempfile.TemporaryDirectory() as outside:
+            demo = Path(tmp)
+            (demo / "voiceover").symlink_to(outside)
+            with self.assertRaises(narrate.NarrateError):
+                narrate.write_exports(self.manifest(), demo)
+            self.assertEqual(list(Path(outside).iterdir()), [])
+
+
+class MissingFiles(unittest.TestCase):
+    LINES = [narrate.Line(1, "card-intro", "Hello there.", 0.3, 4.0),
+             narrate.Line(2, "02", "Now press Run.", 5.3, 4.0),
+             narrate.Line(3, "03", "Done.", 9.3, 4.0)]
+
+    def test_every_missing_number_is_listed_with_the_next_command(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp) / "voiceover"
+            folder.mkdir()
+            (folder / "02.mp3").write_bytes(b"x")
+            with self.assertRaises(narrate.NarrateError) as caught:
+                narrate.check_voice_files(self.LINES, folder)
+        message = narrate.explain(caught.exception, narrate.parse_args(["demo.json", "--voice", "files"]))
+        self.assertIn("2 of 3", message)
+        self.assertIn("voiceover/01.mp3", message)
+        self.assertIn("voiceover/03.mp3", message)
+        self.assertNotIn("voiceover/02.mp3", message)
+        self.assertIn("--export-lines", message)
+        self.assertTrue(message.rstrip().endswith("narrate.py demo.json --voice files"))
+
+    def test_complete_folder_passes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp)
+            for n in (1, 2, 3):
+                (folder / f"{n:02d}.wav").write_bytes(b"x")
+            narrate.check_voice_files(self.LINES, folder)
+
+
+class Keychain(unittest.TestCase):
+    SECRET = "sk-keychain-secret-not-real"
+
+    def done(self, code=0, out="", err=""):
+        return mock.Mock(returncode=code, stdout=out, stderr=err)
+
+    def test_env_key_wins_and_keychain_is_not_touched(self):
+        with mock.patch.object(narrate.subprocess, "run") as run:
+            key, problem = narrate.find_api_key(VOICE, {"ELEVENLABS_API_KEY": " env-key "})
+        self.assertEqual((key, problem), ("env-key", ""))
+        run.assert_not_called()
+
+    def test_no_service_means_no_lookup(self):
+        with mock.patch.object(narrate.subprocess, "run") as run:
+            self.assertEqual(narrate.find_api_key(VOICE, {}), ("", ""))
+        run.assert_not_called()
+
+    def test_keychain_service_from_config_is_read_without_a_shell(self):
+        voice = narrate.Voice.from_config({"elevenlabs": {"keychain_service": "elevenlabs-api"}})
+        with mock.patch.object(narrate.subprocess, "run", return_value=self.done(out=self.SECRET + "\n")) as run:
+            key, problem = narrate.find_api_key(voice, {})
+        self.assertEqual((key, problem), (self.SECRET, ""))
+        args, kwargs = run.call_args
+        self.assertEqual(args[0], ["security", "find-generic-password", "-s", "elevenlabs-api", "-w"])
+        self.assertFalse(kwargs.get("shell", False))
+        self.assertIn("timeout", kwargs)
+
+    def test_env_service_name_wins_over_config(self):
+        voice = narrate.Voice.from_config({"elevenlabs": {"keychain_service": "from-config"}})
+        with mock.patch.object(narrate.subprocess, "run", return_value=self.done(out="k")) as run:
+            narrate.find_api_key(voice, {"ELEVENLABS_KEYCHAIN_SERVICE": "from-env"})
+        self.assertEqual(run.call_args[0][0][3], "from-env")
+
+    def test_missing_item_is_explained_without_leaking_output(self):
+        with mock.patch.object(narrate.subprocess, "run",
+                               return_value=self.done(44, self.SECRET, "The specified item could not be found")):
+            key, problem = narrate.find_api_key(VOICE, {"ELEVENLABS_KEYCHAIN_SERVICE": "nope"})
+        self.assertEqual(key, "")
+        self.assertIn("nope", problem)
+        self.assertIn("not found", problem)
+        self.assertNotIn(self.SECRET, problem)
+
+    def test_unsafe_service_name_is_refused_before_running_anything(self):
+        with mock.patch.object(narrate.subprocess, "run") as run:
+            key, problem = narrate.find_api_key(VOICE, {"ELEVENLABS_KEYCHAIN_SERVICE": "-a evil"})
+        self.assertEqual(key, "")
+        self.assertIn("not a valid", problem)
+        run.assert_not_called()
+
+    def test_missing_security_tool_and_timeout_are_handled(self):
+        for error in (FileNotFoundError("security"), narrate.subprocess.TimeoutExpired("security", 60)):
+            with mock.patch.object(narrate.subprocess, "run", side_effect=error):
+                key, problem = narrate.find_api_key(VOICE, {"ELEVENLABS_KEYCHAIN_SERVICE": "svc"})
+            self.assertEqual(key, "")
+            self.assertTrue(problem)
+
+    def test_explicit_elevenlabs_with_a_failed_keychain_gives_the_store_command(self):
+        args = narrate.parse_args(["demo.json", "--voice", "elevenlabs"])
+        with mock.patch.object(narrate.subprocess, "run", return_value=self.done(44, "", "not found")), \
+                mock.patch.dict(narrate.os.environ, {"ELEVENLABS_KEYCHAIN_SERVICE": "svc"}, clear=False):
+            narrate.os.environ.pop("ELEVENLABS_API_KEY", None)
+            with self.assertRaises(narrate.NarrateError) as caught:
+                narrate.choose_provider(args, VOICE, Path("/nowhere"))
+        message = narrate.explain(caught.exception, args)
+        self.assertIn("security add-generic-password", message)
+        self.assertIn("-s svc", message)
+        self.assertTrue(message.rstrip().endswith("--voice elevenlabs"))
+
+    def test_say_choice_never_reads_the_keychain(self):
+        voice = narrate.Voice.from_config({"provider": "say", "elevenlabs": {"keychain_service": "svc"}})
+        args = narrate.parse_args(["demo.json"])
+        with mock.patch.object(narrate.subprocess, "run") as run, \
+                mock.patch.object(narrate.shutil, "which", return_value="/usr/bin/say"):
+            self.assertEqual(narrate.choose_provider(args, voice, Path("/nowhere"))[0], "say")
+        run.assert_not_called()
+
+
+class Help(unittest.TestCase):
+    def test_help_shows_every_route(self):
+        out = io.StringIO()
+        with mock.patch("sys.stdout", out), self.assertRaises(SystemExit):
+            narrate.parse_args(["--help"])
+        text = out.getvalue()
+        for hint in ("--export-lines", "--voice files", "ELEVENLABS_KEYCHAIN_SERVICE",
+                     "export ELEVENLABS_API_KEY", "assets/music.mp3"):
+            self.assertIn(hint, text)
+
+
+
+class Schema(unittest.TestCase):
+    BASE = {"title": "x", "sequence": [{"card": "a", "title": "t"}]}
+
+    def check(self, voice):
+        return narrate.lib.validate({**self.BASE, "voice": voice}, "demo")
+
+    def test_fades_and_keychain_service_are_accepted(self):
+        self.assertEqual(self.check({"music": "assets/music.mp3", "music_fade_in": 1, "music_fade_out": 2.5,
+                                     "elevenlabs": {"keychain_service": "elevenlabs-api"}}), [])
+
+    def test_negative_fades_and_option_like_service_names_are_rejected(self):
+        errors = self.check({"music_fade_out": -1, "elevenlabs": {"keychain_service": "-w"}})
+        self.assertEqual(len(errors), 2, errors)
 
 
 if __name__ == "__main__":

@@ -69,38 +69,49 @@ on a few things, written out in [references/quality-gates.md](../references/qual
 
 ## Finishing the video
 
-The free path finishes a video on your machine:
+The video is finished on your machine in two commands:
 
 ```bash
 python3 -I "$P/scripts/build-keynote.py" demo.json      # the cut: window, captions, cards, zooms
-python3 -I "$P/scripts/narrate.py" demo.json            # adds the voiceover (and optional music)
+python3 -I "$P/scripts/narrate.py" demo.json            # adds the voiceover and music bed
 ```
 
 `narrate.py` reads the `voiceover` lines in `demo.json`, renders each one, places it at its item's
-start, checks every line fits before the next one, ducks an optional music bed under the speech,
-normalises loudness, and writes a `-narrated.mp4` next to the cut in `recordings/exports/`.
-`--dry-run` checks the timing without rendering. Pick the voice with `--voice`:
+start, checks every line fits before the next one, loops and ducks a music bed under the speech
+with a fade in and out, normalises loudness, and writes a `-narrated.mp4` next to the cut in
+`recordings/exports/`. `--dry-run` checks the timing without rendering. Pick the voice with `--voice`:
 
 | Voice | Cost | How |
 | --- | --- | --- |
 | `say` | Free | macOS built-in voice |
-| `files` | Free | Your own recordings: `voiceover/01.wav`, `02.wav`... one per line |
-| `elevenlabs` | Your ElevenLabs plan | `export ELEVENLABS_API_KEY=...` in your shell. The key is read from the environment only, never stored in a file. Lines are cached in `recordings/voice-cache/`, so re-runs cost nothing |
+| `files` | Free, or what your voice tool charges | Ready-made audio, `voiceover/01.mp3`, `02.mp3`... one per line: your own recordings, or files made with the ElevenLabs or Higgsfield MCP |
+| `elevenlabs` | Your ElevenLabs plan | `export ELEVENLABS_API_KEY=...` in your shell, or keep the key in the macOS Keychain and `export ELEVENLABS_KEYCHAIN_SERVICE=<item name>`. The key is never stored in a file. Lines are cached in `recordings/voice-cache/`, so re-runs cost nothing |
+
+With no `--voice`, it uses your files when `voiceover/` has them, else ElevenLabs when it finds a
+key, else `say`.
+
+**MCP voice tools.** `narrate.py demo.json --export-lines` writes `voiceover/lines.json`: each
+line's text, the file to save it as (`voiceover/NN.mp3`), its start, time budget and a word budget.
+Claude reads it, makes each file with the ElevenLabs MCP (`text_to_speech`) or the Higgsfield MCP
+(`generate_audio`), and runs `narrate.py demo.json --voice files`. Missing files are listed by
+number with the next command. Higgsfield works only this way, since its public API has no text to
+speech endpoint.
+
+**Music.** Save a bed as `assets/music.mp3`: your own instrumental, or one made with the ElevenLabs
+MCP (`compose_music`) or the Higgsfield MCP (`generate_audio` with a music model).
+`--export-lines` also writes `music/README.txt` with the length to ask for.
 
 Optional settings go in a `voice` object in `demo.json`, for example
-`{"provider": "elevenlabs", "elevenlabs": {"voice_id": "..."}, "music": "assets/bed.mp3", "music_volume": 0.12}`.
+`{"provider": "files", "music": "assets/music.mp3", "music_volume": 0.12, "music_fade_in": 1.0, "music_fade_out": 2.0}`.
 
 For a human editor, `build-handoff.py handoff.json` builds the promo and how-to as numbered clips
 and rough assemblies, the voiceover scripts with start times, and the handoff zip.
 
 ## Optional extras
 
-- **ElevenLabs** for a more natural narration voice: set `ELEVENLABS_API_KEY` in your shell and
-  `narrate.py` uses it. Uses your ElevenLabs credits; cached lines are never charged twice.
-- **Cardboard**, a desktop video editor with a `cb` command line tool. If you have it, the
-  `demo-cardboard` skill puts the cut on a Cardboard timeline and adds generated narration, synced
-  captions and music. Nothing requires it, and `doctor.sh` only notes whether it is there.
-  Details: [references/cardboard.md](../references/cardboard.md).
+- **ElevenLabs** for a more natural narration voice, by API key or through its MCP server. Uses
+  your ElevenLabs credits; lines rendered by key are cached and never charged twice.
+- **Higgsfield** through its MCP server, for narration or a music bed. Uses your Higgsfield credits.
 
 ## Samples and examples
 

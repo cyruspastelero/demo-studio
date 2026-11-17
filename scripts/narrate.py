@@ -6,6 +6,12 @@ result onto the cut as AAC. The video stream is copied, not re-encoded.
 
 Usage (from the demo dir, after build-keynote.py):
   narrate.py [demo.json] [--voice say|elevenlabs|files] [--music PATH] [--allow-overrun] [--dry-run]
+  narrate.py [demo.json] --export-lines
+
+--export-lines writes voiceover/lines.json (one entry per voiced line with its target file
+voiceover/NN.mp3, start, time budget and word budget) plus voiceover/README.txt and music/README.txt.
+That is the route for voice tools this script does not call itself, such as the ElevenLabs or
+Higgsfield MCP servers: make each NN.mp3 there, then run with --voice files.
 
 Output: recordings/exports/<slug>-keynote-cut-narrated.mp4. Prints PROGRESS and OUTPUT lines.
 Timing comes from recordings/exports/<slug>-keynote-cut.timing.json, written by build-keynote.py.
@@ -16,6 +22,7 @@ import argparse
 import hashlib
 import importlib.util
 import json
+import math
 import os
 import re
 import shlex
@@ -25,7 +32,7 @@ import sys
 import urllib.error
 import urllib.parse
 import urllib.request
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable
 
@@ -48,6 +55,10 @@ MUSIC_FADE = 1.5
 TARGET_LUFS = -16
 SAMPLE_RATE = 48000
 KEY_ENV = "ELEVENLABS_API_KEY"
+KEYCHAIN_ENV = "ELEVENLABS_KEYCHAIN_SERVICE"
+KEYCHAIN_EXAMPLE = "elevenlabs-api"
+KEYCHAIN_TIMEOUT = 60       # seconds; macOS may ask the user to allow access the first time
+SERVICE_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._ -]{0,127}")
 ELEVENLABS_URL = "https://api.elevenlabs.io/v1/text-to-speech/{voice_id}?output_format=mp3_44100_128"
 # "Rachel", one of the stock premade voices every ElevenLabs account can use.
 # Pick your own in the ElevenLabs voice library and set voice.elevenlabs.voice_id.
@@ -59,7 +70,16 @@ FILE_EXTENSIONS = (".wav", ".mp3", ".m4a")
 ESTIMATE = "estimate"       # dry-run only: word-count estimates, nothing rendered
 SCRIPTS = Path(__file__).resolve().parent
 KEY_FIX = f"export {KEY_ENV}=your-key-here   (in your shell only; never save the key in a file here)"
+KEYCHAIN_FIXES = (
+    f"Or keep it in the macOS Keychain (it asks for the key, so it stays out of shell history):",
+    f'  security add-generic-password -a "$USER" -s {KEYCHAIN_EXAMPLE} -w',
+    f"  export {KEYCHAIN_ENV}={KEYCHAIN_EXAMPLE}",
+)
 REBUILD = "{keynote}"
+VOICE_DIR = "voiceover"
+MUSIC_DIR = "music"
+MUSIC_TARGET = "assets/music.mp3"
+EXPORT_EXT = ".mp3"
 
 
 class NarrateError(Exception):
@@ -79,10 +99,13 @@ class Voice:
     lead_in: float
     music: str
     music_volume: float
+    music_fade_in: float
+    music_fade_out: float
     voice_id: str
     model_id: str
     stability: float
     similarity_boost: float
+    keychain_service: str
 
     @classmethod
     def from_config(cls, raw: dict) -> "Voice":
@@ -90,10 +113,13 @@ class Voice:
         return cls(provider=raw.get("provider"), rate_wpm=raw.get("rate_wpm", DEFAULT_RATE),
                    say_voice=raw.get("say_voice", ""), lead_in=raw.get("lead_in", DEFAULT_LEAD_IN),
                    music=raw.get("music", ""), music_volume=raw.get("music_volume", DEFAULT_MUSIC_VOLUME),
+                   music_fade_in=raw.get("music_fade_in", 0.0),
+                   music_fade_out=raw.get("music_fade_out", MUSIC_FADE),
                    voice_id=eleven.get("voice_id", DEFAULT_ELEVENLABS_VOICE),
                    model_id=eleven.get("model_id", DEFAULT_ELEVENLABS_MODEL),
                    stability=eleven.get("stability", 0.5),
-                   similarity_boost=eleven.get("similarity_boost", 0.75))
+                   similarity_boost=eleven.get("similarity_boost", 0.75),
+                   keychain_service=eleven.get("keychain_service", ""))
 
 
 @dataclass(frozen=True)
@@ -198,10 +224,13 @@ def select_provider(requested: str | None, configured: str | None, has_key: bool
     if choice == "say" and not has_say:
         raise NarrateError("provider 'say' needs macOS (the `say` command was not found). Use another voice:",
                            (f"ElevenLabs: {KEY_FIX}", "  then: {cmd} --voice elevenlabs",
-                            "Your own recordings: save voiceover/01.wav, 02.wav ... then: {cmd} --voice files"))
+                            "An AI voice through MCP, or your own recordings: {cmd} --export-lines",
+                            "  save voiceover/01.mp3, 02.mp3 ... as voiceover/README.txt says, then:",
+                            "{cmd} --voice files"))
     if choice == "elevenlabs" and not has_key:
-        raise NarrateError(f"provider 'elevenlabs' needs the {KEY_ENV} environment variable, which is not set",
-                           (KEY_FIX, "{cmd} --voice elevenlabs"))
+        raise NarrateError(f"provider 'elevenlabs' needs the {KEY_ENV} environment variable, which is not set "
+                           f"(and no Keychain item was named in {KEYCHAIN_ENV} or voice.elevenlabs.keychain_service)",
+                           (KEY_FIX, *KEYCHAIN_FIXES, "Then: {cmd} --voice elevenlabs"))
     if choice:
         return choice
     if has_files:
@@ -215,9 +244,11 @@ def select_provider(requested: str | None, configured: str | None, has_key: bool
         ("1. macOS: the built-in `say` voice is free and used automatically on a Mac: {cmd} --voice say",
          f"2. ElevenLabs: {KEY_FIX}",
          "   then: {cmd} --voice elevenlabs",
-         "3. Your own recordings: save voiceover/01.wav, 02.wav ... (or .mp3 / .m4a) next to {config},",
-         "   one per voiced line in order, then: {cmd} --voice files",
-         "Or check the timing first from word-count estimates (renders nothing): {cmd} --dry-run"))
+         "3. Your own recordings, or an AI voice made through the ElevenLabs or Higgsfield MCP:",
+         "   {cmd} --export-lines   (writes voiceover/lines.json and voiceover/README.txt)",
+         "   save voiceover/01.mp3, 02.mp3 ... (or .wav / .m4a), one per voiced line, then: {cmd} --voice files",
+         "Or check the timing first from word-count estimates (renders nothing):",
+         "{cmd} --dry-run"))
 
 
 def cache_key(provider: str, voice: str, model: str, settings: dict, text: str) -> str:
@@ -333,6 +364,41 @@ def user_file(line: Line, folder: Path) -> Path | None:
     return None
 
 
+def keychain_service(voice: Voice, env: dict) -> str:
+    """The Keychain item to read the ElevenLabs key from. The environment wins over demo.json, so a
+    shared demo folder cannot pick which of your Keychain items gets sent to ElevenLabs."""
+    return (env.get(KEYCHAIN_ENV, "") or voice.keychain_service).strip()
+
+
+def read_keychain(service: str) -> tuple[str, str]:
+    """Reads one generic password with macOS `security`, no shell. Returns (key, problem).
+    The key is never printed, logged or written; `problem` never contains command output."""
+    if not SERVICE_NAME.fullmatch(service):
+        return "", f"{service!r} is not a valid Keychain service name (letters, digits, . _ - and spaces)"
+    try:
+        result = subprocess.run(["security", "find-generic-password", "-s", service, "-w"],
+                                capture_output=True, text=True, timeout=KEYCHAIN_TIMEOUT)
+    except FileNotFoundError:
+        return "", "the macOS `security` command was not found, so the Keychain cannot be read here"
+    except subprocess.TimeoutExpired:
+        return "", f"reading Keychain item {service!r} timed out (was an access prompt left open?)"
+    key = result.stdout.strip() if result.returncode == 0 else ""
+    if key:
+        return key, ""
+    if result.returncode == 44 or "could not be found" in result.stderr:
+        return "", f"Keychain item {service!r} was not found"
+    return "", f"Keychain item {service!r} could not be read (security exit code {result.returncode})"
+
+
+def find_api_key(voice: Voice, env: dict) -> tuple[str, str]:
+    """The ElevenLabs key: ELEVENLABS_API_KEY first, else the named Keychain item. (key, problem)."""
+    key = env.get(KEY_ENV, "").strip()
+    if key:
+        return key, ""
+    service = keychain_service(voice, env)
+    return read_keychain(service) if service else ("", "")
+
+
 @dataclass(frozen=True)
 class Context:
     provider: str
@@ -340,6 +406,23 @@ class Context:
     cache_dir: Path
     files_dir: Path
     dry_run: bool
+    api_key: str = field(default="", repr=False)
+
+
+def check_voice_files(lines: list[Line], folder: Path) -> None:
+    """Before rendering with --voice files: names every missing NN file at once."""
+    missing = [line for line in lines if user_file(line, folder) is None]
+    if not missing:
+        return
+    rows = "\n  ".join(f"{folder.name}/{line.number:02d}{EXPORT_EXT}  ({line.key}, {line.budget:.1f}s): "
+                       f"\"{line.text}\"" for line in missing)
+    raise NarrateError(
+        f"{len(missing)} of {len(lines)} voiceover file(s) are missing (.wav or .m4a also work):\n  {rows}",
+        ("Write the line list for a voice tool: {cmd} --export-lines   (then follow voiceover/README.txt)",
+         "Make each missing file with the ElevenLabs MCP (text_to_speech) or the Higgsfield MCP",
+         "(generate_audio), or record it yourself, and save it under the name shown above.",
+         "Or narrate with the free macOS voice now: {cmd} --voice say",
+         "Then: {cmd} --voice files"))
 
 
 def speak(line: Line, ctx: Context) -> Spoken:
@@ -351,8 +434,9 @@ def speak(line: Line, ctx: Context) -> Spoken:
             raise NarrateError(
                 f"line {line.number} ({line.key}) has no recording: expected {ctx.files_dir / f'{line.number:02d}.wav'} "
                 "(or .mp3 / .m4a)",
-                (f"Record this line and save it as {ctx.files_dir.name}/{line.number:02d}.wav: \"{line.text}\"",
-                 "See every line with its time budget (renders nothing): {cmd} --voice files --dry-run",
+                (f"Record this line or make it with an AI voice, saved as {ctx.files_dir.name}/{line.number:02d}.mp3: "
+                 f"\"{line.text}\"",
+                 "List every line with its file name and time budget: {cmd} --export-lines",
                  "Then: {cmd} --voice files"))
     elif ctx.provider == "say":
         audio = render_say(line, ctx.voice, ctx.cache_dir)
@@ -361,7 +445,7 @@ def speak(line: Line, ctx: Context) -> Spoken:
         if ctx.dry_run:
             audio = cached if cached.exists() else None
         else:
-            audio = render_elevenlabs(line, ctx.voice, os.environ.get(KEY_ENV, "").strip(), ctx.cache_dir)
+            audio = render_elevenlabs(line, ctx.voice, ctx.api_key, ctx.cache_dir)
     if audio is None:
         return Spoken(line, estimate_seconds(line.text, ctx.voice.rate_wpm), False, None)
     return Spoken(line, lib.duration(audio), True, audio)
@@ -393,6 +477,104 @@ def format_table(spoken: list[Spoken]) -> str:
     if any(not s.measured for s in spoken):
         rows.append("  ~ = estimated from the word count, not rendered")
     return "\n".join(rows)
+
+
+# ---------------------------------------------------------------- export for MCP voice tools
+
+VOICE_README = """Voiceover files for narrate.py
+==============================
+
+lines.json lists every voiced line of {title} in order. Each entry has the text, the file
+name it must be saved as, where it starts in the cut, its time budget in seconds and about how
+many words fit. The drop-in rule: one file per line, named by its index, 01.mp3, 02.mp3 and so
+on (.wav and .m4a also work). narrate.py places file NN where line NN starts.
+
+Make the files any way you like:
+  Your own voice   record each line and save it as voiceover/NN.mp3 (or .wav / .m4a).
+  ElevenLabs MCP   call text_to_speech with the line's text and output_directory set to this
+                   folder. It saves a file with its own name; rename it to the entry's "file"
+                   value, for example voiceover/01.mp3. Use the same voice for every line.
+  Higgsfield MCP   call generate_audio with the line's text as the prompt (speech model), wait
+                   for the job, then download the result URL to the entry's "file" value.
+
+Keep each line inside its budget. A line that runs long is reported, never sped up.
+When every file is in place, render the narrated cut:
+  {command} --voice files
+narrate.py lists any missing numbers and what to do. If you change a voiceover line in demo.json,
+export again and remake that line's file.
+"""
+
+MUSIC_README = """Music bed for narrate.py
+========================
+
+narrate.py loops one music file under the voice, ducks it while someone speaks, fades it and
+balances the loudness. The cut is {total:.1f}s long, so a bed of about {seconds}s needs no loop.
+Use instrumental music only, with no vocals, that you have the rights to use.
+
+Get a bed one of these ways, and save it as {target}:
+  Your own file    any .mp3, .wav or .m4a you are allowed to use; copy it to {target}.
+  ElevenLabs MCP   compose_music with a short prompt (for example "calm modern instrumental for a
+                   product demo, soft piano and light beat"), force_instrumental true,
+                   music_length_ms {length_ms}. Move the saved file to {target}.
+  Higgsfield MCP   generate_audio with a music model (for example suno_music, instrumental true,
+                   duration {seconds}), wait for the job, then download the result to {target}.
+
+Then point demo.json at it, inside "voice":
+  "music": "{target}", "music_volume": 0.12, "music_fade_in": 1.0, "music_fade_out": 2.0
+music_volume is the level before ducking (default {volume}); the fades are in seconds (defaults:
+no fade in, {fade}s fade out). Render:
+  {command}
+"""
+
+
+def item_label(item: dict) -> str:
+    return item.get("title") or item.get("caption") or item_key(item)
+
+
+def lines_manifest(lines: list[Line], sequence: list[dict], total: float, rate_wpm: float,
+                   title: str) -> dict:
+    """Everything a voice tool needs to make voiceover/NN.mp3 for each line."""
+    items = {item_key(item): item for item in sequence}
+    return {
+        "title": title, "total": round(total, 3), "rate_wpm": rate_wpm,
+        "music_length_ms": max(3000, math.ceil(total + 1) * 1000),
+        "rule": "Save line N as voiceover/NN.mp3 (01, 02 ...; .wav or .m4a also work), then run "
+                "narrate.py --voice files.",
+        "lines": [{"index": line.number, "item": line.key, "label": item_label(items[line.key]),
+                   "text": line.text, "file": f"{VOICE_DIR}/{line.number:02d}{EXPORT_EXT}",
+                   "start": line.start, "budget": line.budget,
+                   "suggested_words": int(line.budget * rate_wpm / 60)} for line in lines],
+    }
+
+
+def write_exports(manifest: dict, demo_dir: Path, command: str = "narrate.py demo.json") -> list[Path]:
+    """Writes voiceover/lines.json, voiceover/README.txt and music/README.txt inside the demo folder."""
+    seconds = math.ceil(manifest["total"] + 1)
+    texts = {
+        f"{VOICE_DIR}/lines.json": json.dumps(manifest, indent=2, ensure_ascii=False) + "\n",
+        f"{VOICE_DIR}/README.txt": VOICE_README.format(title=manifest["title"], command=command),
+        f"{MUSIC_DIR}/README.txt": MUSIC_README.format(
+            total=manifest["total"], seconds=seconds, length_ms=manifest["music_length_ms"],
+            target=MUSIC_TARGET, volume=DEFAULT_MUSIC_VOLUME, fade=MUSIC_FADE, command=command),
+    }
+    written = []
+    for relative, text in texts.items():
+        try:  # a symlinked voiceover/ or music/ folder must not send these files elsewhere
+            target = lib.safe_join(demo_dir, relative, relative)
+        except lib.UnsafePath as error:
+            raise NarrateError(str(error), (f"Replace that symlink with a real folder, then: {{cmd}} --export-lines",)) from error
+        written.append(write_atomic(target, text.encode()))
+    return written
+
+
+def export_lines(manifest: dict, demo_dir: Path, args: argparse.Namespace) -> int:
+    written = write_exports(manifest, demo_dir, base_command(args))
+    for line in manifest["lines"]:
+        print(f"  {line['file']}  {line['budget']:>5.1f}s  ~{line['suggested_words']:>2} words  {line['text']}")
+    print("\n".join(f"wrote {path}" for path in written))
+    print(f"Next: make each file listed above (see {VOICE_DIR}/README.txt), then render:\n"
+          f"  {base_command(args)} --voice files")
+    return 0
 
 
 # ---------------------------------------------------------------- mix and mux
@@ -428,8 +610,19 @@ def parse_loudnorm(stderr: str) -> dict | None:
     return data
 
 
+def music_fades(total: float, fade_in: float, fade_out: float) -> str:
+    """afade stages for the bed. Each fade is clamped to half the cut so they never overlap."""
+    half = total / 2
+    fade_in, fade_out = min(fade_in, half), min(fade_out, half)
+    stages = f",afade=t=in:st=0:d={fade_in:.3f}" if fade_in > 0 else ""
+    if fade_out > 0:
+        stages += f",afade=t=out:st={total - fade_out:.3f}:d={fade_out:.3f}"
+    return stages
+
+
 def mix_filter(starts: list[float], total: float, music_input: int | None,
-               music_volume: float, sidechain: bool, measured: dict | None = None) -> str:
+               music_volume: float, sidechain: bool, measured: dict | None = None,
+               fade_in: float = 0.0, fade_out: float = MUSIC_FADE) -> str:
     """Filter graph: line i is input i+1. Ends in [out], exactly `total` seconds long."""
     graph = "".join(voice_chain(i + 1, start) for i, start in enumerate(starts))
     graph += ("".join(f"[v{i + 1}]" for i in range(len(starts)))
@@ -438,8 +631,7 @@ def mix_filter(starts: list[float], total: float, music_input: int | None,
     if music_input is not None:
         level = music_volume if sidechain else music_volume * 0.5
         graph += (f"[{music_input}:a]aresample={SAMPLE_RATE},aformat=sample_fmts=fltp:channel_layouts=stereo,"
-                  f"volume={level:.3f},atrim=0:{total:.3f},"
-                  f"afade=t=out:st={max(0.0, total - MUSIC_FADE):.3f}:d={MUSIC_FADE}[bed];")
+                  f"volume={level:.3f},atrim=0:{total:.3f}{music_fades(total, fade_in, fade_out)}[bed];")
         if sidechain:
             graph += ("[voice]asplit=2[vmain][vkey];"
                       "[bed][vkey]sidechaincompress=threshold=0.02:ratio=8:attack=20:release=350[duck];"
@@ -458,14 +650,15 @@ def mux(cut: Path, spoken: list[Spoken], total: float, music: Path | None, voice
         music_input = len(spoken) + 1
     starts, sidechain = [s.line.start for s in spoken], lib.has_filter("sidechaincompress")
     # Pass one: measure the mix's loudness (audio only, fast). Pass two applies it linearly.
-    probe = mix_filter(starts, total, music_input, voice.music_volume, sidechain)
+    fades = {"fade_in": voice.music_fade_in, "fade_out": voice.music_fade_out}
+    probe = mix_filter(starts, total, music_input, voice.music_volume, sidechain, **fades)
     result = subprocess.run(["ffmpeg", "-hide_banner", "-nostats", "-loglevel", "info", "-i", str(cut),
                              *map(str, inputs), "-filter_complex", probe, "-map", "[out]", "-f", "null", "-"],
                             capture_output=True, text=True)
     if result.returncode:
         sys.exit(f"ffmpeg failed while measuring loudness:\n{result.stderr[-1500:]}")
     measured = parse_loudnorm(result.stderr)
-    graph = mix_filter(starts, total, music_input, voice.music_volume, sidechain, measured)
+    graph = mix_filter(starts, total, music_input, voice.music_volume, sidechain, measured, **fades)
     lib.run_progress(["ffmpeg", "-y", "-loglevel", "error", "-i", cut, *inputs, "-filter_complex", graph,
                       "-map", "0:v", "-map", "[out]", "-c:v", "copy", "-c:a", "aac", "-b:a", "192k",
                       "-ar", SAMPLE_RATE, "-t", f"{total:.3f}", "-movflags", "+faststart", out],
@@ -484,25 +677,41 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
   python3 -I {SCRIPTS / 'narrate.py'} demo.json --dry-run
   # 2. free macOS voice plus a music bed ducked under the speech
   python3 -I {SCRIPTS / 'narrate.py'} demo.json --voice say --music assets/music.mp3
-  # 3. ElevenLabs (the key stays in your shell, never in a file)
+  # 3. ElevenLabs with an API key (the key stays in your shell, never in a file)
   export {KEY_ENV}=your-key-here
   python3 -I {SCRIPTS / 'narrate.py'} demo.json --voice elevenlabs
+  # 4. same, with the key kept in the macOS Keychain instead
+  security add-generic-password -a "$USER" -s {KEYCHAIN_EXAMPLE} -w
+  export {KEYCHAIN_ENV}={KEYCHAIN_EXAMPLE}
+  python3 -I {SCRIPTS / 'narrate.py'} demo.json --voice elevenlabs
+  # 5. any other voice tool (ElevenLabs MCP, Higgsfield MCP, your own mic): list the lines,
+  #    save line N as voiceover/NN.mp3, then render from those files
+  python3 -I {SCRIPTS / 'narrate.py'} demo.json --export-lines
+  python3 -I {SCRIPTS / 'narrate.py'} demo.json --voice files
 
 output: recordings/exports/<slug>-keynote-cut-narrated.mp4
 
 voices:
   say         macOS built-in voice, free. Default on a Mac.
-  elevenlabs  needs {KEY_ENV} in the environment (never in a file). Rendered lines are cached in
-              recordings/voice-cache/, so re-runs never spend credits twice.
-  files       your own recordings: voiceover/01.wav, voiceover/02.mp3, ... next to demo.json,
-              numbered 1, 2, 3 in the order of the voiced items (.wav, .mp3 or .m4a).
-Default: files when voiceover/ has them, else elevenlabs when the key is set, else say.""")
+  elevenlabs  needs {KEY_ENV} in the environment, or a macOS Keychain item named by
+              {KEYCHAIN_ENV} (or voice.elevenlabs.keychain_service). Never put the key in a
+              file. Rendered lines are cached in recordings/voice-cache/, so re-runs never spend
+              credits twice.
+  files       ready-made audio: voiceover/01.mp3, voiceover/02.wav, ... next to demo.json,
+              numbered 1, 2, 3 in the order of the voiced items (.wav, .mp3 or .m4a). Made by
+              you, or by an MCP voice tool from voiceover/lines.json (--export-lines).
+Default: files when voiceover/ has them, else elevenlabs when a key is found, else say.
+
+music: --music or voice.music (for example assets/music.mp3), with voice.music_volume,
+voice.music_fade_in and voice.music_fade_out. --export-lines also writes music/README.txt.""")
     parser.add_argument("config", nargs="?", default="demo.json")
     parser.add_argument("--voice", choices=PROVIDERS, help="voice provider (overrides voice.provider)")
     parser.add_argument("--music", help="music bed file (overrides voice.music)")
     parser.add_argument("--allow-overrun", action="store_true", help="mux even when a line runs long")
     parser.add_argument("--dry-run", action="store_true",
                         help="print the line table only; no final video, no ElevenLabs calls")
+    parser.add_argument("--export-lines", action="store_true",
+                        help="write voiceover/lines.json and READMEs for MCP voice and music tools, then stop")
     return parser.parse_args(argv)
 
 
@@ -516,13 +725,15 @@ def resolve_music(cli: str | None, configured: str, demo_dir: Path) -> Path | No
         try:
             path = lib.safe_join(demo_dir, configured, "voice.music")
         except lib.UnsafePath as error:
-            raise NarrateError(str(error), ("Move the music file into the demo folder and point voice.music at it",)) from error
+            raise NarrateError(str(error), ("Move the music file into the demo folder and point voice.music at it,",
+                                            f"for example {MUSIC_TARGET}. Then:", "{cmd}")) from error
     if path and not path.is_file():
         where = "--music is relative to where you run the command" if cli else \
             "voice.music in demo.json is relative to the demo folder"
-        raise NarrateError(f"music file not found: {path} ({where})",
-                           ("Fix the path, or narrate without music: {cmd}" +
-                            ("" if cli else "  (after removing voice.music from {config})"),))
+        fixes = ("Fix the path, or narrate without music:", "{cmd}") if cli else (
+            f"Save the bed as {MUSIC_TARGET} (ways to get one: {MUSIC_DIR}/README.txt, written by --export-lines),",
+            "or remove voice.music from {config} to narrate without music. Then:", "{cmd}")
+        raise NarrateError(f"music file not found: {path} ({where})", fixes)
     return path
 
 
@@ -535,15 +746,28 @@ def timeline(cfg: dict, cut: Path, raw_dir: Path, rebuild: str) -> tuple[list[It
     return derive_timing(cfg["sequence"], raw_dir, lib.duration), lib.duration(cut)
 
 
-def choose_provider(args: argparse.Namespace, voice: Voice, files_dir: Path) -> str:
+def choose_provider(args: argparse.Namespace, voice: Voice, files_dir: Path) -> tuple[str, str]:
+    """(provider, ElevenLabs key or ""). The Keychain is read only when ElevenLabs could be picked."""
+    choice = args.voice or voice.provider
+    has_files = has_voice_files(files_dir)
+    key, problem = "", ""
+    if choice == "elevenlabs" or (choice is None and not has_files):
+        key, problem = find_api_key(voice, os.environ)
     try:
-        return select_provider(args.voice, voice.provider, bool(os.environ.get(KEY_ENV, "").strip()),
-                               shutil.which("say") is not None, has_voice_files(files_dir))
+        if choice == "elevenlabs" and not key and problem and not args.dry_run:
+            service = keychain_service(voice, os.environ)
+            raise NarrateError(f"provider 'elevenlabs' found no {KEY_ENV} and {problem}",
+                               (f'Store the key (it asks for it): security add-generic-password -a "$USER" -s '
+                                f"{shlex.quote(service) if SERVICE_NAME.fullmatch(service) else KEYCHAIN_EXAMPLE} -w",
+                                f"Or set it for this shell only: {KEY_FIX}",
+                                "Then: {cmd} --voice elevenlabs"))
+        return select_provider(args.voice, voice.provider, bool(key),
+                               shutil.which("say") is not None, has_files), key
     except NarrateError:
         if args.dry_run and not args.voice and voice.provider is None:
-            return ESTIMATE
-        if args.dry_run and (args.voice or voice.provider) == "elevenlabs":
-            return "elevenlabs"  # dry run: cached lines are measured, the rest estimated
+            return ESTIMATE, key
+        if args.dry_run and choice == "elevenlabs":
+            return "elevenlabs", key  # dry run: cached lines are measured, the rest estimated
         raise
 
 
@@ -553,7 +777,6 @@ def narrate(args: argparse.Namespace) -> int:
     demo_dir = cfg_path.parent
     rec = demo_dir / "recordings"
     voice = Voice.from_config(cfg.get("voice", {}))
-    provider = choose_provider(args, voice, demo_dir / "voiceover")
     cut = rec / "exports" / f"{lib.slugify(cfg['title'])}-keynote-cut.mp4"
     if not cut.exists():
         raise NarrateError(f"the keynote cut {cut} does not exist yet. Build it first, then narrate:",
@@ -564,9 +787,16 @@ def narrate(args: argparse.Namespace) -> int:
         raise NarrateError(f"{cfg_path.name} has no voiceover lines, so there is nothing to narrate",
                            ('Add "voiceover": "What to say over this part." to the sequence items in {config}',
                             "Check the timing: {cmd} --dry-run", "Then: {cmd}"))
+    if args.export_lines:
+        return export_lines(lines_manifest(lines, cfg["sequence"], total, voice.rate_wpm, cfg["title"]),
+                            demo_dir, args)
+    files_dir = demo_dir / VOICE_DIR
+    provider, api_key = choose_provider(args, voice, files_dir)
+    if provider == "files" and not args.dry_run:
+        check_voice_files(lines, files_dir)
     music = resolve_music(args.music, voice.music, demo_dir)
     lib.require("ffmpeg", "ffprobe")
-    ctx = Context(provider, voice, rec / "voice-cache", demo_dir / "voiceover", args.dry_run)
+    ctx = Context(provider, voice, rec / "voice-cache", files_dir, args.dry_run, api_key)
     print(f"narrate: voice {provider}, {len(lines)} line(s), cut {total:.1f}s", flush=True)
 
     spoken = []
@@ -611,6 +841,10 @@ def command_for(args: argparse.Namespace) -> str:
     return " ".join(shlex.quote(p) for p in parts)
 
 
+def base_command(args: argparse.Namespace) -> str:
+    return " ".join(shlex.quote(p) for p in ["python3", "-I", str(SCRIPTS / "narrate.py"), args.config])
+
+
 def keynote_command(args: argparse.Namespace) -> str:
     return " ".join(shlex.quote(p) for p in ["python3", "-I", str(SCRIPTS / "build-keynote.py"), args.config])
 
@@ -622,8 +856,7 @@ def fill(template: str, values: dict[str, str]) -> str:
 
 
 def explain(error: NarrateError, args: argparse.Namespace) -> str:
-    base = " ".join(shlex.quote(p) for p in ["python3", "-I", str(SCRIPTS / "narrate.py"), args.config])
-    values = {"{cmd}": base, "{keynote}": keynote_command(args), "{config}": args.config}
+    values = {"{cmd}": base_command(args), "{keynote}": keynote_command(args), "{config}": args.config}
     steps = [fill(fix, values) for fix in error.fixes]
     return f"narrate: {error}" + ("\nWhat to do next:\n  " + "\n  ".join(steps) if steps else "")
 

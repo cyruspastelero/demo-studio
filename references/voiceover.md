@@ -37,9 +37,31 @@ teaching a colleague, not like a caption.
 
 ## Recording the voice
 
-`narrate.py` turns the `voiceover` lines in `demo.json` into a narrated keynote cut. The voice is
-your own recordings (`voiceover/01.wav`...), else ElevenLabs when `ELEVENLABS_API_KEY` is set in the
-shell, else macOS `say`. Commands and fixes: skill `demo-edit`, Step 3.
+`narrate.py` turns the `voiceover` lines in `demo.json` into a narrated keynote cut. Where the
+voice comes from:
+
+| Source | How |
+| --- | --- |
+| Your own recordings | Save line 1 as `voiceover/01.mp3`, line 2 as `02.mp3`... (.wav and .m4a also work), then `--voice files` |
+| ElevenLabs MCP or Higgsfield MCP | `narrate.py demo.json --export-lines` writes `voiceover/lines.json` with each line's text, file name, start, time budget and word budget. Make each file with the MCP tool, save it under that name, then `--voice files` |
+| ElevenLabs API key | `export ELEVENLABS_API_KEY=...` in your shell, or keep the key in the macOS Keychain and `export ELEVENLABS_KEYCHAIN_SERVICE=<item name>` |
+| macOS `say` | Free, used when nothing else is set up |
+
+With no `--voice`, narrate.py uses your files when `voiceover/` has them, else ElevenLabs when it
+finds a key, else `say`. Never paste a key into chat, a file or a commit. Higgsfield has no
+documented text to speech API, so it is MCP only. Commands and fixes: skill `demo-edit`, Step 3.
+
+For the MCP route, keep one voice for every line and remake a line's file after changing its text.
+Each line still has to fit its budget; narrate.py reports a long line, it never speeds it up.
+
+## Music bed
+
+A quiet instrumental bed under the voice makes the cut feel finished. Use your own file, or make
+one with the ElevenLabs MCP (`compose_music`, instrumental) or the Higgsfield MCP
+(`generate_audio` with a music model), and save it as `assets/music.mp3`. Then set
+`"voice": {"music": "assets/music.mp3", "music_volume": 0.12, "music_fade_in": 1.0, "music_fade_out": 2.0}`.
+narrate.py loops it, ducks it while someone speaks, fades it in and out and balances the loudness.
+No vocals, and only music you have the rights to.
 
 ## Promo vs how-to
 

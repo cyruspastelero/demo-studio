@@ -34,7 +34,7 @@
       "patternProperties": { "^_": {} },
       "description": "Narration for narrate.py. Every field is optional.",
       "properties": {
-        "provider": { "enum": ["say", "elevenlabs", "files"], "description": "say (macOS, free), elevenlabs (needs ELEVENLABS_API_KEY in the environment) or files (your own voiceover/NN.wav|mp3|m4a). Default: files when voiceover/ has them, else elevenlabs when the key is set, else say." },
+        "provider": { "enum": ["say", "elevenlabs", "files"], "description": "say (macOS, free), elevenlabs (needs ELEVENLABS_API_KEY in the environment, or a macOS Keychain item named by ELEVENLABS_KEYCHAIN_SERVICE or elevenlabs.keychain_service) or files (ready-made voiceover/NN.mp3|wav|m4a: your own recordings, or files made with an MCP voice tool from narrate.py --export-lines). Default: files when voiceover/ has them, else elevenlabs when a key is found, else say." },
         "rate_wpm": { "type": "number", "exclusiveMinimum": 0, "description": "Words per minute for say and for estimates. Default 165." },
         "say_voice": { "type": "string", "description": "macOS say voice, for example Samantha. Default: system voice." },
         "elevenlabs": {
@@ -44,12 +44,15 @@
             "voice_id": { "type": "string", "minLength": 1, "description": "ElevenLabs voice id. Default: a stock premade voice." },
             "model_id": { "type": "string", "minLength": 1, "description": "Default eleven_multilingual_v2." },
             "stability": { "type": "number", "minimum": 0, "maximum": 1, "description": "Default 0.5." },
-            "similarity_boost": { "type": "number", "minimum": 0, "maximum": 1, "description": "Default 0.75." }
+            "similarity_boost": { "type": "number", "minimum": 0, "maximum": 1, "description": "Default 0.75." },
+            "keychain_service": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._ -]{0,127}$", "description": "macOS Keychain service name holding the ElevenLabs key, read with `security find-generic-password -s <name> -w` only when ELEVENLABS_API_KEY is unset. The env var ELEVENLABS_KEYCHAIN_SERVICE wins over this. Holds a name, never the key." }
           }
         },
         "lead_in": { "type": "number", "minimum": 0, "description": "Seconds into an item before its line starts. Default 0.3." },
         "music": { "type": "string", "pattern": "^(?![/\\\\])(?![A-Za-z]:)(?!.*(^|[/\\\\])\\.\\.([/\\\\]|$)).+$", "description": "Music bed path relative to demo.json. Looped, ducked under speech." },
-        "music_volume": { "type": "number", "minimum": 0, "maximum": 1, "description": "Music level before ducking. Default 0.18." }
+        "music_volume": { "type": "number", "minimum": 0, "maximum": 1, "description": "Music level before ducking. Default 0.18." },
+        "music_fade_in": { "type": "number", "minimum": 0, "maximum": 30, "description": "Seconds the music fades in at the start. Default 0 (no fade)." },
+        "music_fade_out": { "type": "number", "minimum": 0, "maximum": 30, "description": "Seconds the music fades out at the end. Default 1.5." }
       }
     },
     "window": {
