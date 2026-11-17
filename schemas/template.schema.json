@@ -1,0 +1,174 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Cyvid7-Darus10/demo-studio/schemas/template.schema.json",
+  "title": "demo-studio look template",
+  "description": "A reusable look: measurements of a style (colours, geometry, timing, loudness), never content. Lives in <id>/template.json next to README.md, source.json and preview/01.png..06.png. Every field is optional except id, name and look; a missing value falls back to the house look (scripts/keynote/spec.py). Colours are #hex only. No field holds a file path: previews are found by convention, so nothing can point outside the template folder.",
+  "type": "object",
+  "required": ["id", "name", "look"],
+  "additionalProperties": false,
+  "patternProperties": { "^_": {} },
+  "properties": {
+    "id": { "$ref": "#/$defs/id" },
+    "name": { "type": "string", "minLength": 1, "pattern": "^[^\\n]{1,80}$", "description": "Short human name, one line." },
+    "description": { "type": "string", "pattern": "^[^\\n]{0,400}$", "description": "One or two sentences: what the look is like." },
+    "created": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$", "description": "YYYY-MM-DD." },
+    "source": {
+      "type": "string",
+      "enum": ["built-in", "copied", "hand-made"],
+      "description": "How the template was made. Provenance details of a copied look are in source.json."
+    },
+    "look": {
+      "type": "object",
+      "additionalProperties": false,
+      "patternProperties": { "^_": {} },
+      "properties": {
+        "brand": { "$ref": "#/$defs/brand" },
+        "window": { "$ref": "#/$defs/window" },
+        "zoom": { "$ref": "#/$defs/zoom" },
+        "highlight": { "$ref": "#/$defs/highlight" },
+        "pill": { "$ref": "#/$defs/pill" },
+        "title": { "$ref": "#/$defs/title" },
+        "transitions": { "$ref": "#/$defs/transitions" },
+        "end": { "$ref": "#/$defs/end" },
+        "pacing": { "$ref": "#/$defs/pacing" },
+        "audio": { "$ref": "#/$defs/audio" }
+      }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{2,63}$",
+      "description": "Folder name and the value demo.json `template` names. Copied looks use <slug>-<6 hex>."
+    },
+    "color": { "type": "string", "pattern": "^#(?:[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$" },
+    "seconds": { "type": "number", "minimum": 0, "maximum": 30 },
+    "alpha": { "type": "number", "minimum": 0, "maximum": 1 },
+    "brand": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Same meaning as demo.json brand. demo.json's own brand values win over these.",
+      "properties": {
+        "font": { "enum": ["inter", "geist"] },
+        "accent": { "$ref": "#/$defs/color", "description": "Accent word colour; also the box and pill colour unless highlight is set." },
+        "ink": { "$ref": "#/$defs/color" },
+        "secondary": { "$ref": "#/$defs/color" },
+        "background": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "base": { "$ref": "#/$defs/color" },
+            "fields": {
+              "type": "array", "minItems": 5, "maxItems": 5, "items": { "$ref": "#/$defs/color" },
+              "description": "Glow top left, top right, bottom right, bottom left, centre."
+            }
+          }
+        },
+        "sweep": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "$ref": "#/$defs/color" } },
+        "dark": { "$ref": "#/$defs/color" },
+        "highlight": { "$ref": "#/$defs/color", "description": "Highlight box stroke when it should differ from accent." }
+      }
+    },
+    "window": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "rect": {
+          "type": "array", "minItems": 4, "maxItems": 4,
+          "items": { "type": "number", "minimum": 0, "maximum": 1920 },
+          "description": "[x, y, w, h] of the window at rest, px in a 1920x1080 frame."
+        },
+        "radius": { "type": "number", "minimum": 0, "maximum": 120 },
+        "shadow": {
+          "type": "string",
+          "pattern": "^(none|[0-9a-z(),.%# -]{1,240})$",
+          "description": "CSS box-shadow: offsets in px and colours as rgba(), #hex or none. No url()."
+        }
+      }
+    },
+    "zoom": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "scale": { "type": "number", "minimum": 1, "maximum": 2 },
+        "dur": { "type": "number", "minimum": 0.2, "maximum": 4, "description": "Seconds of the move, in and out." },
+        "ease": {
+          "type": "array", "minItems": 4, "maxItems": 4, "items": { "type": "number", "minimum": -2, "maximum": 3 },
+          "description": "cubic-bezier(x1, y1, x2, y2); x1 and x2 within 0..1."
+        }
+      }
+    },
+    "highlight": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "stroke": { "type": "number", "minimum": 0, "maximum": 12 },
+        "radius": { "type": "number", "minimum": 0, "maximum": 60 },
+        "pad": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "type": "number", "minimum": 0, "maximum": 80 } },
+        "delay": { "type": "number", "minimum": 0, "maximum": 3, "description": "Seconds after a zoom lands." },
+        "fill_alpha": { "$ref": "#/$defs/alpha" },
+        "halo_alpha": { "$ref": "#/$defs/alpha" }
+      }
+    },
+    "pill": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "center_y": { "type": "number", "minimum": 40, "maximum": 1040 },
+        "height": { "type": "number", "minimum": 24, "maximum": 160 },
+        "radius": { "type": "number", "minimum": 0, "maximum": 999 },
+        "font_size": { "type": "number", "minimum": 12, "maximum": 80 },
+        "kinds": {
+          "type": "array", "minItems": 1, "maxItems": 2, "items": { "enum": ["statement", "person"] },
+          "description": "Callout kinds the look uses; others raise a plan warning."
+        }
+      }
+    },
+    "title": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "font": { "enum": ["inter", "geist"], "description": "Title-card family; default brand.font." },
+        "size": { "type": "number", "minimum": 40, "maximum": 260, "description": "Hero title px; section and end titles scale with it." },
+        "weight": { "type": "integer", "minimum": 100, "maximum": 900 },
+        "tracking": { "type": "number", "minimum": -20, "maximum": 20 },
+        "reveal": { "enum": ["word-blur", "fade", "none"] },
+        "accent_word": { "type": "boolean", "description": "true: one title word in the accent colour (T9)." }
+      }
+    },
+    "transitions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "window_in": { "type": "number", "minimum": 0, "maximum": 3, "description": "Seconds the window takes to rise in; 0 = it appears in place." },
+        "cut": { "enum": ["inside-window", "fade", "cut"], "description": "How clips change. The engine renders inside-window; the others are recorded and warned about." }
+      }
+    },
+    "end": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "enum": ["sweep-logo", "card", "none"], "description": "sweep-logo: end card then brand sweep and logo outro; card: end card, no outro; none: no outro and no end card required." },
+        "seconds": { "type": "number", "minimum": 1, "maximum": 20, "description": "Default end-card length." }
+      }
+    },
+    "pacing": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "shot_max": { "type": "number", "minimum": 2, "maximum": 30, "description": "Longest uninterrupted window shot, s (P2)." },
+        "zoom_every": { "type": "number", "minimum": 2, "maximum": 60, "description": "A window run longer than this without a zoom gets a warning." }
+      }
+    },
+    "audio": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "lufs": { "type": "number", "minimum": -30, "maximum": -8 },
+        "true_peak": { "type": "number", "minimum": -6, "maximum": 0 },
+        "music_gap_db": { "type": "number", "minimum": 0, "maximum": 30 },
+        "outro_silence": { "type": "number", "minimum": 0, "maximum": 10 }
+      }
+    }
+  }
+}

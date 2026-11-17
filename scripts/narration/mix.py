@@ -13,7 +13,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-from .core import FPS, MUSIC_FADE, SAMPLE_RATE, TARGET_LUFS, TARGET_TP, Spoken, Voice, lib
+from . import core
+from .core import FPS, MUSIC_FADE, SAMPLE_RATE, Spoken, Voice, lib
 
 DIP_RAMP = 0.3     # seconds the bed takes to drop into and come back from a dip
 DIP_GAIN = 0.35    # about -9 dB
@@ -33,9 +34,9 @@ def loudnorm(measured: dict | None) -> str:
     limiter for the peaks. (loudnorm's own second pass falls back to a slow AGC whenever its
     linear gain would clip, and that AGC pumps the music bed up in every pause.)"""
     if not measured:
-        return f"loudnorm=I={TARGET_LUFS}:TP={TARGET_TP}:LRA=11:print_format=json"
-    gain = TARGET_LUFS - float(measured["input_i"])
-    ceiling = 10 ** ((TARGET_TP - 0.3) / 20)  # sample-peak ceiling under the true-peak target
+        return f"loudnorm=I={core.TARGET_LUFS}:TP={core.TARGET_TP}:LRA=11:print_format=json"
+    gain = core.TARGET_LUFS - float(measured["input_i"])
+    ceiling = 10 ** ((core.TARGET_TP - 0.3) / 20)  # sample-peak ceiling under the true-peak target
     return f"volume={gain:.2f}dB,alimiter=limit={ceiling:.4f}:attack=5:release=80:level=false"
 
 
@@ -207,10 +208,10 @@ def ebur128(path: Path) -> dict[str, float]:
 def loudness_report(values: dict[str, float]) -> list[str]:
     """Bar problems with the measured loudness; empty when it passes A2 to A4."""
     problems = []
-    if not abs(values["I"] - TARGET_LUFS) <= 1.0:
-        problems.append(f"integrated {values['I']:.1f} LUFS (bar: {TARGET_LUFS} +-1)")
-    if not values["TP"] <= -1.0:
-        problems.append(f"true peak {values['TP']:.1f} dBTP (bar: <= -1.0)")
+    if not abs(values["I"] - core.TARGET_LUFS) <= 1.0:
+        problems.append(f"integrated {values['I']:.1f} LUFS (bar: {core.TARGET_LUFS} +-1)")
+    if not values["TP"] <= core.TRUE_PEAK_BAR:
+        problems.append(f"true peak {values['TP']:.1f} dBTP (bar: <= {core.TRUE_PEAK_BAR})")
     if not values["LRA"] <= 15:
         problems.append(f"loudness range {values['LRA']:.1f} LU (bar: <= 15)")
     return problems

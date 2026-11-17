@@ -176,7 +176,8 @@ def check_workspace(root: Path) -> dict[str, list[str]]:
     index = read_index(root)
     demos = sorted(
         path for path in root.iterdir()
-        if path.is_dir() and not path.name.startswith(".") and (path / "README.md").exists()
+        # "_" folders are workspace furniture (_templates holds look templates), never demos.
+        if path.is_dir() and not path.name.startswith((".", "_")) and (path / "README.md").exists()
     )
     report = {demo.name: check_demo(root, demo, index) for demo in demos}
     for name in sorted(set(index) - set(report)):

@@ -28,6 +28,21 @@ TARGET_TP = -2.0           # A3 asks <= -1.0 dBTP after AAC; aim lower for encod
 MUSIC_GAP_DB = 13.0        # A6: bed sits 12 to 14 dB under the narration between lines
 OUTRO_FADE = 4.0           # A6: the bed fades over 4 s and is gone for the silent tail
 SILENT_TAIL = 3.0          # X3: the last 3 s of an outro are silent
+TRUE_PEAK_BAR = -1.0       # A3, measured after AAC
+TP_HEADROOM = 1.0          # TARGET_TP sits this far under the bar
+
+
+def use_audio(audio: dict | None) -> None:
+    """A look template's audio targets (lufs, true_peak, music_gap_db, outro_silence), read from the
+    build's plan.json `look.audio`. narrate.py calls it once before mixing; None keeps the bar."""
+    global TARGET_LUFS, TARGET_TP, TRUE_PEAK_BAR, MUSIC_GAP_DB, SILENT_TAIL
+    if not audio:
+        return
+    TARGET_LUFS = audio.get("lufs", TARGET_LUFS)
+    TRUE_PEAK_BAR = audio.get("true_peak", TRUE_PEAK_BAR)
+    TARGET_TP = TRUE_PEAK_BAR - TP_HEADROOM
+    MUSIC_GAP_DB = audio.get("music_gap_db", MUSIC_GAP_DB)
+    SILENT_TAIL = audio.get("outro_silence", SILENT_TAIL)
 SAMPLE_RATE = 48000
 KEY_ENV = "ELEVENLABS_API_KEY"
 KEYCHAIN_ENV = "ELEVENLABS_KEYCHAIN_SERVICE"

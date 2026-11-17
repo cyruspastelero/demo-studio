@@ -10,7 +10,7 @@ import demolib as lib
 
 from . import spec
 from .model import Plan, Run
-from .window import CANVAS_H, CANVAS_W, WindowFrame
+from .window import WindowFrame, canvas_size
 
 
 def piecewise(values: Sequence[int], start_frame: int) -> str:
@@ -57,11 +57,12 @@ def run_layer(n: int, run: Run, frames: list[WindowFrame], total: int, inputs: t
     """Window layer L{n} on the cut's clock: rounded content on the window card, transparent before the
     run starts, scaled per frame. inputs = (content, mask, card) input indexes."""
     content, mask, card = inputs
+    canvas_w, canvas_h = canvas_size()
     w = piecewise([f.canvas_w for f in frames], run.start)
     h = piecewise([f.canvas_h for f in frames], run.start)
     chain = [f"[{mask}:v]alphaextract[r{n}m]",
              f"[{content}:v]format=rgba,trim=end_frame={run.frames},setpts=PTS-STARTPTS[r{n}c]",
-             f"[r{n}c][r{n}m]alphamerge,pad={CANVAS_W}:{CANVAS_H}:{spec.CANVAS_PAD_SIDE}:{spec.CANVAS_PAD_TOP}:"
+             f"[r{n}c][r{n}m]alphamerge,pad={canvas_w}:{canvas_h}:{spec.CANVAS_PAD_SIDE}:{spec.CANVAS_PAD_TOP}:"
              f"color=black@0[r{n}p]",
              f"[{card}:v]format=rgba[r{n}k]",
              f"[r{n}k][r{n}p]overlay=0:0:format=auto:shortest=1,format=rgba,"

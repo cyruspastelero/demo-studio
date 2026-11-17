@@ -6,7 +6,8 @@
 // #RRGGBB -> rgba() at alpha a (colours are validated #hex before they get here).
 const rgba = (hex, a) => `rgba(${[1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(',')},${a})`;
 
-const css = (c, font) => `
+// `look` holds numbers only (keynote-render.mjs checks them): pill and box geometry, title weight.
+const css = (c, font, k) => `
 html, body { margin: 0; background: transparent; }
 body { width: 1920px; height: 1080px; -webkit-font-smoothing: antialiased;
   font-family: 'DS Text', sans-serif; font-optical-sizing: auto; font-kerning: normal;
@@ -18,19 +19,19 @@ body { width: 1920px; height: 1080px; -webkit-font-smoothing: antialiased;
 .role { color: ${c.role}; } .white { color: #FFFFFF; } .pill { color: ${c.pill}; }
 .line { position: absolute; left: 110px; width: 1700px; text-align: center; transform-origin: 50% 50%;
   text-wrap: balance; }
-#title { font-family: 'DS Display', 'DS Text', sans-serif; font-weight: 500; line-height: 1.08; }
+#title { font-family: 'DS Display', 'DS Text', sans-serif; font-weight: ${k.title.weight}; line-height: 1.08; }
 #sub { font-family: 'DS Display', 'DS Text', sans-serif; font-weight: 400; line-height: 1.2; }
 #logo { position: absolute; left: ${960 - 64}px; top: 330px; width: 128px; height: auto; display: none; } /* X1 */
-#pill { position: absolute; left: 960px; top: ${962 - 34}px; height: 68px; box-sizing: border-box; /* C1, C2 */
-  display: none; align-items: center; gap: 14px; border-radius: 999px; background: rgba(255,255,255,0.95);
+#pill { position: absolute; left: 960px; top: ${k.pill.centerY - k.pill.height / 2}px; height: ${k.pill.height}px; box-sizing: border-box; /* C1, C2 */
+  display: none; align-items: center; gap: 14px; border-radius: ${k.pill.radius}px; background: rgba(255,255,255,0.95);
   box-shadow: 0 14px 40px rgba(60,45,60,0.12), 0 2px 6px rgba(60,45,60,0.06); white-space: nowrap;
-  font-size: 30px; font-weight: 500; letter-spacing: -0.3px; transform-origin: 50% 50%; } /* C5 */
+  font-size: ${k.pill.fontSize}px; font-weight: 500; letter-spacing: -0.3px; transform-origin: 50% 50%; } /* C5 */
 #pill.person { padding: 9px 30px 9px 9px; } /* C3 */
 #pill.statement { padding: 16px 32px; } /* C4 */
 #avatar { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; display: none; flex: none; }
 #pilltext { line-height: 1; }
-.box { position: absolute; box-sizing: border-box; border: 3px solid ${c.highlight}; border-radius: 12px; /* H1-H3: product colour */
-  background: ${rgba(c.highlight, 0.07)}; box-shadow: 0 0 0 6px ${rgba(c.highlight, 0.10)}; transform-origin: 50% 50%; }
+.box { position: absolute; box-sizing: border-box; border: ${k.box.stroke}px solid ${c.highlight}; border-radius: ${k.box.radius}px; /* H1-H3: product colour */
+  background: ${rgba(c.highlight, k.box.fill)}; box-shadow: 0 0 0 ${k.box.haloWidth}px ${rgba(c.highlight, k.box.halo)}; transform-origin: 50% 50%; }
 #outro { position: absolute; inset: 0; overflow: hidden; display: none; }
 #sweep { position: absolute; left: -240px; width: 2400px; height: 2600px; transform: skewY(${c.skew}deg); } /* X2 */
 #band { height: 320px; background: linear-gradient(100deg, ${c.sweep[0]}, ${c.sweep[1]}); }
@@ -44,7 +45,9 @@ body { width: 1920px; height: 1080px; -webkit-font-smoothing: antialiased;
 #win { position: absolute; box-sizing: border-box; }
 ${font}`;
 
-const html = (c, font) => `<!doctype html><html><head><meta charset="utf-8"><style>${css(c, font)}</style></head>
+const LOOK = { pill: { centerY: 962, height: 68, radius: 999, fontSize: 30 },
+  box: { stroke: 3, radius: 12, fill: 0.07, halo: 0.1, haloWidth: 6 }, title: { weight: 500 } };
+const html = (c, font, k = LOOK) => `<!doctype html><html><head><meta charset="utf-8"><style>${css(c, font, k)}</style></head>
 <body><div id="root">
 <div id="bg"></div>
 <div id="card"><img id="logo" alt=""><div id="title" class="line"></div><div id="sub" class="line"></div></div>

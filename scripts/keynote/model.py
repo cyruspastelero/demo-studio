@@ -192,8 +192,8 @@ def _shot_from(item: dict, index: int, start: int, raw_dir: Path,
         warn.append(f"{where}: no `crop`, so the window shows the full width; app text may read under "
                     f"{spec.MIN_CAP_HEIGHT} px. Add crop: [x, y, w, h] around the UI that matters (W2)")
     seconds = frames / spec.FPS
-    if seconds > 8.0 and not item.get("zooms") and not item.get("zoom"):
-        warn.append(f"{where}: {seconds:.1f}s in one uninterrupted shot (bar P2: 8 s at most); split it "
+    if seconds > spec.SHOT_MAX and not item.get("zooms") and not item.get("zoom"):
+        warn.append(f"{where}: {seconds:.1f}s in one uninterrupted shot (bar P2: {spec.SHOT_MAX:g} s at most); split it "
                     "or add a zoom")
     return Shot(index, item["scene"], source, trim_in, trim_out, speed, start, frames, crop, size)
 
@@ -207,7 +207,7 @@ def _card_from(item: dict, index: int, start: int, is_last: bool, warn: list[str
                                ("subtitle_accent", item.get("subtitle", ""), item.get("subtitle_accent", ""))):
         if accent and accent_index(text, accent) < 0:
             raise PlanError(f"{where}.{name}: {accent!r} is not a word of {text!r}; use one word of it exactly")
-    if not item.get("accent"):
+    if not item.get("accent") and spec.ACCENT_WORD:
         warn.append(f"{where}: no `accent` word; the bar wants exactly one key word in the accent colour (T9)")
     return Card(index, item_key(item), kind, item["title"], item.get("subtitle", ""), item.get("accent", ""),
                 item.get("subtitle_accent", ""), bool(item.get("logo", kind == "end")), start,

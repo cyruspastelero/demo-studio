@@ -9,11 +9,10 @@ import math
 from typing import NamedTuple
 
 from . import spec
-from .easing import EASE_IN_OUT_SINE, EASE_OUT_CUBIC, progress
+from .easing import EASE_OUT_CUBIC, cubic_bezier, progress
 from .model import Run, Zoom
 from .spec import Rect
 
-REST_CENTER = spec.WINDOW_REST.center
 
 
 class WindowFrame(NamedTuple):
@@ -28,14 +27,21 @@ class WindowFrame(NamedTuple):
     canvas_h: int
 
 
-CANVAS_W = int(spec.WINDOW_REST.w + 2 * spec.CANVAS_PAD_SIDE)
-CANVAS_H = int(spec.WINDOW_REST.h + spec.CANVAS_PAD_TOP + spec.CANVAS_PAD_BOTTOM)
+def canvas_size() -> tuple[int, int]:
+    """The window layer: the rest window plus transparent margins for its shadow."""
+    return (int(spec.WINDOW_REST.w + 2 * spec.CANVAS_PAD_SIDE),
+            int(spec.WINDOW_REST.h + spec.CANVAS_PAD_TOP + spec.CANVAS_PAD_BOTTOM))
+
+
+def zoom_ease(x: float) -> float:
+    """Z4: ease-in-out sine by default; a look template may give its own cubic-bezier."""
+    return cubic_bezier(*spec.ZOOM_EASE)(x)
 
 
 def zoom_center(zoom: Zoom) -> tuple[float, float]:
     """Where the window centre sits at full zoom: toward the focus by (scale - 1) of the distance,
     at most ZOOM_PAN_MAX px (Z3), then clamped so the window keeps ZOOM_EDGE px clear (Z3)."""
-    cx, cy = REST_CENTER
+    cx, cy = spec.WINDOW_REST.center
     dx, dy = (zoom.focus[0] - cx) * (zoom.scale - 1), (zoom.focus[1] - cy) * (zoom.scale - 1)
     length = math.hypot(dx, dy)
     if length > spec.ZOOM_PAN_MAX:
@@ -51,10 +57,10 @@ def zoom_progress(zoom: Zoom, t: float) -> float:
     if t < zoom.at or t >= zoom.end:
         return 0.0
     if t < zoom.landed:
-        return EASE_IN_OUT_SINE(progress(t, zoom.at, spec.ZOOM_MOVE_SECONDS))
+        return zoom_ease(progress(t, zoom.at, spec.ZOOM_MOVE_SECONDS))
     if t < zoom.out_start:
         return 1.0
-    return 1.0 - EASE_IN_OUT_SINE(progress(t, zoom.out_start, spec.ZOOM_MOVE_SECONDS))
+    return 1.0 - zoom_ease(progress(t, zoom.out_start, spec.ZOOM_MOVE_SECONDS))
 
 
 def rise_offset(t: float) -> float:
@@ -65,13 +71,14 @@ def rise_offset(t: float) -> float:
 
 def window_rect(run: Run, t: float) -> Rect:
     """The window in frame px at run time t (seconds since the run started)."""
-    scale, (cx, cy) = 1.0, REST_CENTER
+    rest = spec.WINDOW_REST.center
+    scale, (cx, cy) = 1.0, rest
     for zoom in run.zooms:
         p = zoom_progress(zoom, t)
         if p > 0:
             tx, ty = zoom_center(zoom)
             scale = 1 + (zoom.scale - 1) * p
-            cx, cy = REST_CENTER[0] + (tx - REST_CENTER[0]) * p, REST_CENTER[1] + (ty - REST_CENTER[1]) * p
+            cx, cy = rest[0] + (tx - rest[0]) * p, rest[1] + (ty - rest[1]) * p
             break
     w, h = spec.WINDOW_REST.w * scale, spec.WINDOW_REST.h * scale
     return Rect(cx - w / 2, cy - h / 2 + rise_offset(t), w, h)
@@ -82,8 +89,9 @@ def quantize(rect: Rect) -> WindowFrame:
     h = round(rect.h)
     x, y = round(rect.x), round(rect.y)
     k = w / spec.WINDOW_REST.w
+    canvas_w, canvas_h = canvas_size()
     return WindowFrame(x, y, w, h, x - round(spec.CANVAS_PAD_SIDE * k), y - round(spec.CANVAS_PAD_TOP * k),
-                       round(CANVAS_W * k), round(CANVAS_H * k))
+                       round(canvas_w * k), round(canvas_h * k))
 
 
 def run_frames(run: Run) -> list[WindowFrame]:

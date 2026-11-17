@@ -178,13 +178,15 @@ def count_colour(frame: Frame, target: tuple[int, int, int], tolerance: int, box
                if near(frame.px(x, y), target, tolerance))
 
 
-def pill_box(frame: Frame) -> tuple[int, int, int, int] | None:
-    """The callout pill under the window: rows of the band y 905 to 1075 that are mostly near white
-    across x 835 to 1085 (text breaks the white, so half is enough), then its left and right ends."""
+def pill_box(frame: Frame, center_y: float = 962) -> tuple[int, int, int, int] | None:
+    """The callout pill under the window: rows of the band y 905 to 1075 (for a pill centred at 962;
+    the band follows a look template's pill.center_y) that are mostly near white across x 835 to
+    1085 (text breaks the white, so half is enough), then its left and right ends."""
     def bright(x: int, y: int) -> bool:
         return frame.luma(x, y) >= 246
 
-    rows = [y for y in range(905, 1076) if sum(bright(x, y) for x in range(835, 1086, 2)) >= 0.4 * 126]
+    low, high = max(0, int(center_y) - 57), min(H, int(center_y) + 114)
+    rows = [y for y in range(low, high) if sum(bright(x, y) for x in range(835, 1086, 2)) >= 0.4 * 126]
     if not rows:
         return None
     top, bottom = min(rows), max(rows)

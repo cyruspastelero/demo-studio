@@ -133,6 +133,12 @@ Then fill:
   (`music/bed.m4a`) and one `voice.music_dips` entry. Shape: `$P/schemas/demo.schema.json`.
   Example: `$P/samples/plan/demo.json`. Add `brand` (`font`, `accent`, `logo_on_dark`), `browser.timezone` if the UI shows times, and `windows` for a
   two-person demo. Old `caption` and `zoom` fields still build but do not reach the bar.
+- `template`: if the user named a look template ("use template <id>", "in the look of <id>"), set
+  `"template": "<id>"` at the top of demo.json. Check the id exists first:
+  `python3 -I "$P/scripts/templates.py" show <id>` (expected: `<id> (workspace|built-in) <folder>`).
+  Not found: run `python3 -I "$P/scripts/templates.py" list`, pick the closest id and note it under
+  "Decisions"; if they asked to copy a video's look instead, open skill `demo-template` first.
+  demo.json's own `brand` still wins over the template's, so keep setting `brand.accent` below.
 - `brand.accent`: **always set it from the product itself**, since highlight boxes and statement
   pills take this colour (quality bar H1, C4) and must look native to the UI. Read the primary
   button's (or primary link's) colour from the live page, for example in a scout run

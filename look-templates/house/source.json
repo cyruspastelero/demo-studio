@@ -1,0 +1,11 @@
+{
+  "file": "the quality-bar reference cut (docs/quality-bar.md)",
+  "duration": 95.9,
+  "sha256": null,
+  "created": "2026-11-18",
+  "width": 1920,
+  "height": 1080,
+  "fps": 30,
+  "tool": "built-in",
+  "_comment": "Measured by hand into docs/quality-bar.md; no file of the reference is kept."
+}

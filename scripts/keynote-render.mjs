@@ -46,11 +46,23 @@ const font = job.font;
 let faces = fontFace('DS Text', font.text, '100 900');
 const display = Object.entries(font.display || {});
 faces += display.length ? display.map(([w, file]) => fontFace('DS Display', file, w)).join('')
-  : fontFace('DS Display', font.text, '100 900');
+  : fontFace('DS Display', font.display_text || font.text, '100 900');
 
 const colors = job.colors;
 for (const [key, value] of Object.entries(colors)) {
   for (const v of [value].flat()) if (typeof v === 'string' && !HEX.test(v)) fail(`colour ${key} is not #hex`);
+}
+// Look geometry (pill, highlight box, title weight) goes into CSS: numbers only, finite and in range.
+const LOOK_DEFAULT = { pill: { centerY: 962, height: 68, radius: 999, fontSize: 30 },
+  box: { stroke: 3, radius: 12, fill: 0.07, halo: 0.1, haloWidth: 6 }, title: { weight: 500 } };
+const look = {};
+for (const [group, values] of Object.entries(LOOK_DEFAULT)) {
+  look[group] = {};
+  for (const [key, fallback] of Object.entries(values)) {
+    const v = job.look?.[group]?.[key] ?? fallback;
+    if (typeof v !== 'number' || !Number.isFinite(v) || v < 0 || v > 2000) fail(`look ${group}.${key} is not a number in range`);
+    look[group][key] = v;
+  }
 }
 for (const [id, uri] of Object.entries(job.images || {})) if (!IMAGE.test(uri)) fail(`image ${id} is not a data: image`);
 
@@ -63,7 +75,7 @@ try {
   const context = await browser.newContext({ viewport: { width: 1920, height: 1140 }, deviceScaleFactor: 1 });
   await blockRequests(context);
   const page = await context.newPage();
-  await page.setContent(html(colors, faces));
+  await page.setContent(html(colors, faces, look));
   await page.evaluate(async () => {
     await document.fonts.load("500 132px 'DS Display'");
     await document.fonts.load("400 42px 'DS Display'");

@@ -1,0 +1,95 @@
+{
+  "id": "house",
+  "name": "House look",
+  "description": "The demo-studio default: a floating rounded window on a soft drifting pastel background, 1.15x whole-window zooms, product-coloured highlight boxes, white pills, Inter titles that blur in word by word, a brand sweep and logo outro.",
+  "created": "2026-11-18",
+  "source": "built-in",
+  "_comment": "Values equal scripts/keynote/spec.py (docs/quality-bar.md). brand.accent is left out on purpose: without it boxes and pills stay neutral ink and the title accent is #D9463B; a demo sets its product colour in demo.json brand.accent.",
+  "look": {
+    "brand": {
+      "font": "inter",
+      "ink": "#24272B",
+      "secondary": "#5F656D",
+      "background": {
+        "base": "#E3E3E4",
+        "fields": [
+          "#FAF9F7",
+          "#BCC6D3F2",
+          "#E6C4C2F2",
+          "#DEDAD9",
+          "#F1EFEDD9"
+        ]
+      },
+      "sweep": [
+        "#EF4849",
+        "#F68C41"
+      ],
+      "dark": "#1B1D21"
+    },
+    "window": {
+      "rect": [
+        180,
+        100,
+        1560,
+        800
+      ],
+      "radius": 22,
+      "shadow": "0 50px 110px rgba(45,40,60,0.16), 0 14px 34px rgba(45,40,60,0.09)"
+    },
+    "zoom": {
+      "scale": 1.15,
+      "dur": 1.1,
+      "ease": [
+        0.37,
+        0,
+        0.63,
+        1
+      ]
+    },
+    "highlight": {
+      "stroke": 3,
+      "radius": 12,
+      "pad": [
+        15,
+        9
+      ],
+      "delay": 0.17,
+      "fill_alpha": 0.07,
+      "halo_alpha": 0.1
+    },
+    "pill": {
+      "center_y": 962,
+      "height": 68,
+      "radius": 999,
+      "font_size": 30,
+      "kinds": [
+        "statement",
+        "person"
+      ]
+    },
+    "title": {
+      "size": 132,
+      "weight": 500,
+      "tracking": -4,
+      "reveal": "word-blur",
+      "accent_word": true
+    },
+    "transitions": {
+      "window_in": 0.7,
+      "cut": "inside-window"
+    },
+    "end": {
+      "kind": "sweep-logo",
+      "seconds": 7.9
+    },
+    "pacing": {
+      "shot_max": 8.0
+    },
+    "audio": {
+      "lufs": -14.0,
+      "true_peak": -1.0,
+      "music_gap_db": 13.0,
+      "outro_silence": 3.0
+    }
+  }
+}

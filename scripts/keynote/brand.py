@@ -78,7 +78,8 @@ def load_brand(raw: dict | None) -> Brand:
     return Brand(font=font, ink=colour(raw.get("ink", spec.INK), "ink"),
                  secondary=colour(raw.get("secondary", spec.SECONDARY), "secondary"),
                  accent=accent,
-                 highlight=product or spec.HIGHLIGHT_NEUTRAL,
+                 highlight=(colour(raw["highlight"], "highlight")[:7] if raw.get("highlight")
+                            else product or spec.HIGHLIGHT_NEUTRAL),
                  pill_text=readable_on_white(product) if product else spec.PILL_TEXT_NEUTRAL,
                  base=colour(background.get("base", spec.BG_BASE), "background.base"),
                  fields=tuple(colour(c, f"background.fields[{i}]") for i, c in enumerate(fields)),

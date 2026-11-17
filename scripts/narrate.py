@@ -35,7 +35,8 @@ from narration.core import (ESTIMATE, KEY_ENV, KEY_FIX, KEYCHAIN_ENV, KEYCHAIN_E
                             ItemTiming, NarrateError, Voice, lib)
 from narration.mix import *  # noqa: E402,F401,F403
 from narration.mix import ebur128, is_placeholder_bed, loudness_report, mux  # noqa: E402
-from narration.core import OUTRO_FADE, SILENT_TAIL  # noqa: E402
+from narration import core as narration_core  # noqa: E402
+from narration.core import OUTRO_FADE  # noqa: E402
 from narration.providers import *  # noqa: E402,F401,F403
 from narration.providers import (check_voice_files, find_api_key, has_voice_files, keychain_service,  # noqa: E402
                                  select_provider, speak)
@@ -165,11 +166,25 @@ def choose_provider(args: argparse.Namespace, voice: Voice, files_dir: Path) -> 
         raise
 
 
+def use_template_audio(cut: Path) -> None:
+    """The build's look template may set its own loudness targets; they are in plan.json `look.audio`."""
+    plan = cut.with_suffix(".plan.json")
+    try:
+        data = json.loads(plan.read_text()) if plan.is_file() else {}
+    except json.JSONDecodeError:
+        return
+    if data.get("template"):
+        narration_core.use_audio((data.get("look") or {}).get("audio"))
+        print(f"narrate: audio targets from template {data['template']}: "
+              f"{narration_core.TARGET_LUFS} LUFS, true peak <= {narration_core.TRUE_PEAK_BAR} dBTP", flush=True)
+
+
 def narrate(args: argparse.Namespace) -> int:
     cfg_path = Path(args.config).resolve()
     cfg = lib.load_config(cfg_path, "demo", "narrate")
     demo_dir = cfg_path.parent
     rec = demo_dir / "recordings"
+    use_template_audio(rec / "exports" / f"{lib.slugify(cfg['title'])}-keynote-cut.mp4")  # before Voice reads the gap
     voice = Voice.from_config(cfg.get("voice", {}))
     cut = rec / "exports" / f"{lib.slugify(cfg['title'])}-keynote-cut.mp4"
     if not cut.exists():
@@ -212,7 +227,7 @@ def narrate(args: argparse.Namespace) -> int:
         print(f"Next, render the narrated video:\n  {command_for(args)}" + (" --allow-overrun" if advice else ""))
         return 0
     out = cut.with_name(f"{cut.stem}-narrated.mp4")
-    tail = SILENT_TAIL if outro else 0.0
+    tail = narration_core.SILENT_TAIL if outro else 0.0
     fade_out = OUTRO_FADE if outro and not voice.fade_out_set else None
     mux(cut, spoken, total, music, voice, out, tail=tail, fade_out=fade_out)
     if not music:

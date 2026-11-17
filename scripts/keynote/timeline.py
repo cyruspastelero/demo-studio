@@ -56,6 +56,7 @@ def _runs(items: list, shots: tuple[Shot, ...], sequence: list[dict], warn: list
             frames = sum(s.frames for s in current)
             zooms = tuple(z for s in current for z in _zooms(sequence[s.index], s, start, warn))
             _check_zooms(zooms, frames / spec.FPS, current[0].index, warn)
+            _check_zoom_pacing(zooms, frames / spec.FPS, current[0].index, warn)
             runs.append(Run(tuple(position[s.index] for s in current), start, frames, zooms,
                             fade_out=item is not None))
             current = []
@@ -104,6 +105,18 @@ def _check_zooms(zooms: tuple[Zoom, ...], run_seconds: float, first_index: int, 
                         f"{run_seconds:.2f}s; shorten `dur` or start earlier")
 
 
+def _check_zoom_pacing(zooms: tuple[Zoom, ...], run_seconds: float, first_index: int, warn: list[str]) -> None:
+    """A look template's pacing.zoom_every: no stretch of a window run longer than that without a zoom."""
+    every = spec.ZOOM_EVERY
+    if not every:
+        return
+    marks = sorted([0.0, run_seconds, *(z.at for z in zooms), *(z.end for z in zooms)])
+    longest = max(b - a for a, b in zip(marks, marks[1:]))
+    if longest > every:
+        warn.append(f"the run starting at sequence[{first_index}] goes {longest:.1f}s without a zoom; the look "
+                    f"paces one every {every:g}s or less (template pacing.zoom_every)")
+
+
 def _shot_of(index: int, shots: tuple[Shot, ...]) -> tuple[int, Shot]:
     return next((n, s) for n, s in enumerate(shots) if s.index == index)
 
@@ -133,6 +146,8 @@ def _callouts(sequence: list[dict], shots: tuple[Shot, ...], runs: tuple[Run, ..
             if kind == "statement" and len(callout.text.split()) > spec.PILL_STATEMENT_MAX_WORDS:
                 warn.append(f"{out[-1][1]}: {len(callout.text.split())} words; a statement pill holds at most "
                             f"{spec.PILL_STATEMENT_MAX_WORDS} (C4)")
+            if kind not in spec.PILL_KINDS:
+                warn.append(f"{out[-1][1]}: a {kind} pill, but the look uses only {', '.join(spec.PILL_KINDS)} pills")
             if kind == "person" and not callout.role:
                 warn.append(f"{out[-1][1]}: a person pill needs `role` (\"Name, role\", C3)")
             for start, end in zoom_spans:

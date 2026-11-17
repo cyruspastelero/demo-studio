@@ -68,6 +68,13 @@ class WorkspaceCheck(unittest.TestCase):
         (demo / "final" / "acme.mp4").unlink()
         self.assertIn("status says delivered but final/ has no video", self.issues()["acme"])
 
+    def test_underscore_folders_like_templates_are_not_demos(self):
+        make_workspace(self.root)
+        templates = self.root / "_templates"
+        (templates / "my-look-abc123").mkdir(parents=True)
+        (templates / "README.md").write_text("# Look templates\n")
+        self.assertEqual(self.issues(), {"acme": []})
+
     def test_demo_missing_from_index_is_reported(self):
         make_workspace(self.root)
         other = self.root / "other"

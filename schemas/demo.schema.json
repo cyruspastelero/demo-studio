@@ -13,6 +13,11 @@
     "^_": {}
   },
   "properties": {
+    "template": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{2,63}$",
+      "description": "Look template id (docs/templates.md): a measured look from <demos root>/_templates/<id>/ or the built-in look-templates/<id>/. Its look sits under this file's own brand, which wins. List ids: python3 -I scripts/templates.py list"
+    },
     "title": {
       "type": "string",
       "minLength": 1,

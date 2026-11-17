@@ -56,6 +56,9 @@ The house look, in short. The full guide an agent follows is
   six words at most.
 - **A measured bar.** Every number above is in [docs/quality-bar.md](quality-bar.md), and
   `scripts/check-cut.py` runs its checklist on a finished cut.
+- **Other looks.** The house look is one [look template](templates.md) (`house`). A demo can name
+  another with `"template": "<id>"` in demo.json, and skill `demo-template` copies the look of an
+  existing video into a new template; `check-cut.py` then checks against that template's numbers.
 - **A voice like a colleague.** Second person, present tense, about 2.5 words a second, numbers and
   URLs spelled out, music quiet under it.
 

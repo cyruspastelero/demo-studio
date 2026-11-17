@@ -15,7 +15,7 @@ import demolib as lib
 
 from . import spec
 from .brand import Brand
-from .window import CANVAS_H, CANVAS_W
+from .window import canvas_size
 
 SCRIPTS = Path(__file__).resolve().parent.parent
 IMAGE_TYPES = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp",
@@ -52,6 +52,21 @@ def _type(title: dict, sub: dict) -> dict:
     return {"size": title["size"], "tracking": title["tracking"], "subSize": sub["size"], "subTracking": sub["tracking"]}
 
 
+def page_look() -> dict:
+    """Geometry the page draws with (C1, C2, C5, H1 to H3, T2), from spec, so a look template reaches it.
+    keynote-render.mjs checks every value is a finite number before it goes into CSS."""
+    return {"pill": {"centerY": spec.PILL_CENTER[1], "height": spec.PILL_HEIGHT, "radius": spec.PILL_RADIUS,
+                     "fontSize": spec.PILL_FONT_SIZE},
+            "box": {"stroke": spec.HIGHLIGHT_STROKE, "radius": spec.HIGHLIGHT_RADIUS, "fill": spec.HIGHLIGHT_FILL_ALPHA,
+                    "halo": spec.HIGHLIGHT_HALO_ALPHA, "haloWidth": spec.HIGHLIGHT_HALO},
+            "title": {"weight": spec.TITLE_WEIGHT}}
+
+
+def title_family(brand: Brand) -> str:
+    """The font key title cards use: the look's title.font, else brand.font."""
+    return spec.TITLE_FONT or brand.font
+
+
 def state_key(state: dict, salt: str) -> str:
     return hashlib.sha1((salt + json.dumps(state, sort_keys=True, separators=(",", ":"))).encode()).hexdigest()[:20]
 
@@ -63,7 +78,7 @@ def window_statics() -> list[dict]:
     card = {"window": {"x": spec.CANVAS_PAD_SIDE, "y": spec.CANVAS_PAD_TOP, "w": rest.w, "h": rest.h,
                        "radius": spec.WINDOW_RADIUS, "fill": "transparent", "shadow": spec.WINDOW_SHADOW}}
     mask = {"window": {"x": 0, "y": 0, "w": rest.w, "h": rest.h, "radius": spec.WINDOW_RADIUS, "fill": "#FFFFFF"}}
-    return [{"name": "window-card.png", "state": card, "size": [CANVAS_W, CANVAS_H]},
+    return [{"name": "window-card.png", "state": card, "size": list(canvas_size())},
             {"name": "window-mask.png", "state": mask, "size": [int(rest.w), int(rest.h)]}]
 
 
@@ -82,7 +97,9 @@ class Renderer:
         code = "".join((SCRIPTS / name).read_text() for name in ("keynote-page.mjs", "keynote-render.mjs"))
         fonts = "".join(sorted(f"{f.name}:{f.stat().st_size}"
                                for f in (SCRIPTS.parent / "assets" / "fonts").glob("*.woff2")))
-        salt = json.dumps([brand.__dict__, sorted(images.items()), self.styles, code, fonts],
+        self.look = page_look()
+        salt = json.dumps([brand.__dict__, sorted(images.items()), self.styles, code, fonts, self.look,
+                           title_family(brand)],
                           sort_keys=True, default=str)
         self.salt = hashlib.sha1(salt.encode()).hexdigest()
         self.pending: dict[str, dict] = {}
@@ -96,13 +113,19 @@ class Renderer:
     def job(self, kind: str, font_probe: dict | None) -> dict:
         b = self.brand
         font = spec.FONTS[b.font]
+        title = spec.FONTS[title_family(b)]
+        # Display faces exist only for some weights; any other weight uses the variable text face.
+        display = {str(k): v for k, v in title["display"].items()}
+        if str(spec.TITLE_WEIGHT) not in display:
+            display = {}
         groups = {"backgrounds": [], "static": [], "frames": []}
         for entry in self.pending.values():
             target = "backgrounds" if "background" in entry["state"] else (
                 "static" if "window" in entry["state"] else "frames")
             groups[target].append(entry)
         return {"out_dir": str(self.work), "kind": kind,
-                "font": {"text": font["text"], "display": {str(k): v for k, v in font["display"].items()}},
+                "font": {"text": font["text"], "display": display, "display_text": title["text"]},
+                "look": self.look,
                 "colors": {"ink": b.ink, "secondary": b.secondary, "accent": b.accent, "role": ROLE_GREY,
                            "pill": b.pill_text, "highlight": b.highlight,
                            "dark": b.dark, "sweep": list(b.sweep), "skew": spec.SWEEP_SKEW},
@@ -153,8 +176,9 @@ class Renderer:
 
 
 def check_fonts(painted: list[str], brand: Brand) -> None:
-    family = spec.FONTS[brand.font]["family"]
-    if painted and not all(family in name for name in painted):
+    families = {spec.FONTS[brand.font]["family"], spec.FONTS[title_family(brand)]["family"]}
+    family = " and ".join(sorted(families))
+    if painted and not all(any(f in name for f in families) for name in painted):
         sys.exit(f"build-keynote: Chrome painted {painted}, not the bundled {family}. Check assets/fonts/ "
                  "is complete (git checkout assets/fonts) and run again.")
     if painted:

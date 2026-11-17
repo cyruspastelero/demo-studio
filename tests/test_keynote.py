@@ -145,11 +145,21 @@ class Geometry(unittest.TestCase):
         self.assertEqual(spec.PILL_HEIGHT, 68)
         self.assertEqual(spec.PILL_AVATAR, 50)
         self.assertEqual((spec.PILL_FONT_SIZE, spec.PILL_FONT_WEIGHT), (30, 500))
+        # The page draws pill and box geometry from the job's look (a template may change it); the
+        # house values reach it through render.page_look() and are the page's own fallback too.
+        from keynote.render import page_look
+        self.assertEqual(page_look(), {"pill": {"centerY": 962, "height": 68, "radius": 999, "fontSize": 30},
+                                       "box": {"stroke": 3, "radius": 12, "fill": 0.07, "halo": 0.10, "haloWidth": 6},
+                                       "title": {"weight": 500}})
         page = (REPO / "scripts" / "keynote-page.mjs").read_text()
-        for snippet in ("top: ${962 - 34}px", "height: 68px", "padding: 9px 30px 9px 9px", "padding: 16px 32px",
-                        "font-size: 30px; font-weight: 500; letter-spacing: -0.3px", "width: 50px; height: 50px",
-                        "border: 3px solid ${c.highlight}; border-radius: 12px",
-                        "background: ${rgba(c.highlight, 0.07)}; box-shadow: 0 0 0 6px ${rgba(c.highlight, 0.10)}"):
+        for snippet in ("top: ${k.pill.centerY - k.pill.height / 2}px", "height: ${k.pill.height}px",
+                        "padding: 9px 30px 9px 9px", "padding: 16px 32px",
+                        "font-size: ${k.pill.fontSize}px; font-weight: 500; letter-spacing: -0.3px",
+                        "width: 50px; height: 50px",
+                        "border: ${k.box.stroke}px solid ${c.highlight}; border-radius: ${k.box.radius}px",
+                        "background: ${rgba(c.highlight, k.box.fill)}; box-shadow: 0 0 0 ${k.box.haloWidth}px",
+                        "pill: { centerY: 962, height: 68, radius: 999, fontSize: 30 }",
+                        "box: { stroke: 3, radius: 12, fill: 0.07, halo: 0.1, haloWidth: 6 }"):
             self.assertIn(snippet, page)
 
 

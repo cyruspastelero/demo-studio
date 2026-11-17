@@ -64,6 +64,15 @@ keynote-style cut built to the quality bar, and a narrated version. Ask for prom
 4:5 and 9:16 social versions and a zip for a human editor too. Want to check the plan or the reel
 before Claude goes on? Say so, and it stops there.
 
+## Dependencies
+
+All free, all local. Required: Claude Code, Node.js 20+, Python 3.10+ (standard library only),
+ffmpeg, Google Chrome and the Playwright MCP (`@playwright/mcp@0.0.84`). npm installs one runtime
+package for recording (`playwright-core`) plus React, ajv and Vite for the local studio, all pinned;
+`npm audit` is clean. Fonts (Inter, Geist) are bundled under the SIL Open Font License. Optional:
+ElevenLabs or Higgsfield for voice and music. Full list with versions and licences:
+[docs/dependencies.md](docs/dependencies.md).
+
 ## Docs
 
 | Page | What is in it |
@@ -73,8 +82,10 @@ before Claude goes on? Say so, and it stops there.
 | [Studio](docs/studio.md) | The local dashboard and the editor |
 | [Style guide](references/style-guide.md) | The house look: pointer, typing, pacing, zooms, callouts, voice |
 | [Quality bar](docs/quality-bar.md) | The measured minimum every finished cut must pass, with its checklist |
+| [Look templates](docs/templates.md) | Reusable looks: the built-ins, copying the look of a video, using and sharing a template |
 | [Samples](samples/README.md) | Scene recipes and a full sample plan to copy from |
 | [FAQ](docs/faq.md) | Passwords, cost, what stays local, files, timing, re-shoots, branding, safety |
+| [Dependencies](docs/dependencies.md) | Every tool, package and font, with versions and licences |
 | [Development](docs/development.md) | Repo layout and tests |
 
 ## Contributing

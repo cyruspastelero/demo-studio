@@ -35,7 +35,13 @@ def words_of(text: str, accent: str, base_role: str) -> list[tuple[str, str]]:
 
 
 def reveal(text: str, accent: str, role: str, t: float, starts: Sequence[float]) -> list[Word]:
-    return [word_state(w, colour, t, start, spec.WORD_SECONDS, spec.WORD_BLUR, spec.WORD_SHIFT)
+    """T10 word-blur by default; a look template may ask for a plain fade, or no reveal at all."""
+    style = spec.TITLE_REVEAL
+    if style == "none":
+        return [[w, colour, 1.0 if t >= starts[0] else 0.0, 0.0, 0.0]
+                for (w, colour), _ in zip(words_of(text, accent, role), starts)]
+    blur, shift = (spec.WORD_BLUR, spec.WORD_SHIFT) if style == "word-blur" else (0.0, 0.0)
+    return [word_state(w, colour, t, start, spec.WORD_SECONDS, blur, shift)
             for (w, colour), start in zip(words_of(text, accent, role), starts)]
 
 

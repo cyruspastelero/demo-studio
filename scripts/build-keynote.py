@@ -5,6 +5,9 @@ whole-window zooms (1.15x, ease-in-out sine); red highlight boxes glued to the U
 under the window; word-by-word title cards in bundled Inter; a timed end card with a brand sweep
 and logo outro; a soft drifting pastel background. Video only: run narrate.py next for voice and music.
 
+A look template (demo.json `"template": "<id>"`, docs/templates.md) swaps in its measured look
+under demo.json's own brand; without one the house look in keynote/spec.py is used.
+
 Usage (from the demo dir): build-keynote.py [demo.json] [--strict]
   --strict   treat quality-bar warnings (shot too long, pill too long, no accent word, a highlight over
              a take that scrolls under it...) as errors
@@ -27,7 +30,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # demolib, keynote/ and narration/ sit next to this file
 
 import demolib as lib  # noqa: E402
+from keynote import look as looks  # noqa: E402
 from keynote import spec  # noqa: E402
+from keynote import measure  # noqa: E402
+from keynote.templates import TemplateError, find as find_template  # noqa: E402
 from keynote.brand import background_keyframes, load_brand  # noqa: E402
 from keynote.compose import composite, encode  # noqa: E402
 from keynote.model import Card, PlanError  # noqa: E402
@@ -74,7 +80,7 @@ def font_probe(plan) -> dict:
     return state
 
 
-def render_graphics(plan, brand, cfg, demo_dir: Path, work: Path) -> tuple[Path, tuple[Path, Path], dict, list[str]]:
+def render_graphics(plan, brand, cfg, demo_dir: Path, work: Path) -> tuple[Path, tuple[Path, Path], dict, list[str], dict]:
     images = collect_images(cfg, demo_dir, plan)
     renderer = Renderer(work, brand, images, has_logo="logo" in images)
     windows = {n: run_frames(run) for n, run in enumerate(plan.runs)}
@@ -100,8 +106,9 @@ def render_graphics(plan, brand, cfg, demo_dir: Path, work: Path) -> tuple[Path,
     static_dir = renderer.link_sequence("png-static", list(statics.values()), "static-%d.png")
     for i, name in enumerate(statics):
         (static_dir / f"static-{i}.png").rename(static_dir / name)
+    samples = background_samples(renderer.png, bg_keys, plan)
     renderer.prune(set(bg_keys) | set(under_keys) | set(over_keys) | set(statics.values()))
-    return bg_dir, (under_dir, over_dir), windows, fonts
+    return bg_dir, (under_dir, over_dir), windows, fonts, samples
 
 
 def highlight_sidecar(plan, folder: Path) -> list[dict]:
@@ -117,7 +124,42 @@ def highlight_sidecar(plan, folder: Path) -> list[dict]:
     return out
 
 
-def write_sidecars(final: Path, cfg: dict, plan, fonts: list[str], brand) -> Path:
+BG_POINTS = ((40, 40), (960, 40), (1880, 40), (40, 1040), (1880, 1040), (320, 240))  # check-cut.py B3
+
+
+def background_samples(renderer_png, bg_keys: list[str], plan) -> dict[str, str]:
+    """B3 for a template look: the background colours this build drew at the checker's sample points
+    and time (the house look is checked against the reference's own measured samples instead)."""
+    t = 1.6 if plan.cards and plan.cards[0].start == 0 else 0.0
+    k = int(t // spec.BG_KEYFRAME_SECONDS)
+    frac = t / spec.BG_KEYFRAME_SECONDS - k
+    frames = []
+    for key in (bg_keys[k], bg_keys[min(k + 1, len(bg_keys) - 1)]):
+        frames.append(measure.grab(renderer_png(key), 0.0))
+    out = {}
+    for x, y in BG_POINTS:
+        a, b = frames[0].px(x, y), frames[1].px(x, y)
+        out[f"{x},{y}"] = "#" + "".join(f"{round(p + (q - p) * frac):02X}" for p, q in zip(a, b))
+    return out
+
+
+def resolve_look(cfg: dict, demo_dir: Path) -> tuple[str | None, dict, dict]:
+    """(template id or None, effective look, brand dict for load_brand). Applies the look to spec."""
+    template_id = cfg.get("template")
+    template_look = None
+    if template_id:
+        try:
+            template = find_template(template_id, demo_dir)
+        except TemplateError as error:
+            fail(str(error))
+        template_look = template.look
+        print(f"template: {template.id} ({template.where}, {template.folder})", flush=True)
+    look = looks.effective(template_look)
+    looks.apply(look)
+    return template_id, look, looks.brand_config(template_look, cfg.get("brand"))
+
+
+def write_sidecars(final: Path, cfg: dict, plan, fonts: list[str], brand, look_info: dict) -> Path:
     """timing.json (narrate.py) and plan.json (check-cut.py)."""
     items = []
     for n, item in enumerate(plan.items):
@@ -144,7 +186,7 @@ def write_sidecars(final: Path, cfg: dict, plan, fonts: list[str], brand) -> Pat
                "highlights": highlight_sidecar(plan, final.parent),
                "brand": {"accent": brand.accent, "sweep": list(brand.sweep), "highlight": brand.highlight,
                          "pill": brand.pill_text},
-               "fonts": fonts, "warnings": list(plan.warnings)}
+               "fonts": fonts, "warnings": list(plan.warnings), **look_info}
     final.with_suffix(".plan.json").write_text(json.dumps(sidecar, indent=2) + "\n")
     return timing
 
@@ -169,12 +211,19 @@ def main() -> None:
     cfg = lib.load_config(cfg_path, "demo", TOOL)
     demo_dir = cfg_path.parent
     rec = demo_dir / "recordings"
+    template_id, look, brand_cfg = resolve_look(cfg, demo_dir)
     try:
-        brand = load_brand(cfg.get("brand"))
+        brand = load_brand(brand_cfg)
         plan = build_plan(cfg, rec / "raw", probe)
     except PlanError as error:
         fail(f"{error}\nFix {cfg_path.name}, then run: python3 -I {Path(__file__).resolve()} {args.config}")
-    plan = dataclasses.replace(plan, warnings=plan.warnings + tuple(highlight_warnings(plan)))
+    extra = list(highlight_warnings(plan))
+    if look["transitions"]["cut"] != "inside-window":
+        extra.append(f"template transitions.cut is {look['transitions']['cut']!r}; this engine renders clips cut "
+                     "inside the window (W7), so the cut style is recorded but not drawn")
+    if look["end"]["kind"] == "none" and plan.cards and plan.cards[-1].kind == "end":
+        extra.append("template end.kind is \"none\" but demo.json ends on an end card; drop it or keep it on purpose")
+    plan = dataclasses.replace(plan, warnings=plan.warnings + tuple(extra))
     for warning in plan.warnings:
         print(f"WARN {warning}", flush=True)
     if args.strict and plan.warnings:
@@ -185,7 +234,7 @@ def main() -> None:
         lib.refuse_symlinks_under(rec / "exports", "recordings/exports")
     except lib.UnsafePath as error:
         fail(str(error))
-    bg_dir, overlays, windows, fonts = render_graphics(plan, brand, cfg, demo_dir, work)
+    bg_dir, overlays, windows, fonts, samples = render_graphics(plan, brand, cfg, demo_dir, work)
     final = rec / "exports" / f"{lib.slugify(cfg['title'])}-keynote-cut.mp4"
     intermediate = work / "composite.mkv"
     composite(plan, windows, work, bg_dir, overlays, intermediate)
@@ -194,7 +243,10 @@ def main() -> None:
         intermediate.unlink(missing_ok=True)
         for folder in ("seq-bg", "seq-under", "seq-over"):
             lib.safe_rmtree(work, work / folder, f".keynote/{folder}")
-    timing = write_sidecars(final, cfg, plan, fonts, brand)
+    look_info = {"look": look, "look_samples": {"background": samples}}
+    if template_id:
+        look_info["template"] = template_id
+    timing = write_sidecars(final, cfg, plan, fonts, brand, look_info)
     card_stills(final, plan, work)
     print(f"{final} ({lib.duration(final):.1f}s)\ntiming: {timing}\n"
           f"Next: narrate it (voice + music):  python3 -I {Path(__file__).resolve().parent / 'narrate.py'} "

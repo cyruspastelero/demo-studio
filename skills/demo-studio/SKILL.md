@@ -47,6 +47,8 @@ Expected last line: `All required checks passed.`
 | "send it to the editor", "wrap up" | Open skill `demo-handoff` |
 | "where are my demos", "what state is X in" | The home screen, Step 9 |
 | "organise my demos", "clean up", "tidy the folder" | Open skill `demo-organize` |
+| "copy the look of <video>", "make a template from <video>", "save this look as a template" | Open skill `demo-template` |
+| "use template <id>", "make it look like <template id>", "what looks are there" | Open skill `demo-template`, section "Use a template" |
 
 ## Try-it route: the todo sample (about 10 minutes, no login)
 
