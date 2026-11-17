@@ -4,6 +4,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import shutil
 import re
 import subprocess
 import tempfile
@@ -154,12 +155,20 @@ def render_say(line: Line, voice: Voice, cache_dir: Path) -> Path:
     if target.exists():
         return target
     cache_dir.mkdir(parents=True, exist_ok=True)
-    partial = target.with_name(f"{target.stem}.part.aiff")
-    cmd = ["say", "-r", str(voice.rate_wpm), "-o", partial]
-    if voice.say_voice:
-        cmd += ["-v", voice.say_voice]
-    lib.run([*cmd, line.text], "say")
-    os.replace(partial, target)
+    # The text goes in through a file (-f), never as an argument, so a line that starts with "-"
+    # cannot be read as an option. Both temp files live in a fresh private folder (mkdtemp).
+    work = Path(tempfile.mkdtemp(prefix=".say.", dir=cache_dir))
+    try:
+        text_file = work / "line.txt"
+        text_file.write_text(line.text)
+        partial = work / "line.aiff"
+        cmd = ["say", "-r", str(voice.rate_wpm), "-o", partial, "-f", text_file]
+        if voice.say_voice:
+            cmd += ["-v", voice.say_voice]
+        lib.run(cmd, "say")
+        os.replace(partial, target)
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
     return target
 
 

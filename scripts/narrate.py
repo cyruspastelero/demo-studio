@@ -189,6 +189,8 @@ def narrate(args: argparse.Namespace) -> int:
         check_voice_files(lines, files_dir)
     music = resolve_music(args.music, voice.music, demo_dir)
     lib.require("ffmpeg", "ffprobe")
+    for folder, what in ((rec / "voice-cache", "recordings/voice-cache"), (rec / "exports", "recordings/exports")):
+        lib.refuse_symlinks_under(folder, what)  # a planted link must not redirect a write
     ctx = Context(provider, voice, rec / "voice-cache", files_dir, args.dry_run, api_key)
     print(f"narrate: voice {provider}, {len(lines)} line(s), cut {total:.1f}s", flush=True)
 
@@ -215,11 +217,11 @@ def narrate(args: argparse.Namespace) -> int:
         print("narrate: no music bed. The quality bar wants one under the narration (A6); make a free one with\n"
               f"  python3 -I {SCRIPTS / 'make-bed.py'} {MUSIC_TARGET} --seconds {int(total) + 2}\n"
               f"  then set \"voice\": {{\"music\": \"{MUSIC_TARGET}\"}} in {args.config} and run again.", flush=True)
-    out.with_suffix(".voice.json").write_text(json.dumps({  # for check-cut.py: where narration is
+    write_atomic(out.with_suffix(".voice.json"), (json.dumps({  # for check-cut.py: where narration is
         "total": round(total, 3), "outro": outro,
         "dips": [{"at": a, "dur": d} for a, d in voice.music_dips],
         "lines": [{"start": round(x.line.start, 3), "end": round(x.line.start + x.seconds, 3)} for x in spoken]},
-        indent=2) + "\n")
+        indent=2) + "\n").encode())
     levels = ebur128(out)
     print(f"loudness: I {levels['I']:.1f} LUFS, true peak {levels['TP']:.1f} dBTP, LRA {levels['LRA']:.1f} LU", flush=True)
     for problem in loudness_report(levels):
