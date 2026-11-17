@@ -138,7 +138,7 @@ Then fill:
 
 | Setting | Default | Change when |
 | --- | --- | --- |
-| `cursor` | `'dot'` | Never for a bar cut: the blue disc with a white ring is the quality-bar cursor (K1); `'arrow'`/`'hand'` only if the user asks |
+| `cursor` | `'hand'` | `'arrow'` for developer tools and terminals. Never a dot (reads as a screen recorder) |
 | `maskPatterns` | `[]` | The product has its own token prefix (`'\\bwf_(live|test)_\\w{16,}'`) |
 | `maskLabels` | `[]` | A secret sits next to a label like "Ingest key" |
 | `clutter` | `[]` | Any banner or toast shows. Use its full wording, never a short word |
@@ -189,7 +189,7 @@ the plan first.
 - [ ] RUN-SHEET.md has the exact typed text for every beat
 - [ ] VOICEOVER.md has every line with a word count
 - [ ] demo.json validates (`ok`) with crop, callouts, zooms, highlights, accents, voice and music;
-      `_project.js` has the masks, clutter and `cursor: 'dot'`
+      `_project.js` has the masks, clutter and `cursor: 'hand'`
 - [ ] Every PREP.md box is ticked
 - [ ] The test sweep table has `pass` on every row
 - [ ] The scene table was posted as a progress note (not a question)

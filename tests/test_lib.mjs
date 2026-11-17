@@ -68,10 +68,10 @@ await test('a scout target that is not visible stops with its name', async () =>
   await assert.rejects(scoutRects({}, { missing: { boundingBox: async () => null } }), /missing is not visible/);
 });
 
-await test('the default cursor is the quality-bar dot', async () => {
+await test('the default cursor is the pointing hand, never a dot', async () => {
   const { CURSOR_STYLE } = await loadLib({});
-  assert.equal(CURSOR_STYLE, 'dot');
-  assert.match(SOURCE, /background: '#8FAFF5', border: '2px solid #FFFFFF', boxShadow: '0 0 0 1px #A9ABAD'/);
+  assert.equal(CURSOR_STYLE, 'hand');
+  assert.doesNotMatch(SOURCE, /#8FAFF5|ripple/);
 });
 
 console.log(`\nlib tests passed (${passed})`);

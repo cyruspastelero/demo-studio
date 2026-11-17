@@ -206,7 +206,7 @@ It only reads files. Stop it when the session ends. If it fails with a missing m
 | Viewport | 1440x810 CSS, DPR 2 (2880x1620 capture) |
 | Raw takes | 1920x1080, 30fps constant, H.264 CRF 14 `-preset slow`, lanczos, silent |
 | Take handles | 1 to 1.5s still at start, 2 to 3s hold at end |
-| Pointer | `PROJECT.cursor = 'dot'`: blue disc, white ring, click ripple (bar K1) |
+| Pointer | `PROJECT.cursor = 'hand'`: a pointing hand (`'arrow'` for developer tools); never a dot |
 | Pointer motion | eased glides on a slight arc, 300 to 600ms pause before clicks, park after |
 | Typing | 45 to 75ms per key; paste anything longer than about 2 lines |
 | Look of the cut | `$P/docs/quality-bar.md`: pastel background, 1560x800 window cropped to the UI, rise-in, Inter titles with one accent word |

@@ -69,8 +69,8 @@ python3 -I "$P/scripts/check-cut.py" recordings/exports/todo-app-sample-keynote-
 - The app is small in a 1440 wide page. The raw takes are left unzoomed; `demo.json` crops the
   window to the list (`crop: [540, 150, 840, 430]`, so body text lands near 40 px cap height) and
   zooms the whole window to 1.15x on the second tick and on Clear completed, each with a highlight box.
-- The shipped takes were recorded with the old arrow cursor, so a cut made from them fails the
-  bar's cursor item (K1). Re-recording uses the bar's blue disc (`cursor: 'dot'` in `_project.js`).
+- The shipped takes were recorded with the arrow cursor. Re-recording uses the pointing hand
+  (`cursor: 'hand'` in `_project.js`), the house default.
 - While the list is short (scene 01 before the first todo, scene 03 after Clear completed) the
   window shows a lot of empty page, which the bar's W2 item flags. A tighter crop would cut the
   list once it grows; the honest fix is to start scene 01 with one todo already there.

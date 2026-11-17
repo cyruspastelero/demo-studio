@@ -108,10 +108,10 @@ A finished cut opens directly on a title, with no black frame. It sits on a soft
 
 | # | Property | Bar |
 |---|---|---|
-| K1 | Style | A synthetic cursor drawn into the footage: a **24 px disc `#8FAFF5`**, a 2 px white ring and a 1 px `#A9ABAD` hairline, about 30 px overall at rest. It scales with the window. |
-| K2 | Never | The OS arrow or hand pointer captured from the screen |
+| K1 | Style | A synthetic cursor drawn into the footage that scales with the window: the **pointing hand** (fingertip hotspot, white with a dark outline and a soft shadow) by default, the arrow for developer tools. House choice; the reference's blue disc is deliberately not copied. |
+| K2 | Never | A dot or click circle (reads as a screen recorder), or a missing cursor during clicks |
 | K3 | Motion | Smooth eased travel between targets with no jitter, and the cursor rests on the element being discussed |
-| K4 | Click feedback | Not measurable in the reference render. Recommended: press scale 0.86 for 0.16 s, plus a ring growing to 60 px (2 px `rgba(255,255,255,0.85)`) that fades over 0.50 s |
+| K4 | Click feedback | A slight press (scale 0.86 for about 0.12 s); no ripple ring |
 
 ### 2.9 Opening, cast card, section card
 
@@ -171,7 +171,7 @@ Measured the same way on an earlier sample cut (37.5 s), built by `scripts/build
 | Title cards | Static PNG, SF 600 112 to 124 px, 3% push-in, no word reveal, no accent word | Inter 500 132 px, per-word blur reveal, settle, one accent word | Static and generic |
 | Opening | 3.0 s static card; first UI at 3.0 s after a blank dip | Animated hero + subtitle (+ cast card); first UI ≤ 6 s | No motion and no "who" |
 | Outro | Static 3.6 s card with a URL | Timed end card, gradient sweep, logo animation on dark, ≈ 13 s tail | No closing beat |
-| Cursor | Captured OS hand pointer at 0.83x | 24 px blue disc + white ring, scales with window | Looks like a raw screen grab |
+| Cursor | Drawn pointing hand at 0.83x | Drawn pointing hand, scales with window, never a dot | Small at 0.83x |
 | Pacing | 2 scenes of 8.3 s and 22.6 s, single shots with scroll | 2 to 6 s shots, ≤ 8 s uninterrupted, zoom about every 11 s | Far too long per shot |
 | Encode | 1.79 Mbps; colour **untagged**; irregular GOP (keyframes up to 8.3 s apart); B-frames | ≥ 3.5 Mbps, BT.709 tagged, 2 s GOP | Under spec |
 | Faststart | Yes (`moov` at 36) | Yes | Already beats the reference |
@@ -220,7 +220,7 @@ Run these on any new render. Each line is pass/fail. Frame grabs: `ffmpeg -ss <t
 - [ ] Pill text cap height is 22 ±2 px (30 px Inter 500).
 
 **Cursor**
-- [ ] No OS arrow or hand pointer appears in any frame; the cursor is the 24 px blue disc with a white ring.
+- [ ] The cursor is the drawn pointing hand (or the arrow for developer tools); no dot or click circle appears.
 
 **Ending**
 - [ ] The end card reveals title words in step with narration (each word visible ≤ 0.2 s before it is spoken).

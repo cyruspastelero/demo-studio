@@ -56,10 +56,9 @@ reveal; sandbox accounts only; list everything created on camera in THROWAWAYS.m
 ## Making it look human
 
 - Always `glide()` the pointer to a target, pause about 300-600ms, then `tap()`. Never teleport-click.
-- **The cursor is the quality-bar disc** (`PROJECT.cursor = 'dot'`, the default): a soft blue
-  `#8FAFF5` disc with a white ring and a click ripple, measured from the reference cut. An arrow
-  captured in the footage reads as a raw screen grab and cannot be changed in the edit, so set the
-  cursor before the first take.
+- **The cursor is a pointing hand** (`PROJECT.cursor = 'hand'`, the default; `'arrow'` for developer
+  tools). A dot or click circle reads as a screen recorder, not a person. The cursor is drawn into
+  the footage and cannot be changed in the edit, so set it before the first take.
 - **Moves are eased on a slight arc** by `moveHuman` (used by `glide`, `click` and `park`). A straight
   constant-speed `p.mouse.move(..., { steps })` looks robotic, so do not call it on camera. Use
   `placeCursor(p)` to put the pointer at its resting spot before `record()` starts.

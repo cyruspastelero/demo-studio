@@ -21,7 +21,7 @@ First open-source release.
 - Home screen: `npm run studio` with no folder opens a page with one card per demo (stages, what
   needs attention, videos, documents, the next thing to ask Claude), and a first-run guide.
 - The default cursor is now the normal arrow, moved with easing on a slight arc (`moveHuman`,
-  `placeCursor`). The blue dot remains as `PROJECT.cursor = 'dot'`.
+  `placeCursor`).
 - CI on GitHub Actions; contributing guide moved to the repo root; SECURITY.md and issue templates added.
 - Free narration: `scripts/narrate.py` adds the voiceover lines in `demo.json` to the keynote cut,
   with macOS `say`, your own recordings or (optional) ElevenLabs, an optional ducked music bed and

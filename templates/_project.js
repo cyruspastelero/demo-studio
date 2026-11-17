@@ -1,8 +1,8 @@
 // Project-specific settings, inlined before lib.js in every scene.
 const PROJECT = {
-  // 'dot' (default): the quality-bar cursor, a soft blue disc with a white ring and a click ripple
-  // (docs/quality-bar.md K1). 'arrow' or 'hand' only on request; they do not meet the bar.
-  cursor: 'dot',
+  // 'hand' (default): a pointing hand drawn into the page. 'arrow' for developer tools.
+  // Never a dot: it reads as a screen recorder.
+  cursor: 'hand',
   // Extra secret patterns (regex sources) and labels whose neighbouring value gets blurred
   maskPatterns: [],
   maskLabels: [],

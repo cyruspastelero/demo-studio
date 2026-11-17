@@ -40,11 +40,10 @@ The frame shows the product and nothing else.
 
 ## 3. Pointer
 
-- **The quality-bar cursor by default** (K1, K4): `PROJECT.cursor = 'dot'`, a soft blue `#8FAFF5`
-  disc with a 2 px white ring and a 1 px `#A9ABAD` hairline, about 24 px in the cut; it presses to
-  0.86 for 0.16 s and sends out a white ring that grows to 60 px and fades in 0.5 s. It is drawn
-  into the page at record time, so it scales with the window in the edit. Never the OS arrow or
-  hand (K2); `'arrow'` and `'hand'` exist only for a user who asks for them.
+- **A pointing hand by default** (K1): `PROJECT.cursor = 'hand'`, drawn into the page at record
+  time (fingertip is the hotspot), so it scales with the window in the edit and presses slightly
+  on click. Use `'arrow'` for developer tools and terminals. Never a dot or a click circle: they
+  read as a screen recorder, not a person.
 - **Glide, never teleport.** `glide`, `click` and `park` move on a slight eased arc (`moveHuman`).
   Never call `p.mouse.move(..., { steps })` on camera; constant speed looks robotic.
 - **Pause before every click,** 300 to 600ms. `click()` waits 350ms; add a `sleep` when the viewer
@@ -174,7 +173,7 @@ The frame shows the product and nothing else.
 | Do | Don't |
 | --- | --- |
 | Record at 1440x810, DPR 2 | Record at 1920 wide, or zoom the page |
-| The blue disc cursor, eased arcs, pause, then click | Teleport clicks, constant-speed moves, an OS arrow |
+| The pointing hand, eased arcs, pause, then click | Teleport clicks, constant-speed moves, a dot or click circle |
 | Park the pointer after every action | Leave the pointer on the text being read |
 | Type short text, paste long text | Type a whole config file on camera |
 | Wait on real UI signals, trim waits in the edit | Fixed sleeps, or cutting the take short |

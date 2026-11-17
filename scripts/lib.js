@@ -147,44 +147,28 @@ async function park(p, x = W * 0.62, y = H * 0.4) { await moveHuman(p, x, y, 25)
 async function placeCursor(p, x = W * 0.62, y = H * 0.4) { await p.mouse.move(x, y); ctx._mouse = { x, y }; }
 
 // Visible cursor (headless screencasts have no OS cursor). PROJECT.cursor:
-//   'dot'   (default) the quality-bar cursor (docs/quality-bar.md K1, K4): a soft blue #8FAFF5 disc
-//           with a 2 px white ring and a 1 px #A9ABAD hairline, 21 CSS px, which lands at about 24 px
-//           (30 px overall) in the cut, since the window shows UI at about 1.15x its CSS size. It presses
-//           to 0.86 for 0.16 s on click and sends out a white ring that grows to 60 px and fades in 0.5 s.
-//   'arrow' a macOS-style arrow, tip is the hotspot (not the bar: it reads as a raw screen grab)
-//   'hand'  a pointing hand whose fingertip is the hotspot (not the bar)
-const CURSOR_STYLE = PROJECT.cursor || 'dot';
+//   'hand'  (default) a pointing hand whose fingertip is the hotspot: reads as a person clicking
+//   'arrow' a macOS-style arrow, tip is the hotspot, for developer tools and terminals
+// Never a dot or click circle: those read as a screen recorder, not a person.
+const CURSOR_STYLE = PROJECT.cursor === 'arrow' ? 'arrow' : 'hand';
 const CURSOR_FN = style => {
   if (document.getElementById('demo-cursor')) return;
   const c = document.createElement('div'); c.id = 'demo-cursor';
   const base = { position: 'fixed', left: '-60px', top: '-60px', zIndex: 2147483647, pointerEvents: 'none', transition: 'transform 120ms ease' };
   let down = 'scale(1.8)';
-  if (style === 'hand') {
-    c.innerHTML = '<svg width="34" height="39" viewBox="0 0 24 28" xmlns="http://www.w3.org/2000/svg"><path d="M8.5 13V3a1.5 1.5 0 0 1 3 0v8.5v-1a1.5 1.5 0 0 1 3 0V12v-.5a1.5 1.5 0 0 1 3 0v1a1.5 1.5 0 0 1 3 0V19c0 3-2 6-5 6h-4.5c-2 0-3-1-4-2.5L3.8 17.8a1.4 1.4 0 0 1 2-2L8.5 18Z" fill="#fff" stroke="#111" stroke-width="1.1" stroke-linejoin="round"/><path d="M11.5 15.5v4M14.5 15.5v4M17.5 15.5v4" stroke="#111" stroke-width="0.9" stroke-linecap="round"/></svg>';
-    Object.assign(c.style, base, { width: '34px', height: '39px', marginLeft: '-14.2px', marginTop: '-2.2px', transformOrigin: '14.2px 2.2px', filter: 'drop-shadow(0 1px 1.5px rgba(0,0,0,0.35))' });
-    down = 'scale(0.86)';
-  } else if (style === 'arrow') {
+  if (style === 'arrow') {
     // macOS arrow proportions; the tip sits 1.5 units (1.8px) inside the box and is the hotspot.
     c.innerHTML = '<svg width="19" height="27" viewBox="0 0 16 23" xmlns="http://www.w3.org/2000/svg"><path transform="translate(1.5 1.5)" d="M0 0V16.5L4 12.7L6.6 18.9L9.2 17.8L6.6 11.7H12Z" fill="#000" stroke="#fff" stroke-width="1.1" stroke-linejoin="round"/></svg>';
     Object.assign(c.style, base, { width: '19px', height: '27px', marginLeft: '-1.8px', marginTop: '-1.8px', transformOrigin: '1.8px 1.8px', filter: 'drop-shadow(0 1px 1.5px rgba(0,0,0,0.3))' });
     down = 'scale(0.92)';
   } else {
-    // K1: disc + white ring + hairline; the hotspot is the centre.
-    Object.assign(c.style, base, { width: '21px', height: '21px', marginLeft: '-12.5px', marginTop: '-12.5px', borderRadius: '50%', background: '#8FAFF5', border: '2px solid #FFFFFF', boxShadow: '0 0 0 1px #A9ABAD', transition: 'transform 160ms ease-out' });
+    c.innerHTML = '<svg width="34" height="39" viewBox="0 0 24 28" xmlns="http://www.w3.org/2000/svg"><path d="M8.5 13V3a1.5 1.5 0 0 1 3 0v8.5v-1a1.5 1.5 0 0 1 3 0V12v-.5a1.5 1.5 0 0 1 3 0v1a1.5 1.5 0 0 1 3 0V19c0 3-2 6-5 6h-4.5c-2 0-3-1-4-2.5L3.8 17.8a1.4 1.4 0 0 1 2-2L8.5 18Z" fill="#fff" stroke="#111" stroke-width="1.1" stroke-linejoin="round"/><path d="M11.5 15.5v4M14.5 15.5v4M17.5 15.5v4" stroke="#111" stroke-width="0.9" stroke-linecap="round"/></svg>';
+    Object.assign(c.style, base, { width: '34px', height: '39px', marginLeft: '-14.2px', marginTop: '-2.2px', transformOrigin: '14.2px 2.2px', filter: 'drop-shadow(0 1px 1.5px rgba(0,0,0,0.35))' });
     down = 'scale(0.86)';
   }
   document.body.appendChild(c);
-  // K4: a ring that grows to 60 px and fades over 0.5 s on each click (dot style only).
-  const ripple = (x, y) => {
-    if (style !== 'dot' && style) return;
-    const r = document.createElement('div');
-    Object.assign(r.style, { position: 'fixed', left: x + 'px', top: y + 'px', width: '52px', height: '52px', marginLeft: '-26px', marginTop: '-26px', borderRadius: '50%', border: '2px solid rgba(255,255,255,0.85)', boxShadow: '0 0 0 1px rgba(169,171,173,0.5)', zIndex: 2147483646, pointerEvents: 'none', transform: 'scale(0.45)', opacity: '1', transition: 'transform 500ms cubic-bezier(0.33,1,0.68,1), opacity 500ms linear' });
-    document.body.appendChild(r);
-    requestAnimationFrame(() => { r.style.transform = 'scale(1)'; r.style.opacity = '0'; });
-    setTimeout(() => r.remove(), 600);
-  };
   document.addEventListener('mousemove', e => { c.style.left = e.clientX + 'px'; c.style.top = e.clientY + 'px'; }, true);
-  document.addEventListener('mousedown', e => { c.style.transform = down; ripple(e.clientX, e.clientY); }, true);
+  document.addEventListener('mousedown', e => { c.style.transform = down; }, true);
   document.addEventListener('mouseup', () => { c.style.transform = 'scale(1)'; }, true);
 };
 
