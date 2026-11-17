@@ -22,12 +22,13 @@ or create something that cannot be deleted.
 
 ## Sample videos
 
-Both were recorded from the real app and cut with the plugin's scripts. Click a preview for the full 1080p video.
+Both were recorded from the real app and finished entirely by the plugin: crops, zooms, highlights,
+callouts, titles, ElevenLabs narration and music. Click a preview for the full 1080p video with sound.
 
-| Story mode in a study app (37s) | Todo app sample (27s) |
+| Study app showcase (1:18) | Todo app sample (0:37) |
 | --- | --- |
-| [![Story mode demo](docs/img/sample-story-mode.gif)](https://github.com/Cyvid7-Darus10/demo-studio/releases/download/v0.2.0/sample-story-mode.mp4) | [![Todo app demo](docs/img/sample-todo.gif)](https://github.com/Cyvid7-Darus10/demo-studio/releases/download/v0.2.0/sample-todo.mp4) |
-| A live web app with a seeded demo learner: search, a highlighted story, a quick check. Pointing-hand cursor, zooms, captions, end card. | A public todo app ([TodoMVC](https://todomvc.com)), three scenes, no login. Its plan, scene scripts and configs are in [examples/todo-sample](examples/todo-sample), so you can record it yourself. |
+| [![Study app showcase](docs/img/sample-showcase.gif)](https://github.com/Cyvid7-Darus10/demo-studio/releases/download/samples/sample-showcase.mp4) | [![Todo app sample](docs/img/sample-todo.gif)](https://github.com/Cyvid7-Darus10/demo-studio/releases/download/samples/sample-todo.mp4) |
+| A live web app with a seeded demo learner: dashboard, weak topics, a question with its explanation, a story, a scenario and readiness. Highlights take the product's own colour. | A public todo app ([TodoMVC](https://todomvc.com)), three scenes, no login. Its plan, scene scripts, takes and configs are in [examples/todo-sample](examples/todo-sample), so you can rebuild it yourself. |
 
 ## Quick start
 

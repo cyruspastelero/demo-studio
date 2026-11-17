@@ -21,7 +21,7 @@
       ],
       "highlights": [
         { "rect": [673, 366, 268, 32], "dur": 2.4 },
-        { "rect": [1164, 515, 143, 26], "dur": 3.3 }
+        { "rect": [1164, 515, 143, 26], "dur": 1.5 }
       ],
       "voiceover": "Tick things off as you finish them. The filters show what is still active, and what is already done." },
     { "scene": "03", "stem": "03-clear-completed", "take": 1, "trim": [0.0, 5.4], "speed": 1,
