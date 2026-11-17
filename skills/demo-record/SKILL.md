@@ -16,6 +16,51 @@ P="${CLAUDE_PLUGIN_ROOT:-$(ls -d ~/.claude/plugins/cache/*/demo-studio/*/ | tail
 
 `<cwd>` below means the folder Claude Code was started in. `<demo>` is the demo folder.
 
+Do not ask the user anything in this skill except the stop cases in skill `demo-studio` (a login,
+2FA code or captcha; something that cannot be deleted; something that costs money; deleting data
+you did not create). Fix and re-shoot on your own.
+
+## Step 0: log in (off camera, before any take)
+
+Recording only happens inside a scene's `record()` call, so a login done now is never filmed.
+Never put a login, a password field or a 2FA screen inside a scene.
+
+**Way A (the user logs in):** call `browser_navigate` with the login URL, ask the user to log in in
+the Playwright MCP Chrome window, wait for "done", then go to step 6 below.
+
+**Way B (the user handed you demo credentials):**
+
+1. Confirm skill `demo-studio` Step 3b passed (a sandbox or test account). If not, stop.
+2. Read the password from Keychain (macOS):
+   ```bash
+   security find-generic-password -s demo-<name> -a '<login email>' -w
+   ```
+   Expected: one line, the password. Use it only in the next step. Never repeat it in a message.
+
+   | If you see | Do this |
+   | --- | --- |
+   | `The specified item could not be found in the keychain.` | Use the password from this chat if the user pasted one; otherwise ask them to run `security add-generic-password -s demo-<name> -a '<login email>' -w` in their own Terminal window |
+   | `security: command not found` (not macOS) | Use the password from this chat. Never write it to a file unless the user asked for `<demo>/app/.env` |
+
+3. Call `browser_navigate` with the login URL, then `browser_snapshot` to find the fields.
+4. Fill the form with `browser_fill_form` (or `browser_type` per field): the login email, then the
+   password, then click the sign-in button with `browser_click`.
+5. Handle what comes next:
+
+   | The page shows | Do this |
+   | --- | --- |
+   | The app (dashboard, home) | Go to step 6 |
+   | A 2FA code prompt | Ask the user now: "The site wants a 2FA code. Please send me the code." Type it straight away with `browser_type`. Never store it |
+   | An "approve on your phone" prompt | Ask the user to approve it, then `browser_snapshot` again |
+   | A captcha | Ask the user to solve it in the Playwright window and say done |
+   | "Wrong password" or similar | Stop. Tell the user the login failed, without showing the password, and ask them to check it |
+
+6. Call `browser_snapshot`. Done when it shows the logged-in app, not a login page.
+
+**Session expired later** (a scene lands on a login page): stop that take, reject it in
+`takes.csv`, log in again with this Step 0 (way B logs in again without asking; way A asks the
+user), run Step 1 steps 3 and 4 again, then re-shoot the scene.
+
 ## Step 1: rig (once per browser session)
 
 1. Check disk: `df -h .` must show 10 GB or more free.
@@ -37,15 +82,16 @@ P="${CLAUDE_PLUGIN_ROOT:-$(ls -d ~/.claude/plugins/cache/*/demo-studio/*/ | tail
 | If the result shows | Do this |
 | --- | --- |
 | every tab `landed` on the right page, `dpr: 2` | Go on |
-| a tab landed on a login page | Ask the user to log in **in the Playwright MCP browser**, then repeat step 4 |
+| a tab landed on a login page | Do Step 0 again (way B: log in yourself; way A: ask the user to log in **in the Playwright MCP browser**), then repeat step 4 |
 | `no browser handle` | The MCP runs a persistent context. Ask the user to restart it with `--isolated` |
 | `filename` refused | `PLAYWRIGHT_MCP_OUT` is not `<cwd>/.playwright-mcp`. Fix it and repeat step 3 |
 
 Repeat steps 3 and 4 whenever the MCP browser restarts.
 
 **Two people in two windows:** instead of steps 3 and 4, run
-`bash "$P/scripts/open-window.sh" <name> <port> <url>` once per person, ask the user to log in in
-each window, and list them under `windows` in `<demo>/demo.json`. Record with `rec.mjs` (Step 2.3).
+`bash "$P/scripts/open-window.sh" <name> <port> <url>` once per person, log in to each window
+(way A: the user does it; way B: you do it, one Keychain item per person, `demo-<name>-<person>`),
+and list them under `windows` in `<demo>/demo.json`. Record with `rec.mjs` (Step 2.3).
 
 ## Step 2: shoot one scene (repeat per scene, in SHOT-LIST.md order)
 
@@ -76,7 +122,7 @@ each window, and list them under `windows` in `<demo>/demo.json`. Record with `r
    | If the run returns | Do this |
    | --- | --- |
    | `{ frames: N, ... }` with N above 0 | Go to step 4 (a still page sends few frames; that is fine) |
-   | `expected <url>, on <other url>` | Redirected, often to a login. Ask the user to log in, re-run setup |
+   | `expected <url>, on <other url>` | Redirected, often to a login. Reject the take, do Step 0 again, re-run setup, re-shoot |
    | `bad viewport` | Add `await prep(p)` right before `record()` |
    | `frame receiver refused start` | Disk under 4 GB or the receiver stopped. Check `df -h`, restart it |
    | a locator timeout | The label differs. Scout again and fix the `// CHANGE:` line |
@@ -119,5 +165,7 @@ frames until the take is approved; re-encodes are cheap, re-shoots are not.
 - [ ] Every scene in SHOT-LIST.md has exactly one `keep` row in `recordings/takes.csv`
 - [ ] No row is still `new`
 - [ ] Every secret-bearing take was checked frame by frame
+- [ ] No take shows a login form, a password field or a 2FA screen
+- [ ] No password appears in any file in `<demo>` (only a gitignored `app/.env` the user asked for)
 - [ ] THROWAWAYS.md lists everything created on camera
 - [ ] Next: skill `demo-edit`, Step 1 (review reel)

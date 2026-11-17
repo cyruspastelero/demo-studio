@@ -1,6 +1,6 @@
 ---
 name: demo-studio
-description: Make a product demo video end to end. Turns a goal or a client brief into a plan (story arc, run sheet, shot list, voiceover draft, prep checklist), records crisp 1080p browser takes with Playwright MCP and masked secrets, builds a review reel, a keynote-style cut with free narration, a promo cut and a how-to cut, optional 4:5 and 9:16 social versions, and an editor handoff zip. Use when someone asks to "make a demo of X", record or film a product walkthrough, produce demo footage, hand demo videos to an editor, or just wants to try demo-studio.
+description: Make a product demo video end to end, hands off. The user logs in or hands over demo credentials once, then it runs without further questions. Turns a goal or a client brief into a plan (story arc, run sheet, shot list, voiceover draft, prep checklist), records crisp 1080p browser takes with Playwright MCP and masked secrets, builds a review reel, a keynote-style cut with free narration, a promo cut and a how-to cut, optional 4:5 and 9:16 social versions, and an editor handoff zip. Use when someone asks to "make a demo of X", record or film a product walkthrough, produce demo footage, hand demo videos to an editor, or just wants to try demo-studio.
 ---
 
 # Demo studio
@@ -34,7 +34,7 @@ Expected last line: `All required checks passed.`
 | --- | --- |
 | `FAIL ... fix: <command>` | Show the user that exact fix command. Stop until they run it, then run doctor.sh again |
 | `FAIL playwright-core not installed` | Run `npm install --prefix "$P"` yourself, then doctor.sh again |
-| `warn` lines only | Fine. They are optional extras (Cardboard, drawtext, say, ElevenLabs) |
+| `warn` lines only | Fine. They are optional extras (drawtext, say, ElevenLabs) |
 
 ## Step 2: pick the route
 
@@ -68,42 +68,110 @@ Done when: the narrated cut plays and the user has seen it.
 
 ## Full route
 
-### Step 3: ask once
+The promise to the user: **they log in, or hand over demo credentials, and you do the rest.**
+After Stage 0 you run every stage to the end without asking anything, then show the results.
 
-Ask only what you cannot find out yourself, in **one message**:
-
-- which accounts to use (sandbox or test only), and whether they are logged in in the Playwright
-  MCP browser (or which windows to open for a two-person demo)
-- the brief, if someone sent one, and who the audience is
-- which videos they want (default: keynote cut with narration; promo and how-to if an editor is involved)
-- whether things created on camera may be created for real and deleted afterwards (default yes)
-
-Never ask about resolution, pacing, cursor, zoom or style. `$P/references/style-guide.md` is the answer.
 If the folder has an `AGENTS.md` (the starter kit's playbook), read it first. It wins over this file.
 
-### Step 4: plan (skill `demo-plan`)
+### Step 3 (Stage 0): access and the one intake message
 
-Done when: BRIEF.md, SHOT-LIST.md, RUN-SHEET.md, VOICEOVER.md, PREP.md and demo.json are filled,
-the claims list maps every claim to a scene, and the user has seen the scene table.
+**3a. Ask once, only for what is missing.** If the user's first message already has it, skip it.
+Send one message with only the missing items:
 
-### Step 5: prep and test sweep (skill `demo-plan`, steps 7 and 9)
+- the product URL and the goal (what the viewer should see happen)
+- the brief, if someone sent one, and who the audience is (default: people who might buy it)
+- how you get in: "Log in yourself in the Playwright browser" (way A) or "give me demo
+  credentials" (way B). Say that sandbox or test accounts only are used.
 
-Done when: every box in PREP.md is ticked and the test sweep table in the demo's README.md has
-`pass` on every row.
+Never ask about resolution, pacing, cursor, zoom, style, which videos or whether to create test
+data. The defaults below and `$P/references/style-guide.md` answer those. Default videos: review
+reel, keynote cut, narrated cut. Add promo, how-to and the editor zip if an editor is mentioned.
 
-### Step 6: record (skill `demo-record`)
+**3b. Check the account is safe to film.**
 
-Done when: every scene in SHOT-LIST.md has exactly one `keep` row in `recordings/takes.csv`, no row
-is still `new`, and THROWAWAYS.md lists everything created on camera.
+| What you see | Do this |
+| --- | --- |
+| Host or account says sandbox, test, demo, staging or dev, or the user said it is a test account | Go on |
+| A production app, and you cannot tell whether the account holds real customer data | Ask once: "Is this a test account with no real customer data? I only film test accounts." Go on only after a clear yes |
+| The user says it is a real account with real customers | Do not log in. Ask for a sandbox or test account instead |
 
-### Step 7: review and edit (skill `demo-edit`)
+**3c. Way A: the user logs in themselves.**
 
-Done when: the user has seen `recordings/exports/review-reel.mp4`, and the cuts they asked for
-exist in `recordings/exports/`. **Stop here if the user asked only for raw footage.**
+1. Call the Playwright MCP tool `browser_navigate` with the product's login URL.
+2. Tell the user: "Please log in to <url> in the Chrome window the Playwright MCP just opened (not
+   your everyday Chrome). Say done when you see the app."
+3. When they say done, call `browser_snapshot`. If it still shows a login form, ask again once.
+4. Go to 3e.
 
-### Step 8: handoff and wrap-up (skill `demo-handoff`)
+**3d. Way B: the user hands you demo credentials.** You log in; nothing is written to a file.
 
-Done when: the wrap-up checklist in demo-handoff is fully ticked.
+1. Best: the user stores the password in macOS Keychain themselves, so it never appears in chat.
+   Give them this line to run in their own Terminal window (`-w` last makes it prompt for the
+   password without echoing it), and wait for "done":
+   ```bash
+   security add-generic-password -s demo-<name> -a '<login email>' -w
+   ```
+   If they already pasted the password in chat, store it for re-logins yourself and tell them you
+   did (macOS only; elsewhere keep it only in this conversation):
+   ```bash
+   security add-generic-password -U -s demo-<name> -a '<login email>' -w '<password>'
+   ```
+2. Log in now, off camera. Follow skill `demo-record`, Step 0 (it reads the Keychain item, fills
+   the form and handles 2FA).
+3. Never repeat the password in a message, a file, a scene script, `takes.csv`, a commit or a log
+   line. Refer to it as "the password in Keychain item demo-<name>".
+4. Write the password to a file only if the user explicitly asks for one, and then only to
+   `<demo>/app/.env`, after checking it is ignored:
+   `git -C <demo> check-ignore -q app/.env && echo ignored` (expected `ignored`, or no git repo).
+5. 2FA: when the site asks for a code, ask the user for it at that moment ("The site wants a 2FA
+   code. Please send me the code from your authenticator."). Type it straight away. Never store it.
+
+**3e. Done when:** `browser_snapshot` shows the logged-in app, not a login page, and the demo's
+README.md says which way was used and the login email (never the password).
+
+### Steps 4 to 8: run every stage without stopping
+
+**Do not ask between stages. Show results at the end. The user can interrupt at any time.**
+Make the sensible choice yourself, write it down in the demo's README.md under "Decisions", and
+keep going. Do not wait for a reply after posting a progress note.
+
+Stop and ask **only** in these cases:
+
+| Situation | What to say |
+| --- | --- |
+| A login, captcha or 2FA code is needed, or the session expired and no Keychain item exists | Exactly what to click or which code to send |
+| A step would create something that cannot be deleted (an email to a real address, a public post, a real invoice, a published page) | What it creates and where; offer a deletable alternative |
+| A step costs money (a real payment, a paid plan, a paid API you have not been told to use) | What it costs and why it is needed |
+| A step deletes data you did not create (records not in THROWAWAYS.md, the user's files, raw takes, finished videos) | What would be deleted |
+
+Everything else is your call: fix a broken scene, re-shoot, re-seed, trim, re-time, cut a claim
+that the footage cannot prove. If the user asked for review gates ("check with me after the plan",
+"show me the reel before you edit"), stop at exactly those points and nowhere else.
+
+| Step | Stage | Skill | Done when |
+| --- | --- | --- | --- |
+| 4 | Plan | `demo-plan` Steps 1 to 8 | BRIEF, SHOT-LIST, RUN-SHEET, VOICEOVER, PREP and demo.json filled; every claim maps to a scene |
+| 5 | Prep and test sweep | `demo-plan` Steps 7 and 9 | Every PREP.md box ticked; the test sweep table in README.md has `pass` on every row |
+| 6 | Record and QA | `demo-record` | One `keep` row per scene in `recordings/takes.csv`, none `new`; THROWAWAYS.md lists everything created |
+| 7 | Review reel and cuts | `demo-edit` Steps 1 to 3 (4 and 5 if asked) | `review-reel.mp4` and every cut asked for exist in `recordings/exports/`. **Stop here if the user asked only for raw footage** |
+| 8 | Handoff and wrap-up | `demo-handoff` | Its wrap-up checklist is ticked, except boxes that need the user's go-ahead |
+
+Build the review reel first and check it yourself on a contact sheet. Do not wait for the user to
+watch it; it goes in the final report.
+
+### Step 8b: the final report (one message)
+
+1. Open the main video for the user: `open <demo>/recordings/exports/*-keynote-cut-narrated.mp4`
+   (if there is no narrated cut, the `*-keynote-cut.mp4`).
+2. Post:
+   - the path of every video made, review reel first
+   - the scene table with one line per scene
+   - the decisions you made on your own (from README.md "Decisions")
+   - anything that failed or was cut, and why
+   - what is still open, with the exact words to say: "Say clean up and I will delete the N
+     throwaways in THROWAWAYS.md and the frames in `recordings/frames/` (about X GB)."
+   - if you used way B: "Your demo password is in Keychain as demo-<name>. To remove it:
+     `security delete-generic-password -s demo-<name>`."
 
 ## Step 9: the home screen (any time)
 
@@ -136,14 +204,18 @@ It only reads files. Stop it when the session ends. If it fails with a missing m
 | Social | 4:5 1080x1350 and 9:16 1080x1920, blurred footage background, caption band |
 | Demo folder | `$DEMO_ROOT/<name>`, default `./demos/<name>` |
 | Accounts | sandbox or test only, a dedicated seeded demo user |
+| Login | way A (user logs in) unless they hand over credentials; always before recording, never on camera |
+| Questions | none after Stage 0, except the four stop cases in Steps 4 to 8 |
+| Review reel | shown in the final report, not a gate, unless the user asked for review gates |
+| Things created on camera | created for real, listed in THROWAWAYS.md, deleted when the user says clean up |
 | Footage | real screen recordings only, no AI-generated clips or imagery |
-| Finishing | free path (`build-keynote.py`, `narrate.py`); Cardboard only if the user asks |
+| Finishing | free path (`build-keynote.py`, `narrate.py`) |
 
 ## Where things are
 
 | What | Path |
 | --- | --- |
-| Stage skills | `demo-plan`, `demo-record`, `demo-edit`, `demo-handoff`; `demo-cardboard` (optional) |
+| Stage skills | `demo-plan`, `demo-record`, `demo-edit`, `demo-handoff` |
 | The house look | `$P/references/style-guide.md` |
 | Scene recipes and a sample plan | `$P/samples/README.md` |
 | Gotchas from real shoots | `$P/references/learnings.md` |
@@ -152,7 +224,6 @@ It only reads files. Stop it when the session ends. If it fails with a missing m
 | Voiceover rules | `$P/references/voiceover.md` |
 | Secrets | `$P/references/secrets.md` |
 | Editor handoff contents | `$P/references/handoff-spec.md` |
-| Cardboard (optional) | `$P/references/cardboard.md` |
 | Templates new-demo.sh copies | `$P/templates/` |
 | Config shapes | `$P/schemas/demo.schema.json`, `$P/schemas/handoff.schema.json` |
 | Examples | `$P/examples/todo-sample/` (recorded), `$P/examples/acme-invoice-bot/` (plan) |
@@ -165,5 +236,7 @@ It only reads files. Stop it when the session ends. If it fails with a missing m
 - Run one instance of any bot or server at a time.
 - Copy (captions, voiceover, docs) is plain spoken English with no em dashes.
 - Never delete recordings, frames or throwaways without the user's go-ahead.
-- Never write secrets into any file in the demo folder except a gitignored `app/.env`. Never ask the
-  user to paste an API key into chat.
+- Never write secrets into any file in the demo folder except a gitignored `app/.env`, and that only
+  when the user asks for it. Prefer macOS Keychain (`demo-<name>`). Never ask the user to paste an
+  API key into chat, and never repeat a password they gave you.
+- Log in before recording. A login form must never be on camera, and in-page masking stays on.

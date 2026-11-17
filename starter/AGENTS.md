@@ -29,12 +29,23 @@ Write the mode at the top of the demo's README.
 
 ## 2. How much to ask
 
-During prep, recording and editing, choose the sensible path, keep working and report at the end.
-Stop only for steps that need a person: a login, a captcha, a password or a 2FA code. When you
-stop, say exactly what to click.
+The person logs in, or hands over demo credentials, and Claude does the rest. Ask once at the
+start for what is missing (URL, goal, audience, how to get in). After that, run plan, prep, test
+sweep, record, QA, review reel, cuts, handoff and wrap-up without asking between stages. Write each
+choice under "Decisions" in the demo's README and show everything in one report at the end. The
+person can interrupt at any time.
 
-Always ask before: anything that moves real money, anything on a production account, deleting raw
-takes or a delivered video, and making anything public.
+Stop only for:
+
+| Stop for | Example |
+| --- | --- |
+| A login, captcha or 2FA code | The session expired; the site sent a code |
+| Something that cannot be deleted | An email to a real address, a public post, a real invoice |
+| Something that costs money | A real payment, a paid plan, a paid API nobody set up |
+| Deleting data Claude did not create | The person's records, raw takes, a delivered video |
+
+Also ask before anything on a production account. When you stop, say exactly what to click or send.
+Stop at review points only if the person asked for them ("check with me after the plan").
 
 ## 3. Stages and gates
 
@@ -43,12 +54,13 @@ The full checklists are in the plugin's `references/quality-gates.md`.
 
 | Stage | Gate |
 | --- | --- |
+| Access | Logged in off camera on a sandbox or test account (way A or B, section 4 Secrets); README says which way |
 | Intake | Folder scaffolded, README has the mode, goal and deliverables, index row added as `Planning` |
 | Plan | Shot list, cast and claims list written. Every claim has a shot that proves it |
 | Prep | Seed and reset scripts work, smoke run passes end to end |
 | Test sweep | Every scene, edge case and link passes, run twice from a clean state |
 | Shoot | Every scene has a `keep` take. Every secret reveal checked frame by frame |
-| Review | Review reel shown before any polish |
+| Review | Review reel built first and checked by Claude; shown in the final report (a blocking gate only if the person asked for one) |
 | Edit and handoff | Voiceover fits, claims all ticked, cold follow-through reaches the end result |
 | Close out | Frames deleted, throwaways closed, status and index row set, `check.py` clean |
 
@@ -77,13 +89,28 @@ Update the demo README **Status** and the index row in `README.md` at the end of
 
 **Secrets**
 - Sandbox or test accounts only. Mask in the page while recording, never in post. One unmasked frame is a leak.
-- Secrets live only in a password manager or a demo's gitignored `app/.env`. Never in any other file here.
+- Secrets live only in a password manager (macOS Keychain item `demo-<name>`) or, when the person
+  asks for it, a demo's gitignored `app/.env`. Never in any other file here.
+
+**Logging in** (two ways, both fine)
+- Way A: the person logs in themselves in the Playwright MCP browser.
+- Way B: the person hands Claude demo credentials, ideally by running
+  `security add-generic-password -s demo-<name> -a '<login email>' -w` themselves in a Terminal
+  window (it prompts for the password, so it never appears in chat). Claude reads it
+  with `security find-generic-password -s demo-<name> -a '<login email>' -w` and logs in.
+- Claude never repeats a password in chat, logs, notes, scene scripts or commits.
+- Log in before recording. Never film a login form, a password field or a 2FA screen. Masking stays on.
+- 2FA: Claude asks for the code at the moment the site asks for it, types it at once, and never stores it.
+- Production credentials for an account with real customer data: Claude refuses, unless the person
+  confirms it is a test account.
+- At wrap-up, remove the Keychain item if the person wants: `security delete-generic-password -s demo-<name>`.
 
 ## 5. Folder layout
 
 ```
 <name>/
-  README.md          mode, goal, deliverables, cast, accounts and ids, test sweep table, Status
+  README.md          mode, goal, deliverables, cast, accounts and ids (no passwords), login way,
+                     test sweep table, Decisions, Status
   BRIEF.md           the brief, verbatim if a client sent one
   RUN-SHEET.md       beat by beat, with the exact text typed on camera
   SHOT-LIST.md       scenes, captions, lengths

@@ -7,6 +7,10 @@ description: Plan a product demo video from a goal or a client brief. Scaffolds 
 
 Write everything down before touching the browser. A good plan makes recording mechanical.
 
+Do not ask the user anything here. Make each choice yourself and note it in the demo's README.md
+under "Decisions". The only stops are the ones in skill `demo-studio` (a login or 2FA code;
+something that cannot be deleted; something that costs money; deleting data you did not create).
+
 Start every shell command with this line (it finds the plugin folder):
 
 ```bash
@@ -27,7 +31,7 @@ Expected: `scaffolded ./demos/<name>` and `OUTPUT ./demos/<name>`.
 
 | If you see | Do this |
 | --- | --- |
-| `already exists` | The demo exists. Ask the user: resume it, or pick a new name |
+| `already exists` | Read its README.md. Same goal: resume it from its Status. Different goal: use `<name>-2` and say so in the final report. Do not ask |
 | `usage` or a name error | Use only lowercase letters, digits and dashes |
 
 It creates `README.md, BRIEF.md, RUN-SHEET.md, SHOT-LIST.md, VOICEOVER.md, PREP.md, THROWAWAYS.md,
@@ -132,9 +136,18 @@ From `$P/references/quality-gates.md` section 2. Off camera, from a freshly rese
 Write a table in the demo's README.md under **Test sweep**: path, how checked, `pass` or the fix.
 Fix each failure, or cut the scene and its claim.
 
-## Step 10: show the user
+| A sweep step would | Do this |
+| --- | --- |
+| Create something you can delete later | Do it, add it to THROWAWAYS.md |
+| Send to a real address, publish, or create something that cannot be deleted | Stop and ask (a stop case) |
+| Cost money | Stop and ask (a stop case) |
+| Hit a login page | Log in again with skill `demo-record` Step 0, then go on |
 
-Post the scene table and a three-line story summary. Continue unless they object.
+## Step 10: post a progress note and keep going
+
+Post the scene table and a three-line story summary as a note, then go straight on to skill
+`demo-record` in the same turn. **Do not wait for a reply.** Wait only if the user asked to check
+the plan first.
 
 ## Done when
 
@@ -145,4 +158,5 @@ Post the scene table and a three-line story summary. Continue unless they object
 - [ ] demo.json parses and lists every scene; `_project.js` has the masks and clutter
 - [ ] Every PREP.md box is ticked
 - [ ] The test sweep table has `pass` on every row
-- [ ] The user has seen the scene table
+- [ ] The scene table was posted as a progress note (not a question)
+- [ ] Next: skill `demo-record`, Step 0

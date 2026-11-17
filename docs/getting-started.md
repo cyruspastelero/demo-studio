@@ -26,17 +26,32 @@ the pipeline on Linux, but recording on Linux or Windows has had far less use. R
 **Playwright MCP.** Add it to Claude Code (user scope), using real Chrome:
 
 ```bash
-claude mcp add playwright --scope user -- npx -y @playwright/mcp --browser chrome
+claude mcp add playwright --scope user -- npx -y @playwright/mcp@0.0.84 --browser chrome
 ```
 
 or in your MCP config:
 
 ```json
-{ "mcpServers": { "playwright": { "command": "npx", "args": ["-y", "@playwright/mcp", "--browser", "chrome"] } } }
+{ "mcpServers": { "playwright": { "command": "npx", "args": ["-y", "@playwright/mcp@0.0.84", "--browser", "chrome"] } } }
 ```
 
-Log in to the product's sandbox in the browser that the Playwright MCP opens (not your everyday
-Chrome). If you use your own Playwright MCP profile, remember it is logged in as you.
+**Getting Claude into your product.** Use a sandbox or test account, and pick one of two ways:
+
+1. **Log in yourself.** Claude opens the login page in the browser the Playwright MCP opens (not
+   your everyday Chrome) and you log in there. If you use your own Playwright MCP profile,
+   remember it is logged in as you.
+2. **Hand over demo credentials.** Claude logs in for you, before recording starts, so the login
+   is never filmed. The safest way keeps the password out of the chat: store it in macOS Keychain
+   yourself, in a Terminal window (it prompts for the password and does not echo it), then tell Claude the item name:
+   ```bash
+   security add-generic-password -s demo-acme -a 'demo@example.com' -w
+   ```
+   Claude reads it only to log in, never repeats it, and writes it to no file (a gitignored
+   `app/.env` only if you ask for one). If the site asks for a 2FA code, Claude asks you for it at
+   that moment. It refuses credentials for an account with real customer data unless you confirm
+   it is a test account.
+
+After that Claude runs every stage to the end without asking and shows you the results.
 
 Working on the plugin itself? Clone the repo, run `npm install` there, and start Claude Code with
 `claude --plugin-dir /path/to/demo-studio`.
@@ -57,7 +72,7 @@ you want to film.
 
 ```bash
 brew install node ffmpeg python && brew install --cask google-chrome
-claude mcp add playwright --scope user -- npx -y @playwright/mcp --browser chrome
+claude mcp add playwright --scope user -- npx -y @playwright/mcp@0.0.84 --browser chrome
 P="$(ls -d ~/.claude/plugins/cache/demo-studio/demo-studio/*/ | tail -1)"
 npm install --prefix "$P" && bash "$P/scripts/doctor.sh"
 ```
@@ -70,9 +85,16 @@ and say what you want:
 > Make a demo of app.example.com. Goal: a new user creates a project and invites a teammate.
 > Audience: small team leads. I'm logged in to the sandbox in the Playwright browser.
 
-**What you get:** a written plan to approve, a clean 1080p take per scene, a review reel, a
-keynote-style cut with captions and zooms, a narrated version, promo and how-to cuts, 4:5 and 9:16
-social versions, and a zip for a human editor. Ask for as much or as little as you need.
+or, handing over the account:
+
+> Make a demo of app.example.com. Goal: a new user creates a project and invites a teammate.
+> The sandbox login is demo@example.com; the password is in Keychain as demo-acme.
+
+**What you get:** one report at the end with a written plan, a clean 1080p take per scene, a
+review reel, a keynote-style cut with captions and zooms, and a narrated version. Ask for promo and
+how-to cuts, 4:5 and 9:16 social versions and a zip for a human editor too. Claude stops early only
+for a login or 2FA code, a step that would cost money or create something that cannot be deleted,
+or deleting your data. Want to check the plan or the reel first? Say so, and it stops there.
 Want to see it work first? Do the [first demo in 10 minutes](#first-demo-in-10-minutes).
 
 ## First demo in 10 minutes

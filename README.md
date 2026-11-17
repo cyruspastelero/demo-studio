@@ -3,14 +3,21 @@
 [![CI](https://github.com/Cyvid7-Darus10/demo-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/Cyvid7-Darus10/demo-studio/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
-A Claude Code plugin that turns a goal into a finished product demo video, recorded from the real
-product with Playwright. Claude plans the story, records the browser, cuts the video, narrates it
-and packages a handoff for an editor.
+A Claude Code plugin for product demo videos. Tell Claude the goal, then either log in to your
+site in the Playwright browser or hand over your demo credentials. The agent does the rest: it plans
+the story, tests the flow, records the real product, cuts and narrates the video, and packages a
+handoff for an editor. It asks nothing more unless it needs a login code, or a step would cost money
+or create something that cannot be deleted.
 
 - **Real footage.** Every frame is your product running. Nothing on screen is AI-generated.
-- **Free and local.** Playwright, ffmpeg and a built-in editor on your machine. Narrate with macOS
-  `say` or your own voice. ElevenLabs is optional.
-- **Safe to film.** Sandbox accounts only, and secrets are masked in the page before a frame is captured.
+- **Local and free.** Everything runs on your machine: no account, no cloud service, no telemetry.
+  The tools are free (Playwright, Chrome, ffmpeg, Python, Node), and so is narration with macOS
+  `say` or your own voice. Paid services such as ElevenLabs or Higgsfield for voice and music are
+  used only if you choose them. Claude Code itself talks to Anthropic as usual.
+- **Safe by design.** Sandbox or test accounts only, logged in before recording starts. Secrets are
+  masked in the page before a frame is captured, and credentials are never written to the repo.
+  The editor listens on 127.0.0.1 only, and demo folders from other people are treated as
+  untrusted (paths stay inside the demo folder, title cards render sandboxed). See [SECURITY.md](SECURITY.md).
 - **Looks professional by default.** Crisp 2x capture, a human-paced cursor, eased zooms, captions and title cards.
 
 ## Sample videos
@@ -33,7 +40,7 @@ Then set up once (macOS with Homebrew; [other systems](docs/getting-started.md#r
 
 ```bash
 brew install node ffmpeg python && brew install --cask google-chrome
-claude mcp add playwright --scope user -- npx -y @playwright/mcp --browser chrome
+claude mcp add playwright --scope user -- npx -y @playwright/mcp@0.0.84 --browser chrome
 P="$(ls -d ~/.claude/plugins/cache/demo-studio/demo-studio/*/ | tail -1)"
 npm install --prefix "$P" && bash "$P/scripts/doctor.sh"
 ```
@@ -43,14 +50,19 @@ Start Claude Code in a folder for your demos and ask:
 > Make a demo of app.example.com. Goal: a new user creates a project and invites a teammate.
 > I'm logged in to the sandbox in the Playwright browser.
 
+Or hand over a demo account instead, and Claude logs in itself (off camera, password kept in your
+macOS Keychain, never in a file): "The sandbox login is demo@example.com, the password is in
+Keychain as demo-acme." See [Do I have to give Claude my password?](docs/faq.md#do-i-have-to-give-claude-my-password)
+
 New here? Say **"try it"** and Claude records the [todo sample](examples/todo-sample) end to end,
 no login needed ([10 minute walkthrough](docs/getting-started.md#first-demo-in-10-minutes)).
 
 ## What you get
 
-A plan to approve, a clean 1080p take per scene, a review reel, a keynote-style cut with captions
-and zooms, a narrated version, promo and how-to cuts, 4:5 and 9:16 social versions, and a zip for a
-human editor. Ask for as much or as little as you need.
+One report at the end with a written plan, a clean 1080p take per scene, a review reel, a
+keynote-style cut with captions and zooms, and a narrated version. Ask for promo and how-to cuts,
+4:5 and 9:16 social versions and a zip for a human editor too. Want to check the plan or the reel
+before Claude goes on? Say so, and it stops there.
 
 ## Docs
 
@@ -61,7 +73,7 @@ human editor. Ask for as much or as little as you need.
 | [Studio](docs/studio.md) | The local dashboard and the editor |
 | [Style guide](references/style-guide.md) | The house look: pointer, typing, pacing, zooms, captions, voice |
 | [Samples](samples/README.md) | Scene recipes and a full sample plan to copy from |
-| [FAQ](docs/faq.md) | Files, timing, disk space, re-shoots, branding, safety |
+| [FAQ](docs/faq.md) | Passwords, cost, what stays local, files, timing, re-shoots, branding, safety |
 | [Development](docs/development.md) | Repo layout and tests |
 
 ## Contributing

@@ -53,7 +53,7 @@ else bad "Google Chrome not found" "$(brew_or '--cask google-chrome' 'install Ch
 
 # Pinned so a new upstream release cannot change what runs with access to the logged-in browser.
 # Bump deliberately after reading the release notes.
-PLAYWRIGHT_MCP_VERSION=0.0.85
+PLAYWRIGHT_MCP_VERSION=0.0.84
 mcp_found=0
 for f in "$HOME/.claude.json" "$HOME/.claude/settings.json" "$PWD/.mcp.json" "$PWD/.claude/settings.json"; do
   if [ -f "$f" ] && grep -q '@playwright/mcp' "$f" 2>/dev/null; then mcp_found=1; break; fi
