@@ -42,6 +42,10 @@ npm run studio /tmp/acme
 
 ![The editor with a shot selected](img/studio-1440.png)
 
+System, Light and Dark themes: switch them in the dashboard sidebar or the editor's top bar.
+
+![The editor in the dark theme](img/studio-1440-dark.png)
+
 | 9:16 framing | Render drawer | Keyboard shortcuts |
 | --- | --- | --- |
 | ![9:16 framing](img/studio-9x16-1440.png) | ![Title cards rendered](img/studio-render-1440.png) | ![Keyboard shortcuts](img/studio-shortcuts-1440.png) |
