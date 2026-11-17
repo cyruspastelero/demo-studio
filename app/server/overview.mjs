@@ -52,9 +52,19 @@ function filesIn(dir, pattern) {
   if (!existsSync(dir)) return [];
   return readdirSync(dir)
     .filter((name) => !name.startsWith('.') && pattern.test(name))
-    .map((name) => join(dir, name))
-    .filter((file) => statSync(file).isFile())
-    .sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs);
+    .map((name) => ({ file: join(dir, name), stat: statOrNull(join(dir, name)) }))
+    .filter(({ stat }) => stat?.isFile())
+    .sort((a, b) => b.stat.mtimeMs - a.stat.mtimeMs)
+    .map(({ file }) => file);
+}
+
+// A broken link, or a file deleted while the folder is read, must not break the whole home screen.
+function statOrNull(file) {
+  try {
+    return statSync(file);
+  } catch {
+    return null;
+  }
 }
 
 function takeCounts(demo) {
@@ -117,7 +127,7 @@ export function demoOverview(demo, indexStatus = null) {
   const handoffDirs = [join(demo, 'recordings', 'editor-handoff'), join(demo, 'editor-handoff')];
   // Rough assemblies are numbered 00_ in each video's folder of the handoff.
   const assemblies = handoffDirs.flatMap((dir) => (existsSync(dir) ? readdirSync(dir) : [])
-    .flatMap((sub) => (statSync(join(dir, sub)).isDirectory() ? filesIn(join(dir, sub), /^00_.*\.(mp4|mov)$/i) : [])));
+    .flatMap((sub) => (statOrNull(join(dir, sub))?.isDirectory() ? filesIn(join(dir, sub), /^00_.*\.(mp4|mov)$/i) : [])));
   const loose = filesIn(demo, VIDEO);
   const zips = [...filesIn(join(demo, 'recordings'), /editor-handoff\.zip$/), ...filesIn(demo, /editor-handoff\.zip$/)];
   const finals = filesIn(join(demo, 'final'), VIDEO);
