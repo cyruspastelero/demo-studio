@@ -69,8 +69,13 @@ export class DocumentStore {
     const file = join(this.folder, FILES[kind]);
     const current = existsSync(file) ? readFileSync(file, 'utf8') : null;
     const currentHash = current === null ? null : hashText(current);
-    if (baseHash && currentHash && baseHash !== currentHash) {
-      throw new SaveError(`${FILES[kind]} changed on disk since it was loaded`, 409, { text: current, hash: currentHash });
+    // An existing file is only overwritten by a client that proves it saw the current version.
+    // A missing baseHash is treated like a stale one, so a blind write cannot replace the file.
+    if (currentHash !== null && baseHash !== currentHash) {
+      const message = typeof baseHash === 'string' && baseHash
+        ? `${FILES[kind]} changed on disk since it was loaded`
+        : `${FILES[kind]} already exists; reload it before saving`;
+      throw new SaveError(message, 409, { text: current, hash: currentHash });
     }
     const text = formatJson(data);
     const hash = hashText(text);

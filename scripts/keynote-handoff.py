@@ -89,8 +89,8 @@ def main():
         sys.exit(f"handoff: {final} missing; run build-keynote.py first")
 
     out = demo / "editor-handoff"
-    if out.exists():
-        shutil.rmtree(out)
+    if out.exists() or out.is_symlink():
+        lib.safe_rmtree(demo, out, "editor-handoff")
     dirs = {k: out / k for k in ["01-final-cut", "02-raw-footage", "03-edited-segments",
                                  "04-graphics/title-cards", "04-graphics/captions",
                                  "04-graphics/logo", "04-graphics/layout"]}
@@ -101,7 +101,9 @@ def main():
     for f in ["bg.png", "shadow.png", "mask.png"]:
         shutil.copy2(PLUGIN_ASSETS / f, dirs["04-graphics/layout"] / f)
     if cfg.get("logo"):
-        logo = (demo / cfg["logo"]).resolve()
+        logo = lib.config_path(demo, cfg["logo"], "logo", "keynote-handoff")
+        if not logo.is_file():
+            sys.exit(f"keynote-handoff: logo not found: {logo}")
         shutil.copy2(logo, dirs["04-graphics/logo"] / logo.name)
 
     notes, used = {}, set()

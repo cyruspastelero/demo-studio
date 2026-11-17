@@ -51,7 +51,7 @@ def keepers(rec: Path) -> dict[str, Path]:
         for row in csv.DictReader(fh):
             if (row.get("status") or "").strip().lower() != "keep":
                 continue
-            path = (rec / row["file"]).resolve()
+            path = lib.config_path(rec, row.get("file"), f"takes.csv file for scene {row.get('scene')!r}", "review-reel")
             if not path.exists():
                 sys.exit(f"review-reel: keeper {row['file']} is in takes.csv but not on disk")
             take = int(row.get("take") or 0)
@@ -83,7 +83,7 @@ def main() -> None:
     out = out or rec / "exports" / "review-reel.mp4"
     out.parent.mkdir(parents=True, exist_ok=True)
     listing = out.parent / "reel.txt"
-    listing.write_text("".join(f"file '{takes[s]}'\n" for s in order))
+    listing.write_text(lib.concat_list(takes[s] for s in order))
     # Raw takes share one encoding (encode-take.sh), so a stream copy joins them losslessly.
     lib.progress("reel", 0, 1)
     lib.run(["ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", listing,

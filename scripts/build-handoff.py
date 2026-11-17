@@ -119,11 +119,18 @@ def build_videos(cfg: dict) -> list[Video]:
     return videos
 
 
+def shot_input(shot: Shot, paths: Paths) -> Path:
+    """The card PNG or raw take a shot is cut from, confined to its folder."""
+    if shot.is_card:
+        return lib.config_path(paths.cards, f"{shot.source}.png", f"scene '{shot.scene}' card", "build-handoff")
+    return lib.config_path(paths.raw, shot.source, f"scene '{shot.scene}' source", "build-handoff")
+
+
 def check_sources(videos: list[Video], paths: Paths) -> None:
     missing = set()
     for video in videos:
         for shot in video.shots:
-            source = paths.cards / f"{shot.source}.png" if shot.is_card else paths.raw / shot.source
+            source = shot_input(shot, paths)
             if not source.exists():
                 missing.add(str(source))
     if missing:
@@ -141,10 +148,10 @@ def cut(shot: Shot, target: Path, paths: Paths) -> None:
     encode = ["-r", str(FPS), "-c:v", "libx264", "-crf", "16", "-pix_fmt", "yuv420p", "-an", str(target)]
     if shot.is_card:
         lib.run(["ffmpeg", "-y", "-loglevel", "error", "-loop", "1", "-t", f"{shot.end}",
-                 "-i", paths.cards / f"{shot.source}.png", "-vf", "scale=1920:1080", *encode])
+                 "-i", shot_input(shot, paths), "-vf", "scale=1920:1080", *encode])
         return
     lib.run(["ffmpeg", "-y", "-loglevel", "error", "-ss", f"{shot.start}", "-to", f"{shot.end}",
-             "-i", paths.raw / shot.source, "-vf", f"setpts=PTS/{shot.speed},scale=1920:1080", *encode])
+             "-i", shot_input(shot, paths), "-vf", f"setpts=PTS/{shot.speed},scale=1920:1080", *encode])
 
 
 def scene_starts(video: Video) -> dict[str, float]:
@@ -177,7 +184,7 @@ def build(video: Video, paths: Paths, voice: dict, use_say: bool) -> tuple[list[
     total = sum(shot.length for shot in video.shots)
     folder = paths.out / f"{video.key}_{int(total // 60)}m{int(total % 60):02d}"
     for old in paths.out.glob(f"{video.key}_*"):
-        shutil.rmtree(old)
+        lib.safe_rmtree(paths.out, old, f"old {video.key} folder")
     folder.mkdir(parents=True)
 
     clips = []
@@ -195,7 +202,7 @@ def build(video: Video, paths: Paths, voice: dict, use_say: bool) -> tuple[list[
     with tempfile.TemporaryDirectory() as tmp:
         work = Path(tmp)
         listing = work / "clips.txt"
-        listing.write_text("".join(f"file '{clip}'\n" for clip in clips))
+        listing.write_text(lib.concat_list(clips))
         rough = folder / "00_ROUGH-ASSEMBLY.mp4"
         lib.run(["ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", listing, "-c", "copy", rough])
         lib.output(rough)
@@ -240,19 +247,21 @@ def clone_copy(src: Path, dest: Path) -> None:
 
 def copy_source_footage(cfg: dict, paths: Paths) -> None:
     source = paths.out / "source-footage"
-    if source.exists():
-        shutil.rmtree(source)
+    if source.exists() or source.is_symlink():
+        lib.safe_rmtree(paths.out, source, "source-footage")
     groups = cfg.get("parts") or {"all-takes": [""]}
     sheets = paths.reference / "take-contact-sheets"
     sheets.mkdir(parents=True, exist_ok=True)
     takes = sorted(paths.raw.glob("*.mp4"))
     for done, (group, patterns) in enumerate(groups.items(), start=1):
-        (source / group).mkdir(parents=True)
+        source.mkdir(parents=True, exist_ok=True)
+        part = lib.config_path(source, group, f"parts.{group}", "build-handoff")
+        part.mkdir(parents=True)
         matched = [t for t in takes if any(t.name == p or t.name.startswith(p) for p in patterns)]
         if not matched:
             print(f"build-handoff: WARN part '{group}' matched no takes in {paths.raw}", file=sys.stderr)
         for take in matched:
-            clone_copy(take, source / group / take.name)
+            clone_copy(take, part / take.name)
             lib.run(["ffmpeg", "-y", "-loglevel", "error", "-i", take, "-vf", "fps=1/2,scale=480:-1,tile=6x4",
                      "-frames:v", "1", sheets / f"{take.stem}.jpg"])
         lib.progress("source-footage", done, len(groups))
@@ -274,7 +283,8 @@ def write_script(video: Video, folder: Path, total: float, paths: Paths) -> None
         if shot.text:
             out.append(f"           ON-SCREEN TEXT: {shot.text}")
         clock += shot.length
-    (paths.out / video.script_file).write_text("\n".join(out) + "\n")
+    target = lib.config_path(paths.out, video.script_file, f"videos[{video.key}].script_file", "build-handoff")
+    target.write_text("\n".join(out) + "\n")
 
 
 def write_voiceover(video: Video, lines: list, total: float, paths: Paths, has_preview: bool) -> None:
@@ -287,7 +297,8 @@ def write_voiceover(video: Video, lines: list, total: float, paths: Paths, has_p
         out += [f"{number:2d}. [{timecode(start)}]  {name.split(' ', 1)[1]}", f"      {text}", ""]
     out += ["=" * 72, "FULL READ (all lines in order, for a single take)", "=" * 72,
             " ".join(text for *_, text in lines)]
-    (paths.out / video.voiceover_file).write_text("\n".join(out) + "\n")
+    target = lib.config_path(paths.out, video.voiceover_file, f"videos[{video.key}].voiceover_file", "build-handoff")
+    target.write_text("\n".join(out) + "\n")
 
 
 def bullet_block(heading: str, items: list[str], mark: str = "-") -> list[str]:
@@ -363,7 +374,7 @@ def write_brand(cfg: dict, paths: Paths) -> None:
     out += bullet_block("TAGLINES (use only these)", [f'"{t}"' for t in brand.get("taglines", [])])
     (folder / "BRAND.txt").write_text("\n".join(out) + "\n")
     if brand.get("logo"):
-        logo = (paths.root / brand["logo"]).resolve()
+        logo = lib.config_path(paths.root, brand["logo"], "brand.logo", "build-handoff")
         if not logo.exists():
             sys.exit(f"build-handoff: brand.logo not found: {logo}")
         (paths.out / "assets" / "logos").mkdir(parents=True, exist_ok=True)
@@ -371,8 +382,8 @@ def write_brand(cfg: dict, paths: Paths) -> None:
 
 
 def copy_reference_files(cfg: dict, paths: Paths) -> None:
-    for name in cfg.get("reference_files", []):
-        src = (paths.root / name).resolve()
+    for index, name in enumerate(cfg.get("reference_files", [])):
+        src = lib.config_path(paths.root, name, f"reference_files[{index}]", "build-handoff")
         if not src.exists():
             sys.exit(f"build-handoff: reference file not found: {src}")
         clone_copy(src, paths.reference / src.name)
@@ -387,6 +398,20 @@ def run_social(cfg_path: Path) -> None:
 
 # ---------------------------------------------------------------- main
 
+def config_paths(cfg_path: Path, cfg: dict) -> Paths:
+    """paths.* from handoff.json, each confined to the demo folder. out must be a subfolder,
+    because old cuts inside it are deleted and the zip is written next to it."""
+    root = cfg_path.parent.resolve()
+    conf = cfg.get("paths", {})
+    out = lib.config_path(root, conf.get("out", "recordings/editor-handoff"), "paths.out", "build-handoff")
+    if out == root:
+        sys.exit("build-handoff: paths.out must be a subfolder of the demo folder, not the folder itself")
+    raw = lib.config_path(root, conf.get("raw", "recordings/raw"), "paths.raw", "build-handoff")
+    cards = (lib.config_path(root, conf["cards"], "paths.cards", "build-handoff") if "cards" in conf
+             else out / "assets" / "title-cards")
+    return Paths(root=root, raw=raw, out=out, cards=cards)
+
+
 def main() -> None:
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     flags = {a for a in sys.argv[1:] if a.startswith("--")}
@@ -400,11 +425,7 @@ def main() -> None:
     if not use_say:
         print("build-handoff: macOS `say` not used; voiceover fit is estimated from words per minute", flush=True)
 
-    root = cfg_path.parent
-    conf = cfg.get("paths", {})
-    out = (root / conf.get("out", "recordings/editor-handoff")).resolve()
-    paths = Paths(root=root, raw=(root / conf.get("raw", "recordings/raw")).resolve(), out=out,
-                  cards=(root / conf["cards"]).resolve() if "cards" in conf else out / "assets" / "title-cards")
+    paths = config_paths(cfg_path, cfg)
     videos = build_videos(cfg)
     check_sources(videos, paths)
     paths.reference.mkdir(parents=True, exist_ok=True)

@@ -20,7 +20,7 @@ done
 cp "$here/templates/demo.json" "$here/templates/handoff.json" "$dir/"
 cp "$here/templates/_project.js" "$dir/recordings/scenes/_project.js"
 echo "file,scene,take,duration_s,resolution,fps,recorded_at,status,notes" > "$dir/recordings/takes.csv"
-printf 'frames/\nexports/.keynote/\neditor-handoff/\nvoice-cache/\n*.zip\n' > "$dir/recordings/.gitignore"
+printf '.rx-token\nframes/\nexports/.keynote/\neditor-handoff/\nvoice-cache/\n*.zip\n' > "$dir/recordings/.gitignore"
 printf '.browser-*/\n.env\napp/.env\n' > "$dir/.gitignore"
 echo "scaffolded $dir"
 echo "OUTPUT $dir"

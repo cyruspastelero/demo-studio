@@ -35,21 +35,18 @@ def load(name: str, file: str):
 lib = load("demolib", "demolib.py")
 
 
-def handoff_segments(cfg: dict, root: Path, key: str) -> list[dict]:
+def handoff_segments(cfg: dict, cfg_path: Path, key: str) -> list[dict]:
     handoff = load("build_handoff", "build-handoff.py")
     videos = {v.key: v for v in handoff.build_videos(cfg)}
     if key not in videos:
         sys.exit(f"quick-preview: no video '{key}' in handoff.json (have {', '.join(videos)})")
-    conf = cfg.get("paths", {})
-    raw = root / conf.get("raw", "recordings/raw")
-    out = root / conf.get("out", "recordings/editor-handoff")
-    cards = root / conf["cards"] if "cards" in conf else out / "assets" / "title-cards"
+    paths = handoff.config_paths(cfg_path, cfg)  # every path confined to the demo folder
     segments = []
     for shot in videos[key].shots:
         if shot.is_card:
-            segments.append({"card": cards / f"{shot.source}.png", "length": shot.end})
+            segments.append({"card": handoff.shot_input(shot, paths), "length": shot.end})
         else:
-            segments.append({"source": raw / shot.source, "in": shot.start, "out": shot.end, "speed": shot.speed})
+            segments.append({"source": handoff.shot_input(shot, paths), "in": shot.start, "out": shot.end, "speed": shot.speed})
     return segments
 
 
@@ -102,7 +99,7 @@ def main() -> None:
     else:
         cfg = lib.load_config(cfg_path, "handoff", "quick-preview")
         key = args[1]
-        segments = handoff_segments(cfg, root, key)
+        segments = handoff_segments(cfg, cfg_path, key)
     slate = (cfg.get("brand", {}).get("background") or f"#{SLATE}")[1:]
     out = Path(out_arg).resolve() if out_arg else root / "recordings" / "exports" / f"{key}-quick-preview.mp4"
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -115,7 +112,7 @@ def main() -> None:
             parts.append(part)
             lib.progress("quick-preview", number, len(segments) + 1)
         listing = work / "list.txt"
-        listing.write_text("".join(f"file '{p}'\n" for p in parts))
+        listing.write_text(lib.concat_list(parts))
         lib.run(["ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", listing,
                  "-c", "copy", "-movflags", "+faststart", out])
         lib.progress("quick-preview", len(segments) + 1, len(segments) + 1)

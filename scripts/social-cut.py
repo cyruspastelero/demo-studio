@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import re
 import sys
 import tempfile
 from pathlib import Path
@@ -32,6 +33,8 @@ def load_demolib():
 
 
 lib = load_demolib()
+TOOL = "social-cut"
+VIDEO_KEY = re.compile(r"^[A-Z][A-Z0-9-]*$")
 FPS = 30
 SHADOW_PAD = 40
 # aspect -> (width, height, caption band, side margin, bottom margin)
@@ -156,18 +159,21 @@ def with_defaults(entry: dict) -> dict:
 
 def from_handoff(cfg_path: Path) -> None:
     cfg = lib.load_config(cfg_path, "handoff", "social-cut")
-    root = cfg_path.parent
-    out_dir = (root / cfg.get("paths", {}).get("out", "recordings/editor-handoff")).resolve()
+    root = cfg_path.parent.resolve()
+    out_dir = lib.config_path(root, cfg.get("paths", {}).get("out", "recordings/editor-handoff"), "paths.out", TOOL)
     entries = cfg.get("social", [])
     if not entries:
         sys.exit("social-cut: handoff.json has no \"social\" entries")
     for done, raw in enumerate(entries, start=1):
         entry = with_defaults(raw)
         aspect = entry["aspect"].replace(":", "x")
+        where = f"social[{done - 1}]"
         if entry.get("input"):
-            src = (root / entry["input"]).resolve()
+            src = lib.config_path(root, entry["input"], f"{where}.input", TOOL)
             name = Path(entry["input"]).stem
         elif entry.get("video"):
+            if not VIDEO_KEY.match(entry["video"]):
+                sys.exit(f"{TOOL}: {where}.video must be a video key like PROMO, got {entry['video']!r}")
             found = sorted(out_dir.glob(f"{entry['video']}_*/00_ROUGH-ASSEMBLY.mp4"))
             if not found:
                 sys.exit(f"social-cut: no rough assembly for {entry['video']}; run build-handoff.py first")
@@ -177,9 +183,12 @@ def from_handoff(cfg_path: Path) -> None:
         rendered = out_dir / "assets" / "social-captions"
         captions = []
         for i, cap in enumerate(entry["captions"]):
+            if "png" in cap:
+                cap = {**cap, "png": str(lib.config_path(root, cap["png"], f"{where}.captions[{i}].png", TOOL))}
             png = rendered / f"{name}-{aspect}-{i + 1}.png"
             captions.append({**cap, "png": str(png)} if "text" in cap and "png" not in cap and png.exists() else cap)
-        out = (root / entry["output"]).resolve() if entry.get("output") else out_dir / "social" / f"{name}_{aspect}.mp4"
+        out = (lib.config_path(root, entry["output"], f"{where}.output", TOOL) if entry.get("output")
+               else out_dir / "social" / f"{name}_{aspect}.mp4")
         render({**entry, "captions": captions}, src, out, root)
         lib.progress("social", done, len(entries))
 

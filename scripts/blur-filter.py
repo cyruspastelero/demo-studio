@@ -22,6 +22,12 @@ blur_file = frames_dir / "blur.jsonl"
 boxes = []
 if blur_file.exists():
     boxes = [json.loads(line) for line in blur_file.read_text().splitlines() if line.strip()]
+    # Only numbers reach the filter graph; anything else in blur.jsonl stops the encode.
+    try:
+        boxes = [{k: float(box[k]) for k in ("x", "y", "w", "h", "t")}
+                 | ({"until": float(box["until"])} if box.get("until") is not None else {}) for box in boxes]
+    except (KeyError, TypeError, ValueError) as error:
+        sys.exit(f"blur-filter: bad box in {blur_file}: {error}")
 
 if boxes:
     stamps = [float(t) for t in (frames_dir / "ts.txt").read_text().split()]

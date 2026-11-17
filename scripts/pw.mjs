@@ -1,23 +1,23 @@
 // Shared by rec.mjs, run.mjs and title-cards.mjs: finds playwright-core and reads demo.json.
 import { existsSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 export const PLUGIN_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
-// Resolves from the plugin folder first (after `npm install` there), then from the current folder.
+// Resolves only from the plugin folder (after `npm install` there). Never from the current folder:
+// a demo folder from someone else could ship its own node_modules/playwright-core.
 export async function loadPlaywright() {
+  let entry;
   try {
-    return await import('playwright-core');
+    entry = createRequire(resolve(PLUGIN_ROOT, 'package.json')).resolve('playwright-core');
   } catch {
-    try {
-      return createRequire(join(process.cwd(), 'noop.js'))('playwright-core');
-    } catch {
-      console.error(`playwright-core is not installed. Fix:\n  npm install --prefix "${PLUGIN_ROOT}"`);
-      process.exit(1);
-    }
+    console.error(`playwright-core is not installed in the plugin folder. Fix:\n  npm install --prefix "${PLUGIN_ROOT}"`);
+    process.exit(1);
   }
+  const mod = await import(pathToFileURL(entry).href);
+  return mod.chromium ? mod : mod.default; // the require entry is CommonJS
 }
 
 // Headless Chrome for rendering stills. CHROME_PATH overrides the installed Chrome.

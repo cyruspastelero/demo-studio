@@ -28,6 +28,9 @@ lib = load_demolib()
 WIN_Y, WIN_H = 44, 900
 
 
+LOGO_TYPES = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".svg": "image/svg+xml"}
+
+
 def main():
     cfg_path = Path(sys.argv[1] if len(sys.argv) > 1 else "demo.json").resolve()
     cfg = lib.load_config(cfg_path, "demo", "mk-assets")
@@ -39,10 +42,12 @@ def main():
 
     logo = ""
     if cfg.get("logo"):
-        logo_path = (cfg_path.parent / cfg["logo"]).resolve()
-        if not logo_path.exists():
+        logo_path = lib.config_path(cfg_path.parent, cfg["logo"], "logo", "mk-assets")
+        if not logo_path.is_file():
             sys.exit(f"mk-assets: logo not found: {logo_path}")
-        mime = "image/svg+xml" if logo_path.suffix == ".svg" else "image/png"
+        mime = LOGO_TYPES.get(logo_path.suffix.lower())
+        if not mime:
+            sys.exit(f"mk-assets: logo must be a .png, .jpg or .svg file, got {logo_path.name}")
         logo = f"data:{mime};base64,{base64.b64encode(logo_path.read_bytes()).decode()}"
 
     cards = [i for i in cfg["sequence"] if "card" in i]

@@ -24,9 +24,14 @@ fc="$(python3 "$here/blur-filter.py" "$frames_dir" "${CSS_WIDTH:-1440}")"
 # Chrome can deliver screencast frames slightly out of order, so sort by time.
 list="${frames_dir}/concat.txt"
 abs_dir="$(cd "$frames_dir" && pwd)"
+case "$abs_dir" in *$'\n'*|*$'\r'*) echo "encode-take: frames folder path has a line break: $abs_dir" >&2; exit 1 ;; esac
+# ffmpeg concat quoting: inside '...', a ' is written as '\''. Passed through ENVIRON, which awk
+# does not unescape (awk -v would).
+concat_dir="${abs_dir//\'/\'\\\'\'}"
 end_ts="$(cat "${frames_dir}/end.txt" 2>/dev/null || echo 0)"
 awk '{ printf "%s %d\n", $1, NR - 1 }' "${frames_dir}/ts.txt" | sort -n -k1,1 |
-  awk -v d="$abs_dir" -v end="$end_ts" '
+  CONCAT_DIR="$concat_dir" awk -v end="$end_ts" '
+    BEGIN { d = ENVIRON["CONCAT_DIR"] }
     { t[NR] = $1; f[NR] = $2 }
     END {
       for (i = 1; i <= NR; i++) {

@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process';
 import { createReadStream, existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { basename, extname, join, relative } from 'node:path';
+import { PathError, resolveInside } from './paths.mjs';
 
 const TYPES = {
   '.mp4': 'video/mp4', '.mov': 'video/quicktime', '.png': 'image/png', '.jpg': 'image/jpeg',
@@ -12,7 +13,10 @@ const TYPES = {
 // Demo folders come from other people, so /media/ only serves passive types inline. HTML, SVG or
 // script from a demo folder would run on the editor's origin and could call its local API.
 const PASSIVE = new Set(['.mp4', '.mov', '.png', '.jpg', '.jpeg', '.aiff', '.txt']);
-const MEDIA_HEADERS = { 'X-Content-Type-Options': 'nosniff', 'Content-Security-Policy': "sandbox; default-src 'none'" };
+const MEDIA_HEADERS = {
+  'X-Content-Type-Options': 'nosniff', 'Content-Security-Policy': "sandbox; default-src 'none'; frame-ancestors 'none'",
+  'X-Frame-Options': 'DENY',
+};
 const THUMB_CACHE_LIMIT = 400;
 const THUMB_WORKERS = 3;
 
@@ -25,8 +29,35 @@ export function isPassiveMedia(file) {
   return PASSIVE.has(extname(file).toLowerCase());
 }
 
+function notFound(res) {
+  res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+  res.end('not found');
+}
+
+// A read error (file removed mid-stream, permissions) ends this response only; it must never
+// become an unhandled 'error' event, which would stop the whole server.
+function stream(res, file, options) {
+  const source = createReadStream(file, options);
+  source.on('error', (error) => {
+    console.error(`studio: could not read ${basename(file)}: ${error.code ?? error.message}`);
+    if (!res.headersSent) notFound(res);
+    else res.destroy(error);
+  });
+  res.on('close', () => source.destroy());
+  source.pipe(res);
+}
+
+// Only regular files are served. A folder (EISDIR), socket or missing path is a 404; any page in
+// the browser can point an <img> at 127.0.0.1, so this path must never throw.
 export function sendFile(req, res, file, { untrusted = false } = {}) {
-  const { size } = statSync(file);
+  let stat;
+  try {
+    stat = statSync(file);
+  } catch {
+    return notFound(res);
+  }
+  if (!stat.isFile()) return notFound(res);
+  const { size } = stat;
   const passive = isPassiveMedia(file);
   const type = untrusted && !passive ? 'application/octet-stream' : contentType(file);
   const range = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range ?? '');
@@ -38,7 +69,7 @@ export function sendFile(req, res, file, { untrusted = false } = {}) {
   if (!range) {
     res.writeHead(200, { ...headers, 'Content-Length': size });
     if (req.method === 'HEAD') return res.end();
-    return createReadStream(file).pipe(res);
+    return stream(res, file);
   }
   let start = range[1] === '' ? size - Number(range[2]) : Number(range[1]);
   let end = range[1] !== '' && range[2] !== '' ? Number(range[2]) : size - 1;
@@ -50,7 +81,7 @@ export function sendFile(req, res, file, { untrusted = false } = {}) {
   }
   res.writeHead(206, { ...headers, 'Content-Range': `bytes ${start}-${end}/${size}`, 'Content-Length': end - start + 1 });
   if (req.method === 'HEAD') return res.end();
-  return createReadStream(file, { start, end }).pipe(res);
+  return stream(res, file, { start, end });
 }
 
 function run(cmd, args, { binary = false } = {}) {
@@ -150,7 +181,7 @@ function takeStatuses(folder) {
 
 function pngs(folder, dir, strip) {
   const out = {};
-  if (!existsSync(dir)) return out;
+  if (!dir || !existsSync(dir) || !statSync(dir).isDirectory()) return out;
   for (const name of readdirSync(dir)) {
     if (name.endsWith('.png') && name.startsWith('card-')) {
       out[strip ? name.slice(5, -4) : name.slice(0, -4)] = relative(folder, join(dir, name));
@@ -159,12 +190,24 @@ function pngs(folder, dir, strip) {
   return out;
 }
 
+// handoff.paths.* resolved inside the demo folder; a missing folder or one that would leave the
+// demo folder lists nothing.
+export function demoDir(folder, value) {
+  try {
+    return resolveInside(folder, value);
+  } catch (error) {
+    if (error instanceof PathError) return null;
+    throw error;
+  }
+}
+
 export async function mediaIndex(folder, handoff) {
-  const rawDir = join(folder, handoff?.paths?.raw ?? 'recordings/raw');
-  const outDir = join(folder, handoff?.paths?.out ?? 'recordings/editor-handoff');
-  const cardsDir = handoff?.paths?.cards ? join(folder, handoff.paths.cards) : join(outDir, 'assets', 'title-cards');
+  const rawDir = demoDir(folder, handoff?.paths?.raw ?? 'recordings/raw');
+  const outDir = demoDir(folder, handoff?.paths?.out ?? 'recordings/editor-handoff');
+  const cardsDir = handoff?.paths?.cards ? demoDir(folder, handoff.paths.cards)
+    : outDir && join(outDir, 'assets', 'title-cards');
   const statuses = takeStatuses(folder);
-  const files = existsSync(rawDir) ? readdirSync(rawDir).filter((f) => /\.(mp4|mov)$/i.test(f)).sort() : [];
+  const files = rawDir && existsSync(rawDir) && statSync(rawDir).isDirectory() ? readdirSync(rawDir).filter((f) => /\.(mp4|mov)$/i.test(f)).sort() : [];
   const raw = await Promise.all(files.map(async (file) => ({
     file,
     path: relative(folder, join(rawDir, file)),

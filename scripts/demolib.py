@@ -131,6 +131,65 @@ def load_config(path: Path, schema_name: str, tool: str) -> dict:
     return data
 
 
+# ---------------------------------------------------------------- path confinement
+# Demo folders may come from other people, so every path read from handoff.json or demo.json
+# must stay inside the demo folder. These raise UnsafePath (a ValueError) with the field name.
+
+class UnsafePath(ValueError):
+    pass
+
+
+def _parts(value: str) -> list[str]:
+    return re.split(r"[\\/]+", value)
+
+
+def safe_join(root: Path, value, field: str) -> Path:
+    """Joins a config-supplied relative path onto root and returns the resolved path.
+
+    Rejects non-strings, empty values, NUL bytes, absolute paths (POSIX, Windows drive or UNC),
+    '..' segments, and anything (including symlinks) that resolves outside root."""
+    if not isinstance(value, str) or not value:
+        raise UnsafePath(f"{field}: must be a non-empty relative path")
+    if "\0" in value:
+        raise UnsafePath(f"{field}: path contains a NUL byte")
+    if value.startswith(("/", "\\")) or re.match(r"^[A-Za-z]:", value) or Path(value).is_absolute():
+        raise UnsafePath(f"{field}: absolute paths are not allowed ({value!r}); use a path inside the demo folder")
+    if ".." in _parts(value):
+        raise UnsafePath(f"{field}: '..' is not allowed ({value!r}); use a path inside the demo folder")
+    base = Path(root).resolve()
+    full = (base / value).resolve()
+    if not full.is_relative_to(base):
+        raise UnsafePath(f"{field}: {value!r} resolves outside the demo folder {base}")
+    return full
+
+
+def ensure_inside(root: Path, path: Path, what: str) -> Path:
+    """Raises UnsafePath unless path (resolved) is root itself or inside it. Use before deleting."""
+    base = Path(root).resolve()
+    full = Path(path).resolve()
+    if not full.is_relative_to(base):
+        raise UnsafePath(f"{what}: {full} is outside {base}; refusing to touch it")
+    return full
+
+
+def safe_rmtree(root: Path, path: Path, what: str) -> None:
+    """shutil.rmtree, but only for a real folder strictly inside root (never root, never a symlink)."""
+    full = ensure_inside(root, path, what)
+    if full == Path(root).resolve():
+        raise UnsafePath(f"{what}: refusing to delete the demo folder itself ({full})")
+    if Path(path).is_symlink():
+        raise UnsafePath(f"{what}: {path} is a symlink; refusing to delete through it")
+    shutil.rmtree(full)
+
+
+def config_path(root: Path, value, field: str, tool: str) -> Path:
+    """safe_join for scripts: exits with a clear message instead of raising."""
+    try:
+        return safe_join(root, value, field)
+    except UnsafePath as error:
+        sys.exit(f"{tool}: {error}")
+
+
 # ---------------------------------------------------------------- progress and ffmpeg
 
 def progress(stage: str, done: int, total: int) -> None:
@@ -173,6 +232,19 @@ def run_progress(cmd: list, stage: str, total_frames: int, tool: str = "ffmpeg")
         sys.exit(f"{tool} failed: {' '.join(cmd[:8])}...\n{stderr[-1500:]}")
     if last != 20:
         progress(stage, total, total)
+
+
+def concat_quote(path) -> str:
+    """Quotes a path for an ffmpeg concat list: inside '...', a ' is written as '\\''."""
+    text = str(path)
+    if "\n" in text or "\r" in text or "\0" in text:
+        raise UnsafePath(f"file name has a line break or NUL byte, which ffmpeg concat lists cannot hold: {text!r}")
+    return "'" + text.replace("'", "'\\''") + "'"
+
+
+def concat_list(paths) -> str:
+    """The text of an ffmpeg concat demuxer list, one `file '<path>'` line per path."""
+    return "".join(f"file {concat_quote(p)}\n" for p in paths)
 
 
 def probe_size(path: Path) -> tuple[int, int]:

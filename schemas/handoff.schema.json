@@ -13,9 +13,9 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "raw": { "type": "string", "description": "Raw takes. Default recordings/raw." },
-        "out": { "type": "string", "description": "Handoff folder. Default recordings/editor-handoff." },
-        "cards": { "type": "string", "description": "Title card PNGs. Default <out>/assets/title-cards." }
+        "raw": { "type": "string", "pattern": "^(?![/\\\\])(?![A-Za-z]:)(?!.*(^|[/\\\\])\\.\\.([/\\\\]|$)).+$", "description": "Raw takes. Default recordings/raw." },
+        "out": { "type": "string", "pattern": "^(?![/\\\\])(?![A-Za-z]:)(?!.*(^|[/\\\\])\\.\\.([/\\\\]|$)).+$", "description": "Handoff folder. Default recordings/editor-handoff." },
+        "cards": { "type": "string", "pattern": "^(?![/\\\\])(?![A-Za-z]:)(?!.*(^|[/\\\\])\\.\\.([/\\\\]|$)).+$", "description": "Title card PNGs. Default <out>/assets/title-cards." }
       }
     },
     "voice": {
@@ -50,7 +50,7 @@
     "reference_files": {
       "type": "array",
       "description": "Extra files copied into reference/ (review reel, style references).",
-      "items": { "type": "string" }
+      "items": { "type": "string", "pattern": "^(?![/\\\\])(?![A-Za-z]:)(?!.*(^|[/\\\\])\\.\\.([/\\\\]|$)).+$" }
     }
   },
   "$defs": {
@@ -64,7 +64,7 @@
         "subtitle_color": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
         "accent": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
         "font": { "type": "string", "description": "CSS font-family list. Use single quotes inside." },
-        "logo": { "type": "string", "description": "Logo path (PNG or SVG)." },
+        "logo": { "type": "string", "pattern": "^(?![/\\\\])(?![A-Za-z]:)(?!.*(^|[/\\\\])\\.\\.([/\\\\]|$)).+$", "description": "Logo path (PNG or SVG)." },
         "spelling": { "type": "array", "items": { "type": "string" }, "description": "Names and how to write them." },
         "taglines": { "type": "array", "items": { "type": "string" } }
       }
@@ -86,7 +86,7 @@
             "properties": {
               "name": { "type": "string" },
               "role": { "type": "string" },
-              "photo": { "type": "string", "description": "Headshot path; drawn as a circle." }
+              "photo": { "type": "string", "pattern": "^(?![/\\\\])(?![A-Za-z]:)(?!.*(^|[/\\\\])\\.\\.([/\\\\]|$)).+$", "description": "Headshot path; drawn as a circle." }
             }
           }
         }
@@ -97,7 +97,7 @@
       "required": ["source", "in", "out", "screen"],
       "additionalProperties": false,
       "properties": {
-        "source": { "type": "string", "pattern": "\\.(mp4|mov)$", "description": "Raw take file name in paths.raw." },
+        "source": { "type": "string", "pattern": "^(?![/\\\\])(?![A-Za-z]:)(?!.*(^|[/\\\\])\\.\\.([/\\\\]|$)).+\\.(mp4|mov)$", "description": "Raw take file name in paths.raw." },
         "in": { "type": "number", "minimum": 0 },
         "out": { "type": "number", "exclusiveMinimum": 0 },
         "speed": { "type": "number", "exclusiveMinimum": 0, "description": "1 is real time. Default 1." },
@@ -148,8 +148,8 @@
         "key": { "type": "string", "pattern": "^[A-Z][A-Z0-9-]*$", "description": "PROMO, HOW-TO, ..." },
         "title": { "type": "string" },
         "label": { "type": "string", "description": "Short label for the brief, for example 'the story'." },
-        "script_file": { "type": "string" },
-        "voiceover_file": { "type": "string" },
+        "script_file": { "type": "string", "pattern": "^(?![/\\\\])(?![A-Za-z]:)(?!.*(^|[/\\\\])\\.\\.([/\\\\]|$)).+$" },
+        "voiceover_file": { "type": "string", "pattern": "^(?![/\\\\])(?![A-Za-z]:)(?!.*(^|[/\\\\])\\.\\.([/\\\\]|$)).+$" },
         "scenes": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/scene" } }
       }
     },
@@ -188,7 +188,7 @@
         "start": { "type": "number", "minimum": 0 },
         "end": { "type": "number", "exclusiveMinimum": 0 },
         "text": { "type": "string" },
-        "png": { "type": "string", "description": "Pre-rendered caption band PNG, full output width." }
+        "png": { "type": "string", "pattern": "^(?![/\\\\])(?![A-Za-z]:)(?!.*(^|[/\\\\])\\.\\.([/\\\\]|$)).+$", "description": "Pre-rendered caption band PNG, full output width." }
       }
     },
     "social": {
@@ -196,9 +196,9 @@
       "required": ["aspect"],
       "additionalProperties": false,
       "properties": {
-        "video": { "type": "string", "description": "Video key; its rough assembly is the input." },
-        "input": { "type": "string", "description": "Any 16:9 file instead of a video key." },
-        "output": { "type": "string" },
+        "video": { "type": "string", "pattern": "^[A-Z][A-Z0-9-]*$", "description": "Video key; its rough assembly is the input." },
+        "input": { "type": "string", "pattern": "^(?![/\\\\])(?![A-Za-z]:)(?!.*(^|[/\\\\])\\.\\.([/\\\\]|$)).+$", "description": "Any 16:9 file instead of a video key." },
+        "output": { "type": "string", "pattern": "^(?![/\\\\])(?![A-Za-z]:)(?!.*(^|[/\\\\])\\.\\.([/\\\\]|$)).+$" },
         "aspect": { "enum": ["4:5", "9:16"] },
         "fill": { "enum": ["blur", "color"], "description": "Background: blurred footage or a flat colour. Default blur." },
         "color": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },

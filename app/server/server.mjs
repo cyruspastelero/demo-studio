@@ -5,7 +5,7 @@ import { join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DocumentStore, FILES, readDocument, SaveError } from './documents.mjs';
 import { isDemoFolder, listDemos, workspace } from './demos.mjs';
-import { isPassiveMedia, mediaIndex, sendFile, thumbnail } from './media.mjs';
+import { demoDir, isPassiveMedia, mediaIndex, sendFile, thumbnail } from './media.mjs';
 import { insideAny, PathError, resolveInside } from './paths.mjs';
 import { RenderRunner } from './render.mjs';
 
@@ -13,6 +13,8 @@ const APP_DIR = fileURLToPath(new URL('..', import.meta.url));
 const UI_DIR = join(APP_DIR, 'out');
 const BODY_LIMIT = 5 * 1024 * 1024;
 const MEDIA_SETTLE_MS = 500;
+// The editor is never meant to be framed (clickjacking of Render, Save or Open).
+const FRAME_HEADERS = { 'Content-Security-Policy': "frame-ancestors 'none'", 'X-Frame-Options': 'DENY' };
 
 class HttpError extends Error {
   constructor(status, message, extra = {}) {
@@ -102,8 +104,8 @@ export function createStudio({ repo, cwd, folder: initialFolder, dev = false }) 
     folder = dir;
     store = new DocumentStore(dir, (doc) => emit('file-changed', doc));
     const handoff = readDocument(dir, 'handoff')?.data;
-    const rawDir = join(dir, handoff?.paths?.raw ?? 'recordings/raw');
-    rawWatcher = existsSync(rawDir) ? watch(rawDir, mediaChanged) : null;
+    const rawDir = demoDir(dir, handoff?.paths?.raw ?? 'recordings/raw');
+    rawWatcher = rawDir && existsSync(rawDir) && statSync(rawDir).isDirectory() ? watch(rawDir, mediaChanged) : null;
     rawWatcher?.on('error', () => { rawWatcher = null; });
   }
 
@@ -215,6 +217,7 @@ export function createStudio({ repo, cwd, folder: initialFolder, dev = false }) 
   }
 
   function serveUi(req, res, url) {
+    for (const [name, value] of Object.entries(FRAME_HEADERS)) res.setHeader(name, value);
     if (dev && vite) return vite.middlewares(req, res, () => json(res, 404, { error: 'not found' }));
     if (!existsSync(join(UI_DIR, 'index.html'))) {
       res.writeHead(500, { 'Content-Type': 'text/plain' });
@@ -235,6 +238,9 @@ export function createStudio({ repo, cwd, folder: initialFolder, dev = false }) 
     // Reject other hostnames (DNS rebinding) and cross-site writes.
     const host = req.headers.host ?? '';
     if (host !== `127.0.0.1:${port}` && host !== `localhost:${port}`) throw new HttpError(403, 'bad host');
+    // Browsers mark requests from other sites (an <img> or fetch on any web page) as cross-site.
+    // Nothing here is meant for other sites, reads included: media and thumbnails stay private.
+    if (req.headers['sec-fetch-site'] === 'cross-site') throw new HttpError(403, 'cross-site requests are not allowed');
     if (req.method !== 'GET' && req.method !== 'HEAD' && req.headers['x-studio'] !== '1') {
       throw new HttpError(403, 'missing x-studio header');
     }

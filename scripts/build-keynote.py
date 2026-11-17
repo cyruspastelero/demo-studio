@@ -147,7 +147,7 @@ def main():
         lib.progress("parts", i + 1, total)
 
     lst = parts_dir / "list.txt"
-    lst.write_text("".join(f"file '{p}'\n" for p in parts))
+    lst.write_text(lib.concat_list(parts))
     slug = re.sub(r"[^a-z0-9]+", "-", cfg.get("title", "demo").lower()).strip("-") or "demo"
     final = rec / "exports" / f"{slug}-keynote-cut.mp4"
     run(["ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", str(lst),

@@ -76,16 +76,29 @@ PORT=$((20000 + RANDOM % 20000))
 (cd "$R" && DEMO_RX_PORT=$PORT DEMO_MIN_FREE_GB=0 node "$S/frame-receiver.mjs" . >"$TMP/rx.log" 2>&1) &
 RX_PID=$!
 for _ in 1 2 3 4 5 6 7 8 9 10; do curl -s "http://127.0.0.1:$PORT/" >/dev/null 2>&1 && break; sleep 0.3; done
+RX_TOKEN="$(python3 -I -c 'import json, sys; print(json.load(open(sys.argv[1]))[sys.argv[2]])' "$R/.rx-token" "$PORT")" \
+  || die "receiver wrote no token to .rx-token"
+[ "$(stat -f %Lp "$R/.rx-token" 2>/dev/null || stat -c %a "$R/.rx-token")" = 600 ] || die ".rx-token is not mode 600"; ok ".rx-token is private"
+rx() { curl -sf -X POST -H "x-rx-token: $RX_TOKEN" "$@"; }
+code="$(curl -s -o /dev/null -w '%{http_code}' -X POST "http://127.0.0.1:$PORT/start?take=tmprx")"
+[ "$code" = 403 ] || die "receiver accepted a request without its token ($code)"; ok "receiver refuses requests without the token"
+code="$(curl -s -o /dev/null -w '%{http_code}' -X POST -H "x-rx-token: $RX_TOKEN" -H 'Origin: https://evil.example' "http://127.0.0.1:$PORT/start?take=tmprx")"
+[ "$code" = 403 ] || die "receiver accepted a request from a web page ($code)"; ok "receiver refuses requests with an Origin"
+code="$(curl -s -o /dev/null -w '%{http_code}' -X POST -H "x-rx-token: $RX_TOKEN" "http://127.0.0.1:$PORT/start?take=..")"
+[ "$code" = 400 ] || die "receiver accepted take '..' ($code)"; ok "receiver refuses take '..'"
 jpg_b64="$(ffmpeg -loglevel error -f lavfi -i testsrc2=s=64x36 -frames:v 1 -f image2pipe -c:v mjpeg - | base64 | tr -d '\n')"
-curl -sf -X POST "http://127.0.0.1:$PORT/start?take=_tmprx" >/dev/null
+rx "http://127.0.0.1:$PORT/start?take=tmprx" >/dev/null
 for i in 0 1 2; do
-  curl -sf -X POST "http://127.0.0.1:$PORT/frame" -H 'content-type: application/json' \
+  rx "http://127.0.0.1:$PORT/frame" -H 'content-type: application/json' \
     -d "{\"ts\": 1000.$((i * 4)), \"b64\": \"$jpg_b64\"}" >/dev/null
 done
-curl -sf -X POST "http://127.0.0.1:$PORT/stop" | grep -q '"frames":3' || die "receiver did not report 3 frames"
+rx "http://127.0.0.1:$PORT/blur" -d '{"x": 10, "y": 10, "w": 50, "h": 20, "t": 1000.5}' >/dev/null || die "receiver refused a valid blur box"
+code="$(curl -s -o /dev/null -w '%{http_code}' -X POST -H "x-rx-token: $RX_TOKEN" -d '{"x": "0);evil", "y": 1, "w": 1, "h": 1, "t": 1}' "http://127.0.0.1:$PORT/blur")"
+[ "$code" = 400 ] || die "receiver accepted a non-numeric blur box ($code)"; ok "receiver refuses a non-numeric blur box"
+rx "http://127.0.0.1:$PORT/stop" | grep -q '"frames":3' || die "receiver did not report 3 frames"
 kill "$RX_PID" 2>/dev/null || true
-exists "$R/frames/_tmprx/ts.txt"; exists "$R/frames/_tmprx/f00002.jpg"
-command rm -rf "$R/frames/_tmprx"
+exists "$R/frames/tmprx/ts.txt"; exists "$R/frames/tmprx/f00002.jpg"; exists "$R/frames/tmprx/blur.jsonl"
+command rm -rf "$R/frames/tmprx"
 
 step "encode-take (synthetic frames, with a blur box)"
 F="$R/frames/_tmp08"; mkdir -p "$F"

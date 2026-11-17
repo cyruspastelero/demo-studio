@@ -7,6 +7,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { PLUGIN_ROOT, loadDemoConfig, loadPlaywright, windowConfig } from './pw.mjs';
+import { rxTokensLine } from './rx-tokens.mjs';
 
 const [who, ...files] = process.argv.slice(2);
 if (!who || files.length === 0) {
@@ -21,7 +22,8 @@ const lib = readFileSync(join(PLUGIN_ROOT, 'scripts', 'lib.js'), 'utf8');
 // A per-window receiver port lets two windows record at once.
 const rxPort = process.env.RX_PORT || win.rx_port;
 const port = rxPort ? `PROJECT.port = ${Number(rxPort)};` : '';
-const code = [readFileSync('scenes/_project.js', 'utf8'), port, lib, ...files.slice(0, -1).map((f) => readFileSync(f, 'utf8')),
+// Read now, from recordings/.rx-token, so start the window's frame receiver before this.
+const code = [readFileSync('scenes/_project.js', 'utf8'), port, rxTokensLine(), lib, ...files.slice(0, -1).map((f) => readFileSync(f, 'utf8')),
   'let stop = null;', 'try {', readFileSync(files.at(-1), 'utf8'), '} finally { if (stop) await stop(); }'].join('\n');
 
 const { chromium } = await loadPlaywright();

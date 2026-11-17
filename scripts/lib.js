@@ -5,6 +5,15 @@
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const W = 1440, H = 810;            // CSS viewport; captured at DPR 2 = 2880x1620
 const RX = `http://127.0.0.1:${PROJECT.port || 8765}`;
+// The receiver only accepts requests that carry its per-run token. mk-scene.sh, mk-lib.sh and rec.mjs
+// put RX_TOKENS (port -> token, from recordings/.rx-token) in front of this file.
+const RX_TOKEN = (typeof RX_TOKENS === 'object' && RX_TOKENS && RX_TOKENS[String(PROJECT.port || 8765)]) || PROJECT.rxToken || '';
+const RX_HEADERS = { 'x-rx-token': RX_TOKEN };
+function rxPost(path, body) {
+  if (!RX_TOKEN) throw new Error('no frame receiver token: start frame-receiver.mjs first, then re-run mk-scene.sh (or mk-lib.sh and its _lib.run.js)');
+  return api.post(`${RX}${path}`, body === undefined ? { headers: RX_HEADERS }
+    : { data: JSON.stringify(body), headers: { ...RX_HEADERS, 'content-type': 'application/json' } });
+}
 const ctx = page.context().browser().contexts().find(c => c !== page.context());
 if (!ctx) throw new Error('2x recording context missing; run setup-context first');
 const api = ctx.request;
@@ -49,13 +58,13 @@ async function hideClutter(p, sources) {
 async function record(p, take) {
   const [w, h, dpr] = await p.evaluate(() => [innerWidth, innerHeight, devicePixelRatio]);
   if (w !== W || h !== H || dpr !== 2) throw new Error(`bad viewport ${w}x${h}@${dpr}; call prep(p) first`);
-  const started = await api.post(`${RX}/start?take=${take}`);
+  const started = await rxPost(`/start?take=${encodeURIComponent(take)}`);
   if (!started.ok()) throw new Error(`frame receiver refused start: ${await started.text()}`);
   const cdp = await ctx.newCDPSession(p);
   let chain = Promise.resolve();
   cdp.on('Page.screencastFrame', f => {
     cdp.send('Page.screencastFrameAck', { sessionId: f.sessionId }).catch(() => {});
-    chain = chain.then(() => api.post(`${RX}/frame`, { data: JSON.stringify({ ts: f.metadata.timestamp, b64: f.data }), headers: { 'content-type': 'application/json' } })).catch(() => {});
+    chain = chain.then(() => rxPost('/frame', { ts: f.metadata.timestamp, b64: f.data })).catch(() => {});
   });
   await cdp.send('Page.startScreencast', { format: 'jpeg', quality: 88, maxWidth: W * 2, maxHeight: H * 2 });
   let stopped = false;
@@ -64,7 +73,7 @@ async function record(p, take) {
     await sleep(300);
     await cdp.send('Page.stopScreencast').catch(() => {});
     await chain; await cdp.detach().catch(() => {});
-    return (await api.post(`${RX}/stop`)).json();
+    return (await rxPost('/stop')).json();
   };
 }
 
@@ -74,10 +83,12 @@ const now = () => Date.now() / 1000 - 0.2;
 async function blur(loc, since, until) {
   const b = await loc.boundingBox();
   if (!b) throw new Error('blur target not visible');
-  await api.post(`${RX}/blur`, { data: JSON.stringify({ x: b.x, y: b.y, w: b.width, h: b.height, t: since || now(), ...(until ? { until } : {}) }) });
+  const res = await rxPost('/blur', { x: b.x, y: b.y, w: b.width, h: b.height, t: since || now(), ...(until ? { until } : {}) });
+  if (!res.ok()) throw new Error(`frame receiver refused blur box: ${await res.text()}`);
 }
 async function blurRect(x, y, w, h, since) {
-  await api.post(`${RX}/blur`, { data: JSON.stringify({ x, y, w, h, t: since || now() }) });
+  const res = await rxPost('/blur', { x, y, w, h, t: since || now() });
+  if (!res.ok()) throw new Error(`frame receiver refused blur box: ${await res.text()}`);
 }
 
 // Human-looking pointer: eased (slow-fast-slow) along a gentle arc, never a straight constant-speed line.

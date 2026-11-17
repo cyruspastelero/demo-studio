@@ -323,8 +323,13 @@ def render_say(line: Line, voice: Voice, cache_dir: Path) -> Path:
 def user_file(line: Line, folder: Path) -> Path | None:
     for name in (f"{line.number:02d}", str(line.number)):
         for ext in FILE_EXTENSIONS:
-            if (folder / f"{name}{ext}").exists():
-                return folder / f"{name}{ext}"
+            path = folder / f"{name}{ext}"
+            if path.exists():
+                try:  # a symlink in a shared demo folder must not pull in files from elsewhere
+                    lib.ensure_inside(folder.parent, path, f"voiceover file {path.name}")
+                except lib.UnsafePath as error:
+                    raise NarrateError(str(error)) from error
+                return path
     return None
 
 
@@ -502,7 +507,16 @@ Default: files when voiceover/ has them, else elevenlabs when the key is set, el
 
 
 def resolve_music(cli: str | None, configured: str, demo_dir: Path) -> Path | None:
-    path = Path(cli).resolve() if cli else (demo_dir / configured).resolve() if configured else None
+    """--music is typed by the user, so any path is fine. voice.music comes from demo.json, which may
+    be someone else's, so it must stay inside the demo folder."""
+    path = None
+    if cli:
+        path = Path(cli).resolve()
+    elif configured:
+        try:
+            path = lib.safe_join(demo_dir, configured, "voice.music")
+        except lib.UnsafePath as error:
+            raise NarrateError(str(error), ("Move the music file into the demo folder and point voice.music at it",)) from error
     if path and not path.is_file():
         where = "--music is relative to where you run the command" if cli else \
             "voice.music in demo.json is relative to the demo folder"

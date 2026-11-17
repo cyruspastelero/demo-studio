@@ -24,6 +24,7 @@ mkdir -p "$out_dir"
     echo "mk-scene: unknown option $mode" >&2; exit 1
   else
     if [ -f scenes/_project.js ]; then cat scenes/_project.js; else echo 'const PROJECT = {};'; fi; echo
+    node "$here/rx-tokens.mjs"   # the running receiver's token; re-wrap after restarting it
     cat "$here/lib.js"; echo
   fi
   echo 'let stop = null;'

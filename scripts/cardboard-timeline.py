@@ -111,7 +111,7 @@ def main(argv: list[str]) -> None:
     cfg_path = Path(args[0] if args else "handoff.json").resolve()
     cfg = lib.load_config(cfg_path, "handoff", TOOL)
     lib.require("ffprobe")
-    out = (cfg_path.parent / cfg.get("paths", {}).get("out", "recordings/editor-handoff")).resolve()
+    out = lib.config_path(cfg_path.parent, cfg.get("paths", {}).get("out", "recordings/editor-handoff"), "paths.out", TOOL)
     videos = handoff.build_videos(cfg)
     wanted = args[1] if len(args) > 1 else None
     if wanted and wanted not in {video.key for video in videos}:

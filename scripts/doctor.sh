@@ -51,13 +51,16 @@ done
 if [ -n "$chrome" ]; then ok "Google Chrome"
 else bad "Google Chrome not found" "$(brew_or '--cask google-chrome' 'install Chrome from https://www.google.com/chrome')"; fi
 
+# Pinned so a new upstream release cannot change what runs with access to the logged-in browser.
+# Bump deliberately after reading the release notes.
+PLAYWRIGHT_MCP_VERSION=0.0.85
 mcp_found=0
 for f in "$HOME/.claude.json" "$HOME/.claude/settings.json" "$PWD/.mcp.json" "$PWD/.claude/settings.json"; do
   if [ -f "$f" ] && grep -q '@playwright/mcp' "$f" 2>/dev/null; then mcp_found=1; break; fi
 done
 if [ "$mcp_found" = 1 ]; then ok "Playwright MCP configured"
 else bad "Playwright MCP not found in Claude Code config" \
-  "claude mcp add playwright --scope user -- npx -y @playwright/mcp --browser chrome"; fi
+  "claude mcp add playwright --scope user -- npx -y @playwright/mcp@${PLAYWRIGHT_MCP_VERSION} --browser chrome"; fi
 
 free_kb="$(df -Pk "$target" | awk 'NR==2 {print $4}')"
 free_gb=$((free_kb / 1024 / 1024))

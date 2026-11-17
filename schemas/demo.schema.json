@@ -9,7 +9,7 @@
   "patternProperties": { "^_": {} },
   "properties": {
     "title": { "type": "string", "minLength": 1, "description": "Product name, short. Also names the output file." },
-    "logo": { "type": "string", "description": "Logo path relative to demo.json (PNG or SVG). Empty for none." },
+    "logo": { "type": "string", "pattern": "^$|^(?![/\\\\])(?![A-Za-z]:)(?!.*(^|[/\\\\])\\.\\.([/\\\\]|$)).+$", "description": "Logo path relative to demo.json (PNG or SVG). Empty for none." },
     "browser": {
       "type": "object",
       "additionalProperties": false,
@@ -48,7 +48,7 @@
           }
         },
         "lead_in": { "type": "number", "minimum": 0, "description": "Seconds into an item before its line starts. Default 0.3." },
-        "music": { "type": "string", "description": "Music bed path relative to demo.json. Looped, ducked under speech." },
+        "music": { "type": "string", "pattern": "^(?![/\\\\])(?![A-Za-z]:)(?!.*(^|[/\\\\])\\.\\.([/\\\\]|$)).+$", "description": "Music bed path relative to demo.json. Looped, ducked under speech." },
         "music_volume": { "type": "number", "minimum": 0, "maximum": 1, "description": "Music level before ducking. Default 0.18." }
       }
     },
