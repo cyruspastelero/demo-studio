@@ -2,6 +2,12 @@
 
 Notable changes, newest first. Versions follow semver as described in CONTRIBUTING.md.
 
+## Unreleased
+
+- **Editor opens on the real cut**: when `handoff.json` is still the scaffold template, the editor
+  opens on `demo.json` instead, and a note in the inspector says when the open file is still the
+  template (#3).
+
 ## 0.3.0 (2026-11-18)
 
 - **Finished cuts at a measured quality bar** (`docs/quality-bar.md`): bundled Inter and Geist, a

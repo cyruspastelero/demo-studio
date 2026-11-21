@@ -8,6 +8,7 @@ import { RenderDrawer } from './components/render-drawer';
 import { SourceViewer } from './components/source-viewer';
 import { Timeline } from './components/timeline';
 import { renderOptions, TopBar } from './components/top-bar';
+import { isPlaceholderTitle } from '../shared/placeholder.mjs';
 import { applyEdit, EditError, refUses, type Edit, type RefMode, type ShotPatch } from './lib/edits';
 import { voiceoverFits } from './lib/fit';
 import { socialEntry } from './lib/geometry';
@@ -26,6 +27,15 @@ const EMPTY: TimelineModel = { scenes: [], shots: [], total: 0, rateWpm: 165, le
 
 type EditorSession = Extract<Session, { mode: 'editor' }>;
 
+const isTemplate = (data: unknown) => isPlaceholderTitle((data as { title?: unknown } | null)?.title);
+
+function templateNotice(kind: FileKind, others: FileKind[]): string {
+  const name = `${kind}.json`;
+  const stage = kind === 'handoff' ? 'run the handoff stage' : 'plan the demo';
+  const other = others.filter((k) => k !== kind)[0];
+  return `${name} is still the template: ${stage}${other ? ` or switch to ${other}.json` : ''}.`;
+}
+
 export function Editor({ session, onClose }: {
   session: EditorSession; onClose: () => void;
 }) {
@@ -37,7 +47,10 @@ export function Editor({ session, onClose }: {
   }, []);
   const docs = useDocuments(session.files, notify);
   const fileTabs = KINDS.filter((k) => session.files[k]?.data);
-  const [fileKind, setFileKind] = useState<FileKind>(fileTabs[0] ?? 'handoff');
+  // Open on a file that holds a real cut: a handoff.json still carrying the template's title was
+  // never filled in, and its placeholder scenes would read as lost edits.
+  const [fileKind, setFileKind] = useState<FileKind>(() =>
+    fileTabs.find((k) => !isTemplate(session.files[k]?.data)) ?? fileTabs[0] ?? 'handoff');
   const [videoIndex, setVideoIndex] = useState(0);
   const [aspect, setAspect] = useState<Aspect>('16:9');
   const [selection, setSelection] = useState<Selection>(null);
@@ -232,6 +245,7 @@ export function Editor({ session, onClose }: {
       {doc ? (
         <Inspector kind={fileKind} doc={doc} videoIndex={videoIndex} timeline={timeline} selection={selection}
           onSelect={setSelection} onEdit={runEdit} onShotPatch={onShotPatch} durations={durations} fits={fits}
+          notice={isTemplate(doc) ? templateNotice(fileKind, fileTabs) : undefined}
           errors={built.error ? [built.error, ...docs.errors[fileKind]] : docs.errors[fileKind]} />
       ) : <aside className="panel inspector"><div className="inspector-body"><div className="note bad">{built.error}</div></div></aside>}
       <Timeline timeline={timeline} pps={pps} onZoom={setPps} player={player} selection={selection} onSelect={setSelection}

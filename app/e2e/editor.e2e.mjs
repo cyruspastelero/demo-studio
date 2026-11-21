@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { exampleCopy, launch, startServer } from './harness.mjs';
+import { exampleCopy, launch, REPO, startServer } from './harness.mjs';
 
 const results = [];
 async function step(name, fn) {
@@ -206,6 +206,18 @@ try {
     await page.waitForSelector('[data-testid="render-drawer"][data-status="running"]');
     await page.click('[data-testid="render-drawer"] button:has-text("Cancel")');
     await page.waitForSelector('[data-testid="render-drawer"][data-status="cancelled"]', { timeout: 10000 });
+  });
+
+  await step('opens on demo.json while handoff.json is still the template', async () => {
+    const fileTab = (k) => page.locator(`.topbar [role="tab"]:has-text("${k}.json")`);
+    writeFileSync(join(folder, 'handoff.json'), readFileSync(join(REPO, 'templates', 'handoff.json')));
+    await page.reload();
+    await page.waitForSelector('[data-testid="shot"]');
+    assert.equal(await fileTab('demo').getAttribute('aria-selected'), 'true');
+    assert.equal(await page.locator('[data-testid="template-notice"]').count(), 0);
+    await fileTab('handoff').click();
+    const notice = await page.locator('[data-testid="template-notice"]').textContent();
+    assert.match(notice, /handoff\.json is still the template.*switch to demo\.json/);
   });
 
   assert.deepEqual(errors, [], `no page errors: ${errors.join('; ')}`);

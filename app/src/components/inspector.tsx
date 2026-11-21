@@ -20,6 +20,8 @@ interface Props {
   durations: Record<string, number | null>;
   fits: VoiceoverFit[];
   errors: string[];
+  /** Shown above everything else, e.g. that the open file is still the template. */
+  notice?: string;
 }
 
 function ShotPanel({ kind, doc, timeline, selection, onEdit, onShotPatch, durations }: Props & { selection: { type: 'shot'; scene: number; shot: number } }) {
@@ -218,6 +220,7 @@ export function Inspector(props: Props) {
         ))}
       </div>
       <div className="inspector-body" data-testid="inspector">
+        {props.notice && <div className="note bad" data-testid="template-notice">{props.notice}</div>}
         {errors.length > 0 && (
           <ul className="errors" data-testid="validation-errors">
             {errors.slice(0, 8).map((e) => <li key={e}>{e}</li>)}

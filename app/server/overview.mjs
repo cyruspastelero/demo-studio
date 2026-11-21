@@ -2,6 +2,7 @@
 // videos and documents it has, and the next thing to ask Claude for. Read-only, files only.
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
+import { isPlaceholderTitle } from '../shared/placeholder.mjs';
 import { parseCsv } from './media.mjs';
 
 export const STATUSES = ['Planning', 'Prepping', 'Recording', 'Review', 'With editor', 'Delivered', 'Archived'];
@@ -10,15 +11,12 @@ const CLOSED_THROWAWAY = ['deleted', 'kept', 'keep'];
 const VIDEO = /\.(mp4|mov)$/i;
 const DOCS = ['README.md', 'BRIEF.md', 'RUN-SHEET.md', 'SHOT-LIST.md', 'VOICEOVER.md', 'PREP.md', 'THROWAWAYS.md'];
 const INDEX_ROW = /^\|\s*\[([^\]]+)\]\(/;
-const PLACEHOLDER_TITLES = ['Product name', 'Product name, short'];  // what templates/ ships with
 // The stage a demo has at least reached when its index row says so, for demos whose files moved.
 const STAGE_FOR_STATUS = {
   Prepping: 'plan', Recording: 'prep', Review: 'record', 'With editor': 'handoff', Delivered: 'final', Archived: 'final',
 };
 
-export function isPlaceholderTitle(title) {
-  return typeof title !== 'string' || !title.trim() || PLACEHOLDER_TITLES.includes(title.trim());
-}
+export { isPlaceholderTitle };
 
 // Folder names come from whoever made the demo. One goes into a prompt the user pastes into Claude,
 // so only a plain name is used (in backticks); anything else (spaces, quotes, newlines, words that
