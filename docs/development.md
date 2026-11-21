@@ -38,3 +38,19 @@ npm run test:app                     # editor unit tests (vitest)
 npm run test:e2e                     # editor end to end, headless Chrome on a temp copy of the example
 npm run screenshots -w app           # refresh docs/img/
 ```
+
+## The GitHub Pages site
+
+`site/index.html` is the demo page at https://cyruspastelero.github.io/demo-studio/. The Pages
+workflow (`.github/workflows/pages.yml`) builds it:
+
+1. `npm run build -w app && npm run build:static -w app` makes the live editor: a server-less build
+   of the studio (`vite build --mode static`), plus `app/scripts/snapshot-static-demo.mjs`, which runs
+   the real studio on `examples/todo-sample` with an empty demos root and records every read the app
+   makes into `app/out-static/data/`. Local paths are replaced with `~/...` before saving. In that
+   build, edits stay in the tab and rendering explains that it needs the local studio.
+2. `bash scripts/build-site.sh _site <folder with sample-*.mp4>` puts the page, logo, fonts, posters,
+   the house template frames and the editor (as `editor/`) together. The workflow downloads the
+   sample videos from the `samples` release, so they never go into git.
+
+To preview locally, run both steps and serve `_site` with `python3 -m http.server`.

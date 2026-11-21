@@ -1,7 +1,26 @@
-# demo-studio
+<p align="center">
+  <img src="assets/logo/mark.svg" alt="" width="64" height="64">
+</p>
 
-[![CI](https://github.com/cyruspastelero/demo-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/cyruspastelero/demo-studio/actions/workflows/ci.yml)
-[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+<h1 align="center">demo-studio</h1>
+
+<p align="center">
+  <b>Tell Claude the goal. Get a finished demo video of your real app.</b>
+</p>
+
+<p align="center">
+  <a href="https://github.com/cyruspastelero/demo-studio/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/cyruspastelero/demo-studio/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="LICENSE"><img alt="License: Apache 2.0" src="https://img.shields.io/badge/license-Apache%202.0-d2430e"></a>
+  <img alt="Free and local" src="https://img.shields.io/badge/runs-locally-171717">
+</p>
+
+<p align="center">
+  <a href="https://cyruspastelero.github.io/demo-studio/"><b>Live demo</b></a>
+  &nbsp;·&nbsp;
+  <a href="#quick-start"><b>Quick start</b></a>
+  &nbsp;·&nbsp;
+  <a href="#docs"><b>Docs</b></a>
+</p>
 
 A Claude Code plugin for product demo videos. Tell Claude the goal, then either log in to your
 site in the Playwright browser or hand over your demo credentials. The agent does the rest: it plans
@@ -64,14 +83,27 @@ keynote-style cut built to the quality bar, and a narrated version. Ask for prom
 4:5 and 9:16 social versions and a zip for a human editor too. Want to check the plan or the reel
 before Claude goes on? Say so, and it stops there.
 
+To fix a cut yourself, `npm run studio` opens a local timeline editor.
+[Try it in the browser](https://cyruspastelero.github.io/demo-studio/#editor) on the todo sample first.
+
+## Look templates
+
+The look of a cut (window, zooms, highlights, callouts, titles, ending, loudness) is a template, so
+the setup grows with you:
+
+- **Pick one per demo** with one line in demo.json: `"template": "house"`. Your brand colours and
+  logo still win, so one template serves every product.
+- **Copy the look of any video.** Say "copy the look of launch.mp4" and skill `demo-template`
+  measures it frame by frame and saves a new template with previews.
+- **Share it as a folder** in `_templates/`. A template with a built-in's name replaces it.
+
+Details: [docs/templates.md](docs/templates.md).
+
 ## Dependencies
 
-All free, all local. Required: Claude Code, Node.js 20+, Python 3.10+ (standard library only),
-ffmpeg, Google Chrome and the Playwright MCP (`@playwright/mcp@0.0.84`). npm installs one runtime
-package for recording (`playwright-core`) plus React, ajv and Vite for the local studio, all pinned;
-`npm audit --omit=dev` reports no known vulnerabilities in runtime packages. Fonts (Inter, Geist) are bundled under the SIL Open Font License. Optional:
-ElevenLabs or Higgsfield for voice and music. Full list with versions and licences:
-[docs/dependencies.md](docs/dependencies.md).
+All free and local: Claude Code, Node.js 20+, Python 3.10+, ffmpeg, Google Chrome and the
+Playwright MCP. ElevenLabs or Higgsfield are optional, for voice and music. Versions, packages,
+fonts and licences: [docs/dependencies.md](docs/dependencies.md).
 
 ## Docs
 
