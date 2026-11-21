@@ -21,4 +21,4 @@ All three scenes share one window run, cropped to the list (`[540, 150, 840, 430
 | Card | Kind | Title (accent in bold) | Subtitle or tagline |
 | --- | --- | --- | --- |
 | intro | hero | A todo list in **three** moves. | Recorded and cut with demo-studio. |
-| outro | end | Real app. Real **clicks.** | github.com/Cyvid7-Darus10/demo-studio |
+| outro | end | Real app. Real **clicks.** | github.com/cyruspastelero/demo-studio |

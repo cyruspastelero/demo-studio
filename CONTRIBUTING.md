@@ -5,7 +5,7 @@ Every demo teaches something. Put it back here so the next person does not re-le
 ## Set up
 
 ```bash
-git clone https://github.com/Cyvid7-Darus10/demo-studio.git
+git clone https://github.com/cyruspastelero/demo-studio.git
 cd demo-studio && npm install
 bash scripts/doctor.sh
 claude --plugin-dir "$PWD"      # load your working copy instead of the installed plugin

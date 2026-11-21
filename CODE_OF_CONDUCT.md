@@ -7,4 +7,4 @@ no harassment of any kind. This applies in issues, pull requests, discussions an
 project is represented.
 
 To report a problem, contact the maintainer privately through the email on their
-[GitHub profile](https://github.com/Cyvid7-Darus10). Reports are kept confidential.
+[GitHub profile](https://github.com/cyruspastelero). Reports are kept confidential.

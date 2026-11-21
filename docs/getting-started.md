@@ -64,7 +64,7 @@ you want to film.
 **1. Install the plugin** in Claude Code:
 
 ```
-/plugin marketplace add Cyvid7-Darus10/demo-studio
+/plugin marketplace add cyruspastelero/demo-studio
 /plugin install demo-studio@demo-studio
 ```
 

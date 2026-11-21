@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/Cyvid7-Darus10/demo-studio/schemas/template.schema.json",
+  "$id": "https://github.com/cyruspastelero/demo-studio/schemas/template.schema.json",
   "title": "demo-studio look template",
   "description": "A reusable look: measurements of a style (colours, geometry, timing, loudness), never content. Lives in <id>/template.json next to README.md, source.json and preview/01.png..06.png. Every field is optional except id, name and look; a missing value falls back to the house look (scripts/keynote/spec.py). Colours are #hex only. No field holds a file path: previews are found by convention, so nothing can point outside the template folder.",
   "type": "object",

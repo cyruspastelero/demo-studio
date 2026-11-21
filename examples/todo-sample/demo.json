@@ -28,7 +28,7 @@
       "crop": [540, 150, 840, 430],
       "callouts": [{ "at": 1.7, "dur": 3.2, "kind": "statement", "text": "Done ones, gone." }],
       "voiceover": "Then clear the finished ones in one click, and the list is clean again." },
-    { "card": "outro", "kind": "end", "title": "Real app. Real clicks.", "accent": "clicks.", "subtitle": "github.com/Cyvid7-Darus10/demo-studio", "duration": 7.9, "outro": 5.0,
+    { "card": "outro", "kind": "end", "title": "Real app. Real clicks.", "accent": "clicks.", "subtitle": "github.com/cyruspastelero/demo-studio", "duration": 7.9, "outro": 5.0,
       "voiceover": "Real app, real clicks. Every frame here was recorded and cut on a laptop, for free." }
   ]
 }

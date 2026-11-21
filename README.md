@@ -1,6 +1,6 @@
 # demo-studio
 
-[![CI](https://github.com/Cyvid7-Darus10/demo-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/Cyvid7-Darus10/demo-studio/actions/workflows/ci.yml)
+[![CI](https://github.com/cyruspastelero/demo-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/cyruspastelero/demo-studio/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
 A Claude Code plugin for product demo videos. Tell Claude the goal, then either log in to your
@@ -27,7 +27,7 @@ callouts, titles, ElevenLabs narration and music. Click a preview for the full 1
 
 | Study app showcase (1:18) | Todo app sample (0:37) |
 | --- | --- |
-| [![Study app showcase](docs/img/sample-showcase.gif)](https://github.com/Cyvid7-Darus10/demo-studio/releases/download/samples/sample-showcase.mp4) | [![Todo app sample](docs/img/sample-todo.gif)](https://github.com/Cyvid7-Darus10/demo-studio/releases/download/samples/sample-todo.mp4) |
+| [![Study app showcase](docs/img/sample-showcase.gif)](https://github.com/cyruspastelero/demo-studio/releases/download/samples/sample-showcase.mp4) | [![Todo app sample](docs/img/sample-todo.gif)](https://github.com/cyruspastelero/demo-studio/releases/download/samples/sample-todo.mp4) |
 | A live web app with a seeded demo learner: dashboard, weak topics, a question with its explanation, a story, a scenario and readiness. Highlights take the product's own colour. | A public todo app ([TodoMVC](https://todomvc.com)), three scenes, no login. Its plan, scene scripts, takes and configs are in [examples/todo-sample](examples/todo-sample), so you can rebuild it yourself. |
 
 ## Quick start
@@ -37,12 +37,12 @@ Clone the repo and work inside it. Your demos live in `demos/` in the clone, whi
 ```bash
 brew install node ffmpeg python && brew install --cask google-chrome   # other systems: docs/getting-started.md
 claude mcp add playwright --scope user -- npx -y @playwright/mcp@0.0.84 --browser chrome
-git clone https://github.com/Cyvid7-Darus10/demo-studio.git && cd demo-studio
+git clone https://github.com/cyruspastelero/demo-studio.git && cd demo-studio
 npm install && bash scripts/doctor.sh && bash scripts/new-workspace.sh ./demos
 claude
 ```
 
-Prefer it as a plugin in any folder? `/plugin marketplace add Cyvid7-Darus10/demo-studio`, then
+Prefer it as a plugin in any folder? `/plugin marketplace add cyruspastelero/demo-studio`, then
 `/plugin install demo-studio@demo-studio` ([details](docs/getting-started.md#install)).
 
 Then ask:

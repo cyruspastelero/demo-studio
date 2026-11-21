@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/Cyvid7-Darus10/demo-studio/schemas/sidecars.schema.json",
+  "$id": "https://github.com/cyruspastelero/demo-studio/schemas/sidecars.schema.json",
   "title": "demo-studio build sidecars",
   "description": "Files the build writes next to a cut in recordings/exports: <slug>-keynote-cut.plan.json and .timing.json (build-keynote.py) and <slug>-keynote-cut-narrated.voice.json (narrate.py). A shared demo folder can ship its own, so every reader validates them against these shapes before a value reaches ffmpeg or a loop. Times are seconds in the cut, capped at four hours; lists are capped so a crafted file cannot make a checker run for ever. The plan's look is checked separately against the look in template.schema.json.",
   "$defs": {
