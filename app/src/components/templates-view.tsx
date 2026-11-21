@@ -1,4 +1,5 @@
 import { Check, Copy, ImageOff, LayoutTemplate } from 'lucide-react';
+import { serverUrl } from '../lib/static-demo';
 import { useState } from 'react';
 import { plainText, TEMPLATE_COPIER, templatePrompt } from '../lib/prompts';
 import { originLabel, sourceLine, type LookTemplate } from '../lib/templates';
@@ -48,7 +49,7 @@ function PreviewStrip({ template }: { template: LookTemplate }) {
     <div className="tpl-strip">
       <button className="tpl-preview" onClick={next} disabled={previews.length < 2}
         aria-label={previews.length > 1 ? `${name}: frame ${shown + 1} of ${previews.length}. Show the next frame` : `${name}: preview frame`}>
-        <img src={previews[shown]} alt="" onError={markFailed} />
+        <img src={serverUrl(previews[shown])} alt="" onError={markFailed} />
         {previews.length > 1 && <span className="tpl-frame mono" aria-hidden>{shown + 1}/{previews.length}</span>}
       </button>
       {previews.length > 1 && (
@@ -56,7 +57,7 @@ function PreviewStrip({ template }: { template: LookTemplate }) {
           {previews.map((url, i) => (
             <button key={url} className="tpl-thumb" aria-pressed={i === shown} onClick={() => setShown(i)}
               aria-label={`Show frame ${i + 1}`}>
-              <img src={url} alt="" loading="lazy" />
+              <img src={serverUrl(url)} alt="" loading="lazy" />
             </button>
           ))}
         </div>

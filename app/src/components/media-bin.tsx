@@ -1,4 +1,5 @@
 import { ExternalLink, Film, Layers, Type } from 'lucide-react';
+import { serverUrl } from '../lib/static-demo';
 import { useRef } from 'react';
 import { thumbUrl } from '../api';
 import type { BinItem } from '../lib/edits';
@@ -90,7 +91,7 @@ export function MediaBin({ kind, doc, media, viewing, onSelectCard, onViewTake, 
                 onDragStart={(e) => startDrag(e, { kind: 'card', name })}
                 title={`${card.title}\nClick to edit, drag onto the timeline to add.`}
               >
-                <div className="thumb" style={media?.cards[name] ? { backgroundImage: `url("/media/${media.cards[name]}")` } : undefined}>
+                <div className="thumb" style={media?.cards[name] ? { backgroundImage: `url("${serverUrl(`/media/${media.cards[name]}`)}")` } : undefined}>
                   {!media?.cards[name] && <Type size={16} />}
                 </div>
                 <div>
@@ -134,7 +135,7 @@ export function MediaBin({ kind, doc, media, viewing, onSelectCard, onViewTake, 
             </div>
             {demoCards.map((c) => (
               <div key={c.card} className="bin-item" onClick={() => onSelectCard(c.card)} title="Click to edit">
-                <div className="thumb" style={media?.keynoteCards[c.card] ? { backgroundImage: `url("/media/${media.keynoteCards[c.card]}")` } : undefined}>
+                <div className="thumb" style={media?.keynoteCards[c.card] ? { backgroundImage: `url("${serverUrl(`/media/${media.keynoteCards[c.card]}`)}")` } : undefined}>
                   {!media?.keynoteCards[c.card] && <Type size={16} />}
                 </div>
                 <div><div className="name">card-{c.card}</div><div className="meta"><span>{c.title}</span></div></div>

@@ -22,3 +22,5 @@ app/out/
 voice-cache/
 recordings/exports/.keynote/
 recordings/frames/
+_site/
+app/out-static/

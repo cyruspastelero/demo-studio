@@ -1,3 +1,4 @@
+import { STATIC_DEMO, STATIC_DEMO_NOTICE, serverUrl } from './lib/static-demo';
 import type { FileKind, MediaIndex } from './lib/types';
 
 export interface FileState {
@@ -75,6 +76,7 @@ export class ApiError extends Error {
 }
 
 async function call<T>(method: string, path: string, body?: unknown): Promise<T> {
+  if (STATIC_DEMO) return staticCall<T>(method, path);
   const res = await fetch(path, {
     method,
     headers: body === undefined ? { 'x-studio': '1' } : { 'content-type': 'application/json', 'x-studio': '1' },
@@ -83,6 +85,26 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new ApiError(data.error ?? `${method} ${path} failed (${res.status})`, res.status, data);
   return data as T;
+}
+
+// In the static demo a save is kept in memory (the editor already holds the data); anything that
+// needs the machine (render, reveal, open) explains that it needs the local studio.
+let staticSaves = 0;
+async function staticCall<T>(method: string, path: string): Promise<T> {
+  // Opening the sample demo replays the recorded answer; it is the only demo in the static build.
+  // ?open starts straight in it, and the home screen is the recorded first session.
+  if (method === 'GET' || path === '/api/open') {
+    const startInEditor = path === '/api/session' && new URLSearchParams(window.location.search).has('open');
+    const recorded = startInEditor ? '/api/open' : path === '/api/home' ? '/api/session' : path;
+    const res = await fetch(serverUrl(recorded));
+    if (!res.ok) throw new ApiError(`${path} is not part of the demo`, res.status, {});
+    return (await res.json()) as T;
+  }
+  if (method === 'PUT' && path.startsWith('/api/file/')) {
+    staticSaves += 1;
+    return { hash: `demo-${staticSaves}` } as T;
+  }
+  throw new ApiError(STATIC_DEMO_NOTICE, 501, {});
 }
 
 export const api = {
@@ -100,9 +122,9 @@ export const api = {
 };
 
 export function demoThumbUrl(demo: string, path: string, w = 480): string {
-  return `/api/demo-thumb?demo=${encodeURIComponent(demo)}&path=${encodeURIComponent(path)}&t=1&w=${w}`;
+  return serverUrl(`/api/demo-thumb?demo=${encodeURIComponent(demo)}&path=${encodeURIComponent(path)}&t=1&w=${w}`);
 }
 
 export function thumbUrl(path: string, t: number, w = 160): string {
-  return `/api/thumb?path=${encodeURIComponent(path)}&t=${t.toFixed(2)}&w=${w}`;
+  return serverUrl(`/api/thumb?path=${encodeURIComponent(path)}&t=${t.toFixed(2)}&w=${w}`);
 }

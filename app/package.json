@@ -12,7 +12,8 @@
     "build": "tsc --noEmit -p . && vite build",
     "test": "vitest run",
     "e2e": "node e2e/home.e2e.mjs && node e2e/editor.e2e.mjs",
-    "screenshots": "node e2e/screenshots.mjs"
+    "screenshots": "node e2e/screenshots.mjs",
+    "build:static": "vite build --mode static && node scripts/snapshot-static-demo.mjs"
   },
   "dependencies": {
     "ajv": "8.20.0",

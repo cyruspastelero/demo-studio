@@ -808,3 +808,16 @@ kbd {
   *, *::before, *::after { transition-duration: 0ms !important; }
   .spin, .progress.indeterminate > div { animation: none; }
 }
+
+/* The live demo on GitHub Pages: one quiet line above the app. */
+.static-demo-note {
+  margin: 0;
+  padding: 6px 16px;
+  font-size: 12px;
+  color: var(--ink);
+  background: var(--accent-tint);
+  border-bottom: 1px solid var(--line);
+  text-align: center;
+}
+body:has(.static-demo-note) { display: flex; flex-direction: column; }
+body:has(.static-demo-note) #root { flex: 1; min-height: 0; height: auto; }

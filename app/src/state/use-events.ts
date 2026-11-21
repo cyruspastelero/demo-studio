@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { STATIC_DEMO } from '../lib/static-demo';
 
 type Handlers = Record<string, (data: never) => void>;
 
@@ -7,6 +8,7 @@ export function useEvents(handlers: Handlers) {
   const ref = useRef(handlers);
   ref.current = handlers;
   useEffect(() => {
+    if (STATIC_DEMO) return undefined; // no server to listen to
     const source = new EventSource('/api/events');
     const names = Object.keys(ref.current);
     const listeners = names.map((name) => {

@@ -1,5 +1,6 @@
 // Real-time playback of a timeline with two <video> elements: one shows the current clip while
 // the other waits on the next clip's in point, so cuts swap without a gap.
+import { serverUrl } from './static-demo';
 import { shotAt, sourceTime } from './timeline';
 import type { Timeline, TimelineShot } from './types';
 
@@ -15,7 +16,7 @@ export interface PlayerSnapshot {
 }
 
 export function mediaUrl(path: string): string {
-  return `/media/${path.split('/').map(encodeURIComponent).join('/')}`;
+  return serverUrl(`/media/${path.split('/').map(encodeURIComponent).join('/')}`);
 }
 
 export class Player {

@@ -1,5 +1,7 @@
 // The Templates view's data: look templates from GET /api/templates, and the lines shown on a card.
 
+import { serverUrl } from './static-demo';
+
 export type TemplateOrigin = 'workspace' | 'built-in';
 
 export interface LookTemplate {
@@ -30,7 +32,7 @@ export function parseTemplates(data: unknown): LookTemplate[] {
 }
 
 export async function fetchTemplates(fetcher: typeof fetch = fetch): Promise<LookTemplate[]> {
-  const res = await fetcher('/api/templates', { headers: { 'x-studio': '1' } });
+  const res = await fetcher(serverUrl('/api/templates'), { headers: { 'x-studio': '1' } });
   if (!res.ok) throw new Error(`could not list templates (${res.status})`);
   return parseTemplates(await res.json());
 }
