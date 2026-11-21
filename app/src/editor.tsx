@@ -27,14 +27,12 @@ const EMPTY: TimelineModel = { scenes: [], shots: [], total: 0, rateWpm: 165, le
 
 type EditorSession = Extract<Session, { mode: 'editor' }>;
 
+// A handoff.json or demo.json still carrying the template's title was scaffolded and never filled in.
 const isTemplate = (data: unknown) => isPlaceholderTitle((data as { title?: unknown } | null)?.title);
-
-function templateNotice(kind: FileKind, others: FileKind[]): string {
-  const name = `${kind}.json`;
-  const stage = kind === 'handoff' ? 'run the handoff stage' : 'plan the demo';
-  const other = others.filter((k) => k !== kind)[0];
-  return `${name} is still the template: ${stage}${other ? ` or switch to ${other}.json` : ''}.`;
-}
+const FILL_IN: Record<FileKind, string> = {
+  handoff: 'ask Claude to build the editor handoff to fill it in',
+  demo: 'ask Claude to plan the demo to fill it in',
+};
 
 export function Editor({ session, onClose }: {
   session: EditorSession; onClose: () => void;
@@ -47,13 +45,13 @@ export function Editor({ session, onClose }: {
   }, []);
   const docs = useDocuments(session.files, notify);
   const fileTabs = KINDS.filter((k) => session.files[k]?.data);
-  // Open on a file that holds a real cut: a handoff.json still carrying the template's title was
-  // never filled in, and its placeholder scenes would read as lost edits.
+  // Open on a file that holds a real cut: a template's placeholder scenes read as lost edits.
   const [fileKind, setFileKind] = useState<FileKind>(() =>
     fileTabs.find((k) => !isTemplate(session.files[k]?.data)) ?? fileTabs[0] ?? 'handoff');
   const [videoIndex, setVideoIndex] = useState(0);
   const [aspect, setAspect] = useState<Aspect>('16:9');
   const [selection, setSelection] = useState<Selection>(null);
+  const switchFile = useCallback((k: FileKind) => { setFileKind(k); setVideoIndex(0); setSelection(null); }, []);
   const [pps, setPps] = useState(36);
   const [snapping, setSnapping] = useState(true);
   const [loop, setLoop] = useState(false);
@@ -221,11 +219,24 @@ export function Editor({ session, onClose }: {
   const entry = socialEntry(fileKind === 'handoff' ? handoff?.social : undefined, fileKind === 'handoff' ? videoKey : undefined, aspect);
   const videoTabs = fileKind === 'handoff' ? (handoff?.videos ?? []).map((v) => v.key) : ['KEYNOTE'];
 
+  // The open file is still the template: say so on the timeline, and offer the file with the real cut.
+  const realFile = fileTabs.find((k) => k !== fileKind && docs.docs[k] && !isTemplate(docs.docs[k]));
+  const banner = doc && isTemplate(doc) && (
+    <div className="tl-banner" role="status" data-testid="template-banner">
+      <span title={`${fileKind}.json is still the template, so these scenes are placeholders: ${FILL_IN[fileKind]}.`}>
+        <b>{fileKind}.json is still the template</b>, so these scenes are placeholders: {FILL_IN[fileKind]}.
+      </span>
+      {realFile && (
+        <button className="btn" data-testid="template-switch" onClick={() => switchFile(realFile)}>Open {realFile}.json</button>
+      )}
+    </div>
+  );
+
   return (
-    <div className="editor">
+    <div className={`editor${banner ? ' has-banner' : ''}`}>
       <TopBar
         name={session.name} fileTabs={fileTabs} fileKind={fileKind}
-        onFileKind={(k) => { setFileKind(k); setVideoIndex(0); setSelection(null); }}
+        onFileKind={switchFile}
         videoTabs={videoTabs} videoIndex={fileKind === 'handoff' ? videoIndex : 0}
         onVideo={(i) => { setVideoIndex(i); setSelection(null); }}
         aspect={aspect} onAspect={setAspect}
@@ -245,11 +256,11 @@ export function Editor({ session, onClose }: {
       {doc ? (
         <Inspector kind={fileKind} doc={doc} videoIndex={videoIndex} timeline={timeline} selection={selection}
           onSelect={setSelection} onEdit={runEdit} onShotPatch={onShotPatch} durations={durations} fits={fits}
-          notice={isTemplate(doc) ? templateNotice(fileKind, fileTabs) : undefined}
           errors={built.error ? [built.error, ...docs.errors[fileKind]] : docs.errors[fileKind]} />
       ) : <aside className="panel inspector"><div className="inspector-body"><div className="note bad">{built.error}</div></div></aside>}
       <Timeline timeline={timeline} pps={pps} onZoom={setPps} player={player} selection={selection} onSelect={setSelection}
-        onEdit={runEdit} onShotPatch={onShotPatch} fits={fits} durations={durations} snapping={snapping} onSnapping={setSnapping} />
+        onEdit={runEdit} onShotPatch={onShotPatch} fits={fits} durations={durations} snapping={snapping} onSnapping={setSnapping}
+        banner={banner || undefined} />
 
       {drawer && job && <RenderDrawer job={job} onClose={() => setDrawer(false)} onError={(m) => notify(m, 'error')} />}
       {help && <ShortcutsOverlay onClose={() => setHelp(false)} />}

@@ -81,6 +81,11 @@ which plays the clips with their in and out points and speed, draws title cards 
 and frames 4:5 and 9:16 the way `social-cut.py` does. Bottom: the timeline, with a voiceover lane
 that turns red when a line runs past the next narrated scene. Right: the inspector.
 
+**Which file opens.** The editor opens on `handoff.json` unless it is still the template from
+`new-demo.sh` (its title is still "Product name"); then it opens on `demo.json`, where a
+keynote-only cut lives. If the file you are looking at is still the template, a banner above the
+timeline says so and offers the other file when that one is filled in.
+
 **Checking raw takes.** Click a take in the bin (or focus it and press Enter) to watch the whole
 take at real speed in the preview, with its own scrubber, frame step and length. Space, J, K, L and
 the arrow keys drive it while it is open; Esc or Back to cut returns to the cut where you left it.

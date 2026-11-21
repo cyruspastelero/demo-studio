@@ -1,5 +1,5 @@
 import { Magnet, Scissors, Trash2, ZoomIn, ZoomOut } from 'lucide-react';
-import { useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { thumbUrl } from '../api';
 import type { BinItem, Edit, ShotPatch } from '../lib/edits';
 import type { VoiceoverFit } from '../lib/fit';
@@ -35,7 +35,7 @@ function useTime(player: Player | null) {
 }
 
 export function Timeline({
-  timeline, pps, onZoom, player, selection, onSelect, onEdit, onShotPatch, fits, durations, snapping, onSnapping,
+  timeline, pps, onZoom, player, selection, onSelect, onEdit, onShotPatch, fits, durations, snapping, onSnapping, banner,
 }: {
   timeline: TimelineModel;
   pps: number;
@@ -49,6 +49,8 @@ export function Timeline({
   durations: Record<string, number | null>;
   snapping: boolean;
   onSnapping: (on: boolean) => void;
+  /** A notice shown between the toolbar and the lanes, e.g. that the open file is still the template. */
+  banner?: ReactNode;
 }) {
   const scroll = useRef<HTMLDivElement>(null);
   const time = useTime(player);
@@ -197,6 +199,7 @@ export function Timeline({
           value={Math.log(pps)} onChange={(e) => onZoom(Math.exp(Number(e.target.value)))} />
         <button className="icon-btn" aria-label="Zoom in" title="Zoom in (=)" onClick={() => onZoom(Math.min(MAX_PPS, pps * 1.25))}><ZoomIn size={16} /></button>
       </div>
+      {banner}
       <div className="tl-body">
         <div className="tl-lanes" aria-hidden>
           <div style={{ height: 26 }}>Scenes</div>

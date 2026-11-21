@@ -210,14 +210,34 @@ try {
 
   await step('opens on demo.json while handoff.json is still the template', async () => {
     const fileTab = (k) => page.locator(`.topbar [role="tab"]:has-text("${k}.json")`);
+    const banner = page.locator('[data-testid="template-banner"]');
+    const real = readFileSync(join(folder, 'handoff.json'));
     writeFileSync(join(folder, 'handoff.json'), readFileSync(join(REPO, 'templates', 'handoff.json')));
     await page.reload();
     await page.waitForSelector('[data-testid="shot"]');
     assert.equal(await fileTab('demo').getAttribute('aria-selected'), 'true');
-    assert.equal(await page.locator('[data-testid="template-notice"]').count(), 0);
+    assert.equal(await banner.count(), 0);
+
+    // On the template tab the timeline says so and offers the real cut.
     await fileTab('handoff').click();
-    const notice = await page.locator('[data-testid="template-notice"]').textContent();
-    assert.match(notice, /handoff\.json is still the template.*switch to demo\.json/);
+    assert.match(await banner.textContent(), /handoff\.json is still the template/);
+    await page.click('[data-testid="template-switch"]');
+    assert.equal(await fileTab('demo').getAttribute('aria-selected'), 'true');
+    assert.equal(await banner.count(), 0);
+
+    // Claude fills handoff.json in while it is open: the banner goes without a reload.
+    await fileTab('handoff').click();
+    await banner.waitFor();
+    writeFileSync(join(folder, 'handoff.json'), real);
+    await banner.waitFor({ state: 'detached' });
+
+    // Both files still templates: handoff opens first, with no file to switch to.
+    writeFileSync(join(folder, 'handoff.json'), readFileSync(join(REPO, 'templates', 'handoff.json')));
+    writeFileSync(join(folder, 'demo.json'), readFileSync(join(REPO, 'templates', 'demo.json')));
+    await page.reload();
+    await banner.waitFor();
+    assert.equal(await fileTab('handoff').getAttribute('aria-selected'), 'true');
+    assert.equal(await page.locator('[data-testid="template-switch"]').count(), 0);
   });
 
   assert.deepEqual(errors, [], `no page errors: ${errors.join('; ')}`);

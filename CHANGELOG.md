@@ -5,8 +5,8 @@ Notable changes, newest first. Versions follow semver as described in CONTRIBUTI
 ## Unreleased
 
 - **Editor opens on the real cut**: when `handoff.json` is still the scaffold template, the editor
-  opens on `demo.json` instead, and a note in the inspector says when the open file is still the
-  template (#3).
+  opens on `demo.json` instead. On a file that is still the template, a banner above the timeline
+  says so and offers the filled-in file, so placeholder scenes no longer look like lost edits (#3).
 
 ## 0.3.0 (2026-11-18)
 
