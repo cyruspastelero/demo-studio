@@ -1,0 +1,219 @@
+{
+  "$schema": "../../motion/schema/storyboard.schema.json",
+  "version": 1,
+  "title": "Scene gallery: every scene type once",
+  "fps": 30,
+  "brand": {
+    "name": "demo-studio",
+    "accent": "#d2430e",
+    "logo": "../../assets/logo/mark.svg",
+    "url": "github.com/cyruspastelero/demo-studio"
+  },
+  "scenes": [
+    {
+      "type": "kineticText",
+      "duration": 1.8,
+      "phrases": [
+        {
+          "text": "Every scene type,",
+          "at": 0.1
+        },
+        {
+          "text": "*once.*",
+          "at": 0.9
+        }
+      ],
+      "mode": "build"
+    },
+    {
+      "type": "cardScatter",
+      "duration": 2,
+      "phrases": [
+        "Six house looks."
+      ],
+      "images": [
+        "../../look-templates/house/preview/01.png",
+        "../../look-templates/house/preview/02.png",
+        "../../look-templates/house/preview/03.png",
+        "../../look-templates/house/preview/04.png",
+        "../../look-templates/house/preview/05.png",
+        "../../look-templates/house/preview/06.png"
+      ]
+    },
+    {
+      "type": "promptType",
+      "duration": 2.2,
+      "text": "Make a demo of my todo app.",
+      "typeFrom": 0.4,
+      "typeTo": 1.4,
+      "clickAt": 1.85
+    },
+    {
+      "type": "tiles",
+      "duration": 2,
+      "labels": [
+        "Plan",
+        "Prep",
+        "Record",
+        "Review",
+        "Edit",
+        "Hand off"
+      ],
+      "status": "Quality check: 0 fail",
+      "every": 0.2
+    },
+    {
+      "type": "doneBurst",
+      "duration": 1.5,
+      "label": "Done"
+    },
+    {
+      "type": "tiltedPanel",
+      "duration": 1.8,
+      "media": "../../docs/img/studio-1440.png",
+      "cursor": [
+        {
+          "at": 0.6,
+          "point": [
+            0.6,
+            0.6
+          ]
+        },
+        {
+          "at": 1.2,
+          "point": [
+            0.93,
+            0.05
+          ],
+          "click": true
+        }
+      ]
+    },
+    {
+      "type": "uiFocus",
+      "duration": 2.2,
+      "media": "../../docs/img/studio-render-1440.png",
+      "focus": [
+        0.6,
+        0.1,
+        0.38,
+        0.5
+      ],
+      "zoomAt": 0.5,
+      "headline": "Zoom to *one* detail."
+    },
+    {
+      "type": "aspectMorph",
+      "duration": 2.1,
+      "ratios": [
+        "16:9",
+        "4:5",
+        "9:16"
+      ],
+      "medias": [
+        {
+          "src": "../launch-ad/media/export-16x9.mp4"
+        },
+        {
+          "src": "../launch-ad/media/export-4x5.mp4"
+        },
+        {
+          "src": "../launch-ad/media/export-9x16.mp4"
+        }
+      ]
+    },
+    {
+      "type": "statCounter",
+      "duration": 1.6,
+      "from": 0,
+      "to": 6,
+      "label": "stages from one sentence",
+      "bar": true
+    },
+    {
+      "type": "deviceFrame",
+      "duration": 1.8,
+      "device": "phone",
+      "side": "left",
+      "media": "../../docs/img/studio-home-390.png",
+      "headline": "On a *phone*, too."
+    },
+    {
+      "type": "featureList",
+      "duration": 2,
+      "title": "What you get",
+      "items": [
+        "Real clicks in your real app",
+        "Narration, music, captions",
+        "16:9, 4:5 and 9:16"
+      ],
+      "media": "../../docs/img/studio-templates-1440.png"
+    },
+    {
+      "type": "notificationStack",
+      "duration": 2,
+      "headline": "While you *wait*",
+      "items": [
+        {
+          "title": "Plan ready",
+          "body": "Run sheet, shot list, voiceover",
+          "meta": "now"
+        },
+        {
+          "title": "Take 3 recorded",
+          "body": "1080p, secrets blurred",
+          "meta": "now"
+        },
+        {
+          "title": "Cut checked",
+          "body": "0 fail",
+          "meta": "now"
+        }
+      ]
+    },
+    {
+      "type": "chartReveal",
+      "duration": 2,
+      "title": "Seconds per shot, a launch cut",
+      "values": [
+        5.4,
+        5.2,
+        2.3,
+        2.6,
+        3.8,
+        2.9,
+        5.6,
+        5.2
+      ],
+      "labels": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8"
+      ],
+      "unit": "s"
+    },
+    {
+      "type": "buttonPress",
+      "duration": 1.6,
+      "label": "Render",
+      "resultLabel": "Rendered",
+      "variant": "glow",
+      "clickAt": 0.8
+    },
+    {
+      "type": "sparkle",
+      "duration": 0.8,
+      "exit": "fade"
+    },
+    {
+      "type": "logoLockup",
+      "duration": 1.8,
+      "exit": "cut"
+    }
+  ]
+}

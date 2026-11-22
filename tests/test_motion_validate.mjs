@@ -1,0 +1,88 @@
+// Launch-ad engine (motion/): run with node tests/test_motion_validate.mjs (node:test, no browser).
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { tmpdir } from 'node:os';
+import { fileURLToPath } from 'node:url';
+import { validateStoryboard, validateStyle } from '../motion/lib/validate.mjs';
+
+const here = dirname(fileURLToPath(import.meta.url));
+const schema = JSON.parse(readFileSync(join(here, '../motion/schema/storyboard.schema.json'), 'utf8'));
+const styleSchema = JSON.parse(readFileSync(join(here, '../motion/schema/style.schema.json'), 'utf8'));
+const dir = mkdtempSync(join(tmpdir(), 'motion-test-'));
+writeFileSync(join(dir, 'shot.png'), 'x');
+const boardPath = join(dir, 'board.json');
+const base = () => ({ version: 1, brand: { name: 'Acme', accent: '#2255ff' }, scenes: [{ type: 'kineticText', duration: 2, phrases: ['Hello *world*'] }] });
+
+test('a minimal storyboard is valid', () => {
+  assert.deepEqual(validateStoryboard(base(), schema, boardPath), []);
+});
+
+test('errors name the scene index and field', () => {
+  const b = base();
+  b.scenes.push({ type: 'tiles', duration: 2, labels: ['only one'] });
+  const errors = validateStoryboard(b, schema, boardPath);
+  assert.ok(errors.some((e) => e.startsWith('scenes[1].labels') && /at least 2/.test(e)), errors.join('\n'));
+});
+
+test('unknown scene types and unknown fields are rejected', () => {
+  const b = base();
+  b.scenes.push({ type: 'hologram', duration: 1 });
+  b.scenes[0].colour = 'red';
+  const errors = validateStoryboard(b, schema, boardPath);
+  assert.ok(errors.some((e) => e.startsWith('scenes[1].type')), errors.join('\n'));
+  assert.ok(errors.some((e) => e.startsWith('scenes[0].colour') && /not a known field/.test(e)), errors.join('\n'));
+});
+
+test('missing asset files fail validation before rendering', () => {
+  const b = base();
+  b.scenes.push({ type: 'tiltedPanel', duration: 2, media: 'nope.png' });
+  b.scenes.push({ type: 'tiltedPanel', duration: 2, media: { src: 'gone.mp4', from: 1 } });
+  b.scenes.push({ type: 'tiltedPanel', duration: 2, media: 'shot.png' });
+  const errors = validateStoryboard(b, schema, boardPath);
+  assert.ok(errors.some((e) => e.startsWith('scenes[1].media') && /file not found: nope.png/.test(e)), errors.join('\n'));
+  assert.ok(errors.some((e) => e.startsWith('scenes[2].media.src') && /file not found: gone.mp4/.test(e)), errors.join('\n'));
+  assert.ok(!errors.some((e) => e.startsWith('scenes[3]')), errors.join('\n'));
+});
+
+test('beats need a tempo; beats and duration together are rejected', () => {
+  const b = base();
+  b.scenes[0] = { type: 'kineticText', beats: 4, duration: 2, phrases: ['Hi'] };
+  const errors = validateStoryboard(b, schema, boardPath);
+  assert.ok(errors.some((e) => /needs timing.bpm/.test(e)));
+  assert.ok(errors.some((e) => /not both/.test(e)));
+});
+
+test('brand accent must be a hex colour', () => {
+  const b = base();
+  b.brand.accent = 'orange';
+  assert.ok(validateStoryboard(b, schema, boardPath).some((e) => e.startsWith('brand.accent')));
+});
+
+test('aspectMorph needs media or medias', () => {
+  const b = base();
+  b.scenes.push({ type: 'aspectMorph', duration: 2, ratios: ['16:9', '9:16'] });
+  assert.ok(validateStoryboard(b, schema, boardPath).some((e) => e.startsWith('scenes[1]') && /media or medias/.test(e)));
+});
+
+test('every shipped style passes the style schema', () => {
+  for (const name of ['airy', 'nocturne', 'showroom']) {
+    const style = JSON.parse(readFileSync(join(here, `../motion-templates/${name}/style.json`), 'utf8'));
+    assert.deepEqual(validateStyle(style, styleSchema), [], name);
+  }
+});
+
+test('a style with a bad transition is rejected with its path', () => {
+  const style = JSON.parse(readFileSync(join(here, '../motion-templates/airy/style.json'), 'utf8'));
+  style.motion.transition = 'spin';
+  assert.ok(validateStyle(style, styleSchema).some((e) => e.startsWith('motion.transition')));
+});
+
+test('the shipped example storyboards are valid and all their files exist', () => {
+  for (const rel of ['../examples/launch-ad/storyboard.json', '../examples/motion-gallery/storyboard.json', '../examples/motion-gallery/long-headline.json']) {
+    const path = join(here, rel);
+    const board = JSON.parse(readFileSync(path, 'utf8'));
+    assert.deepEqual(validateStoryboard(board, schema, path), [], rel);
+  }
+});

@@ -38,6 +38,11 @@ the tests or the dev server on your own files.
 | vitest | 4.1.12 | Studio unit tests | dev | MIT |
 | @types/node, @types/react, @types/react-dom | pinned | Type definitions | dev | MIT |
 
+The launch-ad engine (`motion/`, [motion.md](motion.md)) adds no packages: it renders with the
+pinned `playwright-core` and Chrome, and its easing (cubic-bezier), beat analysis, schema validator and
+SFX kit (synthesised with ffmpeg) are plain Node. Music for an ad comes from your own licensed track
+or the optional ElevenLabs MCP `compose_music` tool (your account and its terms).
+
 The studio's server uses only Node's built-in modules (no web framework, no database).
 
 ## Bundled assets

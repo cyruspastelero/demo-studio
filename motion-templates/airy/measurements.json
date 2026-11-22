@@ -1,0 +1,667 @@
+{
+  "style": "airy",
+  "reference": "ref",
+  "fps": 30,
+  "durationSec": 33.088,
+  "method": {
+    "cutDetector": "ffmpeg select='gt(scene,0.25)',showinfo (detector cuts listed separately) + per-frame diff/edge/scene track; every transition checked on 10 fps frames",
+    "transitionsAreSoft": true
+  },
+  "detectorCuts025": [],
+  "cuts": [
+    {
+      "index": 1,
+      "timeSec": 1.1,
+      "type": "blur-zoom",
+      "note": "line scales down to ~0.48 with blur (ease-in), next word enters at ~2.0x scale, blurred, settles",
+      "sceneScore": 0.0268,
+      "frameDiff": 3.42,
+      "beatOffsetMs": -144,
+      "beatInBar": 1
+    },
+    {
+      "index": 2,
+      "timeSec": 2.2,
+      "type": "blur-zoom",
+      "note": "same pattern, word to word",
+      "sceneScore": 0.0026,
+      "frameDiff": 0.42,
+      "beatOffsetMs": -58,
+      "beatInBar": 3
+    },
+    {
+      "index": 3,
+      "timeSec": 4.533,
+      "type": "morph",
+      "note": "folder icon travels to centre and drops into a panel",
+      "sceneScore": 0.008,
+      "frameDiff": 3.09,
+      "beatOffsetMs": 247,
+      "beatInBar": 3
+    },
+    {
+      "index": 4,
+      "timeSec": 5.767,
+      "type": "scale-down+blur exit",
+      "note": "panel stack shrinks and blurs out, next words blur in",
+      "sceneScore": 0.0004,
+      "frameDiff": 1.58,
+      "beatOffsetMs": -41,
+      "beatInBar": 2
+    },
+    {
+      "index": 5,
+      "timeSec": 9.8,
+      "type": "whip/motion-blur",
+      "note": "camera swings off the phone ring; a blue swoosh shape leads",
+      "sceneScore": 0.0264,
+      "frameDiff": 35.37,
+      "beatOffsetMs": -64,
+      "beatInBar": 2
+    },
+    {
+      "index": 6,
+      "timeSec": 10.6,
+      "type": "morph",
+      "note": "blue swoosh flattens into the progress bar",
+      "sceneScore": 0.0437,
+      "frameDiff": 24.11,
+      "beatOffsetMs": 229,
+      "beatInBar": 3
+    },
+    {
+      "index": 7,
+      "timeSec": 12.9,
+      "type": "morph",
+      "note": "progress bar collapses to a dot that pops into the check circle (confetti)",
+      "sceneScore": 0.0073,
+      "frameDiff": 2.78,
+      "beatOffsetMs": -6,
+      "beatInBar": 0
+    },
+    {
+      "index": 8,
+      "timeSec": 14.5,
+      "type": "morph",
+      "note": "check circle becomes a white squircle, then the first card of a row",
+      "sceneScore": 0.0082,
+      "frameDiff": 0.75,
+      "beatOffsetMs": 72,
+      "beatInBar": 3
+    },
+    {
+      "index": 9,
+      "timeSec": 15.767,
+      "type": "morph",
+      "note": "card row match-cuts into the library panel grid",
+      "sceneScore": 0.0702,
+      "frameDiff": 18.53,
+      "beatOffsetMs": -182,
+      "beatInBar": 2
+    },
+    {
+      "index": 10,
+      "timeSec": 16.933,
+      "type": "blur-zoom",
+      "note": "push-in on the tilted panel",
+      "sceneScore": 0.0103,
+      "frameDiff": 14.21,
+      "beatOffsetMs": -30,
+      "beatInBar": 0
+    },
+    {
+      "index": 11,
+      "timeSec": 18.3,
+      "type": "whip/motion-blur",
+      "note": "isolated card spins (motion blur) into a scatter of cards",
+      "sceneScore": 0.0728,
+      "frameDiff": 21.42,
+      "beatOffsetMs": -184,
+      "beatInBar": 3
+    },
+    {
+      "index": 12,
+      "timeSec": 20.1,
+      "type": "whip/motion-blur",
+      "note": "scatter flies out, list panel swings in",
+      "sceneScore": 0.0422,
+      "frameDiff": 23.15,
+      "beatOffsetMs": 95,
+      "beatInBar": 2
+    },
+    {
+      "index": 13,
+      "timeSec": 22.2,
+      "type": "whip/motion-blur",
+      "note": "list panel pans out with blur, single row card in",
+      "sceneScore": 0.0155,
+      "frameDiff": 8.06,
+      "beatOffsetMs": 167,
+      "beatInBar": 2
+    },
+    {
+      "index": 14,
+      "timeSec": 24,
+      "type": "morph",
+      "note": "dark button becomes the gradient pill button",
+      "sceneScore": 0.0092,
+      "frameDiff": 3.28,
+      "beatOffsetMs": -62,
+      "beatInBar": 2
+    },
+    {
+      "index": 15,
+      "timeSec": 24.633,
+      "type": "sparkle/shape wipe",
+      "note": "light rectangle wipe, large 4-point sparkle shrinks and flies",
+      "sceneScore": 0.0184,
+      "frameDiff": 16.23,
+      "beatOffsetMs": 64,
+      "beatInBar": 3
+    },
+    {
+      "index": 16,
+      "timeSec": 26.1,
+      "type": "sparkle/shape wipe",
+      "note": "sparkle trail draws a swoosh and the line writes in behind it",
+      "sceneScore": 0.0002,
+      "frameDiff": 0.41,
+      "beatOffsetMs": 10,
+      "beatInBar": 2
+    },
+    {
+      "index": 17,
+      "timeSec": 28.533,
+      "type": "scale-down+blur exit",
+      "note": "line shrinks and fades, logo mark pops, wordmark slides out",
+      "sceneScore": 0.0048,
+      "frameDiff": 1.35,
+      "beatOffsetMs": -92,
+      "beatInBar": 3
+    }
+  ],
+  "shotStats": {
+    "count": 18,
+    "medianSec": 1.5335,
+    "minSec": 0.633,
+    "maxSec": 4.555,
+    "meanSec": 1.838,
+    "shotsSec": [
+      1.1,
+      1.1,
+      2.333,
+      1.234,
+      4.033,
+      0.8,
+      2.3,
+      1.6,
+      1.267,
+      1.166,
+      1.367,
+      1.8,
+      2.1,
+      1.8,
+      0.633,
+      1.467,
+      2.433,
+      4.555
+    ]
+  },
+  "transitions": {
+    "blur-zoom": 3,
+    "morph": 6,
+    "scale-down+blur exit": 2,
+    "whip/motion-blur": 4,
+    "sparkle/shape wipe": 2
+  },
+  "colors": {
+    "background": {
+      "flat": "#f8f7fe",
+      "centre": "#f8f7fe",
+      "corners": {
+        "tl": "#f8f7fe",
+        "tr": "#f8f7fe",
+        "bl": "#f8f7fe",
+        "br": "#f8f7fe"
+      },
+      "gradientStops": [],
+      "vignette": false,
+      "note": "identical at 0/10/20/../100% of height in text scenes (2.8 s, 27 s, 30 s); no gradient, no vignette"
+    },
+    "text": {
+      "primary": "#08070b",
+      "primaryAlt": "#2f2c48",
+      "onDark": null
+    },
+    "accent": {
+      "gradient": [
+        "#186afb",
+        "#66b9fb"
+      ],
+      "gradientDirection": "left-to-right within a word",
+      "cyan": "#16a7f4",
+      "deep": [
+        "#0642be",
+        "#0c58f2"
+      ],
+      "light": [
+        "#4b98f5",
+        "#69b7f8"
+      ],
+      "logoBlue": "#0154fd"
+    },
+    "panel": {
+      "fill": "#ffffff",
+      "border": [
+        "#3a7bf0",
+        "#8ecbf9"
+      ],
+      "borderNote": "~3 px gradient border, saturated blue at top fading to light cyan at the bottom",
+      "button": {
+        "gradient": [
+          "#5ab0fe",
+          "#3d8bfb"
+        ],
+        "innerRing": "#bfe4ff",
+        "dark": "#050505"
+      }
+    },
+    "shadow": {
+      "tint": "#cdebff",
+      "rgbaEstimate": "rgba(0,185,255,0.20)",
+      "cardGlow": "#e4ebff"
+    },
+    "glow": {
+      "progressBar": [
+        "#5d6cf6",
+        "#86b8fb",
+        "#78c7fc"
+      ],
+      "swoosh": "#6b52fb",
+      "confetti": [
+        "#017afd",
+        "#013cb4",
+        "#79ccfc",
+        "#fca3fe"
+      ],
+      "checkCircleFill": "#ebeefe"
+    }
+  },
+  "type": {
+    "family": "neo-grotesk sans (Inter-like), single family, no serif",
+    "headline": {
+      "capOrAscenderPctOfFrame": [
+        7.13,
+        8.24
+      ],
+      "xHeightPctOfFrame": [
+        5.28,
+        6.02
+      ],
+      "lineInkPctOfFrame": [
+        7.2,
+        10.4
+      ],
+      "heroWordCapPct": 10.83,
+      "endLinePct": 6.3,
+      "samples": [
+        {
+          "t": 0.8,
+          "cap": 7.13,
+          "x": 5.28
+        },
+        {
+          "t": 1.8,
+          "cap": 10.83,
+          "x": 7.87,
+          "note": "single hero word"
+        },
+        {
+          "t": 2.9,
+          "cap": 7.59,
+          "x": 6.02
+        },
+        {
+          "t": 6.1,
+          "cap": 8.24,
+          "x": 5.83
+        },
+        {
+          "t": 19.5,
+          "cap": 6.76,
+          "x": 4.91
+        },
+        {
+          "t": 27,
+          "cap": 6.3,
+          "x": 4.72
+        }
+      ]
+    },
+    "weight": {
+      "stemToCap": [
+        0.098,
+        0.118
+      ],
+      "median": 0.112,
+      "estimate": "Regular (400)"
+    },
+    "letterSpacing": {
+      "letterGapToCap": [
+        0.07,
+        0.16
+      ],
+      "median": 0.098,
+      "feel": "normal to slightly open; no tight negative tracking"
+    },
+    "wordGapToCap": {
+      "building": [
+        0.57,
+        0.62
+      ],
+      "settled": [
+        0.36,
+        0.37
+      ],
+      "note": "words land with ~1.6x a normal word space, the line then closes up"
+    },
+    "wordsOnScreen": {
+      "typical": 2,
+      "max": 4
+    },
+    "wordsPerBeat": 0.85,
+    "wordStaggerMs": {
+      "measured": [
+        300,
+        450
+      ],
+      "note": "the second word of the opening pair pops in fully on frame 9 (0.30 s) with no fade; second word of a pair arrives 300-450 ms after the first"
+    },
+    "alignment": "centred (line centre x = 947-968 px); lines slide left 95-380 px/s while words are appended",
+    "reveal": "blur-zoom per line (scale ~2.0 -> 1.0 with blur), hard pop for the next word in the same line"
+  },
+  "easing": [
+    {
+      "label": "word blur-zoom entry (width, 2.0x -> 1.0x)",
+      "kind": "word reveal",
+      "metric": "w",
+      "from": 729,
+      "to": 367,
+      "startSec": 1.1,
+      "endSec": 1.533,
+      "durationMs": 433,
+      "bezier": [
+        0.21,
+        0.29,
+        0,
+        0.8
+      ],
+      "css": "cubic-bezier(0.21, 0.29, 0, 0.8)",
+      "rmsError": 0.005,
+      "overshoot": -0.014,
+      "note": "first visible frame already at 2x; heavy ease-out"
+    },
+    {
+      "label": "word blur clearing (edge energy)",
+      "kind": "word reveal",
+      "metric": "sharp",
+      "from": 7.63,
+      "to": 23.16,
+      "startSec": 1.1,
+      "endSec": 1.467,
+      "durationMs": 367,
+      "bezier": [
+        0.17,
+        -0.1,
+        0.07,
+        0.66
+      ],
+      "css": "cubic-bezier(0.17, -0.1, 0.07, 0.66)",
+      "rmsError": 0.011,
+      "overshoot": 0,
+      "note": "sharpness proxy, not linear in blur radius"
+    },
+    {
+      "label": "line exit (width to 0.48x, with blur and fade)",
+      "kind": "exit",
+      "metric": "w",
+      "from": 499,
+      "to": 240,
+      "startSec": 0.733,
+      "endSec": 1.067,
+      "durationMs": 333,
+      "bezier": [
+        0.37,
+        0.15,
+        0.85,
+        0.23
+      ],
+      "css": "cubic-bezier(0.37, 0.15, 0.85, 0.23)",
+      "rmsError": 0.005,
+      "overshoot": 0,
+      "note": "ease-in; the line is cut at ~0.5x scale"
+    },
+    {
+      "label": "check circle pop-in (height)",
+      "kind": "element entry",
+      "metric": "h",
+      "from": 206,
+      "to": 391,
+      "startSec": 13.1,
+      "endSec": 13.4,
+      "durationMs": 300,
+      "bezier": [
+        0,
+        0.54,
+        0.96,
+        1.12
+      ],
+      "css": "cubic-bezier(0, 0.54, 0.96, 1.12)",
+      "rmsError": 0.02,
+      "overshoot": -0.005,
+      "note": "fast start, tiny settle"
+    },
+    {
+      "label": "progress bar collapses to a dot (width)",
+      "kind": "morph",
+      "metric": "w",
+      "from": 497,
+      "to": 198,
+      "startSec": 12.883,
+      "endSec": 13.083,
+      "durationMs": 200,
+      "bezier": [
+        0.67,
+        0.19,
+        0.23,
+        0.8
+      ],
+      "css": "cubic-bezier(0.67, 0.19, 0.23, 0.8)",
+      "rmsError": 0.005,
+      "overshoot": 0,
+      "note": "ease-in-out"
+    }
+  ],
+  "panels": {
+    "perspectiveFeel": "strong, low camera: panels lie back like a tabletop, far edge soft (depth of field)",
+    "tilts": [
+      {
+        "t": 5.3,
+        "element": "panel stack",
+        "sideVanishingDistancePx": 3428,
+        "rotateXdeg": {
+          "p1200": 19.3,
+          "p2000": 30.2,
+          "p2667": 37.8
+        },
+        "rotateYdeg": 0,
+        "rotateZdeg": -0.2,
+        "rmsPx": 0.3,
+        "note": "pure rotateX, symmetric trapezoid, top edge blurred out"
+      },
+      {
+        "t": 20.8,
+        "element": "library panel",
+        "topEdgeSlopeDeg": -6.6,
+        "rightEdgeLeanDeg": 3.7,
+        "horizonVanishingDistancePx": 3297,
+        "rotateYdeg": {
+          "p1200": -20,
+          "p2000": -31.2,
+          "p2667": -39
+        },
+        "note": "left side recedes (negative = left recedes), slight rotateX"
+      }
+    ],
+    "cornerRadius": [
+      {
+        "t": 15.3,
+        "element": "video card",
+        "radiusPx": 30,
+        "widthPx": 581,
+        "pctOfWidth": 5.2,
+        "note": "arc fit; visual read 22-25 px (4%)"
+      },
+      {
+        "t": 24.3,
+        "element": "gradient button",
+        "radiusPx": 45.5,
+        "widthPx": 941,
+        "heightPx": 237,
+        "pctOfWidth": 4.8,
+        "pctOfHeight": 19.2
+      }
+    ],
+    "shadow": [
+      {
+        "t": 22.5,
+        "element": "row card",
+        "offsetYPx": 72,
+        "blurPx": 136,
+        "spreadPx": -40,
+        "cssApprox": "0 72px 136px -40px rgba(0,185,255,0.30)",
+        "peakHex": "#cdebff",
+        "peakAtPxBelowEdge": 16,
+        "reachBelowPx": 208,
+        "reachAbovePx": 0,
+        "reachSidesPx": 12,
+        "note": "coloured glow under the card only"
+      },
+      {
+        "t": 15.3,
+        "element": "video card",
+        "offsetYPx": 6.5,
+        "blurPx": 38,
+        "peakHex": "#e4ebff",
+        "reachBelowPx": 44,
+        "reachAbovePx": 31
+      },
+      {
+        "t": 24.3,
+        "element": "button",
+        "offsetYPx": 1,
+        "blurPx": 12,
+        "note": "faint"
+      }
+    ],
+    "drift": {
+      "logoScalePctPerSec": -1.9,
+      "textPanPxPerSec": [
+        95,
+        380
+      ],
+      "heroWordScalePctPerSec": -34,
+      "note": "hero word keeps shrinking fast after landing (1.6-1.87 s); logo hold drifts slowly"
+    }
+  },
+  "music": {
+    "bpm": 118.33,
+    "beatPeriodSec": 0.5071,
+    "beatOffsetSec": 0.23,
+    "firstDownbeatSec": 0.737,
+    "candidates": [
+      {
+        "bpm": 118.33,
+        "acf": 809.851,
+        "combScore": 136.706
+      },
+      {
+        "bpm": 78.85,
+        "acf": 677.7859,
+        "combScore": 142.955
+      },
+      {
+        "bpm": 157.71,
+        "acf": 159.3058,
+        "combScore": 83.546
+      },
+      {
+        "bpm": 94.69,
+        "acf": -43.2086,
+        "combScore": 73.026
+      },
+      {
+        "bpm": 94.58,
+        "acf": -79.2511,
+        "combScore": 72.001
+      }
+    ],
+    "cutBeatOffsetsMs": [
+      -144,
+      -58,
+      247,
+      -41,
+      -64,
+      229,
+      -6,
+      72,
+      -182,
+      -30,
+      -184,
+      95,
+      167,
+      -62,
+      64,
+      10,
+      -92
+    ],
+    "cutHalfBeatOffsetsMs": [
+      109,
+      -58,
+      -7,
+      -41,
+      -64,
+      -25,
+      -6,
+      72,
+      72,
+      -30,
+      69,
+      95,
+      -87,
+      -62,
+      64,
+      10,
+      -92
+    ],
+    "summary": {
+      "medianAbsOffsetMs": 72,
+      "randomExpectationMs": 127,
+      "onBeatToleranceMs": 76,
+      "onBeatShare": 0.53,
+      "onBeatEvenShare": 0.33,
+      "onBarLineShare": 0.22,
+      "beatGapsBetweenOnBeatCuts": [
+        7,
+        8,
+        6,
+        3,
+        5,
+        14,
+        1,
+        3
+      ],
+      "medianAbsHalfBeatOffsetMs": 64
+    }
+  }
+}

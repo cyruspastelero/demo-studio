@@ -24,3 +24,8 @@ recordings/exports/.keynote/
 recordings/frames/
 _site/
 app/out-static/
+
+# The launch-ad sample ships its short source clips; renders and caches stay out.
+!examples/launch-ad/media/*.mp4
+.motion-cache/
+motion/sfx/

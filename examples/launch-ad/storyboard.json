@@ -1,0 +1,237 @@
+{
+  "$schema": "../../motion/schema/storyboard.schema.json",
+  "version": 1,
+  "title": "demo-studio launch ad",
+  "style": "airy",
+  "fps": 30,
+  "brand": {
+    "name": "demo-studio",
+    "accent": "#d2430e",
+    "logo": "../../assets/logo/mark.svg",
+    "url": "github.com/cyruspastelero/demo-studio",
+    "fonts": {
+      "display": {
+        "family": "Bricolage Grotesque",
+        "src": "../../site/fonts/bricolage-grotesque.woff2",
+        "weight": 440
+      },
+      "body": {
+        "family": "Schibsted Grotesk",
+        "src": "../../site/fonts/schibsted-grotesk.woff2",
+        "weight": 500
+      }
+    }
+  },
+  "timing": {
+    "beatsFrom": "media/music.beats.json",
+    "start": 0,
+    "tail": 0
+  },
+  "audio": {
+    "music": "media/music.mp3",
+    "musicGainDb": 0,
+    "fadeOut": 1.2,
+    "sfxGainDb": -14,
+    "loudness": -14,
+    "truePeak": -1.5
+  },
+  "scenes": [
+    {
+      "type": "kineticText",
+      "beats": 8,
+      "note": "Hook",
+      "phrases": [
+        {
+          "text": "Every demo video",
+          "at": 0.2
+        },
+        {
+          "text": "took me",
+          "at": 2
+        },
+        {
+          "text": "*an afternoon.*",
+          "at": 4
+        }
+      ]
+    },
+    {
+      "type": "cardScatter",
+      "beats": 8,
+      "note": "Real finished demo frames (public samples only)",
+      "phrases": [
+        {
+          "text": "I make demos for",
+          "at": 0.2
+        },
+        {
+          "text": "*my own apps*",
+          "at": 1.4
+        },
+        {
+          "text": "and for what we build at work.",
+          "at": 2.8
+        }
+      ],
+      "images": [
+        "media/card-1.jpg",
+        "media/card-2.jpg",
+        "media/card-3.jpg",
+        "media/card-4.jpg",
+        "media/card-5.jpg",
+        "media/card-6.jpg"
+      ]
+    },
+    {
+      "type": "kineticText",
+      "beats": 7,
+      "phrases": [
+        {
+          "text": "So I taught *Claude*",
+          "at": 0.2
+        },
+        {
+          "text": "everything I *learned.*",
+          "at": 2.5
+        }
+      ],
+      "mark": "../../assets/logo/mark.svg",
+      "markAt": 4.5
+    },
+    {
+      "type": "promptType",
+      "beats": 7,
+      "note": "The one sentence",
+      "text": "Make a demo of app.example.com. Goal: a new user creates a project and invites a teammate.",
+      "placeholder": "Describe the demo you want",
+      "typeFrom": 0.6,
+      "typeTo": 4.8,
+      "clickAt": 6
+    },
+    {
+      "type": "sparkle",
+      "beats": 2,
+      "exit": "fade",
+      "note": "Lands in the music's one-bar break"
+    },
+    {
+      "type": "tiles",
+      "beats": 8,
+      "labels": [
+        "Plan",
+        "Prep",
+        "Record",
+        "Review",
+        "Edit",
+        "Hand off"
+      ],
+      "status": "Quality check: 0 fail",
+      "every": 0.9
+    },
+    {
+      "type": "doneBurst",
+      "beats": 3,
+      "label": "*Done*"
+    },
+    {
+      "type": "tiltedPanel",
+      "beats": 5,
+      "note": "A real finished demo-studio video",
+      "media": {
+        "src": "media/finished-video.mp4"
+      },
+      "badge": "Finished video"
+    },
+    {
+      "type": "uiFocus",
+      "beats": 6,
+      "note": "Real editor take: select scene 2, rewrite its voiceover line",
+      "media": {
+        "src": "media/editor.mp4",
+        "rate": 1.6
+      },
+      "focus": [
+        0.775,
+        0.085,
+        0.222,
+        0.33
+      ],
+      "zoomAt": 1.6,
+      "headline": "*Fix* anything.",
+      "headlineAt": 2.2
+    },
+    {
+      "type": "aspectMorph",
+      "beats": 4,
+      "ratios": [
+        "16:9",
+        "4:5",
+        "9:16"
+      ],
+      "note": "The real 16:9, 4:5 and 9:16 exports demo-studio made of its own launch video",
+      "medias": [
+        {
+          "src": "media/export-16x9.mp4"
+        },
+        {
+          "src": "media/export-4x5.mp4"
+        },
+        {
+          "src": "media/export-9x16.mp4"
+        }
+      ]
+    },
+    {
+      "type": "cardScatter",
+      "beats": 5,
+      "layout": "scatter",
+      "phrases": [
+        {
+          "text": "Your look.",
+          "at": 0.3
+        },
+        {
+          "text": "Your voice.",
+          "at": 1.5
+        },
+        {
+          "text": "Your *app.*",
+          "at": 2.7
+        }
+      ],
+      "images": [
+        "../../look-templates/house/preview/01.png",
+        "../../look-templates/house/preview/02.png",
+        "../../look-templates/house/preview/03.png",
+        "../../look-templates/house/preview/04.png",
+        "../../look-templates/house/preview/05.png",
+        "../../look-templates/house/preview/06.png"
+      ]
+    },
+    {
+      "type": "kineticText",
+      "beats": 3,
+      "mode": "build",
+      "size": "hero",
+      "phrases": [
+        {
+          "text": "Free.",
+          "at": 0.5
+        },
+        {
+          "text": "Local.",
+          "at": 1.25
+        },
+        {
+          "text": "*Open source.*",
+          "at": 2
+        }
+      ]
+    },
+    {
+      "type": "logoLockup",
+      "beats": 6,
+      "exit": "cut"
+    }
+  ]
+}

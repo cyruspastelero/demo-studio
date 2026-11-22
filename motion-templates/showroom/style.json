@@ -1,0 +1,137 @@
+{
+  "name": "showroom",
+  "description": "Gallery-grey stage with a floor gradient and deep-blue night scenes, a slanted accent word, devices that start on the screen and pull back, typed lines and mostly hard cuts.",
+  "source": "ANALYSIS.md (measured from an AI product launch ad); every value is traced in its section 8",
+  "tone": "light",
+  "palette": {
+    "light": {
+      "bg": "#f3f3f3",
+      "bg2": "#e3e3e5",
+      "ink": "#030303",
+      "muted": "#65656c",
+      "panel": "#ffffff",
+      "line": "#e2e2e7",
+      "shadowTint": "#101422",
+      "glow": "#ffffff"
+    },
+    "dark": {
+      "bg": "#000516",
+      "bg2": "#010d38",
+      "ink": "#fafdff",
+      "muted": "#a8b0cc",
+      "panel": "#153065",
+      "line": "#3b5b8b",
+      "shadowTint": "#1750ba",
+      "glow": "#1659c7"
+    },
+    "confetti": [
+      "accent",
+      "accentLight",
+      "#ffffff",
+      "#030303"
+    ]
+  },
+  "fonts": {
+    "display": {
+      "family": "Inter",
+      "file": "InterVariable.woff2",
+      "weight": 400,
+      "accentWeight": 300
+    },
+    "body": {
+      "family": "Inter",
+      "file": "InterVariable.woff2",
+      "weight": 420
+    },
+    "accent": "italic",
+    "accentSkew": -11
+  },
+  "type": {
+    "hero": 10.3,
+    "title": 8.0,
+    "body": 5.0,
+    "small": 4.1,
+    "minPx": 44,
+    "tracking": -0.01,
+    "lineHeight": 1.1
+  },
+  "text": {
+    "reveal": "type",
+    "charMs": 100,
+    "caret": true,
+    "wordMs": 520,
+    "staggerMs": 140,
+    "ease": [
+      0.1,
+      0.33,
+      0,
+      0.76
+    ],
+    "blurPx": 6,
+    "rise": 0,
+    "scaleFrom": 1,
+    "exitMs": 440
+  },
+  "motion": {
+    "enterMs": 840,
+    "enterEase": [
+      0.1,
+      0.33,
+      0,
+      0.76
+    ],
+    "exitMs": 440,
+    "exitEase": [
+      0.92,
+      0.58,
+      0.08,
+      0.71
+    ],
+    "exitScale": 0.8,
+    "transition": "cut",
+    "transitionMix": {
+      "cut": 9,
+      "morph": 8,
+      "blurZoom": 3,
+      "blurDissolve": 2,
+      "glowBurst": 1,
+      "scaleDown": 1
+    },
+    "drift": -0.033,
+    "deviceEntry": "pullBack",
+    "popMs": 440,
+    "popEase": [
+      0.1,
+      0.33,
+      0,
+      0.76
+    ],
+    "clickMs": 260
+  },
+  "panel": {
+    "radius": 0.04,
+    "tilt": [
+      12.1,
+      -13.2,
+      0
+    ],
+    "perspective": 2000,
+    "shadow": "0 5U 12U -1U TINT55, 0 1U 2.5U TINT22",
+    "border": "1px solid LINE",
+    "chromeBar": false
+  },
+  "background": {
+    "kind": "linear",
+    "darkKind": "sky",
+    "tint": 0.0
+  },
+  "sceneTones": {
+    "tiltedPanel": "dark",
+    "deviceFrame": "dark",
+    "promptType": "dark",
+    "logoLockup": "dark"
+  },
+  "cursor": "arrow",
+  "doneVariant": "ring",
+  "deviceTone": "dark"
+}

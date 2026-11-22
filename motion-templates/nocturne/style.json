@@ -1,0 +1,139 @@
+{
+  "name": "nocturne",
+  "description": "Near-black with the brand colour glowing up from the bottom edge, big typed headlines with a caret, light cards with a coloured glow, blur-zoom transitions and a flip to light for the product section.",
+  "source": "ANALYSIS.md (measured from a dark fintech product video); every value is traced in its section 8",
+  "tone": "dark",
+  "palette": {
+    "light": {
+      "bg": "#fdfdfd",
+      "bg2": "#f6f3fa",
+      "ink": "#090205",
+      "muted": "#6d6575",
+      "panel": "#ffffff",
+      "line": "#e6e1ec",
+      "shadowTint": "#1b1028",
+      "glow": "#ffffff"
+    },
+    "dark": {
+      "bg": "#0d0609",
+      "bg2": "#160a14",
+      "ink": "#fffcfe",
+      "muted": "#b7adc0",
+      "panel": "#fefcf6",
+      "panelInk": "#0d0609",
+      "panelMuted": "#6e6475",
+      "line": "#d9d2e0",
+      "shadowTint": "#000000",
+      "glow": "#2e0f3d"
+    },
+    "confetti": [
+      "accent",
+      "accentLight",
+      "#ffffff"
+    ]
+  },
+  "fonts": {
+    "display": {
+      "family": "Geist",
+      "file": "GeistVariable.woff2",
+      "weight": 380,
+      "accentWeight": 380
+    },
+    "body": {
+      "family": "Geist",
+      "file": "GeistVariable.woff2",
+      "weight": 420
+    },
+    "accent": "gradient"
+  },
+  "type": {
+    "hero": 13.7,
+    "title": 9.6,
+    "body": 5.4,
+    "small": 4.3,
+    "minPx": 44,
+    "tracking": -0.01,
+    "lineHeight": 1.1
+  },
+  "text": {
+    "reveal": "type",
+    "charMs": 68,
+    "caret": true,
+    "wordMs": 430,
+    "staggerMs": 120,
+    "ease": [
+      0.25,
+      0.16,
+      0.06,
+      0.83
+    ],
+    "blurPx": 10,
+    "rise": 0,
+    "scaleFrom": 1,
+    "exitMs": 267
+  },
+  "motion": {
+    "enterMs": 500,
+    "enterEase": [
+      0.25,
+      0.16,
+      0.06,
+      0.83
+    ],
+    "exitMs": 267,
+    "exitEase": [
+      0.52,
+      0.1,
+      0.83,
+      0.55
+    ],
+    "exitScale": 0.6,
+    "transition": "zoomThrough",
+    "transitionMix": {
+      "blurZoom": 5,
+      "morph": 5,
+      "slide": 3,
+      "whip": 2,
+      "blurDissolve": 2,
+      "sparkle": 2,
+      "toneFlip": 2,
+      "scaleDown": 1,
+      "cut": 1
+    },
+    "drift": -0.017,
+    "popMs": 430,
+    "popEase": [
+      0.25,
+      0.16,
+      0.06,
+      0.83
+    ],
+    "clickMs": 220
+  },
+  "panel": {
+    "radius": 0.032,
+    "tilt": [
+      18.8,
+      23.3,
+      -6.1
+    ],
+    "perspective": 2000,
+    "shadow": "0 3U 8U #00000080",
+    "border": "1px solid LINE",
+    "glow": "0 0 0 1px ACCENT, 0 0 60px -6px ACCENT",
+    "chromeBar": true
+  },
+  "background": {
+    "kind": "radialBottom",
+    "glowAccent": true,
+    "tint": 0.03
+  },
+  "sceneTones": {
+    "uiFocus": "light",
+    "aspectMorph": "light",
+    "logoLockup": "light"
+  },
+  "cursor": "hand",
+  "doneVariant": "ring",
+  "deviceTone": "dark"
+}

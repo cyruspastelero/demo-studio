@@ -53,6 +53,12 @@ jobs:
           node tests/test_frame_receiver.mjs
           node tests/test_lib.mjs
           node tests/test_security.mjs
+      - name: Node unit tests (launch-ad motion engine)
+        run: |
+          node tests/test_motion_fit.mjs
+          node tests/test_motion_timing.mjs
+          node tests/test_motion_beats.mjs
+          node tests/test_motion_validate.mjs
       - name: Smoke test on synthetic footage (includes the quality-bar checklist on a rendered cut)
         run: bash tests/smoke.sh
       - name: Look templates smoke test (house template matches the default look)

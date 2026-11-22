@@ -7,16 +7,19 @@
 ```
 .claude-plugin/   plugin.json, marketplace.json
 skills/           demo-studio (orchestrator), demo-plan, demo-record, demo-edit, demo-handoff, demo-organize,
-                  demo-template
+                  demo-template, demo-motion
 scripts/          every tool (recorder, QA, encode, edit, narrate, handoff, social, scaffold, doctor)
 references/       style guide, learnings, quality gates, scene patterns, voiceover, handoff spec,
                   secrets
 samples/          scene recipes to copy and a sample plan
-examples/         acme-invoice-bot (a filled-in fictional plan) and todo-sample (a real, recorded demo)
+examples/         acme-invoice-bot (a filled-in fictional plan), todo-sample (a real, recorded demo),
+                  launch-ad (the demo-studio launch ad storyboard) and motion-gallery (every scene type)
 templates/        files new-demo.sh copies into a new demo
 starter/          the workspace kit new-workspace.sh installs: playbook, index, check.py
 schemas/          demo, handoff and template schemas (the config shapes the scripts check)
 look-templates/   built-in look templates (house = the default look), docs/templates.md
+motion/           launch-ad engine: storyboard -> beat-synced motion-graphics ad (docs/motion.md)
+motion-templates/ launch-ad styles (airy, nocturne, showroom) with measured ANALYSIS.md and previews
 app/              local editor: React UI (src/), file and render server (server/), tests (e2e/)
 tests/            smoke.sh (end to end on synthetic footage) and unit tests for the Python tools
 docs/             ROADMAP.md, img/ (screenshots and the sample GIF)
@@ -34,6 +37,7 @@ npm install && bash tests/smoke.sh   # pipeline on synthetic footage, ending in 
 python3 -I tests/test_check.py && python3 -I tests/test_narrate.py && python3 -I tests/test_keynote.py && python3 -I tests/test_motion.py && python3 -I tests/test_templates.py && python3 -I tests/test_security.py
 bash tests/smoke-templates.sh        # todo sample with and without "template": "house" (heavy: two builds)
 node tests/test_lib.mjs && node tests/test_card_safety.mjs && node tests/test_frame_receiver.mjs && node tests/test_security.mjs
+npm run test:motion                  # launch-ad engine: validator, beat maths, text fitting (no browser)
 npm run test:app                     # editor unit tests (vitest)
 npm run test:e2e                     # editor end to end, headless Chrome on a temp copy of the example
 npm run screenshots -w app           # refresh docs/img/

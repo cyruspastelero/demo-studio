@@ -1,0 +1,728 @@
+{
+  "style": "showroom",
+  "reference": "an AI product launch ad",
+  "fps": 25,
+  "durationSec": 73.259,
+  "method": {
+    "cutDetector": "ffmpeg select='gt(scene,0.25)',showinfo (detector cuts listed separately) + per-frame diff/edge/scene track; every transition checked on 10 fps frames",
+    "transitionsAreSoft": true
+  },
+  "detectorCuts025": [
+    2.96,
+    7.32,
+    11.4,
+    17.12,
+    20.4,
+    31.72,
+    33.48,
+    35.32,
+    53.28,
+    54.52,
+    61.2
+  ],
+  "cuts": [
+    {
+      "index": 1,
+      "timeSec": 2.96,
+      "type": "hard cut",
+      "note": "title card to footage",
+      "sceneScore": 1,
+      "frameDiff": 166.27,
+      "beatOffsetMs": 135,
+      "beatInBar": 1
+    },
+    {
+      "index": 2,
+      "timeSec": 4,
+      "type": "morph",
+      "note": "full-frame footage scales down into a rounded UI card",
+      "sceneScore": 0.0836,
+      "frameDiff": 12.14,
+      "beatOffsetMs": 34,
+      "beatInBar": 3
+    },
+    {
+      "index": 3,
+      "timeSec": 7.32,
+      "type": "hard cut",
+      "note": "card shrinks slightly, cut to chat UI",
+      "sceneScore": 0.6512,
+      "frameDiff": 103.69,
+      "beatOffsetMs": -68,
+      "beatInBar": 1
+    },
+    {
+      "index": 4,
+      "timeSec": 9.24,
+      "type": "hard cut",
+      "note": "cut to logo blob",
+      "sceneScore": 0.0688,
+      "frameDiff": 21.61,
+      "beatOffsetMs": 141,
+      "beatInBar": 0
+    },
+    {
+      "index": 5,
+      "timeSec": 11.4,
+      "type": "hard cut",
+      "note": "cut to cloud background, logo blurred",
+      "sceneScore": 0.6599,
+      "frameDiff": 77.31,
+      "beatOffsetMs": 19,
+      "beatInBar": 0
+    },
+    {
+      "index": 6,
+      "timeSec": 13.6,
+      "type": "blur dissolve",
+      "note": "logo blurs out, words blur in",
+      "sceneScore": 0.003,
+      "frameDiff": 0.9,
+      "beatOffsetMs": -62,
+      "beatInBar": 0
+    },
+    {
+      "index": 7,
+      "timeSec": 17.12,
+      "type": "morph",
+      "note": "page becomes a monitor screen as the camera pulls back",
+      "sceneScore": 0.2758,
+      "frameDiff": 34.81,
+      "beatOffsetMs": 36,
+      "beatInBar": 2
+    },
+    {
+      "index": 8,
+      "timeSec": 20.4,
+      "type": "blur-zoom",
+      "note": "push into the screen, cut to dark blue",
+      "sceneScore": 0.3394,
+      "frameDiff": 96.15,
+      "beatOffsetMs": -106,
+      "beatInBar": 0
+    },
+    {
+      "index": 9,
+      "timeSec": 26.6,
+      "type": "glow burst",
+      "note": "prompt dissolves into cyan/violet light with horizontal streaks, white-out, dashboard emerges (~2.2 s)",
+      "sceneScore": 0.0371,
+      "frameDiff": 13.92,
+      "beatOffsetMs": -180,
+      "beatInBar": 3
+    },
+    {
+      "index": 10,
+      "timeSec": 31.72,
+      "type": "hard cut",
+      "note": "device on plinth",
+      "sceneScore": 0.5717,
+      "frameDiff": 70.51,
+      "beatOffsetMs": -193,
+      "beatInBar": 0
+    },
+    {
+      "index": 11,
+      "timeSec": 33.48,
+      "type": "hard cut",
+      "note": "phone on branch",
+      "sceneScore": 0.6633,
+      "frameDiff": 76.16,
+      "beatOffsetMs": -144,
+      "beatInBar": 3
+    },
+    {
+      "index": 12,
+      "timeSec": 35.32,
+      "type": "hard cut",
+      "note": "wider monitor on plinth",
+      "sceneScore": 0.8101,
+      "frameDiff": 93.46,
+      "beatOffsetMs": -15,
+      "beatInBar": 2
+    },
+    {
+      "index": 13,
+      "timeSec": 36.8,
+      "type": "morph",
+      "note": "scene scales down into a rounded rect, then into a pill with gradient rings",
+      "sceneScore": 0.2035,
+      "frameDiff": 39.59,
+      "beatOffsetMs": -246,
+      "beatInBar": 1
+    },
+    {
+      "index": 14,
+      "timeSec": 37.72,
+      "type": "scale-down exit",
+      "note": "pill shrinks away, letters drop in",
+      "sceneScore": 0.0151,
+      "frameDiff": 3.67,
+      "beatOffsetMs": 104,
+      "beatInBar": 2
+    },
+    {
+      "index": 15,
+      "timeSec": 40.56,
+      "type": "morph",
+      "note": "text line becomes a line of code",
+      "sceneScore": 0.0299,
+      "frameDiff": 4.58,
+      "beatOffsetMs": 92,
+      "beatInBar": 3
+    },
+    {
+      "index": 16,
+      "timeSec": 43.6,
+      "type": "morph",
+      "note": "code highlights become colour bars, then a glass card",
+      "sceneScore": 0.0841,
+      "frameDiff": 10,
+      "beatOffsetMs": 280,
+      "beatInBar": 0
+    },
+    {
+      "index": 17,
+      "timeSec": 44.8,
+      "type": "morph",
+      "note": "glass card resolves into the dashboard over hills",
+      "sceneScore": 0.0342,
+      "frameDiff": 9.71,
+      "beatOffsetMs": -231,
+      "beatInBar": 3
+    },
+    {
+      "index": 18,
+      "timeSec": 51.72,
+      "type": "blur-zoom",
+      "note": "camera flies through the card spiral",
+      "sceneScore": 0.0521,
+      "frameDiff": 44.18,
+      "beatOffsetMs": -155,
+      "beatInBar": 3
+    },
+    {
+      "index": 19,
+      "timeSec": 53.28,
+      "type": "blur-zoom",
+      "note": "text recedes into a glass card, light to dark",
+      "sceneScore": 0.2672,
+      "frameDiff": 48.76,
+      "beatOffsetMs": 265,
+      "beatInBar": 1
+    },
+    {
+      "index": 20,
+      "timeSec": 54.52,
+      "type": "hard cut",
+      "note": "cut to close-up of the page",
+      "sceneScore": 0.6629,
+      "frameDiff": 97.84,
+      "beatOffsetMs": -207,
+      "beatInBar": 0
+    },
+    {
+      "index": 21,
+      "timeSec": 61.2,
+      "type": "hard cut",
+      "note": "cut to tablet on plinth",
+      "sceneScore": 0.7372,
+      "frameDiff": 96.87,
+      "beatOffsetMs": 200,
+      "beatInBar": 3
+    },
+    {
+      "index": 22,
+      "timeSec": 65.52,
+      "type": "blur dissolve",
+      "note": "scene to dark, button blurs in",
+      "sceneScore": 0.1189,
+      "frameDiff": 22.88,
+      "beatOffsetMs": -43,
+      "beatInBar": 3
+    },
+    {
+      "index": 23,
+      "timeSec": 67.6,
+      "type": "morph",
+      "note": "button shrinks into a blooming 3D flower",
+      "sceneScore": 0.0836,
+      "frameDiff": 16.37,
+      "beatOffsetMs": -244,
+      "beatInBar": 3
+    },
+    {
+      "index": 24,
+      "timeSec": 69.4,
+      "type": "morph",
+      "note": "flower collapses into the logo mark",
+      "sceneScore": 0.0221,
+      "frameDiff": 13.17,
+      "beatOffsetMs": -155,
+      "beatInBar": 2
+    }
+  ],
+  "shotStats": {
+    "count": 25,
+    "medianSec": 2.2,
+    "minSec": 0.92,
+    "maxSec": 6.92,
+    "meanSec": 2.93,
+    "shotsSec": [
+      2.96,
+      1.04,
+      3.32,
+      1.92,
+      2.16,
+      2.2,
+      3.52,
+      3.28,
+      6.2,
+      5.12,
+      1.76,
+      1.84,
+      1.48,
+      0.92,
+      2.84,
+      3.04,
+      1.2,
+      6.92,
+      1.56,
+      1.24,
+      6.68,
+      4.32,
+      2.08,
+      1.8,
+      3.859
+    ]
+  },
+  "transitions": {
+    "hard cut": 9,
+    "morph": 8,
+    "blur dissolve": 2,
+    "blur-zoom": 3,
+    "glow burst": 1,
+    "scale-down exit": 1
+  },
+  "colors": {
+    "background": {
+      "light": {
+        "top": "#f3f3f3",
+        "centre": "#f3f3f3",
+        "corners": {
+          "tl": "#f3f3f3",
+          "tr": "#f3f3f3",
+          "bl": "#e4e4e6",
+          "br": "#e4e4e6"
+        },
+        "gradientStops": [
+          [
+            0,
+            "#f3f3f3"
+          ],
+          [
+            70,
+            "#f3f3f3"
+          ],
+          [
+            80,
+            "#ececec"
+          ],
+          [
+            90,
+            "#e8e7ea"
+          ],
+          [
+            100,
+            "#e3e3e5"
+          ]
+        ],
+        "shape": "studio sweep: flat top, soft floor gradient in the bottom 30%"
+      },
+      "dark": {
+        "corners": {
+          "tl": "#010d38",
+          "tr": "#010103",
+          "bl": "#030b2b",
+          "br": "#020c30"
+        },
+        "top": "#000516",
+        "glows": [
+          "#0b3578",
+          "#1659c7",
+          "#0d4698",
+          "#1331d9"
+        ],
+        "violet": "#9a61e0",
+        "shape": "navy-black with electric-blue floor and back light"
+      },
+      "endCard": {
+        "flat": "#080e18",
+        "alt": "#060c1a"
+      },
+      "cloud": {
+        "range": [
+          "#7888b2",
+          "#bbc3d3"
+        ],
+        "dominant": "#8896b7"
+      },
+      "glowBurst": {
+        "centre": [
+          "#cbb6ff",
+          "#d4d2ff"
+        ],
+        "colors": [
+          "#a897fd",
+          "#b59afe",
+          "#5697d9",
+          "#56b9e9",
+          "#68c7f7",
+          "#184797"
+        ],
+        "corners": "#000031"
+      }
+    },
+    "text": {
+      "onLight": "#030303",
+      "onDark": "#fafdff"
+    },
+    "accent": {
+      "italicSerifOnLight": [
+        "#151656",
+        "#171b76",
+        "#353be8",
+        "#3549f6"
+      ],
+      "italicSerifOnDark": [
+        "#b6b9f6",
+        "#8788f8",
+        "#555cf8",
+        "#3848f8"
+      ],
+      "single": "#3846f7",
+      "note": "italic serif accent word with a left-to-right indigo to electric-blue gradient"
+    },
+    "panel": {
+      "glassFill": "#153065",
+      "glassRim": "#3b5b8b",
+      "glassOver": "#020c30",
+      "floorGlow": "#1750ba"
+    },
+    "shadow": {
+      "onLight": "soft grey contact shadow under devices",
+      "devices": "dark plinths #050505-#080808"
+    }
+  },
+  "type": {
+    "family": "neo-grotesk sans + high-contrast italic serif for one accent word per line",
+    "headline": {
+      "capOrAscenderPctOfFrame": [
+        6.76,
+        10.28
+      ],
+      "xHeightPctOfFrame": [
+        5.46,
+        6.2
+      ],
+      "samples": [
+        {
+          "t": 1,
+          "cap": 6.76,
+          "x": 5.46
+        },
+        {
+          "t": 2.7,
+          "cap": 9.26,
+          "x": 5.56,
+          "note": "includes serif italic ascenders"
+        },
+        {
+          "t": 39.2,
+          "cap": 8.52,
+          "x": 6.2
+        },
+        {
+          "t": 52.9,
+          "cap": 10.28,
+          "x": 6.2,
+          "note": "serif italic ascenders"
+        }
+      ]
+    },
+    "weight": {
+      "stemToCap": [
+        0.09,
+        0.123
+      ],
+      "median": 0.1,
+      "estimate": "Regular (400); serif accent regular italic"
+    },
+    "letterSpacing": {
+      "letterGapToCap": [
+        0.063,
+        0.137
+      ],
+      "median": 0.086,
+      "feel": "normal"
+    },
+    "wordGapToCap": {
+      "median": 0.41
+    },
+    "wordsOnScreen": {
+      "typical": 3,
+      "max": 5
+    },
+    "wordsPerBeat": 0.4,
+    "typewriter": {
+      "msPerChar": 120,
+      "note": "accent word typed in glyph steps at 52.30, 52.54, 52.66, 52.78 s (3 frames at 25 fps per glyph)"
+    },
+    "alignment": "centred; left-aligned two-line captions beside devices (x ~ 6% of width)",
+    "reveal": "typewriter for sans and serif; per-letter drop-in for the wordmark"
+  },
+  "easing": [
+    {
+      "label": "screen-to-device pull-back (width)",
+      "kind": "panel entry",
+      "metric": "w",
+      "from": 1620,
+      "to": 943,
+      "startSec": 17.12,
+      "endSec": 17.96,
+      "durationMs": 840,
+      "bezier": [
+        0.1,
+        0.33,
+        0,
+        0.76
+      ],
+      "css": "cubic-bezier(0.1, 0.33, 0, 0.76)",
+      "rmsError": 0.012,
+      "overshoot": -0.018,
+      "note": "then a slow -5%/s tail"
+    },
+    {
+      "label": "dashboard scale-down to a card (height)",
+      "kind": "transition",
+      "metric": "h",
+      "from": 1011,
+      "to": 309,
+      "startSec": 47.96,
+      "endSec": 48.4,
+      "durationMs": 440,
+      "bezier": [
+        0.92,
+        0.58,
+        0.08,
+        0.71
+      ],
+      "css": "cubic-bezier(0.92, 0.58, 0.08, 0.71)",
+      "rmsError": 0.006,
+      "overshoot": 0,
+      "note": "sharp middle"
+    },
+    {
+      "label": "pill scale-down exit (width)",
+      "kind": "exit",
+      "metric": "w",
+      "from": 641,
+      "to": 355,
+      "startSec": 37.2,
+      "endSec": 37.64,
+      "durationMs": 440,
+      "bezier": [
+        0.05,
+        0.34,
+        0.65,
+        0.19
+      ],
+      "css": "cubic-bezier(0.05, 0.34, 0.65, 0.19)",
+      "rmsError": 0.017,
+      "overshoot": 0,
+      "note": "rings and pill shrink together"
+    }
+  ],
+  "panels": {
+    "perspectiveFeel": "product-photography: real devices on plinths, moderate three-quarter angles, gentle camera",
+    "tilts": [
+      {
+        "t": 18,
+        "element": "monitor",
+        "rotateXdeg": {
+          "p1200": 7.1,
+          "p2000": 12.1,
+          "p2667": 13.3
+        },
+        "rotateYdeg": {
+          "p1200": -7.9,
+          "p2000": -13.2,
+          "p2667": -15.8
+        },
+        "rotateZdeg": {
+          "p2000": 0.7
+        },
+        "rmsPx": {
+          "p1200": 5.5,
+          "p2000": 3.2,
+          "p2667": 1.5
+        },
+        "note": "left side recedes, top recedes"
+      },
+      {
+        "t": 62,
+        "element": "tablet screen",
+        "rotateXdeg": {
+          "p2000": 36.7,
+          "p2667": 37.6
+        },
+        "rotateYdeg": {
+          "p2000": -21.4,
+          "p2667": -22.2
+        },
+        "rotateZdeg": {
+          "p2000": 12.8,
+          "p2667": 13.8
+        },
+        "rmsPx": {
+          "p2000": 8.3,
+          "p2667": 5.4
+        },
+        "note": "device leaning back on its stand"
+      },
+      {
+        "t": 25,
+        "element": "glass prompt box",
+        "rotateXdeg": 0,
+        "rotateYdeg": 0,
+        "note": "frontal once settled; it flips in tilted"
+      }
+    ],
+    "cornerRadius": [
+      {
+        "t": 25,
+        "element": "glass prompt box",
+        "radiusPx": 40,
+        "widthPx": 990,
+        "pctOfWidth": 4,
+        "note": "read from the rim; arc fit noisy on glass"
+      }
+    ],
+    "shadow": [
+      {
+        "t": 25,
+        "element": "glass prompt box",
+        "type": "floor glow",
+        "peakHex": "#1750ba",
+        "note": "blue light pool under the box, 1-2 px light rim on top edge"
+      }
+    ],
+    "drift": {
+      "logoScalePctPerSec": -3.3,
+      "revealTailScalePctPerSec": -5,
+      "note": "monitor reveal keeps easing back after the main move"
+    }
+  },
+  "music": {
+    "bpm": 105.2,
+    "beatPeriodSec": 0.5703,
+    "beatOffsetSec": 0.544,
+    "firstDownbeatSec": 2.255,
+    "candidates": [
+      {
+        "bpm": 105.2,
+        "acf": 2462.1073,
+        "combScore": 119.231
+      },
+      {
+        "bpm": 157.81,
+        "acf": 2136.2973,
+        "combScore": 114.956
+      },
+      {
+        "bpm": 78.92,
+        "acf": 1861.7815,
+        "combScore": 139.574
+      },
+      {
+        "bpm": 126.27,
+        "acf": 1649.4127,
+        "combScore": 100.211
+      },
+      {
+        "bpm": 90.2,
+        "acf": 1117.8365,
+        "combScore": 90.466
+      }
+    ],
+    "cutBeatOffsetsMs": [
+      135,
+      34,
+      -68,
+      141,
+      19,
+      -62,
+      36,
+      -106,
+      -180,
+      -193,
+      -144,
+      -15,
+      -246,
+      104,
+      92,
+      280,
+      -231,
+      -155,
+      265,
+      -207,
+      200,
+      -43,
+      -244,
+      -155
+    ],
+    "cutHalfBeatOffsetsMs": [
+      135,
+      34,
+      -68,
+      141,
+      19,
+      -62,
+      36,
+      -106,
+      105,
+      92,
+      141,
+      -15,
+      39,
+      104,
+      92,
+      -5,
+      54,
+      130,
+      -21,
+      79,
+      -85,
+      -43,
+      41,
+      130
+    ],
+    "summary": {
+      "medianAbsOffsetMs": 142.5,
+      "randomExpectationMs": 143,
+      "onBeatToleranceMs": 86,
+      "onBeatShare": 0.29,
+      "onBeatEvenShare": 0.43,
+      "onBarLineShare": 0.29,
+      "beatGapsBetweenOnBeatCuts": [
+        6,
+        7,
+        4,
+        6,
+        32,
+        53
+      ],
+      "medianAbsHalfBeatOffsetMs": 73.5
+    }
+  }
+}

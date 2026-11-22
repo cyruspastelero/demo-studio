@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>motion runtime</title>
+<link rel="icon" href="data:,">
+<style>
+  html, body { margin: 0; padding: 0; overflow: hidden; background: #000; }
+  #stage { position: relative; overflow: hidden; }
+  #stage * { box-sizing: border-box; }
+  .layer, .scene, .cam { position: absolute; inset: 0; }
+  .scene { display: none; }
+  .abs { position: absolute; }
+  .word { display: inline-block; white-space: pre; will-change: transform, filter, opacity; }
+  .line { display: block; white-space: nowrap; }
+  img { display: block; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script type="module" src="./runtime.js"></script>
+</body>
+</html>

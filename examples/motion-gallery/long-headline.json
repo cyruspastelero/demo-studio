@@ -1,0 +1,51 @@
+{
+  "$schema": "../../motion/schema/storyboard.schema.json",
+  "version": 1,
+  "title": "Robustness: long words and long lines must wrap or shrink, never clip",
+  "fps": 30,
+  "brand": {
+    "name": "Incomprehensibilities International",
+    "accent": "#2f6bff",
+    "url": "example.com/a-rather-long-path/that-keeps-going"
+  },
+  "scenes": [
+    {
+      "type": "kineticText",
+      "duration": 1.5,
+      "phrases": [
+        "Internationalization *Supercalifragilisticexpialidocious* everywhere"
+      ]
+    },
+    {
+      "type": "kineticText",
+      "duration": 1.5,
+      "mode": "build",
+      "phrases": [
+        "This headline is deliberately far too long for one line",
+        "and keeps going with *several* more words",
+        "until it must wrap."
+      ]
+    },
+    {
+      "type": "tiles",
+      "duration": 1.5,
+      "labels": [
+        "Authentication",
+        "Internationalization",
+        "Notifications",
+        "Reconciliation"
+      ],
+      "status": "Every label above must stay inside its tile"
+    },
+    {
+      "type": "buttonPress",
+      "duration": 1.5,
+      "label": "Synchronize everything now",
+      "resultLabel": "Synchronized"
+    },
+    {
+      "type": "logoLockup",
+      "duration": 1.5
+    }
+  ]
+}

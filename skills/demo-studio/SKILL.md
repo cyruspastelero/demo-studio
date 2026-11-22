@@ -49,6 +49,7 @@ Expected last line: `All required checks passed.`
 | "organise my demos", "clean up", "tidy the folder" | Open skill `demo-organize` |
 | "copy the look of <video>", "make a template from <video>", "save this look as a template" | Open skill `demo-template` |
 | "use template <id>", "make it look like <template id>", "what looks are there" | Open skill `demo-template`, section "Use a template" |
+| "make a launch ad", "make an ad", "motion graphics", "a promo with music and no voice" | Open skill `demo-motion` |
 
 ## Try-it route: the todo sample (about 10 minutes, no login)
 

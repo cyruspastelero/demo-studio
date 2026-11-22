@@ -1,0 +1,1065 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "motion/storyboard.schema.json",
+  "title": "Motion storyboard",
+  "description": "One product ad or explainer as a list of scenes. Paths are relative to the storyboard file. In-scene times named `at` are in beats when timing.bpm is set, otherwise in seconds.",
+  "type": "object",
+  "required": [
+    "version",
+    "brand",
+    "scenes"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "version": {
+      "const": 1
+    },
+    "title": {
+      "type": "string"
+    },
+    "style": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+$",
+      "description": "Folder name under styles/. Default: airy."
+    },
+    "fps": {
+      "type": "integer",
+      "minimum": 12,
+      "maximum": 60
+    },
+    "brand": {
+      "type": "object",
+      "required": [
+        "name",
+        "accent"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "accent": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        "accentInk": {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "description": "Text colour on accent fills. Default white."
+        },
+        "logo": {
+          "type": "string",
+          "format": "asset-image"
+        },
+        "url": {
+          "type": "string"
+        },
+        "fonts": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "display": {
+              "$ref": "#/$defs/font"
+            },
+            "body": {
+              "$ref": "#/$defs/font"
+            }
+          }
+        }
+      }
+    },
+    "timing": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "bpm": {
+          "type": "number",
+          "minimum": 40,
+          "maximum": 240
+        },
+        "offset": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Seconds of the first beat in the music."
+        },
+        "start": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Override: second at which scene 1 starts."
+        },
+        "tail": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Seconds held after the last scene."
+        },
+        "beatsFrom": {
+          "type": "string",
+          "format": "asset-file",
+          "description": "beats.json from analyze-beats.mjs; fills bpm and offset when they are absent."
+        }
+      }
+    },
+    "audio": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "music": {
+          "type": "string",
+          "format": "asset-audio"
+        },
+        "musicStart": {
+          "type": "number",
+          "minimum": 0
+        },
+        "musicGainDb": {
+          "type": "number"
+        },
+        "fadeOut": {
+          "type": "number",
+          "minimum": 0
+        },
+        "sfxGainDb": {
+          "type": "number"
+        },
+        "sfx": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "format": "asset-audio"
+          }
+        },
+        "loudness": {
+          "type": "number",
+          "maximum": -6,
+          "minimum": -30
+        },
+        "truePeak": {
+          "type": "number",
+          "maximum": 0
+        }
+      }
+    },
+    "scenes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/scene"
+      }
+    }
+  },
+  "$defs": {
+    "font": {
+      "type": "object",
+      "required": [
+        "family",
+        "src"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "family": {
+          "type": "string"
+        },
+        "src": {
+          "type": "string",
+          "format": "asset-file"
+        },
+        "weight": {
+          "type": "number",
+          "minimum": 100,
+          "maximum": 900
+        }
+      }
+    },
+    "media": {
+      "description": "An image path, a video/gif path, or a clip object.",
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "asset-media"
+        },
+        {
+          "type": "object",
+          "required": [
+            "src"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "src": {
+              "type": "string",
+              "format": "asset-media"
+            },
+            "from": {
+              "type": "number",
+              "minimum": 0
+            },
+            "to": {
+              "type": "number",
+              "minimum": 0
+            },
+            "rate": {
+              "type": "number",
+              "minimum": 0.1,
+              "maximum": 8
+            },
+            "crop": {
+              "$ref": "#/$defs/rect"
+            }
+          }
+        }
+      ]
+    },
+    "rect": {
+      "type": "array",
+      "items": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1
+      },
+      "minItems": 4,
+      "maxItems": 4,
+      "description": "[x, y, w, h] as fractions of the media."
+    },
+    "point": {
+      "type": "array",
+      "items": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1
+      },
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "phrase": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "object",
+          "required": [
+            "text"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "text": {
+              "type": "string",
+              "minLength": 1
+            },
+            "at": {
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        }
+      ]
+    },
+    "phrases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/phrase"
+      }
+    },
+    "cursorStep": {
+      "type": "object",
+      "required": [
+        "at",
+        "point"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "at": {
+          "type": "number",
+          "minimum": 0
+        },
+        "point": {
+          "$ref": "#/$defs/point"
+        },
+        "click": {
+          "type": "boolean"
+        }
+      }
+    },
+    "scene": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "kineticText",
+            "tiltedPanel",
+            "cardScatter",
+            "promptType",
+            "tiles",
+            "doneBurst",
+            "aspectMorph",
+            "uiFocus",
+            "statCounter",
+            "logoLockup",
+            "deviceFrame",
+            "featureList",
+            "notificationStack",
+            "chartReveal",
+            "buttonPress",
+            "sparkle"
+          ]
+        },
+        "beats": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "duration": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "exit": {
+          "enum": [
+            "auto",
+            "blurScale",
+            "whip",
+            "zoomThrough",
+            "fade",
+            "cut"
+          ]
+        },
+        "tone": {
+          "enum": [
+            "auto",
+            "light",
+            "dark"
+          ]
+        },
+        "sfx": {
+          "type": "boolean"
+        },
+        "id": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "kineticText"
+              }
+            }
+          },
+          "then": {
+            "$ref": "#/$defs/kineticText"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "tiltedPanel"
+              }
+            }
+          },
+          "then": {
+            "$ref": "#/$defs/tiltedPanel"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "cardScatter"
+              }
+            }
+          },
+          "then": {
+            "$ref": "#/$defs/cardScatter"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "promptType"
+              }
+            }
+          },
+          "then": {
+            "$ref": "#/$defs/promptType"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "tiles"
+              }
+            }
+          },
+          "then": {
+            "$ref": "#/$defs/tiles"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "doneBurst"
+              }
+            }
+          },
+          "then": {
+            "$ref": "#/$defs/doneBurst"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "aspectMorph"
+              }
+            }
+          },
+          "then": {
+            "$ref": "#/$defs/aspectMorph"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "uiFocus"
+              }
+            }
+          },
+          "then": {
+            "$ref": "#/$defs/uiFocus"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "statCounter"
+              }
+            }
+          },
+          "then": {
+            "$ref": "#/$defs/statCounter"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "logoLockup"
+              }
+            }
+          },
+          "then": {
+            "$ref": "#/$defs/logoLockup"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "deviceFrame"
+              }
+            }
+          },
+          "then": {
+            "$ref": "#/$defs/deviceFrame"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "featureList"
+              }
+            }
+          },
+          "then": {
+            "$ref": "#/$defs/featureList"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "notificationStack"
+              }
+            }
+          },
+          "then": {
+            "$ref": "#/$defs/notificationStack"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "chartReveal"
+              }
+            }
+          },
+          "then": {
+            "$ref": "#/$defs/chartReveal"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "buttonPress"
+              }
+            }
+          },
+          "then": {
+            "$ref": "#/$defs/buttonPress"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "sparkle"
+              }
+            }
+          },
+          "then": {
+            "$ref": "#/$defs/sparkle"
+          }
+        }
+      ]
+    },
+    "common": {
+      "type": {
+        "type": "string"
+      },
+      "beats": {},
+      "duration": {},
+      "exit": {},
+      "tone": {},
+      "sfx": {},
+      "id": {},
+      "note": {}
+    },
+    "kineticText": {
+      "required": [
+        "phrases"
+      ],
+      "properties": {
+        "phrases": {
+          "$ref": "#/$defs/phrases"
+        },
+        "mode": {
+          "enum": [
+            "replace",
+            "build"
+          ]
+        },
+        "size": {
+          "enum": [
+            "hero",
+            "title",
+            "body"
+          ]
+        },
+        "reveal": {
+          "enum": [
+            "style",
+            "blur",
+            "type",
+            "rise"
+          ]
+        },
+        "mark": {
+          "type": "string",
+          "format": "asset-image",
+          "description": "Logo mark that pops in after the last phrase."
+        },
+        "markAt": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "additionalPropertiesFrom": [
+        "common"
+      ]
+    },
+    "tiltedPanel": {
+      "required": [
+        "media"
+      ],
+      "properties": {
+        "media": {
+          "$ref": "#/$defs/media"
+        },
+        "chrome": {
+          "enum": [
+            "window",
+            "plain"
+          ]
+        },
+        "tilt": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": -40,
+            "maximum": 40
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "headline": {
+          "type": "string"
+        },
+        "headlinePosition": {
+          "enum": [
+            "above",
+            "below"
+          ]
+        },
+        "cursor": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/cursorStep"
+          }
+        },
+        "badge": {
+          "type": "string",
+          "description": "Small pill label on the panel corner, e.g. Playing."
+        }
+      },
+      "additionalPropertiesFrom": [
+        "common"
+      ]
+    },
+    "cardScatter": {
+      "required": [
+        "images"
+      ],
+      "properties": {
+        "images": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 9,
+          "items": {
+            "$ref": "#/$defs/media"
+          }
+        },
+        "phrases": {
+          "$ref": "#/$defs/phrases"
+        },
+        "layout": {
+          "enum": [
+            "scatter",
+            "orbit",
+            "row",
+            "grid"
+          ]
+        }
+      },
+      "additionalPropertiesFrom": [
+        "common"
+      ]
+    },
+    "promptType": {
+      "required": [
+        "text"
+      ],
+      "properties": {
+        "text": {
+          "type": "string",
+          "minLength": 1
+        },
+        "placeholder": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "sendLabel": {
+          "type": "string"
+        },
+        "typeFrom": {
+          "type": "number",
+          "minimum": 0
+        },
+        "typeTo": {
+          "type": "number",
+          "minimum": 0
+        },
+        "clickAt": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "additionalPropertiesFrom": [
+        "common"
+      ]
+    },
+    "tiles": {
+      "required": [
+        "labels"
+      ],
+      "properties": {
+        "labels": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 8,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "status": {
+          "type": "string"
+        },
+        "progressLabel": {
+          "type": "string"
+        },
+        "every": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Beats (or seconds) between tiles lighting up."
+        }
+      },
+      "additionalPropertiesFrom": [
+        "common"
+      ]
+    },
+    "doneBurst": {
+      "properties": {
+        "label": {
+          "type": "string"
+        },
+        "sub": {
+          "type": "string"
+        },
+        "variant": {
+          "enum": [
+            "confetti",
+            "ring"
+          ]
+        }
+      },
+      "additionalPropertiesFrom": [
+        "common"
+      ]
+    },
+    "aspectMorph": {
+      "required": [
+        "ratios"
+      ],
+      "properties": {
+        "media": {
+          "$ref": "#/$defs/media"
+        },
+        "ratios": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 4,
+          "items": {
+            "type": "string",
+            "pattern": "^[0-9]+:[0-9]+$"
+          }
+        },
+        "showLabels": {
+          "type": "boolean"
+        },
+        "medias": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 4,
+          "items": {
+            "$ref": "#/$defs/media"
+          },
+          "description": "One media per ratio (e.g. the real 16:9, 4:5 and 9:16 exports). Crossfades as the frame morphs."
+        }
+      },
+      "additionalPropertiesFrom": [
+        "common"
+      ],
+      "anyOfRequired": [
+        [
+          "media"
+        ],
+        [
+          "medias"
+        ]
+      ]
+    },
+    "uiFocus": {
+      "required": [
+        "media",
+        "focus"
+      ],
+      "properties": {
+        "media": {
+          "$ref": "#/$defs/media"
+        },
+        "focus": {
+          "$ref": "#/$defs/rect"
+        },
+        "zoomAt": {
+          "type": "number",
+          "minimum": 0
+        },
+        "click": {
+          "$ref": "#/$defs/point"
+        },
+        "clickAt": {
+          "type": "number",
+          "minimum": 0
+        },
+        "headline": {
+          "type": "string"
+        },
+        "headlineAt": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "additionalPropertiesFrom": [
+        "common"
+      ]
+    },
+    "statCounter": {
+      "required": [
+        "to"
+      ],
+      "properties": {
+        "from": {
+          "type": "number"
+        },
+        "to": {
+          "type": "number"
+        },
+        "decimals": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3
+        },
+        "suffix": {
+          "type": "string"
+        },
+        "prefix": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "bar": {
+          "type": "boolean"
+        }
+      },
+      "additionalPropertiesFrom": [
+        "common"
+      ]
+    },
+    "logoLockup": {
+      "properties": {
+        "logo": {
+          "type": "string",
+          "format": "asset-image"
+        },
+        "name": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        },
+        "tagline": {
+          "type": "string"
+        }
+      },
+      "additionalPropertiesFrom": [
+        "common"
+      ]
+    },
+    "deviceFrame": {
+      "required": [
+        "media"
+      ],
+      "properties": {
+        "media": {
+          "$ref": "#/$defs/media"
+        },
+        "device": {
+          "enum": [
+            "phone",
+            "laptop",
+            "monitor",
+            "tablet"
+          ]
+        },
+        "headline": {
+          "type": "string"
+        },
+        "side": {
+          "enum": [
+            "left",
+            "right",
+            "center"
+          ]
+        }
+      },
+      "additionalPropertiesFrom": [
+        "common"
+      ]
+    },
+    "featureList": {
+      "required": [
+        "items"
+      ],
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "items": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 6,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "media": {
+          "$ref": "#/$defs/media"
+        }
+      },
+      "additionalPropertiesFrom": [
+        "common"
+      ]
+    },
+    "notificationStack": {
+      "required": [
+        "items"
+      ],
+      "properties": {
+        "headline": {
+          "type": "string"
+        },
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 5,
+          "items": {
+            "type": "object",
+            "required": [
+              "title"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "title": {
+                "type": "string"
+              },
+              "body": {
+                "type": "string"
+              },
+              "icon": {
+                "type": "string",
+                "format": "asset-image"
+              },
+              "meta": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "additionalPropertiesFrom": [
+        "common"
+      ]
+    },
+    "chartReveal": {
+      "required": [
+        "values"
+      ],
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "values": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 12,
+          "items": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "unit": {
+          "type": "string"
+        },
+        "highlight": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalPropertiesFrom": [
+        "common"
+      ]
+    },
+    "buttonPress": {
+      "required": [
+        "label"
+      ],
+      "properties": {
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "resultLabel": {
+          "type": "string"
+        },
+        "variant": {
+          "enum": [
+            "solid",
+            "glow",
+            "outline"
+          ]
+        },
+        "clickAt": {
+          "type": "number",
+          "minimum": 0
+        },
+        "headline": {
+          "type": "string"
+        }
+      },
+      "additionalPropertiesFrom": [
+        "common"
+      ]
+    },
+    "sparkle": {
+      "properties": {
+        "count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5
+        }
+      },
+      "additionalPropertiesFrom": [
+        "common"
+      ]
+    }
+  }
+}

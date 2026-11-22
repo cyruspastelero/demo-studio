@@ -121,6 +121,12 @@ send it. The receiver unzips it into their own `<demos>/_templates/`, runs
 `python3 -I scripts/templates.py validate <id>`, and sets the id in a demo.json. To ship one with the
 plugin, put it in `look-templates/<id>/` with its previews and add a row to the built-in table above.
 
+## Motion templates for launch ads
+
+Look templates style the walkthrough cuts. Launch ads made by skill `demo-motion` use their own
+motion templates in `motion-templates/` (`airy`, `nocturne`, `showroom`), each measured from a
+reference ad the same way. See [motion.md](motion.md#styles).
+
 ## Copyright
 
 A template captures **measurements of a style** (sizes, timings, colours, loudness), not content. It

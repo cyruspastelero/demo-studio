@@ -1,0 +1,476 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "motion/style.schema.json",
+  "title": "Motion style template",
+  "description": "Look and motion feel. Brand colour and logo come from the storyboard; a style never names a product. Sizes are in u = 1% of the frame's shorter side.",
+  "type": "object",
+  "required": [
+    "name",
+    "tone",
+    "palette",
+    "fonts",
+    "type",
+    "text",
+    "motion",
+    "panel"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+$"
+    },
+    "description": {
+      "type": "string"
+    },
+    "source": {
+      "type": "string",
+      "description": "Where the numbers come from (ANALYSIS.md)."
+    },
+    "tone": {
+      "enum": [
+        "light",
+        "dark"
+      ]
+    },
+    "palette": {
+      "type": "object",
+      "required": [
+        "light",
+        "dark"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "light": {
+          "$ref": "#/$defs/tonePalette"
+        },
+        "dark": {
+          "$ref": "#/$defs/tonePalette"
+        },
+        "confetti": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Colours or the word accent."
+        }
+      }
+    },
+    "fonts": {
+      "type": "object",
+      "required": [
+        "display",
+        "body"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "display": {
+          "$ref": "#/$defs/font"
+        },
+        "body": {
+          "$ref": "#/$defs/font"
+        },
+        "accent": {
+          "enum": [
+            "color",
+            "italic",
+            "gradient"
+          ],
+          "description": "How the accent word differs."
+        },
+        "accentSkew": {
+          "type": "number",
+          "minimum": -20,
+          "maximum": 20,
+          "description": "Slant in degrees for italic accents (fonts without an italic axis)."
+        }
+      }
+    },
+    "type": {
+      "type": "object",
+      "required": [
+        "hero",
+        "title",
+        "body",
+        "small"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "hero": {
+          "type": "number",
+          "minimum": 3,
+          "maximum": 20
+        },
+        "title": {
+          "type": "number",
+          "minimum": 3,
+          "maximum": 16
+        },
+        "body": {
+          "type": "number",
+          "minimum": 2,
+          "maximum": 10
+        },
+        "small": {
+          "type": "number",
+          "minimum": 2,
+          "maximum": 8
+        },
+        "minPx": {
+          "type": "number",
+          "minimum": 8
+        },
+        "tracking": {
+          "type": "number",
+          "minimum": -0.1,
+          "maximum": 0.2
+        },
+        "lineHeight": {
+          "type": "number",
+          "minimum": 0.8,
+          "maximum": 1.6
+        }
+      }
+    },
+    "text": {
+      "type": "object",
+      "required": [
+        "reveal",
+        "wordMs",
+        "staggerMs",
+        "ease"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "reveal": {
+          "enum": [
+            "blur",
+            "type",
+            "rise"
+          ]
+        },
+        "wordMs": {
+          "type": "number",
+          "minimum": 0
+        },
+        "staggerMs": {
+          "type": "number",
+          "minimum": 0
+        },
+        "ease": {
+          "$ref": "#/$defs/ease"
+        },
+        "blurPx": {
+          "type": "number",
+          "minimum": 0
+        },
+        "rise": {
+          "type": "number",
+          "description": "Entry offset in u."
+        },
+        "scaleFrom": {
+          "type": "number"
+        },
+        "caret": {
+          "type": "boolean"
+        },
+        "exitMs": {
+          "type": "number",
+          "minimum": 0
+        },
+        "charMs": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Typewriter speed per character."
+        }
+      }
+    },
+    "motion": {
+      "type": "object",
+      "required": [
+        "enterMs",
+        "enterEase",
+        "exitMs",
+        "exitEase",
+        "transition",
+        "drift"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "enterMs": {
+          "type": "number",
+          "minimum": 0
+        },
+        "enterEase": {
+          "$ref": "#/$defs/ease"
+        },
+        "exitMs": {
+          "type": "number",
+          "minimum": 0
+        },
+        "exitEase": {
+          "$ref": "#/$defs/ease"
+        },
+        "transition": {
+          "enum": [
+            "blurScale",
+            "whip",
+            "zoomThrough",
+            "fade",
+            "cut"
+          ]
+        },
+        "transitionMix": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "number"
+          },
+          "description": "Informational: measured share of each transition type."
+        },
+        "drift": {
+          "type": "number",
+          "minimum": -0.1,
+          "maximum": 0.1,
+          "description": "Camera scale change per second while a scene holds (negative = slow pull back)."
+        },
+        "cardSpin": {
+          "type": "number"
+        },
+        "clickMs": {
+          "type": "number"
+        },
+        "exitScale": {
+          "type": "number",
+          "minimum": 0.2,
+          "maximum": 1.5,
+          "description": "Scale reached by the blurScale exit."
+        },
+        "popMs": {
+          "type": "number",
+          "minimum": 0
+        },
+        "popEase": {
+          "$ref": "#/$defs/ease"
+        },
+        "deviceEntry": {
+          "enum": [
+            "rise",
+            "pullBack"
+          ],
+          "description": "deviceFrame entry: rise from below, or start on the screen and pull back to the whole device."
+        }
+      }
+    },
+    "panel": {
+      "type": "object",
+      "required": [
+        "radius",
+        "tilt",
+        "perspective",
+        "shadow"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "radius": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 0.1,
+          "description": "Corner radius as a share of panel width."
+        },
+        "tilt": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3,
+          "description": "rotateX, rotateY, rotateZ degrees."
+        },
+        "perspective": {
+          "type": "number",
+          "minimum": 200
+        },
+        "shadow": {
+          "type": "string"
+        },
+        "border": {
+          "type": "string"
+        },
+        "glow": {
+          "type": "string"
+        },
+        "chromeBar": {
+          "type": "boolean"
+        }
+      }
+    },
+    "background": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "flat",
+            "radialBottom",
+            "radialCentre",
+            "linear",
+            "sky"
+          ]
+        },
+        "glowAccent": {
+          "type": "boolean",
+          "description": "Tint the background glow with the brand accent."
+        },
+        "grain": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 0.2
+        },
+        "tint": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 0.3,
+          "description": "Mix this much of the brand accent into the background (bg2 and glow)."
+        },
+        "darkKind": {
+          "enum": [
+            "flat",
+            "radialBottom",
+            "radialCentre",
+            "linear",
+            "sky"
+          ],
+          "description": "Background kind for dark-tone scenes."
+        }
+      }
+    },
+    "cursor": {
+      "enum": [
+        "hand",
+        "arrow"
+      ]
+    },
+    "doneVariant": {
+      "enum": [
+        "confetti",
+        "ring"
+      ]
+    },
+    "deviceTone": {
+      "enum": [
+        "light",
+        "dark"
+      ]
+    },
+    "sceneTones": {
+      "type": "object",
+      "additionalProperties": {
+        "enum": [
+          "light",
+          "dark"
+        ]
+      },
+      "description": "Default tone per scene type, e.g. {\"deviceFrame\": \"dark\"}. A scene's own tone wins."
+    }
+  },
+  "$defs": {
+    "ease": {
+      "anyOf": [
+        {
+          "enum": [
+            "linear",
+            "out",
+            "inOut",
+            "in",
+            "back",
+            "snap"
+          ]
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 4,
+          "maxItems": 4
+        }
+      ]
+    },
+    "font": {
+      "type": "object",
+      "required": [
+        "family",
+        "file",
+        "weight"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "family": {
+          "type": "string"
+        },
+        "file": {
+          "type": "string",
+          "description": "Font file name under engine/fonts/."
+        },
+        "weight": {
+          "type": "number",
+          "minimum": 100,
+          "maximum": 900
+        },
+        "accentWeight": {
+          "type": "number",
+          "minimum": 100,
+          "maximum": 900
+        }
+      }
+    },
+    "tonePalette": {
+      "type": "object",
+      "required": [
+        "bg",
+        "bg2",
+        "ink",
+        "muted",
+        "panel",
+        "line"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "bg": {
+          "type": "string"
+        },
+        "bg2": {
+          "type": "string"
+        },
+        "ink": {
+          "type": "string"
+        },
+        "muted": {
+          "type": "string"
+        },
+        "panel": {
+          "type": "string"
+        },
+        "line": {
+          "type": "string"
+        },
+        "shadowTint": {
+          "type": "string"
+        },
+        "glow": {
+          "type": "string"
+        },
+        "panelInk": {
+          "type": "string",
+          "description": "Text on panels when panels contrast with the background."
+        },
+        "panelMuted": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,777 @@
+{
+  "style": "nocturne",
+  "reference": "a dark fintech product video",
+  "fps": 30,
+  "durationSec": 48.019,
+  "method": {
+    "cutDetector": "ffmpeg select='gt(scene,0.25)',showinfo (detector cuts listed separately) + per-frame diff/edge/scene track; every transition checked on 10 fps frames",
+    "transitionsAreSoft": true
+  },
+  "detectorCuts025": [
+    21,
+    30,
+    47.1
+  ],
+  "cuts": [
+    {
+      "index": 1,
+      "timeSec": 4.5,
+      "type": "blur-zoom",
+      "note": "text pushes through the camera (scale up), next word blurred",
+      "sceneScore": 0.1139,
+      "frameDiff": 38.31,
+      "beatOffsetMs": 270,
+      "beatInBar": 3
+    },
+    {
+      "index": 2,
+      "timeSec": 5.567,
+      "type": "whip/motion-blur",
+      "note": "horizontal whip, word slides right, logo enters motion-blurred from left",
+      "sceneScore": 0.0173,
+      "frameDiff": 9.4,
+      "beatOffsetMs": 137,
+      "beatInBar": 1
+    },
+    {
+      "index": 3,
+      "timeSec": 7.867,
+      "type": "blur dissolve",
+      "note": "logo blurs out, next text blurs in",
+      "sceneScore": 0.0376,
+      "frameDiff": 9.69,
+      "beatOffsetMs": 37,
+      "beatInBar": 1
+    },
+    {
+      "index": 4,
+      "timeSec": 10.9,
+      "type": "blur dissolve",
+      "note": "text fades, glowing pill blurs in",
+      "sceneScore": 0.0265,
+      "frameDiff": 27.8,
+      "beatOffsetMs": 70,
+      "beatInBar": 2
+    },
+    {
+      "index": 5,
+      "timeSec": 12.767,
+      "type": "morph",
+      "note": "pill is the toolbar button; camera pulls back to a tilted browser",
+      "sceneScore": 0.0142,
+      "frameDiff": 12.44,
+      "beatOffsetMs": 137,
+      "beatInBar": 1
+    },
+    {
+      "index": 6,
+      "timeSec": 14.233,
+      "type": "blur-zoom",
+      "note": "headline scales up past camera, panel drops",
+      "sceneScore": 0.0432,
+      "frameDiff": 63.93,
+      "beatOffsetMs": -197,
+      "beatInBar": 0
+    },
+    {
+      "index": 7,
+      "timeSec": 16.667,
+      "type": "morph",
+      "note": "document carries over, words clear, document scales to centre",
+      "sceneScore": 0.0497,
+      "frameDiff": 13.91,
+      "beatOffsetMs": -163,
+      "beatInBar": 0
+    },
+    {
+      "index": 8,
+      "timeSec": 19.733,
+      "type": "scale-down+blur exit",
+      "note": "document shrinks, blurs and fades",
+      "sceneScore": 0.0263,
+      "frameDiff": 15.21,
+      "beatOffsetMs": -97,
+      "beatInBar": 1
+    },
+    {
+      "index": 9,
+      "timeSec": 21,
+      "type": "slide/push",
+      "note": "browser panel rises from below, text drifts up",
+      "sceneScore": 0.6706,
+      "frameDiff": 79.73,
+      "beatOffsetMs": -30,
+      "beatInBar": 3
+    },
+    {
+      "index": 10,
+      "timeSec": 22.067,
+      "type": "blur-zoom",
+      "note": "push into the cream card; this is also the dark-to-light flip",
+      "sceneScore": 0.0172,
+      "frameDiff": 10.27,
+      "beatOffsetMs": -163,
+      "beatInBar": 1
+    },
+    {
+      "index": 11,
+      "timeSec": 23.433,
+      "type": "sparkle/shape wipe",
+      "note": "card warps with violet/mint edge glow into a 4-point sparkle",
+      "sceneScore": 0.0225,
+      "frameDiff": 18.67,
+      "beatOffsetMs": 3,
+      "beatInBar": 3
+    },
+    {
+      "index": 12,
+      "timeSec": 24.767,
+      "type": "sparkle/shape wipe",
+      "note": "sparkle trail writes the next line",
+      "sceneScore": 0.008,
+      "frameDiff": 1.34,
+      "beatOffsetMs": 137,
+      "beatInBar": 1
+    },
+    {
+      "index": 13,
+      "timeSec": 27,
+      "type": "slide/push",
+      "note": "text pushed left, dashboard rises from below",
+      "sceneScore": 0.0254,
+      "frameDiff": 28.12,
+      "beatOffsetMs": -30,
+      "beatInBar": 1
+    },
+    {
+      "index": 14,
+      "timeSec": 28.633,
+      "type": "blur-zoom",
+      "note": "push-in to a single row",
+      "sceneScore": 0.0172,
+      "frameDiff": 17.81,
+      "beatOffsetMs": -197,
+      "beatInBar": 0
+    },
+    {
+      "index": 15,
+      "timeSec": 30,
+      "type": "light/dark flip",
+      "note": "light to dark radial glow, panel rises",
+      "sceneScore": 0.3573,
+      "frameDiff": 85.6,
+      "beatOffsetMs": -30,
+      "beatInBar": 2
+    },
+    {
+      "index": 16,
+      "timeSec": 33.5,
+      "type": "whip/motion-blur",
+      "note": "3D swing to the button area",
+      "sceneScore": 0.1064,
+      "frameDiff": 31.83,
+      "beatOffsetMs": -130,
+      "beatInBar": 0
+    },
+    {
+      "index": 17,
+      "timeSec": 35.167,
+      "type": "slide/push",
+      "note": "panel slides up out, table fades in",
+      "sceneScore": 0.119,
+      "frameDiff": 20.23,
+      "beatOffsetMs": -263,
+      "beatInBar": 3
+    },
+    {
+      "index": 18,
+      "timeSec": 37.067,
+      "type": "morph",
+      "note": "table collapses into the glowing pill",
+      "sceneScore": 0.0741,
+      "frameDiff": 20.39,
+      "beatOffsetMs": -163,
+      "beatInBar": 2
+    },
+    {
+      "index": 19,
+      "timeSec": 38.067,
+      "type": "morph",
+      "note": "pill shrinks into a ring loader, ring becomes a check",
+      "sceneScore": 0.015,
+      "frameDiff": 4.14,
+      "beatOffsetMs": 237,
+      "beatInBar": 3
+    },
+    {
+      "index": 20,
+      "timeSec": 40.1,
+      "type": "light/dark flip",
+      "note": "dark card scales down and falls away revealing the light background",
+      "sceneScore": 0.0477,
+      "frameDiff": 39.1,
+      "beatOffsetMs": -130,
+      "beatInBar": 3
+    },
+    {
+      "index": 21,
+      "timeSec": 42.133,
+      "type": "blur-zoom",
+      "note": "line shrinks and blurs out, next word blur-zooms in",
+      "sceneScore": 0.0245,
+      "frameDiff": 3.99,
+      "beatOffsetMs": 103,
+      "beatInBar": 2
+    },
+    {
+      "index": 22,
+      "timeSec": 43.75,
+      "type": "morph",
+      "note": "line-art strokes converge into the logo mark",
+      "sceneScore": 0.005,
+      "frameDiff": 1.26,
+      "beatOffsetMs": -80,
+      "beatInBar": 1
+    },
+    {
+      "index": 23,
+      "timeSec": 47.1,
+      "type": "hard cut",
+      "note": "cut to black end",
+      "sceneScore": 1,
+      "frameDiff": 236.84,
+      "beatOffsetMs": 270,
+      "beatInBar": 2
+    }
+  ],
+  "shotStats": {
+    "count": 24,
+    "medianSec": 1.767,
+    "minSec": 0.919,
+    "maxSec": 4.5,
+    "meanSec": 2.001,
+    "shotsSec": [
+      4.5,
+      1.067,
+      2.3,
+      3.033,
+      1.867,
+      1.466,
+      2.434,
+      3.066,
+      1.267,
+      1.067,
+      1.366,
+      1.334,
+      2.233,
+      1.633,
+      1.367,
+      3.5,
+      1.667,
+      1.9,
+      1,
+      2.033,
+      2.033,
+      1.617,
+      3.35,
+      0.919
+    ]
+  },
+  "transitions": {
+    "blur-zoom": 5,
+    "whip/motion-blur": 2,
+    "blur dissolve": 2,
+    "morph": 5,
+    "scale-down+blur exit": 1,
+    "slide/push": 3,
+    "sparkle/shape wipe": 2,
+    "light/dark flip": 2,
+    "hard cut": 1
+  },
+  "colors": {
+    "background": {
+      "dark": {
+        "top": "#130209",
+        "centre": "#2e0f3d",
+        "bottomCentre": "#a069e5",
+        "corners": {
+          "tl": "#130209",
+          "tr": "#130209",
+          "bl": "#240b2a",
+          "br": "#311146"
+        },
+        "gradientStops": [
+          [
+            0,
+            "#130209"
+          ],
+          [
+            40,
+            "#230926"
+          ],
+          [
+            50,
+            "#2e0f3d"
+          ],
+          [
+            60,
+            "#3d175b"
+          ],
+          [
+            70,
+            "#522382"
+          ],
+          [
+            80,
+            "#6d36aa"
+          ],
+          [
+            90,
+            "#8750cf"
+          ],
+          [
+            100,
+            "#a069e5"
+          ]
+        ],
+        "shape": "radial glow centred at the bottom edge, ~0.6 frame wide; logo scenes drop the glow to #080103-#0a0005"
+      },
+      "light": {
+        "top": "#fdfdfd",
+        "centre": "#fdfdfd",
+        "corners": {
+          "tl": "#fdfdfd",
+          "tr": "#fdfdfd",
+          "bl": "#eadcfc",
+          "br": "#faf6fe"
+        },
+        "gradientStopsLeftEdge": [
+          [
+            0,
+            "#fdfdfd"
+          ],
+          [
+            50,
+            "#f8f5fd"
+          ],
+          [
+            70,
+            "#ebdefc"
+          ],
+          [
+            80,
+            "#e7d5fe"
+          ],
+          [
+            100,
+            "#ece0fc"
+          ]
+        ],
+        "mintTint": "#d1f0e8",
+        "shape": "lavender haze bottom-left, mint haze bottom-centre in the outro"
+      }
+    },
+    "text": {
+      "onDark": "#fffcfe",
+      "onLight": "#090205"
+    },
+    "accent": {
+      "onDarkTypingTail": [
+        "#dac9e7",
+        "#b69cc9",
+        "#82669a",
+        "#5a3c74"
+      ],
+      "onLight": [
+        "#451b69",
+        "#552489",
+        "#8458b7",
+        "#b596d6"
+      ],
+      "note": "newest typed letters fade in from deep violet; accent words carry a violet gradient"
+    },
+    "panel": {
+      "cardFill": "#fefcf6",
+      "appCream": "#fdfbf8",
+      "appCreamShade": "#f3efe9",
+      "appSidebar": "#130209",
+      "documentFill": "#ffffff"
+    },
+    "glow": {
+      "pill": [
+        "#9b55fb",
+        "#a162f9",
+        "#8d4ff9",
+        "#8995dc"
+      ],
+      "pillHighlight": "#bad6e3",
+      "pillGlowBelow": "#502f66",
+      "ring": "#7bfcb6",
+      "rimViolet": "#5c2a95",
+      "rimMint": "#38564a",
+      "bottomGlow": "#a069e5"
+    },
+    "shadow": {
+      "onDark": "none visible; elements glow instead",
+      "onLight": "soft lavender haze"
+    }
+  },
+  "type": {
+    "family": "geometric grotesk sans (single family); logo wordmark bold",
+    "headline": {
+      "capOrAscenderPctOfFrame": [
+        6.2,
+        10.9
+      ],
+      "openerCapPct": 16.48,
+      "xHeightPctOfFrame": [
+        4.17,
+        8.33
+      ],
+      "samples": [
+        {
+          "t": 0.9,
+          "cap": 16.48,
+          "x": 11.3,
+          "note": "opener, typed large"
+        },
+        {
+          "t": 3.9,
+          "cap": 10.37,
+          "x": 6.3
+        },
+        {
+          "t": 9.4,
+          "cap": 10.93,
+          "x": 8.33
+        },
+        {
+          "t": 20.6,
+          "cap": 6.2,
+          "x": 4.17
+        },
+        {
+          "t": 25.9,
+          "cap": 9.63,
+          "x": 6.48
+        },
+        {
+          "t": 41.5,
+          "cap": 7.78,
+          "x": 5.28
+        }
+      ]
+    },
+    "weight": {
+      "stemToCap": [
+        0.089,
+        0.119
+      ],
+      "median": 0.104,
+      "estimate": "Regular (400), light-leaning"
+    },
+    "letterSpacing": {
+      "letterGapToCap": [
+        0.085,
+        0.13
+      ],
+      "median": 0.1,
+      "feel": "normal"
+    },
+    "wordGapToCap": {
+      "median": 0.47
+    },
+    "wordsOnScreen": {
+      "typical": 3,
+      "max": 5
+    },
+    "wordsPerBeat": 0.5,
+    "typewriter": {
+      "msPerChar": [
+        50,
+        85
+      ],
+      "charsPerSec": [
+        12,
+        20
+      ],
+      "caret": "white bar, full cap height, stays on",
+      "deleteMs": 100,
+      "fadeTailChars": 3,
+      "note": "line cleared in <=100 ms then retyped"
+    },
+    "alignment": "centred; long lines scroll horizontally (marquee pan) instead of wrapping",
+    "reveal": "typewriter with violet fade tail and caret; blur-in for single words"
+  },
+  "easing": [
+    {
+      "label": "document entry (height, small -> full)",
+      "kind": "panel entry",
+      "metric": "h",
+      "from": 84,
+      "to": 559,
+      "startSec": 14.3,
+      "endSec": 14.8,
+      "durationMs": 500,
+      "bezier": [
+        0.25,
+        0.16,
+        0.06,
+        0.83
+      ],
+      "css": "cubic-bezier(0.25, 0.16, 0.06, 0.83)",
+      "rmsError": 0.007,
+      "overshoot": -0.019,
+      "note": "scale-up from a small tile"
+    },
+    {
+      "label": "document exit (width shrink)",
+      "kind": "exit",
+      "metric": "w",
+      "from": 872,
+      "to": 609,
+      "startSec": 19.4,
+      "endSec": 19.667,
+      "durationMs": 267,
+      "bezier": [
+        0.52,
+        0.1,
+        0.83,
+        0.55
+      ],
+      "css": "cubic-bezier(0.52, 0.1, 0.83, 0.55)",
+      "rmsError": 0.005,
+      "overshoot": 0,
+      "note": "ease-in"
+    },
+    {
+      "label": "document exit (blur)",
+      "kind": "exit",
+      "metric": "sharp",
+      "from": 9.97,
+      "to": 0.92,
+      "startSec": 19.3,
+      "endSec": 19.667,
+      "durationMs": 367,
+      "bezier": [
+        0.27,
+        0.01,
+        0.03,
+        0.43
+      ],
+      "css": "cubic-bezier(0.27, 0.01, 0.03, 0.43)",
+      "rmsError": 0.037,
+      "overshoot": 0,
+      "note": "sharpness proxy"
+    },
+    {
+      "label": "pill blur-in (sharpness)",
+      "kind": "element entry",
+      "metric": "sharp",
+      "from": 0.67,
+      "to": 7.91,
+      "startSec": 11.133,
+      "endSec": 11.566,
+      "durationMs": 433,
+      "bezier": [
+        0.41,
+        0.21,
+        0.01,
+        0
+      ],
+      "css": "cubic-bezier(0.41, 0.21, 0.01, 0)",
+      "rmsError": 0.019,
+      "overshoot": 0,
+      "note": "sharpness proxy; blur clears late"
+    }
+  ],
+  "panels": {
+    "perspectiveFeel": "moderate, browser and document turned toward camera from one side, small roll",
+    "tilts": [
+      {
+        "t": 16.2,
+        "element": "document",
+        "rotateXdeg": {
+          "p1200": 17,
+          "p2000": 18.8,
+          "p2667": 18.1
+        },
+        "rotateYdeg": {
+          "p1200": 18.8,
+          "p2000": 23.3,
+          "p2667": 25.9
+        },
+        "rotateZdeg": {
+          "p1200": -5.3,
+          "p2000": -6.1,
+          "p2667": -6.4
+        },
+        "rmsPx": {
+          "p1200": 5.1,
+          "p2000": 1.4,
+          "p2667": 0.4
+        },
+        "note": "best fit at p=2667 (AE 50 mm equivalent)"
+      },
+      {
+        "t": 27.6,
+        "element": "browser",
+        "topEdgeSlopeDeg": 6,
+        "leftEdgeLeanDeg": 0.8,
+        "horizonVanishingDistancePx": 3641,
+        "rotateYdeg": {
+          "p1200": 18.2,
+          "p2000": 28.8,
+          "p2667": 36.2
+        },
+        "note": "right side recedes"
+      }
+    ],
+    "cornerRadius": [
+      {
+        "t": 36.3,
+        "element": "table row card",
+        "radiusPx": 33,
+        "widthPx": 1024,
+        "heightPx": 173,
+        "pctOfWidth": 3.2,
+        "pctOfHeight": 19.1
+      },
+      {
+        "t": 37.5,
+        "element": "status pill",
+        "radiusPx": 86,
+        "widthPx": 960,
+        "heightPx": 223,
+        "pctOfHeight": 38.6,
+        "note": "near capsule"
+      }
+    ],
+    "shadow": [
+      {
+        "t": 37.5,
+        "element": "pill",
+        "type": "glow",
+        "peakHex": "#502f66",
+        "reachBelowPx": 100,
+        "reachAbovePx": 57,
+        "offsetYPx": 20,
+        "note": "violet bloom, no dark drop shadow"
+      },
+      {
+        "t": 11.5,
+        "element": "browser",
+        "type": "rim light",
+        "colors": [
+          "#5c2a95",
+          "#38564a"
+        ],
+        "note": "violet-to-mint light along the top edge"
+      }
+    ],
+    "drift": {
+      "logoScalePctPerSec": -1.7,
+      "note": "slow push-back on holds"
+    }
+  },
+  "music": {
+    "bpm": 100,
+    "beatPeriodSec": 0.6,
+    "beatOffsetSec": 0.03,
+    "firstDownbeatSec": 0.03,
+    "candidates": [
+      {
+        "bpm": 100,
+        "acf": 1513.6577,
+        "combScore": 199.913
+      },
+      {
+        "bpm": 133.34,
+        "acf": 230.5686,
+        "combScore": 89.569
+      },
+      {
+        "bpm": 79.97,
+        "acf": 83.8786,
+        "combScore": 86.81
+      },
+      {
+        "bpm": 114.28,
+        "acf": -97.2591,
+        "combScore": 50.25
+      },
+      {
+        "bpm": 75.01,
+        "acf": -111.3021,
+        "combScore": 72.678
+      }
+    ],
+    "cutBeatOffsetsMs": [
+      270,
+      137,
+      37,
+      70,
+      137,
+      -197,
+      -163,
+      -97,
+      -30,
+      -163,
+      3,
+      137,
+      -30,
+      -197,
+      -30,
+      -130,
+      -263,
+      -163,
+      237,
+      -130,
+      103,
+      -80,
+      270
+    ],
+    "cutHalfBeatOffsetsMs": [
+      -30,
+      137,
+      37,
+      70,
+      137,
+      103,
+      137,
+      -97,
+      -30,
+      137,
+      3,
+      137,
+      -30,
+      103,
+      -30,
+      -130,
+      37,
+      137,
+      -63,
+      -130,
+      103,
+      -80,
+      -30
+    ],
+    "summary": {
+      "medianAbsOffsetMs": 137,
+      "randomExpectationMs": 150,
+      "onBeatToleranceMs": 90,
+      "onBeatShare": 0.3,
+      "onBeatEvenShare": 0.29,
+      "onBarLineShare": 0,
+      "beatGapsBetweenOnBeatCuts": [
+        5,
+        17,
+        4,
+        6,
+        5,
+        23
+      ],
+      "medianAbsHalfBeatOffsetMs": 97
+    }
+  }
+}
