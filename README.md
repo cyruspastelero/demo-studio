@@ -83,8 +83,37 @@ keynote-style cut built to the quality bar, and a narrated version. Ask for prom
 4:5 and 9:16 social versions and a zip for a human editor too. Want to check the plan or the reel
 before Claude goes on? Say so, and it stops there.
 
-To fix a cut yourself, `npm run studio` opens a local timeline editor.
+To fix a cut yourself, `npm run studio` opens a local timeline editor: play and scrub the cut,
+retime shots, rewrite a voiceover line and see at once whether it still fits.
 [Try it in the browser](https://cyruspastelero.github.io/demo-studio/#editor) on the todo sample first.
+
+<p align="center">
+  <img src="docs/img/editor.gif" alt="The editor on the todo sample: playing the cut, selecting a scene and adding words to its voiceover while the fit readout updates" width="860">
+</p>
+
+## Sound
+
+Each shot's `voiceover` line is written with the plan. `narrate.py` checks every line fits its
+slot (about 2.5 words a second) before any voice is made, renders and places each line, loops a
+music bed 13 dB under the voice and 7 dB lower under each line, and mixes to -14 LUFS with true
+peak under -1 dBTP, all with ffmpeg on your machine.
+
+| Voice | Cost |
+| --- | --- |
+| macOS `say`, the default | Free |
+| Your own recordings in `voiceover/` | Free |
+| ElevenLabs, by API key (read from your shell or Keychain) or MCP | Your plan, cached so re-runs cost nothing |
+| Higgsfield, by MCP | Your credits |
+
+Music is your own licensed track or one made with ElevenLabs or Higgsfield. Details:
+[How it works](docs/how-it-works.md).
+
+## Local and safe
+
+No account, no cloud service, no telemetry. Demos stay in `demos/` on your disk. Recording uses
+sandbox logins only, secrets are masked in the page before capture, the editor listens on
+127.0.0.1, and paid voice services see your voiceover text only if you pick them. Claude Code
+itself talks to Anthropic as usual. Limits and reporting: [SECURITY.md](SECURITY.md).
 
 ## Look templates
 

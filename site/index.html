@@ -121,6 +121,36 @@ h2 { font-size: clamp(26px, 3.2vw, 36px); line-height: 1.15; letter-spacing: -0.
 pre { margin: 0; padding: 14px 16px; background: var(--well); border-radius: 8px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; }
 .controls { font: 13px/1.8 var(--mono); color: var(--muted); }
 
+/* Sound */
+.chain { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); border-top: 2px solid var(--ink); }
+.chain li { padding: 14px 16px 0 0; }
+.chain li + li { border-left: 1px solid var(--rule); padding-left: 16px; }
+.chain .t { font: 12px var(--mono); color: var(--muted); }
+.chain h3 { font-size: 19px; margin: 6px 0; }
+.chain p { margin: 0; font-size: 15px; color: var(--muted); }
+@media (max-width: 900px) {
+  .chain { grid-template-columns: 1fr 1fr; border-top: 0; }
+  .chain li, .chain li + li { border-left: 0; border-top: 1px solid var(--rule); padding: 14px 16px 16px 0; }
+}
+@media (max-width: 520px) { .chain { grid-template-columns: 1fr; } }
+
+/* Tables */
+.table { overflow-x: auto; margin-top: 12px; }
+.chain + .table { margin-top: 36px; }
+td:last-child { white-space: nowrap; }
+.cols > * { min-width: 0; }
+td code { overflow-wrap: anywhere; }
+@media (max-width: 600px) { td:first-child, td:last-child { white-space: normal; } th, td { padding-right: 12px; } }
+table { width: 100%; border-collapse: collapse; font-size: 15px; }
+th, td { text-align: left; vertical-align: top; padding: 10px 16px 10px 0; border-top: 1px solid var(--rule); }
+th { font: 500 12px var(--mono); letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); border-top: 0; }
+td:first-child { font-weight: 600; white-space: nowrap; }
+td.m { color: var(--muted); }
+.cols { display: grid; grid-template-columns: 5fr 7fr; gap: 40px; margin-top: 8px; align-items: start; }
+.cols h3 { font-size: 19px; margin: 0 0 4px; }
+@media (max-width: 860px) { .cols { grid-template-columns: 1fr; gap: 28px; } }
+.note { font-size: 15px; color: var(--muted); max-width: 60ch; margin: 16px 0 0; }
+
 /* Start */
 .say { border: 1px solid var(--rule); border-radius: 10px; background: var(--raised); padding: 14px 16px; margin: 16px 0 0; }
 .say span { display: block; font: 12px var(--mono); color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
@@ -136,6 +166,8 @@ footer { margin-top: 88px; padding: 24px 0 40px; border-top: 1px solid var(--rul
     <nav aria-label="Page">
       <a class="wide" href="#editor">Editor</a>
       <a class="wide" href="#templates">Templates</a>
+      <a class="wide" href="#sound">Sound</a>
+      <a class="wide" href="#local">Local and safe</a>
       <a href="https://github.com/cyruspastelero/demo-studio">GitHub</a>
     </nav>
   </header>
@@ -178,7 +210,7 @@ footer { margin-top: 88px; padding: 24px 0 40px; border-top: 1px solid var(--rul
         <iframe src="editor/?open" title="demo-studio editor, live demo with the todo sample" loading="lazy"></iframe>
       </div>
       <div class="editor-small">
-        <figure class="screen"><img src="img/studio-1440.png" alt="The editor: a take bin, the preview, and a timeline with scenes, shots and a voiceover lane" loading="lazy"></figure>
+        <figure class="screen"><img src="img/editor.gif" alt="The editor on the todo sample: playing the cut, selecting a scene and editing its voiceover" loading="lazy"></figure>
         <p class="caption"><span>The editor needs a wider screen.</span><a href="editor/?open">Open it anyway</a></p>
       </div>
       <p class="caption"><span>Live demo · no server · rendering needs the local studio</span><a href="editor/?open">Open full screen</a></p>
@@ -233,8 +265,64 @@ footer { margin-top: 88px; padding: 24px 0 40px; border-top: 1px solid var(--rul
       </div>
     </section>
 
+    <section id="sound" aria-labelledby="sound-h">
+      <p class="mark"><b>00:04</b>Sound</p>
+      <h2 id="sound-h">The voiceover is written with the plan, then timed, voiced and mixed by one script.</h2>
+      <p class="lead">Each shot in <code>demo.json</code> carries its own <code>voiceover</code> line. <code>narrate.py</code> turns those lines into the narrated cut, using plain ffmpeg on your machine.</p>
+      <ol class="chain">
+        <li><span class="t">01</span><h3>Fit</h3><p>Every line is checked against the time before the next shot, at about 2.5 words a second. A long line is flagged before any voice is made, so nothing is paid for twice.</p></li>
+        <li><span class="t">02</span><h3>Voice</h3><p>Each line is rendered and placed at the start of its shot. Lines made through ElevenLabs are cached, so a re-run costs nothing.</p></li>
+        <li><span class="t">03</span><h3>Music</h3><p>A bed from <code>music/bed.m4a</code> loops under the cut, sits 13&nbsp;dB below the voice and drops 7&nbsp;dB more under each line, with no pumping. It fades in and out.</p></li>
+        <li><span class="t">04</span><h3>Mix</h3><p>Loudness lands at -14 LUFS with true peak under -1 dBTP, then <code>check-cut.py</code> measures it again on the finished file.</p></li>
+      </ol>
+
+      <div class="table">
+        <table>
+          <thead><tr><th>Voice</th><th>Where it runs</th><th>Cost</th></tr></thead>
+          <tbody>
+            <tr><td>macOS <code>say</code></td><td class="m">On your Mac. The default when nothing else is set up.</td><td class="m">Free</td></tr>
+            <tr><td>Your own recordings</td><td class="m">Files you drop in <code>voiceover/01.mp3</code>, <code>02.mp3</code>… <code>--export-lines</code> lists each line with its time and word budget.</td><td class="m">Free</td></tr>
+            <tr><td>ElevenLabs</td><td class="m">Only if you choose it: an API key read from your shell or macOS Keychain, or the ElevenLabs MCP. The key is never written to a file.</td><td class="m">Your plan</td></tr>
+            <tr><td>Higgsfield</td><td class="m">Only if you choose it, through its MCP. Claude saves each line as a file, then mixes them like your own recordings.</td><td class="m">Your credits</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note">Music works the same way: your own licensed instrumental, or one made with ElevenLabs <code>compose_music</code> or Higgsfield. With no bed, a sine-pad placeholder fills in and the script warns until you replace it. Both sample videos on this page use ElevenLabs narration and music.</p>
+    </section>
+
+    <section id="local" aria-labelledby="local-h">
+      <p class="mark"><b>00:05</b>Local and safe</p>
+      <h2 id="local-h">It runs on your laptop. There is nothing to sign up for.</h2>
+      <p class="lead">No demo-studio account, no cloud service, no telemetry. Your footage, plans and renders stay in a <code>demos/</code> folder on your disk, and git ignores it.</p>
+      <div class="cols">
+        <dl class="facts">
+          <div><dt>Test accounts only</dt><dd>Recording uses a sandbox or demo login, signed in before the camera starts. Steps that cost money or can't be deleted stop and ask first.</dd></div>
+          <div><dt>Secrets are masked before capture</dt><dd>Token-shaped text and values next to known labels are blurred in the page itself, before a frame is taken, and every frame is checked after. Passwords stay in your macOS&nbsp;Keychain.</dd></div>
+          <div><dt>The editor is not on the network</dt><dd>The studio listens on 127.0.0.1 only. Demo folders from other people are treated as untrusted: paths stay inside the folder and title cards render sandboxed.</dd></div>
+          <div><dt>What does leave</dt><dd>Claude Code talks to Anthropic as it always does. ElevenLabs or Higgsfield get your voiceover text only if you pick them.</dd></div>
+        </dl>
+        <div>
+          <h3>What it runs on</h3>
+          <div class="table">
+            <table>
+              <thead><tr><th>Tool</th><th>For</th><th>Licence</th></tr></thead>
+              <tbody>
+                <tr><td>Node.js 20+</td><td class="m">Recorder, card rendering, the studio</td><td class="m">MIT</td></tr>
+                <tr><td>Python 3.10+</td><td class="m">Edit, narration and check scripts, standard library only</td><td class="m">PSF</td></tr>
+                <tr><td>ffmpeg</td><td class="m">Encoding, mixing, loudness</td><td class="m">LGPL/GPL</td></tr>
+                <tr><td>Google Chrome</td><td class="m">The recorded browser and the title renderer</td><td class="m">Google</td></tr>
+                <tr><td>Playwright MCP</td><td class="m">Lets Claude drive the browser, pinned to 0.0.84</td><td class="m">Apache-2.0</td></tr>
+                <tr><td>npm packages</td><td class="m">playwright-core, React, Ajv, lucide, pinned and locked</td><td class="m">Apache-2.0, MIT, ISC</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="note"><code>bash scripts/doctor.sh</code> checks each one and prints the fix. Versions, fonts and checksums: <a href="https://github.com/cyruspastelero/demo-studio/blob/main/docs/dependencies.md">dependencies</a>. How to report a problem: <a href="https://github.com/cyruspastelero/demo-studio/blob/main/SECURITY.md">security policy</a>.</p>
+        </div>
+      </div>
+    </section>
+
     <section id="start" aria-labelledby="start-h">
-      <p class="mark"><b>00:04</b>Start</p>
+      <p class="mark"><b>00:06</b>Start</p>
       <h2 id="start-h">Two commands in Claude Code, then say what the demo should show.</h2>
       <p class="lead">You need Node 20+, Python 3.10+, ffmpeg, Chrome and the Playwright MCP. The <a href="https://github.com/cyruspastelero/demo-studio/blob/main/docs/getting-started.md">getting started guide</a> sets them up and walks through a first demo in about ten minutes.</p>
 <pre>/plugin marketplace add cyruspastelero/demo-studio
