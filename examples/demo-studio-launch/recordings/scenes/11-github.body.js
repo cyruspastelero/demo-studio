@@ -1,0 +1,22 @@
+// The public GitHub repo: skills and look templates as folders, Apache-2.0 licence.
+const p = findTab('github.com/cyruspastelero/demo-studio'); await prep(p);
+ensure(p, 'github.com/cyruspastelero/demo-studio');
+await p.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+await sleep(1000);
+await placeCursor(p, W * 0.40, H * 0.30);
+stop = await record(p, 'tmp11');
+await sleep(1000);
+const skills = p.locator('a.Link--primary:visible', { hasText: /^\.claude\/skills$/ }).first();
+const looks = p.locator('a.Link--primary:visible', { hasText: /^look-templates\/house$/ }).first();
+await glide(p, skills, 1.3, 0.5);
+await sleep(700);
+await glide(p, looks, 1.2, 0.5);
+await sleep(900);
+const lic = p.locator('a:visible', { hasText: /^\s*Apache-2\.0 license\s*$/ }).last();
+await glide(p, lic, 1.25, 0.5);
+await sleep(500);
+const scout = { ...await scoutRects(p, { skills, looks, lic }) };
+await park(p, W * 0.97, H * 0.62);
+await sleep(4500);
+const r = await stop(); stop = null;
+return { frames: r.frames, scout };

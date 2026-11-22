@@ -1,0 +1,415 @@
+{
+  "title": "Made with demo-studio",
+  "logo": "assets/logo.svg",
+  "brand": {
+    "font": "inter",
+    "accent": "#D2430E",
+    "sweep": [
+      "#D2430E",
+      "#FF7043"
+    ],
+    "logo_on_dark": "assets/logo.svg"
+  },
+  "voice": {
+    "rate_wpm": 190,
+    "lead_in": 0.3,
+    "elevenlabs": {
+      "voice_id": "hpp4J3VqNfWAUOO0d1Us"
+    },
+    "music": "music/bed.m4a",
+    "music_gap_db": 12,
+    "music_dips": [
+      {
+        "at": 24.2,
+        "dur": 1.0
+      }
+    ]
+  },
+  "_comment": "Launch video for demo-studio, made with demo-studio (hook, the maker's story in first person, then what it can grow into). The title above is what the outro lockup shows next to the logo. Montage and result clips are not screen recordings: they trim the two public sample videos (real demo-studio output), transcoded to the raw-take spec with audio dropped, cropped to the sample's own window so only the product UI shows. 02a/02b, 03a/03b and 01/11 reuse one take with different crops. Times in callouts, zooms and highlights are seconds into the scene after trim and speed; crop, focus and rect are source px of the 1920x1080 take (recordings/scout/).",
+  "sequence": [
+    {
+      "card": "open",
+      "kind": "section",
+      "title": "Every demo video took me an afternoon.",
+      "accent": "afternoon.",
+      "duration": 2.0,
+      "voiceover": "Every demo video I made used to take me an afternoon. Now Claude makes them for me."
+    },
+    {
+      "scene": "00a",
+      "stem": "09-showcase-sample",
+      "take": 1,
+      "trim": [
+        29.6,
+        31.6
+      ],
+      "speed": 1,
+      "crop": [
+        76,
+        60,
+        1769,
+        907
+      ]
+    },
+    {
+      "scene": "00b",
+      "stem": "10-todo-sample",
+      "take": 1,
+      "trim": [
+        10.7,
+        12.7
+      ],
+      "speed": 1,
+      "crop": [
+        53,
+        50,
+        1769,
+        907
+      ]
+    },
+    {
+      "scene": "00c",
+      "stem": "09-showcase-sample",
+      "take": 1,
+      "trim": [
+        64.6,
+        66.6
+      ],
+      "speed": 1,
+      "crop": [
+        182,
+        102,
+        1556,
+        798
+      ]
+    },
+    {
+      "scene": "06",
+      "stem": "06-site-hero",
+      "take": 1,
+      "trim": [
+        0.4,
+        6.6
+      ],
+      "speed": 1,
+      "crop": [
+        256,
+        0,
+        1408,
+        722
+      ],
+      "callouts": [
+        {
+          "at": 0.76,
+          "dur": 3.8,
+          "kind": "statement",
+          "text": "Everything I learned, as a plugin."
+        }
+      ],
+      "voiceover": "I make demos for my own apps and for what we build at work. So I taught Claude everything I learned."
+    },
+    {
+      "scene": "01",
+      "stem": "01-the-ask",
+      "take": 1,
+      "trim": [
+        2.9,
+        8.1
+      ],
+      "speed": 1,
+      "crop": [
+        256,
+        128,
+        1408,
+        718
+      ],
+      "zooms": [
+        {
+          "at": 0.1,
+          "focus": [
+            960,
+            790
+          ],
+          "dur": 2.5
+        }
+      ],
+      "highlights": [
+        {
+          "rect": [
+            279,
+            754,
+            1363,
+            73
+          ]
+        }
+      ],
+      "voiceover": "You tell it what the demo should show, in one sentence."
+    },
+    {
+      "scene": "02a",
+      "stem": "02-six-stages",
+      "take": 1,
+      "trim": [
+        1.2,
+        3.5
+      ],
+      "speed": 1,
+      "crop": [
+        250,
+        545,
+        705,
+        362
+      ],
+      "voiceover": "It plans, records your real app in Chrome, cuts, and narrates."
+    },
+    {
+      "scene": "02b",
+      "stem": "02-six-stages",
+      "take": 1,
+      "trim": [
+        4.2,
+        6.8
+      ],
+      "speed": 1,
+      "crop": [
+        960,
+        545,
+        705,
+        362
+      ]
+    },
+    {
+      "scene": "04",
+      "stem": "09-showcase-sample",
+      "take": 1,
+      "trim": [
+        49.7,
+        52.75
+      ],
+      "speed": 0.8,
+      "crop": [
+        70,
+        61,
+        1769,
+        907
+      ],
+      "voiceover": "Out comes a finished video. Every frame is the real app."
+    },
+    {
+      "scene": "03a",
+      "stem": "03-editor",
+      "take": 1,
+      "trim": [
+        2.4,
+        5.5
+      ],
+      "speed": 1.25,
+      "crop": [
+        0,
+        150,
+        1360,
+        697
+      ],
+      "voiceover": "Want to change something? Play it in the timeline editor, rewrite a line, and it tells you if it still fits."
+    },
+    {
+      "scene": "03b",
+      "stem": "03-editor",
+      "take": 1,
+      "trim": [
+        12.4,
+        20.2
+      ],
+      "speed": 1.4,
+      "crop": [
+        533,
+        173,
+        1387,
+        713
+      ],
+      "zooms": [
+        {
+          "at": 0.45,
+          "focus": [
+            1707,
+            470
+          ],
+          "dur": 2.5
+        }
+      ],
+      "highlights": [
+        {
+          "rect": [
+            1515,
+            513,
+            384,
+            48
+          ]
+        }
+      ]
+    },
+    {
+      "scene": "07",
+      "stem": "07-templates",
+      "take": 1,
+      "trim": [
+        4.0,
+        9.2
+      ],
+      "speed": 1,
+      "crop": [
+        700,
+        70,
+        980,
+        503
+      ],
+      "zooms": [
+        {
+          "at": 0.2,
+          "focus": [
+            900,
+            344
+          ],
+          "dur": 2.5
+        }
+      ],
+      "highlights": [
+        {
+          "rect": [
+            740,
+            329,
+            325,
+            30
+          ]
+        }
+      ],
+      "voiceover": "It grows with you. Copy the look of any video, and share it as a template."
+    },
+    {
+      "scene": "08",
+      "stem": "08-social",
+      "take": 1,
+      "trim": [
+        0.8,
+        4.8
+      ],
+      "speed": 1,
+      "crop": [
+        440,
+        44,
+        1220,
+        626
+      ],
+      "callouts": [
+        {
+          "at": 0.5,
+          "dur": 3.0,
+          "kind": "statement",
+          "text": "4:5 and 9:16, built in."
+        }
+      ],
+      "voiceover": "Need social cuts? Four by five, or nine by sixteen."
+    },
+    {
+      "scene": "05",
+      "stem": "05-local-and-safe",
+      "take": 1,
+      "trim": [
+        2.2,
+        7.8
+      ],
+      "speed": 1,
+      "crop": [
+        256,
+        160,
+        1408,
+        722
+      ],
+      "zooms": [
+        {
+          "at": 0.55,
+          "focus": [
+            538,
+            692
+          ],
+          "dur": 2.5
+        }
+      ],
+      "highlights": [
+        {
+          "rect": [
+            256,
+            678,
+            381,
+            28
+          ]
+        }
+      ],
+      "voiceover": "It runs on your laptop, and secrets are masked before capture."
+    },
+    {
+      "scene": "11a",
+      "stem": "11-github",
+      "take": 1,
+      "trim": [
+        0.6,
+        3.0
+      ],
+      "speed": 1,
+      "crop": [
+        149,
+        400,
+        1205,
+        618
+      ],
+      "voiceover": "It's open source, and a starting point. Bring your own look, your own voice, your own app."
+    },
+    {
+      "scene": "11b",
+      "stem": "11-github",
+      "take": 1,
+      "trim": [
+        3.4,
+        8.6
+      ],
+      "speed": 1,
+      "crop": [
+        653,
+        392,
+        1134,
+        581
+      ],
+      "zooms": [
+        {
+          "at": 0.15,
+          "focus": [
+            1507,
+            802
+          ],
+          "dur": 2.5
+        }
+      ],
+      "highlights": [
+        {
+          "rect": [
+            1408,
+            791,
+            198,
+            22
+          ]
+        }
+      ]
+    },
+    {
+      "card": "outro",
+      "kind": "end",
+      "title": "demo-studio",
+      "accent": "demo-studio",
+      "subtitle": "Free, local, open source. github.com/cyruspastelero/demo-studio",
+      "subtitle_accent": "local,",
+      "duration": 6.4,
+      "outro": 5.0,
+      "voiceover": "demo-studio. Free, local, open source. Try it on your app, and tell me what it should learn next."
+    }
+  ]
+}

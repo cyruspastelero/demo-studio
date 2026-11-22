@@ -121,6 +121,14 @@ h2 { font-size: clamp(26px, 3.2vw, 36px); line-height: 1.15; letter-spacing: -0.
 pre { margin: 0; padding: 14px 16px; background: var(--well); border-radius: 8px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; }
 .controls { font: 13px/1.8 var(--mono); color: var(--muted); }
 
+/* Launch ads */
+.styles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 32px; }
+.styles figure { margin: 0; }
+.styles img { display: block; width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--rule); }
+.styles figcaption { margin-top: 10px; font-size: 15px; color: var(--muted); }
+.styles figcaption b { display: block; color: var(--ink); font: 600 17px var(--display); margin-bottom: 2px; }
+@media (max-width: 760px) { .styles { grid-template-columns: 1fr; } }
+
 /* Sound */
 .chain { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); border-top: 2px solid var(--ink); }
 .chain li { padding: 14px 16px 0 0; }
@@ -166,6 +174,7 @@ footer { margin-top: 88px; padding: 24px 0 40px; border-top: 1px solid var(--rul
     <nav aria-label="Page">
       <a class="wide" href="#editor">Editor</a>
       <a class="wide" href="#templates">Templates</a>
+      <a class="wide" href="#ads">Launch ads</a>
       <a class="wide" href="#sound">Sound</a>
       <a class="wide" href="#local">Local and safe</a>
       <a href="https://github.com/cyruspastelero/demo-studio">GitHub</a>
@@ -265,8 +274,43 @@ footer { margin-top: 88px; padding: 24px 0 40px; border-top: 1px solid var(--rul
       </div>
     </section>
 
+    <section id="ads" aria-labelledby="ads-h">
+      <p class="mark"><b>00:04</b>Launch ads</p>
+      <h2 id="ads-h">The same footage, cut as a launch ad.</h2>
+      <p class="lead">Skill <code>demo-motion</code> turns a demo's real screens into a short motion piece: words that land on the beat, floating UI, a typed prompt, a finished check. It renders 16:9, 4:5 and 9:16 from one <code>storyboard.json</code>. This one is demo-studio's own launch ad, made with it.</p>
+      <figure class="screen" style="margin-top:0">
+        <video controls preload="none" playsinline poster="img/sample-launch-ad-poster.jpg" aria-label="demo-studio launch ad, made with the demo-motion skill">
+          <source src="media/sample-launch-ad.mp4" type="video/mp4">
+        </video>
+      </figure>
+      <p class="caption"><span>demo-studio launch ad · airy style · with sound</span><a href="https://github.com/cyruspastelero/demo-studio/tree/main/examples/launch-ad">Its storyboard</a></p>
+
+      <div class="styles">
+        <figure><img src="img/motion/airy.jpg" alt="Airy style: dark words on a warm off-white page, one accent word" loading="lazy"><figcaption><b>Airy</b>Light and calm. Words blur in one by one over floating panels.</figcaption></figure>
+        <figure><img src="img/motion/nocturne.jpg" alt="Nocturne style: large light text on near-black, with your brand colour glowing from below" loading="lazy"><figcaption><b>Nocturne</b>Near-black, with your brand colour glowing up from below. Suits finance and data products.</figcaption></figure>
+        <figure><img src="img/motion/showroom.jpg" alt="Showroom style: words typed on a grey stage, product on a deep blue lit stage" loading="lazy"><figcaption><b>Showroom</b>Words typed out on a grey stage, the product on a lit blue one. Hard cuts, slow pull-backs.</figcaption></figure>
+      </div>
+      <p class="note">A style is one <code>style.json</code> in <code>motion-templates/</code>: palette, type, easing and depth. Your logo and brand colour come from the storyboard, so every style fits any product. Add your own the same way.</p>
+
+      <div class="split">
+        <div>
+          <figure class="screen">
+            <video controls preload="none" playsinline poster="img/sample-launch-poster.jpg" aria-label="The narrated walkthrough of demo-studio, made with demo-studio">
+              <source src="media/sample-launch.mp4" type="video/mp4">
+            </video>
+          </figure>
+          <p class="caption"><span>The narrated walkthrough · 1:10</span><a href="https://github.com/cyruspastelero/demo-studio/tree/main/examples/demo-studio-launch">Its plan and scenes</a></p>
+        </div>
+        <dl class="facts">
+          <div><dt>Both made from one plan</dt><dd>The walkthrough is the keynote cut with narration; the ad reuses the same recorded screens.</dd></div>
+          <div><dt>Copy either one</dt><dd>Both samples are in <code>examples/</code>. Swap in your own screens, words and logo, and render.</dd></div>
+          <div><dt>Music on the beat</dt><dd>The ad's cuts are timed to the beats measured in its music track, then mixed to -14 LUFS.</dd></div>
+        </dl>
+      </div>
+    </section>
+
     <section id="sound" aria-labelledby="sound-h">
-      <p class="mark"><b>00:04</b>Sound</p>
+      <p class="mark"><b>00:05</b>Sound</p>
       <h2 id="sound-h">The voiceover is written with the plan, then timed, voiced and mixed by one script.</h2>
       <p class="lead">Each shot in <code>demo.json</code> carries its own <code>voiceover</code> line. <code>narrate.py</code> turns those lines into the narrated cut, using plain ffmpeg on your machine.</p>
       <ol class="chain">
@@ -291,7 +335,7 @@ footer { margin-top: 88px; padding: 24px 0 40px; border-top: 1px solid var(--rul
     </section>
 
     <section id="local" aria-labelledby="local-h">
-      <p class="mark"><b>00:05</b>Local and safe</p>
+      <p class="mark"><b>00:06</b>Local and safe</p>
       <h2 id="local-h">It runs on your laptop. There is nothing to sign up for.</h2>
       <p class="lead">No demo-studio account, no cloud service, no telemetry. Your footage, plans and renders stay in a <code>demos/</code> folder on your disk, and git ignores it.</p>
       <div class="cols">
@@ -322,7 +366,7 @@ footer { margin-top: 88px; padding: 24px 0 40px; border-top: 1px solid var(--rul
     </section>
 
     <section id="start" aria-labelledby="start-h">
-      <p class="mark"><b>00:06</b>Start</p>
+      <p class="mark"><b>00:07</b>Start</p>
       <h2 id="start-h">Two commands in Claude Code, then say what the demo should show.</h2>
       <p class="lead">You need Node 20+, Python 3.10+, ffmpeg, Chrome and the Playwright MCP. The <a href="https://github.com/cyruspastelero/demo-studio/blob/main/docs/getting-started.md">getting started guide</a> sets them up and walks through a first demo in about ten minutes.</p>
 <pre>/plugin marketplace add cyruspastelero/demo-studio

@@ -3,7 +3,7 @@ name: Pages
 on:
   push:
     branches: [main]
-    paths: ['site/**', 'assets/**', 'docs/img/**', 'app/**', 'examples/todo-sample/**', 'look-templates/**', 'scripts/build-site.sh', '.github/workflows/pages.yml']
+    paths: ['site/**', 'assets/**', 'docs/img/**', 'app/**', 'examples/todo-sample/**', 'look-templates/**', 'motion-templates/**', 'scripts/build-site.sh', '.github/workflows/pages.yml']
   workflow_dispatch:
 
 permissions:

@@ -41,13 +41,20 @@ or create something that cannot be deleted.
 
 ## Sample videos
 
-Both were recorded from the real app and finished entirely by the plugin: crops, zooms, highlights,
+These two were recorded from real apps and finished entirely by the plugin: crops, zooms, highlights,
 callouts, titles, ElevenLabs narration and music. Click a preview for the full 1080p video with sound.
 
 | Study app showcase (1:18) | Todo app sample (0:37) |
 | --- | --- |
 | [![Study app showcase](docs/img/sample-showcase.gif)](https://github.com/cyruspastelero/demo-studio/releases/download/samples/sample-showcase.mp4) | [![Todo app sample](docs/img/sample-todo.gif)](https://github.com/cyruspastelero/demo-studio/releases/download/samples/sample-todo.mp4) |
 | A live web app with a seeded demo learner: dashboard, weak topics, a question with its explanation, a story, a scenario and readiness. Highlights take the product's own colour. | A public todo app ([TodoMVC](https://todomvc.com)), three scenes, no login. Its plan, scene scripts, takes and configs are in [examples/todo-sample](examples/todo-sample), so you can rebuild it yourself. |
+
+demo-studio's own launch videos were made with it too, from one plan. Both are in `examples/` to copy.
+
+| Launch ad (0:36) | Narrated walkthrough (1:10) |
+| --- | --- |
+| [![demo-studio launch ad](docs/img/sample-launch-ad.gif)](https://github.com/cyruspastelero/demo-studio/releases/download/samples/sample-launch-ad.mp4) | [![demo-studio walkthrough](docs/img/sample-launch-poster.jpg)](https://github.com/cyruspastelero/demo-studio/releases/download/samples/sample-launch.mp4) |
+| A beat-synced motion-graphics ad in the `airy` style, from real screens of the site and the editor. Storyboard and media: [examples/launch-ad](examples/launch-ad). | The keynote cut with narration: the site, the live editor, the repo and the samples. Plan and scene scripts: [examples/demo-studio-launch](examples/demo-studio-launch). |
 
 ## Quick start
 
@@ -128,6 +135,13 @@ the setup grows with you:
 
 Details: [docs/templates.md](docs/templates.md).
 
+**Launch ads.** For a short, music-driven ad instead of a walkthrough, skill `demo-motion` turns the
+demo's real stills and clips into a beat-synced motion-graphics ad: kinetic type, tilted UI panels,
+a typed prompt, progress tiles, a Done burst and a logo lock-up, in 16:9, 4:5 and 9:16. Three
+measured motion templates (`airy`, `nocturne`, `showroom`) set the look; your brand colour and logo
+still win. The demo-studio launch ad in `examples/launch-ad/` is one storyboard. Details:
+[docs/motion.md](docs/motion.md).
+
 ## Dependencies
 
 All free and local: Claude Code, Node.js 20+, Python 3.10+, ffmpeg, Google Chrome and the
@@ -144,6 +158,7 @@ fonts and licences: [docs/dependencies.md](docs/dependencies.md).
 | [Style guide](references/style-guide.md) | The house look: pointer, typing, pacing, zooms, callouts, voice |
 | [Quality bar](docs/quality-bar.md) | The measured minimum every finished cut must pass, with its checklist |
 | [Look templates](docs/templates.md) | Reusable looks: the built-ins, copying the look of a video, using and sharing a template |
+| [Launch ads](docs/motion.md) | Storyboard to beat-synced motion-graphics ad: scene types, motion templates, rendering, music |
 | [Samples](samples/README.md) | Scene recipes and a full sample plan to copy from |
 | [FAQ](docs/faq.md) | Passwords, cost, what stays local, files, timing, re-shoots, branding, safety |
 | [Dependencies](docs/dependencies.md) | Every tool, package and font, with versions and licences |

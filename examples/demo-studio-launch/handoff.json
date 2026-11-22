@@ -1,0 +1,300 @@
+{
+  "title": "demo-studio launch",
+  "brand": {
+    "name": "demo-studio",
+    "font": "Inter, 'Inter Variable', system-ui, sans-serif",
+    "title_color": "#1D1D1F",
+    "subtitle_color": "#5F656D"
+  },
+  "videos": [
+    {
+      "key": "LAUNCH",
+      "label": "social versions only",
+      "scenes": [
+        {
+          "name": "Launch",
+          "voiceover": "See demo.json; this file only drives the social versions.",
+          "shots": [
+            {
+              "source": "06-site-hero-t1.mp4",
+              "in": 0.4,
+              "out": 5.8,
+              "speed": 1,
+              "screen": "Site hero"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "social": [
+    {
+      "input": "recordings/exports/made-with-demo-studio-keynote-cut-narrated.mp4",
+      "output": "recordings/exports/demo-studio-launch-4x5.mp4",
+      "aspect": "4:5",
+      "fill": "blur",
+      "fit": "contain",
+      "captions": [
+        {
+          "start": 0.3,
+          "end": 3.36,
+          "text": "Every demo video I made used to take me an afternoon."
+        },
+        {
+          "start": 3.39,
+          "end": 5.23,
+          "text": "Now Claude makes them for me."
+        },
+        {
+          "start": 8.3,
+          "end": 11.76,
+          "text": "I make demos for my own apps and for what we build at work."
+        },
+        {
+          "start": 11.79,
+          "end": 14.3,
+          "text": "So I taught Claude everything I learned."
+        },
+        {
+          "start": 14.5,
+          "end": 16.56,
+          "text": "You tell it what the demo should show,"
+        },
+        {
+          "start": 16.59,
+          "end": 17.62,
+          "text": "in one sentence."
+        },
+        {
+          "start": 19.7,
+          "end": 24.35,
+          "text": "It plans, records your real app in Chrome, cuts, and narrates."
+        },
+        {
+          "start": 24.6,
+          "end": 26.23,
+          "text": "Out comes a finished video."
+        },
+        {
+          "start": 26.26,
+          "end": 28.14,
+          "text": "Every frame is the real app."
+        },
+        {
+          "start": 28.4,
+          "end": 30.01,
+          "text": "Want to change something?"
+        },
+        {
+          "start": 30.04,
+          "end": 32.04,
+          "text": "Play it in the timeline editor,"
+        },
+        {
+          "start": 32.07,
+          "end": 33.02,
+          "text": "rewrite a line,"
+        },
+        {
+          "start": 33.05,
+          "end": 35.42,
+          "text": "and it tells you if it still fits."
+        },
+        {
+          "start": 36.43,
+          "end": 37.51,
+          "text": "It grows with you."
+        },
+        {
+          "start": 37.54,
+          "end": 39.16,
+          "text": "Copy the look of any video,"
+        },
+        {
+          "start": 39.19,
+          "end": 40.99,
+          "text": "and share it as a template."
+        },
+        {
+          "start": 41.63,
+          "end": 45.17,
+          "text": "Need social cuts? 4:5 or 9:16."
+        },
+        {
+          "start": 45.63,
+          "end": 46.97,
+          "text": "It runs on your laptop,"
+        },
+        {
+          "start": 47.0,
+          "end": 49.41,
+          "text": "and secrets are masked before capture."
+        },
+        {
+          "start": 51.23,
+          "end": 53.94,
+          "text": "It's open source, and a starting point."
+        },
+        {
+          "start": 53.97,
+          "end": 56.47,
+          "text": "Bring your own look, your own voice,"
+        },
+        {
+          "start": 56.5,
+          "end": 57.56,
+          "text": "your own app."
+        },
+        {
+          "start": 58.83,
+          "end": 61.22,
+          "text": "demo-studio. Free, local, open source."
+        },
+        {
+          "start": 61.25,
+          "end": 62.43,
+          "text": "Try it on your app,"
+        },
+        {
+          "start": 62.46,
+          "end": 65.02,
+          "text": "and tell me what it should learn next."
+        }
+      ]
+    },
+    {
+      "input": "recordings/exports/made-with-demo-studio-keynote-cut-narrated.mp4",
+      "output": "recordings/exports/demo-studio-launch-9x16.mp4",
+      "aspect": "9:16",
+      "fill": "blur",
+      "fit": "contain",
+      "captions": [
+        {
+          "start": 0.3,
+          "end": 3.36,
+          "text": "Every demo video I made used to take me an afternoon."
+        },
+        {
+          "start": 3.39,
+          "end": 5.23,
+          "text": "Now Claude makes them for me."
+        },
+        {
+          "start": 8.3,
+          "end": 11.76,
+          "text": "I make demos for my own apps and for what we build at work."
+        },
+        {
+          "start": 11.79,
+          "end": 14.3,
+          "text": "So I taught Claude everything I learned."
+        },
+        {
+          "start": 14.5,
+          "end": 16.56,
+          "text": "You tell it what the demo should show,"
+        },
+        {
+          "start": 16.59,
+          "end": 17.62,
+          "text": "in one sentence."
+        },
+        {
+          "start": 19.7,
+          "end": 24.35,
+          "text": "It plans, records your real app in Chrome, cuts, and narrates."
+        },
+        {
+          "start": 24.6,
+          "end": 26.23,
+          "text": "Out comes a finished video."
+        },
+        {
+          "start": 26.26,
+          "end": 28.14,
+          "text": "Every frame is the real app."
+        },
+        {
+          "start": 28.4,
+          "end": 30.01,
+          "text": "Want to change something?"
+        },
+        {
+          "start": 30.04,
+          "end": 32.04,
+          "text": "Play it in the timeline editor,"
+        },
+        {
+          "start": 32.07,
+          "end": 33.02,
+          "text": "rewrite a line,"
+        },
+        {
+          "start": 33.05,
+          "end": 35.42,
+          "text": "and it tells you if it still fits."
+        },
+        {
+          "start": 36.43,
+          "end": 37.51,
+          "text": "It grows with you."
+        },
+        {
+          "start": 37.54,
+          "end": 39.16,
+          "text": "Copy the look of any video,"
+        },
+        {
+          "start": 39.19,
+          "end": 40.99,
+          "text": "and share it as a template."
+        },
+        {
+          "start": 41.63,
+          "end": 45.17,
+          "text": "Need social cuts? 4:5 or 9:16."
+        },
+        {
+          "start": 45.63,
+          "end": 46.97,
+          "text": "It runs on your laptop,"
+        },
+        {
+          "start": 47.0,
+          "end": 49.41,
+          "text": "and secrets are masked before capture."
+        },
+        {
+          "start": 51.23,
+          "end": 53.94,
+          "text": "It's open source, and a starting point."
+        },
+        {
+          "start": 53.97,
+          "end": 56.47,
+          "text": "Bring your own look, your own voice,"
+        },
+        {
+          "start": 56.5,
+          "end": 57.56,
+          "text": "your own app."
+        },
+        {
+          "start": 58.83,
+          "end": 61.22,
+          "text": "demo-studio. Free, local, open source."
+        },
+        {
+          "start": 61.25,
+          "end": 62.43,
+          "text": "Try it on your app,"
+        },
+        {
+          "start": 62.46,
+          "end": 65.02,
+          "text": "and tell me what it should learn next."
+        }
+      ]
+    }
+  ]
+}
