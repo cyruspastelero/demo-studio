@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Narrates the keynote cut: renders each `voiceover` line in demo.json, places it where its item
 starts in the cut (plus voice.lead_in), checks that every line ends before the next voiced item,
-optionally ducks a music bed under the speech, normalises loudness to about -16 LUFS and muxes the
+optionally ducks a music bed under the speech, normalises loudness to -14 LUFS and muxes the
 result onto the cut as AAC. The video stream is copied, not re-encoded.
 
 Usage (from the demo dir, after build-keynote.py):
