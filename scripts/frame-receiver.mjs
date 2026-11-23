@@ -28,7 +28,8 @@ const MIN_GAP = 1 / 30; // cap at 30fps; terminals and consoles repaint constant
 const MAX_FRAMES = 5400; // 3 min at 30fps, hard stop per take
 const MAX_FRAME_BODY = 16 * 1024 * 1024; // one 2880x1620 JPEG as base64 JSON is ~1-3 MB
 const MAX_SMALL_BODY = 4 * 1024;
-const TAKE = /^[A-Za-z0-9][\w.-]*$/;
+// Letters, digits, _ . -; may start with _ (scenes name working takes _tmpNN). No slashes, no "..".
+const TAKE = /^[A-Za-z0-9_][\w.-]*$/;
 const MAX_COORD = 100_000;
 const TOKEN_FILE = join(recordings, ".rx-token");
 
