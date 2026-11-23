@@ -1,0 +1,186 @@
+{
+  "$schema": "../../motion/schema/storyboard.schema.json",
+  "version": 1,
+  "title": "Switchyard launch ad (daylight)",
+  "style": "daylight",
+  "fps": 30,
+  "brand": {
+    "name": "Switchyard",
+    "accent": "#15803D",
+    "logo": "media/logo.svg",
+    "url": "github.com/cyruspastelero/switchyard"
+  },
+  "timing": {
+    "beatsFrom": "../launch-ad/media/music.beats.json",
+    "start": 0,
+    "tail": 0
+  },
+  "audio": {
+    "music": "../launch-ad/media/music.mp3",
+    "musicGainDb": 0,
+    "fadeOut": 1.2,
+    "sfxGainDb": -14,
+    "loudness": -14,
+    "truePeak": -1.5
+  },
+  "scenes": [
+    {
+      "type": "kineticText",
+      "beats": 4,
+      "note": "Hook, typed with a caret like the reference's 'Help me|'",
+      "reveal": "type",
+      "phrases": [
+        {
+          "text": "Where's my *payments* terminal?",
+          "at": 0.2
+        }
+      ]
+    },
+    {
+      "type": "tiltedPanel",
+      "beats": 4,
+      "note": "Illustration of twelve windows piled on one desktop",
+      "media": {
+        "src": "media/windows-pile.mp4",
+        "from": 0,
+        "to": 4.0,
+        "rate": 2
+      },
+      "chrome": "plain",
+      "headline": "Every window, *one desktop.*",
+      "headlinePosition": "above"
+    },
+    {
+      "type": "kineticText",
+      "beats": 6,
+      "note": "The turn, on the drop (bar 3)",
+      "phrases": [
+        {
+          "text": "Meet *Switchyard.*",
+          "at": 0.3
+        }
+      ],
+      "mark": "media/logo.svg",
+      "markAt": 0.1
+    },
+    {
+      "type": "buttonPress",
+      "beats": 4,
+      "note": "Isolated control, as in the reference. Real label from the menu bar panel",
+      "label": "Sort now",
+      "resultLabel": "Sorted",
+      "clickAt": 0.9,
+      "headline": "One *click.*"
+    },
+    {
+      "type": "deviceFrame",
+      "beats": 8,
+      "note": "Illustration: menu bar panel, Sort now, windows carried to four desktops",
+      "device": "laptop",
+      "side": "center",
+      "media": {
+        "src": "media/menu-sort.mp4",
+        "from": 0,
+        "to": 9.6,
+        "rate": 2.4
+      },
+      "headline": "Every window *goes home.*"
+    },
+    {
+      "type": "kineticText",
+      "beats": 4,
+      "reveal": "type",
+      "phrases": [
+        {
+          "text": "One *key* per project.",
+          "at": 0.2
+        }
+      ],
+      "note": ""
+    },
+    {
+      "type": "shapeSweep",
+      "beats": 2,
+      "note": "Original shape wipe on the music's one-bar break (replaces the four-point star)"
+    },
+    {
+      "type": "tiltedPanel",
+      "beats": 8,
+      "note": "Illustration: option keys switch desktops",
+      "media": {
+        "src": "media/switch-keys.mp4",
+        "from": 0,
+        "to": 7.5,
+        "rate": 1.9
+      },
+      "chrome": "plain",
+      "badge": "\u23251  \u23252  \u23253"
+    },
+    {
+      "type": "promptType",
+      "beats": 5,
+      "note": "Option Space, type des, Enter",
+      "label": "Or type a *few letters.*",
+      "placeholder": "Switch to a project",
+      "text": "des",
+      "typeFrom": 0.5,
+      "typeTo": 1.2,
+      "clickAt": 1.9
+    },
+    {
+      "type": "tiltedPanel",
+      "beats": 7,
+      "note": "Real dashboard take: Sort, counts tick down, Windows sorted",
+      "media": {
+        "src": "media/dashboard-sort.mp4",
+        "from": 0,
+        "to": 8.0,
+        "rate": 2.3
+      },
+      "headline": "Every project, *one page.*",
+      "headlinePosition": "above"
+    },
+    {
+      "type": "uiFocus",
+      "beats": 7,
+      "note": "Real close-up take recorded at 2880x1620 (panel zoom 260%), so the zoom stays sharp",
+      "media": {
+        "src": "media/rename-closeup.mp4",
+        "from": 0,
+        "to": 7.6,
+        "rate": 2.15
+      },
+      "focus": [
+        0.0,
+        0.2,
+        0.78,
+        0.56
+      ],
+      "zoomAt": 0.5,
+      "headline": "Name your *Chrome windows.*",
+      "headlineAt": 0.8
+    },
+    {
+      "type": "kineticText",
+      "beats": 4,
+      "note": "README: 'Everything runs on your Mac. Nothing is sent anywhere.' Apache-2.0",
+      "phrases": [
+        {
+          "text": "Runs *locally.*",
+          "at": 0
+        },
+        {
+          "text": "Free and *open source.*",
+          "at": 2
+        }
+      ]
+    },
+    {
+      "type": "logoLockup",
+      "beats": 9,
+      "tagline": "Every project, its own desktop.",
+      "exit": "cut",
+      "note": ""
+    }
+  ]
+}

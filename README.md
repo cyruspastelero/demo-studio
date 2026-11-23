@@ -56,6 +56,15 @@ demo-studio's own launch videos were made with it too, from one plan. Both are i
 | [![demo-studio launch ad](docs/img/sample-launch-ad.gif)](https://github.com/cyruspastelero/demo-studio/releases/download/samples/sample-launch-ad.mp4) | [![demo-studio walkthrough](docs/img/sample-launch-poster.jpg)](https://github.com/cyruspastelero/demo-studio/releases/download/samples/sample-launch.mp4) |
 | A beat-synced motion-graphics ad in the `airy` style, from real screens of the site and the editor. Storyboard and media: [examples/launch-ad](examples/launch-ad). | The keynote cut with narration: the site, the live editor, the repo and the samples. Plan and scene scripts: [examples/demo-studio-launch](examples/demo-studio-launch). |
 
+A launch ad in the `daylight` template for [Switchyard](https://github.com/cyruspastelero/switchyard),
+an open-source macOS app: typed headlines, one button lifted out of the UI, a shape sweep and a sharp
+zoom into a close-up take.
+
+| Switchyard launch ad (0:36) |
+| --- |
+| [![Switchyard launch ad in the daylight template](docs/img/sample-daylight-ad.gif)](https://github.com/cyruspastelero/demo-studio/releases/download/samples/sample-daylight-ad.mp4) |
+| Storyboard and media: [examples/switchyard-launch](examples/switchyard-launch). Template: [motion-templates/daylight](motion-templates/daylight). |
+
 ## Quick start
 
 Clone the repo and work inside it. Your demos live in `demos/` in the clone, which git ignores.

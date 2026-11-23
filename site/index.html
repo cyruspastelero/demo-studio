@@ -122,7 +122,8 @@ pre { margin: 0; padding: 14px 16px; background: var(--well); border-radius: 8px
 .controls { font: 13px/1.8 var(--mono); color: var(--muted); }
 
 /* Launch ads */
-.styles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 32px; }
+.styles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-top: 32px; }
+@media (max-width: 1100px) { .styles { grid-template-columns: repeat(2, 1fr); } }
 .styles figure { margin: 0; }
 .styles img { display: block; width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--rule); }
 .styles figcaption { margin-top: 10px; font-size: 15px; color: var(--muted); }
@@ -287,6 +288,7 @@ footer { margin-top: 88px; padding: 24px 0 40px; border-top: 1px solid var(--rul
 
       <div class="styles">
         <figure><img src="img/motion/airy.jpg" alt="Airy style: dark words on a warm off-white page, one accent word" loading="lazy"><figcaption><b>Airy</b>Light and calm. Words blur in one by one over floating panels.</figcaption></figure>
+        <figure><img src="img/motion/daylight.jpg" alt="Daylight style: a headline typed with a caret on a clean white page with a soft brand-colour glow" loading="lazy"><figcaption><b>Daylight</b>Clean white, rounded type, headlines typed with a caret. Brand-colour shapes sweep between sections.</figcaption></figure>
         <figure><img src="img/motion/nocturne.jpg" alt="Nocturne style: large light text on near-black, with your brand colour glowing from below" loading="lazy"><figcaption><b>Nocturne</b>Near-black, with your brand colour glowing up from below. Suits finance and data products.</figcaption></figure>
         <figure><img src="img/motion/showroom.jpg" alt="Showroom style: words typed on a grey stage, product on a deep blue lit stage" loading="lazy"><figcaption><b>Showroom</b>Words typed out on a grey stage, the product on a lit blue one. Hard cuts, slow pull-backs.</figcaption></figure>
       </div>
