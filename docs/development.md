@@ -19,7 +19,7 @@ starter/          the workspace kit new-workspace.sh installs: playbook, index, 
 schemas/          demo, handoff and template schemas (the config shapes the scripts check)
 look-templates/   built-in look templates (house = the default look), docs/templates.md
 motion/           launch-ad engine: storyboard -> beat-synced motion-graphics ad (docs/motion.md)
-motion-templates/ launch-ad styles (airy, nocturne, showroom) with measured ANALYSIS.md and previews
+motion-templates/ launch-ad styles (airy, daylight, nocturne, showroom) with ANALYSIS.md or style notes and previews
 app/              local editor: React UI (src/), file and render server (server/), tests (e2e/)
 tests/            smoke.sh (end to end on synthetic footage) and unit tests for the Python tools
 docs/             ROADMAP.md, img/ (screenshots and the sample GIF)

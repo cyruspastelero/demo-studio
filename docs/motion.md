@@ -146,8 +146,9 @@ Full example (a complete, valid storyboard; `examples/launch-ad/storyboard.json`
 
 ## Scene types
 
-Times below are beats when the storyboard has a tempo, else seconds. "Default" spreads a value over
-the scene. Each scene's SFX cue names are in brackets.
+Times below are beats when the storyboard has a tempo, else seconds (at 120 BPM, `"at": 2` is 1 s in).
+"Default" spreads a value over the scene. A phrase that the next one replaces in under 0.8 s stops the
+render: it cannot be read. Each scene's SFX cue names are in brackets.
 
 | Type | What it shows | Parameters |
 |---|---|---|
@@ -157,7 +158,7 @@ the scene. Each scene's SFX cue names are in brackets.
 | `tiles` | A row (or 2-column grid in portrait) of numbered tiles that light up in turn, a progress bar, a status line. [`tick` per tile] | `labels` (2 to 8, required); `status`; `progressLabel` (shows a % counter); `every` (gap between tiles). |
 | `doneBurst` | Word above a check that draws itself, with a confetti burst or a drawn ring. [`pop`] | `label` (default Done); `sub`; `variant`: `confetti`/`ring` (default from the style). |
 | `tiltedPanel` | A screenshot or clip in a floating window with 3D tilt, entry from a steeper angle, slow drift; optional cursor path and corner badge. [`whoosh`, `click`] | `media` (required); `chrome`: `window`/`plain`; `tilt`: `[rx, ry, rz]` deg; `headline`, `headlinePosition`: `above`/`below`; `cursor`: `[{at, point:[x,y], click}]` (point in media fractions); `badge`. |
-| `uiFocus` | The panel straightens and the camera dives into one region, the rest dims, an accent ring marks it; optional synthetic click and headline. Use a clip to show a real interaction. [`whoosh`, `swish`, `click`] | `media`, `focus: [x, y, w, h]` (required); `zoomAt`; `click: [x, y]`, `clickAt`; `headline`, `headlineAt`. |
+| `uiFocus` | The panel straightens and the camera dives into one region, the rest dims, an accent ring marks it; optional synthetic click and headline. Use a clip to show a real interaction. [`whoosh`, `swish`, `click`] | `media`, `focus: [x, y, w, h]` (required); `zoomAt`; `click: [x, y]`, `clickAt`; `headline`, `headlineAt`. The region fills the frame, so the source needs about `1920 / w` pixels across (a `w` of 0.5 needs 3840). `--check` warns when a zoom stretches its source over 1.25x: record that take closer, or encode it with `OUT_SIZE=2880x1620`. |
 | `aspectMorph` | One frame morphing between aspect ratios with big ratio labels; crossfades per-ratio media if given. [`swish`] | `ratios` (default 16:9, 4:5, 9:16); `media` or `medias` (one per ratio); `showLabels`. |
 | `statCounter` | A big number counting up with a glowing bar and a label. [`tick`] | `to` (required); `from`, `decimals`, `prefix`, `suffix`, `label`, `bar`. |
 | `logoLockup` | Logo mark pops and slides, name reveals beside it (stacked in portrait), URL pill fades up. [`hit`] | `logo`, `name`, `url` (default from `brand`); `tagline`. |
@@ -166,7 +167,8 @@ the scene. Each scene's SFX cue names are in brackets.
 | `notificationStack` | Notification cards dropping in and stacking. [`tick` per card] | `items` (`{title, body, meta, icon}`, 1 to 5, required); `headline`. |
 | `chartReveal` | Bars growing with counting values; one highlighted in the accent. [`whoosh`] | `values` (required); `labels`, `unit`, `title`, `highlight` (index, default the max). |
 | `buttonPress` | One isolated button; the cursor clicks it; the label swaps to a result. [`click`] | `label` (required); `resultLabel`; `variant`: `solid`/`glow`/`outline`; `clickAt`; `headline`. |
-| `sparkle` | A four-point star zooms through the frame and throws small stars: a beat-long transition. [`sparkle`] | `count` (small stars, 1 to 5). |
+| `sparkle` | A four-point star zooms through the frame and throws small stars: a beat-long transition. [`sparkle`] | `count` (small stars, 1 to 5). Big on screen it reads close to a well-known AI assistant's mark; prefer `shapeSweep`. |
+| `shapeSweep` | A big accent circle and rounded pills slide across and clear the frame: a beat-long wipe in plain brand shapes. [`whoosh`] | `direction`: `left` (default) or `right`. |
 
 Every scene also gets the style's camera push (`motion.drift`) and its exit transition.
 
@@ -181,6 +183,7 @@ product. The background picks up a little of the brand accent (`background.tint`
 |---|---|---|---|---|
 | `airy` (default) | Near-white with a faint brand tint, accent-coloured glow under floating UI, accent border on cards, gradient accent words. | Words blur-zoom in from 2x (433 ms), one every 300 ms; the line stays centred as it grows | Scale down to 0.48 + blur (333 ms) | Confetti |
 | `nocturne` | Near-black with the accent glowing up from the bottom edge; warm-white cards with an accent glow; big light type; flips to light for the in-app section and the lock-up. | Typewriter, 68 ms per character, caret | Zoom through with blur | Glowing ring |
+| `daylight` | Clean white with a soft accent glow in the middle, rounded friendly sans (Figtree), plain accent words, white floating UI with a thin line border and soft shadow, gentle tilt. Use `shapeSweep` between sections. | Typewriter, 55 ms per character, tall caret | Scale down + blur, some morphs | Confetti |
 | `showroom` | Gallery grey with a floor gradient, and a deep-blue lit stage for product moments; slanted light accent word; devices start on the screen and pull back. | Typewriter, 100 ms per character, caret | Hard cut | Ring |
 
 Preview stills of the scene types in each style (from `examples/motion-gallery/storyboard.json`) are in
@@ -189,11 +192,12 @@ Preview stills of the scene types in each style (from `examples/motion-gallery/s
 ![airy](../motion-templates/airy/preview/05.jpg)
 ![nocturne](../motion-templates/nocturne/preview/05.jpg)
 ![showroom](../motion-templates/showroom/preview/05.jpg)
+![daylight](../motion-templates/daylight/preview/05.jpg)
 
 Each style's `ANALYSIS.md` lists the measured numbers and, in its section 8, which number each
 `style.json` value comes from.
 
-Fonts come from the repo (all SIL OFL): Inter and Geist in `assets/fonts/`, Bricolage Grotesque and
+Fonts come from the repo (all SIL OFL): Inter, Geist and Figtree in `assets/fonts/`, Bricolage Grotesque and
 Schibsted Grotesk in `site/fonts/`. A style's `fonts.*.file` is a file name in one of those folders.
 
 ### Style fields

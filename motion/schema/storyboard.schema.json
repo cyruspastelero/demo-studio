@@ -308,7 +308,8 @@
             "notificationStack",
             "chartReveal",
             "buttonPress",
-            "sparkle"
+            "sparkle",
+            "shapeSweep"
           ]
         },
         "beats": {
@@ -537,6 +538,18 @@
           },
           "then": {
             "$ref": "#/$defs/sparkle"
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "shapeSweep"
+              }
+            }
+          },
+          "then": {
+            "$ref": "#/$defs/shapeSweep"
           }
         }
       ]
@@ -1055,6 +1068,19 @@
           "type": "integer",
           "minimum": 1,
           "maximum": 5
+        }
+      },
+      "additionalPropertiesFrom": [
+        "common"
+      ]
+    },
+    "shapeSweep": {
+      "properties": {
+        "direction": {
+          "enum": [
+            "left",
+            "right"
+          ]
         }
       },
       "additionalPropertiesFrom": [

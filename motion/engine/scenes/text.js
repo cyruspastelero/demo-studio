@@ -1,5 +1,5 @@
 // Text-led scenes: kineticText, cardScatter, logoLockup, sparkle.
-import { el, px, prog, lerp, clamp01, textBlock, revealWords, media, rng, star, rgba, ease, measurer } from '../kit.js';
+import { el, px, prog, lerp, clamp01, textBlock, revealWords, media, rng, star, rgba, mix, ease, measurer } from '../kit.js';
 
 /** Normalise phrases to [{text, t}] with t in seconds; unspecified times spread over the scene. */
 export function phraseTimes(ctx, phrases, dur, { lead = 0.1, span = 0.7 } = {}) {
@@ -32,6 +32,13 @@ export const kineticText = {
       var starts = groups.flatMap((g) => g.words.map((_, i) => g.t + (i * ctx.style.text.staggerMs) / 1000));
     } else {
       blocks = items.map((it) => ({ block: textBlock(ctx, root, it.text, { size: p.size, maxWidth: box.w, maxHeight: box.h }), t: it.t }));
+      // Reveals speed up to fit their slot, but a phrase replaced too soon is never readable.
+      items.forEach((it, i) => {
+        const next = items[i + 1];
+        if (next && next.t - it.t < 0.8) {
+          ctx.warn(`phrase "${it.text}" is on screen for ${(next.t - it.t).toFixed(2)} s before the next one replaces it (under 0.8 s, too short to read); move the next phrase's "at" later (at counts beats when the storyboard has a tempo, not seconds)`);
+        }
+      });
     }
     items.forEach((it) => ctx.cue(it.t, 'swish', -6));
     let mark = null;
@@ -196,6 +203,38 @@ export const sparkle = {
           const pm = clamp01((k - 0.35) / 0.6);
           const dist = ease('out')(pm) * Math.min(ctx.W, ctx.H) * m.d;
           m.node.style.transform = `translate(${px(ctx.W / 2 + Math.cos(m.a) * dist)}, ${px(ctx.H / 2 + Math.sin(m.a) * dist)}) scale(${Math.sin(Math.PI * pm)}) rotate(${pm * 180}deg)`;
+        });
+      },
+    };
+  },
+};
+
+// A beat-long wipe of soft accent shapes: one big circle and rounded pills slide across and clear the
+// frame. Plain geometry in the brand accent, so it reads as the brand and not as anyone's logo.
+export const shapeSweep = {
+  defaults: { direction: 'left' },
+  build(root, p, ctx, dur) {
+    const dir = p.direction === 'right' ? -1 : 1;
+    const H = ctx.H, W = ctx.W, m = Math.min(W, H);
+    const tone = (amount) => mix(ctx.accent, '#ffffff', amount);
+    const pill = (a, b) => `linear-gradient(90deg, ${tone(a)}, ${tone(b)})`;
+    // Solid shapes, light to dark, so overlaps stay clean. The big circle passes in front.
+    const shapes = [
+      { w: W * 0.46, h: m * 0.13, y: H * 0.25, r: px(m), bg: pill(0.85, 0.35), delay: 0.04, speed: 1.2, z: 1 },
+      { w: W * 0.36, h: m * 0.13, y: H * 0.76, r: px(m), bg: pill(0.3, 0.8), delay: 0.12, speed: 1.1, z: 1 },
+      { w: m * 0.14, h: m * 0.14, y: H * 0.76, r: '50%', bg: tone(0.55), delay: 0.2, speed: 1.3, z: 1 },
+      { w: m * 0.92, h: m * 0.92, y: H * 0.5, r: '50%', bg: `radial-gradient(circle at 32% 30%, ${tone(0.25)}, ${ctx.accent} 70%)`, delay: 0, speed: 1.0, z: 2 },
+    ].map((s) => ({ ...s, node: el('div', { position: 'absolute', left: '0', top: '0', width: px(s.w), height: px(s.h), borderRadius: s.r, background: s.bg, zIndex: String(s.z) }, root) }));
+    ctx.cue(0, 'whoosh', -4);
+    return {
+      update(t) {
+        const k = clamp01(t / dur);
+        shapes.forEach((s) => {
+          const q = ease('inOut')(clamp01((k - s.delay) / (1 - s.delay)) ** (1 / s.speed));
+          // Enter from one edge, leave by the other.
+          const from = dir > 0 ? W + s.w * 0.1 : -s.w * 1.1;
+          const to = dir > 0 ? -s.w * 1.1 : W + s.w * 0.1;
+          s.node.style.transform = `translate(${px(lerp(from, to, q))}, ${px(s.y - s.h / 2)})`;
         });
       },
     };

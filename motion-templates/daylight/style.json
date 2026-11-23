@@ -1,0 +1,128 @@
+{
+  "name": "daylight",
+  "description": "Clean white stage with a soft accent glow, a rounded friendly sans, headlines typed with a tall caret, white floating UI with soft shadows and a gentle tilt, shape-sweep transitions.",
+  "source": "README.md (style notes from a bright 2024 productivity-suite launch film; values set by eye, not measured)",
+  "tone": "light",
+  "palette": {
+    "light": {
+      "bg": "#ffffff",
+      "bg2": "#f6f8fb",
+      "ink": "#0b0a0d",
+      "muted": "#5f6368",
+      "panel": "#ffffff",
+      "line": "#e6e8ee",
+      "shadowTint": "accent",
+      "glow": "#ffffff"
+    },
+    "dark": {
+      "bg": "#121114",
+      "bg2": "#1a191c",
+      "ink": "#f6f5f8",
+      "muted": "#a3a2a8",
+      "panel": "#1f1e22",
+      "line": "#2e2d31",
+      "shadowTint": "accent",
+      "glow": "#2a292d"
+    },
+    "confetti": [
+      "accent",
+      "accentDark",
+      "accentLight",
+      "#ffffff"
+    ]
+  },
+  "fonts": {
+    "display": {
+      "family": "Figtree",
+      "file": "FigtreeVariable.woff2",
+      "weight": 450,
+      "accentWeight": 520
+    },
+    "body": {
+      "family": "Figtree",
+      "file": "FigtreeVariable.woff2",
+      "weight": 450
+    },
+    "accent": "color"
+  },
+  "type": {
+    "hero": 10.3,
+    "title": 8.7,
+    "body": 5.0,
+    "small": 4.1,
+    "minPx": 44,
+    "tracking": -0.015,
+    "lineHeight": 1.1
+  },
+  "text": {
+    "reveal": "type",
+    "wordMs": 380,
+    "staggerMs": 110,
+    "ease": [
+      0.21,
+      0.29,
+      0,
+      0.8
+    ],
+    "blurPx": 8,
+    "rise": 0,
+    "scaleFrom": 1,
+    "caret": true,
+    "exitMs": 300,
+    "charMs": 55
+  },
+  "motion": {
+    "enterMs": 600,
+    "enterEase": [
+      0.21,
+      0.29,
+      0,
+      0.8
+    ],
+    "exitMs": 333,
+    "exitEase": [
+      0.37,
+      0.15,
+      0.85,
+      0.23
+    ],
+    "exitScale": 0.48,
+    "transition": "blurScale",
+    "transitionMix": {
+      "morph": 6,
+      "whip": 3,
+      "blurZoom": 3,
+      "scaleDownBlur": 3,
+      "sparkle": 0,
+      "cut": 1
+    },
+    "drift": -0.019,
+    "popMs": 300,
+    "popEase": [
+      0,
+      0.54,
+      0.96,
+      1.12
+    ],
+    "clickMs": 240
+  },
+  "panel": {
+    "radius": 0.035,
+    "tilt": [
+      6,
+      -14,
+      1
+    ],
+    "perspective": 2000,
+    "shadow": "0 4U 10U -3U TINT33, 0 0.5U 2.5U TINT14",
+    "border": "1px solid LINE",
+    "chromeBar": false
+  },
+  "background": {
+    "kind": "radialCentre",
+    "tint": 0.05
+  },
+  "cursor": "hand",
+  "doneVariant": "confetti",
+  "deviceTone": "dark"
+}

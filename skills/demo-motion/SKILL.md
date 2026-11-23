@@ -1,6 +1,6 @@
 ---
 name: demo-motion
-description: Make a short, beat-synced motion-graphics launch ad from a demo's real footage. Writes a storyboard.json (kinetic type, tilted UI panels, a typed prompt, progress tiles, a Done burst, aspect-ratio morphs, a logo lock-up) from the demo's plan or a short brief, picks a motion template (airy, nocturne, showroom), gets music, renders 16:9, 4:5 and 9:16 at -14 LUFS and checks a contact sheet. Use when the user says "make a launch ad", "motion graphics", "make an ad", "a promo with music and no voice", or wants a teaser of a demo.
+description: Make a short, beat-synced motion-graphics launch ad from a demo's real footage. Writes a storyboard.json (kinetic type, tilted UI panels, a typed prompt, progress tiles, a Done burst, aspect-ratio morphs, a logo lock-up) from the demo's plan or a short brief, picks a motion template (airy, daylight, nocturne, showroom), gets music, renders 16:9, 4:5 and 9:16 at -14 LUFS and checks a contact sheet. Use when the user says "make a launch ad", "motion graphics", "make an ad", "a promo with music and no voice", or wants a teaser of a demo.
 ---
 
 # Demo motion (launch ads)
@@ -57,7 +57,8 @@ Read the demo's `PLAN.md` / `demo.json` (goal, story arc, voiceover draft) or th
 10. Lock-up: logo, name, URL.
 
 Plain words, short phrases (2 to 5 words), no em dashes, one accent word per phrase marked with
-asterisks: `"took me *an afternoon.*"`.
+asterisks: `"took me *an afternoon.*"`. Every phrase needs at least 0.8 s on screen before the next one
+replaces it; `at` counts **beats** when the storyboard has a tempo (at 120 BPM, `"at": 2` is 1 s).
 
 ## Step 3: collect real media
 
@@ -69,7 +70,19 @@ ffmpeg -v error -ss 20.5 -to 24.0 -i recordings/exports/<cut>.mp4 -an -vf scale=
 ```
 
 Expected: each command writes one file and prints nothing. Pick moments with the cursor doing
-something (a click, typing, a result appearing). Keep clips 2 to 7 s. A storyboard can also point
+something (a click, typing, a result appearing). Keep clips 2 to 7 s.
+
+**Zooms need pixels.** A `uiFocus` region `w` wide fills the frame, so the clip needs about `1920 / w`
+pixels across. A normal take is 1920 wide, so zooming into half of it (`w` 0.5) doubles every pixel and
+looks soft. For any zoom tighter than about `w` 0.75, record a close-up take instead: zoom the page
+(CSS `zoom` on the panel) so the part you will focus fills most of the viewport, and encode it at full
+resolution:
+
+```bash
+OUT_SIZE=2880x1620 bash "$P/scripts/encode-take.sh" frames/_tmpNN 07c-rename-closeup "close-up for the zoom"
+```
+
+Then use a wide `focus` (about 0.75 or more) on that take. A storyboard can also point
 at a take directly with `{ "src": "...", "from": 12.2, "to": 18.6, "rate": 1.6 }`.
 
 ## Step 4: get music
@@ -125,12 +138,14 @@ Expected: `{"ok":true,"style":"airy","duration":36,...}`.
 | `scenes[7].media.src: file not found: x.mp4` | Fix the path; paths are relative to the storyboard |
 | `is not a known field` | A typo or a parameter of another scene type; see docs/motion.md "Scene types" |
 | `needs timing.bpm or timing.beatsFrom` | Add `timing.beatsFrom`, or use `duration` (seconds) |
+| `"warnings": ["scenes[10] uiFocus stretches ... 2.0x and will look soft ..."]` | Record a close-up take or encode at `OUT_SIZE=2880x1620` (Step 3), or widen `focus`. Do not ship a soft zoom |
 
 ## Step 6: pick a style and check stills
 
 Pick the motion template that fits the product (read `$P/motion-templates/*/README.md`): `airy`
-(light and friendly, the default), `nocturne` (dark and premium), `showroom` (grey and deep blue,
-devices, hard cuts). Set `"style"` in the storyboard. Render stills at the middle of every scene:
+(light and friendly, the default), `daylight` (clean white, rounded type, typed headlines with a caret,
+shape-sweep transitions; for bright productivity-suite style launch films), `nocturne` (dark and
+premium), `showroom` (grey and deep blue, devices, hard cuts). Set `"style"` in the storyboard. Render stills at the middle of every scene:
 
 ```bash
 node "$P/motion/render-motion.mjs" motion/storyboard.json --size 16x9 --stills 2,6,9.5,13,17,21 --stills-dir motion/stills
@@ -143,6 +158,7 @@ Repeat with `--size 9x16`.
 | If you see | Do this |
 | --- | --- |
 | `text does not fit even at 44px: "..."` | Shorten that phrase or split it into two phrases |
+| `phrase "..." is on screen for 0.45 s before the next one replaces it` | Move the next phrase's `at` later (beats, not seconds) or shorten the first phrase |
 | `tile labels too long` / `button label too long` | Shorter labels |
 | `runtime load failed` | The message names the scene or asset; fix it and re-run |
 | `Executable doesn't exist` / no Chrome | Install Google Chrome (`bash "$P/scripts/doctor.sh"` prints the fix) |
@@ -179,6 +195,13 @@ Delete `motion/.motion-cache/` and `motion/stills/` when you are done.
 
 ## Copying a style
 
+Copy the feel (pace, type, colour mood, how UI floats and zooms), never the reference's marks: no
+logo shapes, mascots, signature icons or sounds. A shape that looks like a famous brand's mark (for
+example a big four-point star, which reads as a well-known AI assistant's logo) is out; use plain
+geometry in the product's own accent, such as `shapeSweep`. Music from the reference is someone
+else's recording: never use it, even in a draft. Match its tempo and feel with a track you have the
+rights to (Step 4).
+
 To make the ad look like a reference the user may use as a reference, follow "Adding a style" in
 `$P/docs/motion.md`: measure it with the scripts in `$P/motion/analysis/` (cuts, colours, type,
 easing, panels, tempo), write `ANALYSIS.md` and a new `style.json` in
@@ -190,7 +213,9 @@ set), compare side by side with
 
 - `motion/out/ad-16x9.mp4`, `ad-4x5.mp4`, `ad-9x16.mp4` exist, each reports -14 LUFS integrated and a
   true peak under -1 dBTP.
-- You read a contact sheet of each size and the frames at every scene change.
+- You read a contact sheet of each size and the frames at every scene change, and looked at every
+  zoom at full size (a still at 1920 wide): text in the zoom is as sharp as the headline.
+- `--check` printed no `warnings`.
 - Every claim on screen is true and every UI shot is the demo's own.
 - `motion/README.md` lists the decisions (story, style, music source and its licence, anything not
   reproduced).

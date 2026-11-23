@@ -19,3 +19,5 @@ License, Version 1.1:
 - Geist and Geist Mono 1.9.0 (GeistVariable.woff2, GeistMonoVariable.woff2),
   Copyright 2024 The Geist Project Authors (https://github.com/vercel/geist-font).
   The full licence is in assets/fonts/OFL-Geist.txt.
+- Figtree (FigtreeVariable.woff2, latin subset, wght axis), Copyright 2022 The Figtree Project
+  Authors (https://github.com/erikdkennedy/figtree). The full licence is in assets/fonts/OFL-Figtree.txt.
