@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Prints an ffmpeg filter_complex that scales a take to 1920x1080 and blurs secret regions.
 
+OUT_SIZE=2880x1620 (or any WxH) keeps more pixels: use it for takes the edit will zoom into
+(uiFocus, keynote zooms over about 1.3x), or a 2x zoom of a 1080p take looks soft.
+
 Usage: blur-filter.py <frames-dir> <css-width>
 Reads <frames-dir>/ts.txt (capture timestamps) and optional blur.jsonl lines of
 {"x","y","w","h","t"[,"until"]} in CSS px / epoch seconds. Each box is blurred from t
@@ -11,7 +14,13 @@ import json
 import sys
 from pathlib import Path
 
-OUT_W, OUT_H = 1920, 1080
+import os
+import re
+
+_size = os.environ.get("OUT_SIZE", "1920x1080")
+if not re.fullmatch(r"\d{3,4}x\d{3,4}", _size):
+    sys.exit(f"blur-filter: OUT_SIZE must look like 2880x1620, got {_size!r}")
+OUT_W, OUT_H = (int(n) // 2 * 2 for n in _size.split("x"))
 PAD = 6  # css px of margin around each box so glyph edges don't peek out
 
 frames_dir, css_width = Path(sys.argv[1]), float(sys.argv[2])

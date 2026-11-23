@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import { validateStoryboard, validateStyle } from './lib/validate.mjs';
 import { resolveScenes, totalDuration } from './lib/timing.mjs';
-import { prepareMedia } from './lib/assets.mjs';
+import { planZoomSources, prepareMedia } from './lib/assets.mjs';
 import { startServer } from './lib/server.mjs';
 import { renderMix, loudnessReport } from './lib/mix.mjs';
 
@@ -66,6 +66,7 @@ export function loadProject(storyboardPath, styleOverride) {
 
 async function openRuntime(project, size, cacheDir) {
   const { board, style, fps, timeline, timing, base } = project;
+  planZoomSources(board, project.storyboardPath, size[0]);
   const { assets, files } = prepareMedia(board, project.storyboardPath, cacheDir, fps);
   const boardForPage = structuredClone(board);
   for (const f of Object.values(boardForPage.brand.fonts || {})) { const abs = resolve(base, f.src); files.add(abs); f.url = `/file${abs}`; }
@@ -105,14 +106,17 @@ function builtinSfx() {
 export async function render(storyboardPath, opts) {
   const project = loadProject(storyboardPath, opts.style);
   project.storyboardPath = storyboardPath;
-  if (opts.check) return { project };
+  if (opts.check) {
+    const warnings = planZoomSources(structuredClone(project.board), storyboardPath, 1920);
+    return { project, warnings };
+  }
   const size = SIZES[opts.size || '16x9'];
   if (!size) throw new Error(`--size must be one of ${Object.keys(SIZES).join(', ')}`);
   const cacheDir = process.env.MOTION_CACHE || join(dirname(resolve(storyboardPath)), '.motion-cache');
   mkdirSync(cacheDir, { recursive: true });
   const { page, result, logs, close } = await openRuntime(project, size, cacheDir);
   try {
-    if (result.warnings.length) throw new Error(`text does not fit:\n  - ${result.warnings.join('\n  - ')}`);
+    if (result.warnings.length) throw new Error(`storyboard problems:\n  - ${result.warnings.join('\n  - ')}`);
     const fps = project.fps;
     const from = Number(opts.from ?? 0), to = Math.min(Number(opts.to ?? project.duration), project.duration);
     if (opts.stills) {
@@ -167,6 +171,6 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   }
   render(storyboard, args).then((r) => {
     const p = r.project;
-    console.log(JSON.stringify({ ok: true, style: p.styleName, duration: Number(p.duration.toFixed(3)), bpm: p.timing.bpm ?? null, scenes: p.timeline.length, out: r.out, shots: r.shots?.length, loudness: r.loudness }));
+    console.log(JSON.stringify({ ok: true, style: p.styleName, duration: Number(p.duration.toFixed(3)), bpm: p.timing.bpm ?? null, scenes: p.timeline.length, out: r.out, shots: r.shots?.length, loudness: r.loudness, ...(r.warnings?.length ? { warnings: r.warnings } : {}) }));
   }).catch((error) => { console.error(error.message); process.exit(1); });
 }

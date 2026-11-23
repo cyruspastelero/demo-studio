@@ -141,3 +141,17 @@ reveal; sandbox accounts only; list everything created on camera in THROWAWAYS.m
 - zsh modifiers (`$i:l`) and `$` inside ffmpeg expressions bite in inline shell. Put anything
   non-trivial in the Python scripts.
 - Use `command rm` if `rm` is aliased. Ask the user before deleting frames or recordings.
+
+## Zooms, launch ads and reference styles
+
+- A zoom is only as sharp as its source. Takes are encoded at 1920x1080 and the motion engine also
+  capped clips at 1920 wide, so a `uiFocus` into half the frame doubled every pixel and the owner
+  called it "so blurry". Now: `--check` warns over 1.25x, `uiFocus` clips keep up to 3840 px, and
+  close-up takes are encoded with `OUT_SIZE=2880x1620`. Record close-ups (page zoomed so the card
+  fills the viewport) rather than zooming in the edit.
+- Copying a reference's style must not copy its marks. The `sparkle` star, big on screen, read as a
+  well-known AI assistant's logo to the owner. Use plain brand shapes (`shapeSweep`).
+- A reference's soundtrack is someone else's recording; never use it. Match its tempo and feel.
+- Phrase `at` values count beats with a tempo. `"at": 1.1` meant 0.55 s, and the first phrase was
+  never readable; renders now stop on phrases shown under 0.8 s.
+- Take names: the samples use `_tmpNN`; the frame receiver used to reject a leading underscore.

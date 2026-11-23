@@ -144,6 +144,10 @@ and list them under `windows` in `<demo>/demo.json`. Record with `rec.mjs` (Step
    bash "$P/scripts/encode-take.sh" frames/_tmpNN <NN-name> "what happened, latencies"
    ```
    Expected: `raw/<NN-name>-tN.mp4 (12.3s, 1920x1080); frames kept in frames/<NN-name>-tN`.
+   If the edit will zoom into this take (a `uiFocus` in a launch ad, a keynote zoom over about 1.3x),
+   keep the full capture instead: prefix the command with `OUT_SIZE=2880x1620`. Better still, shoot
+   a close-up take with the page zoomed so the part that matters fills the viewport. A 2x zoom of a
+   1920 take looks soft, and no setting fixes it after the frames are deleted.
 6. **Log:** in `recordings/takes.csv`, change the new row's status from `new` to `keep`, `alt` or
    `reject`, and say why in the notes. Exactly one `keep` per scene.
 7. **Throwaways:** add every item created on camera (keys, records, invites) to THROWAWAYS.md now.

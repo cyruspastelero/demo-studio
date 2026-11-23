@@ -24,7 +24,7 @@ export function collectMedia(board) {
   return found;
 }
 
-function probe(file) {
+export function probe(file) {
   const r = spawnSync('ffprobe', ['-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=width,height', '-of', 'csv=p=0', file], { encoding: 'utf8' });
   if (r.status !== 0) throw new Error(`cannot read media ${file}: ${r.stderr.trim()}`);
   const [w, h] = r.stdout.trim().split(',').map(Number);
@@ -61,18 +61,19 @@ export function prepareMedia(board, storyboardPath, cacheDir, fps, { maxWidth = 
     const abs = resolve(base, s.src);
     if (!existsSync(abs)) throw new Error(`missing asset ${s.src} (resolved ${abs})`);
     const isClip = VIDEO.test(abs);
-    if (!isClip && !s.crop) {
+    if (!isClip && !s.crop && s.maxWidth == null) {
       const size = abs.endsWith('.svg') ? svgSize(abs) : probe(abs);
       assets[key] = { kind: 'image', url: `/file${abs}`, ...size };
       files.add(abs);
       continue;
     }
-    const hash = createHash('sha1').update(JSON.stringify({ abs, from: s.from, to: s.to, crop: s.crop, fps, maxWidth, v: 2 })).digest('hex').slice(0, 16);
+    const width = s.maxWidth ?? maxWidth;
+    const hash = createHash('sha1').update(JSON.stringify({ abs, from: s.from, to: s.to, crop: s.crop, fps, maxWidth: width, v: 2 })).digest('hex').slice(0, 16);
     const dir = join(cacheDir, hash);
     if (!existsSync(join(dir, 'done'))) {
       const tmp = `${dir}.tmp`;
       mkdirSync(tmp, { recursive: true });
-      const vf = `${cropFilter(s.crop)}scale='min(${maxWidth},iw)':-2:flags=lanczos`;
+      const vf = `${cropFilter(s.crop)}scale='min(${width},iw)':-2:flags=lanczos`;
       if (isClip) {
         const range = [...(s.from != null ? ['-ss', String(s.from)] : []), ...(s.to != null ? ['-to', String(s.to)] : [])];
         ffmpeg([...range, '-i', abs, '-vf', `fps=${fps},${vf}`, '-q:v', '2', join(tmp, '%05d.jpg')], `extract ${s.src}`);
@@ -92,4 +93,31 @@ export function prepareMedia(board, storyboardPath, cacheDir, fps, { maxWidth = 
       : { kind: 'image', url: `/file${join(dir, frames[0])}`, ...size };
   }
   return { assets, files };
+}
+
+/**
+ * uiFocus dives into one region of its media. Gives that media enough pixels for the zoom (the default
+ * 1920 px cap would make a 2x zoom soft) and returns a warning for each zoom the source is too small for.
+ * A region `focus[2]` wide fills about the frame width, so it needs frameWidth / focus[2] source pixels.
+ */
+export function planZoomSources(board, storyboardPath, frameWidth) {
+  const base = dirname(resolve(storyboardPath));
+  const warnings = [];
+  (board.scenes || []).forEach((scene, i) => {
+    if (scene.type !== 'uiFocus' || !scene.media || !Array.isArray(scene.focus)) return;
+    if (typeof scene.media === 'string') scene.media = { src: scene.media };
+    const s = scene.media;
+    const abs = resolve(base, s.src);
+    if (!existsSync(abs) || abs.endsWith('.svg')) return;
+    const need = Math.min(3840, Math.ceil(frameWidth / scene.focus[2] / 2) * 2);
+    s.maxWidth ??= Math.max(1920, need);
+    const source = probe(abs).width * (s.crop ? s.crop[2] : 1);
+    const stretch = need / source;
+    if (stretch > 1.25) {
+      warnings.push(`scenes[${i}] uiFocus stretches ${s.src} ${stretch.toFixed(1)}x and will look soft: `
+        + `record that take closer (zoom the page so the region fills the frame) or at full resolution `
+        + `(encode-take.sh with OUT_SIZE=2880x1620), or widen focus`);
+    }
+  });
+  return warnings;
 }

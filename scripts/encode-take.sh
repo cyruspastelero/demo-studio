@@ -2,7 +2,8 @@
 # Turns a folder of captured frames into an edit-ready clip and logs it.
 # Run from the recordings dir.
 # Usage: encode-take.sh <frames-dir> <NN-scene-name> "<notes>"
-# Output: raw/<NN-scene-name>-t<take>.mp4 (next free take number), 1920x1080,
+# Output: raw/<NN-scene-name>-t<take>.mp4 (next free take number), 1920x1080 (OUT_SIZE=2880x1620 for
+# takes the edit will zoom into),
 # constant 30fps CRF 14, plus a row in takes.csv. Frames move to frames/<scene>-t<take>.
 # Env: CSS_WIDTH (recorded viewport width in CSS px, default 1440)
 set -euo pipefail
