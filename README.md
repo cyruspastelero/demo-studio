@@ -157,8 +157,8 @@ All free, all on your machine. `bash scripts/doctor.sh` checks each one and prin
 
 | You need | What it does |
 | --- | --- |
-| Claude Code | Runs the skills that plan, record and edit |
-| Playwright MCP | Lets Claude click and type in your logged-in browser |
+| A coding agent with MCP | Follows the skills in `skills/` that plan, record and edit. Claude Code loads them on its own and is what we test with. Other agents (Codex, Cursor, Gemini CLI) can follow them: point them at `skills/demo-studio/SKILL.md` |
+| Playwright MCP | Lets the agent click and type in your logged-in browser |
 | Google Chrome | The browser that gets recorded, and the renderer for titles |
 | Node.js 20+ | Records takes, renders overlays, runs the studio app |
 | Python 3.10+ | Cuts, narration, checks and the editor handoff (no pip packages) |
