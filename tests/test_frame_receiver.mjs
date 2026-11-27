@@ -97,6 +97,21 @@ try {
     assert.equal(stop.status, 200);
     assert.equal(JSON.parse(stop.text).frames, 1);
   });
+  await test('re-recording a take under the same name starts clean: no old frames, timestamps or blur boxes', async () => {
+    const take = join(dir, 'frames', 'again-t1');
+    assert.equal((await post('/start?take=again-t1', { headers: auth })).status, 200);
+    for (const ts of [7000, 7001]) await post('/frame', { headers: auth, body: JSON.stringify({ ts, b64: JPEG }) });
+    await post('/blur', { headers: auth, body: JSON.stringify({ x: 1, y: 2, w: 3, h: 4, t: 7000 }) });
+    assert.equal((await post('/stop', { headers: auth })).status, 200);
+    writeFileSync(join(take, 'notes.md'), 'keep');
+    mkdirSync(join(take, 'f99999.jpg'));
+    assert.equal((await post('/start?take=again-t1', { headers: auth })).status, 200);
+    assert.deepEqual(readdirSync(take).sort(), ['f99999.jpg', 'notes.md']);
+    assert.equal((await post('/frame', { headers: auth, body: JSON.stringify({ ts: 8000, b64: JPEG }) })).status, 200);
+    assert.equal(JSON.parse((await post('/stop', { headers: auth })).text).frames, 1);
+    assert.equal(existsSync(join(take, 'blur.jsonl')), false);
+    assert.equal(existsSync(join(take, 'f00001.jpg')), false);
+  });
   await test('a take folder planted as a symlink is refused and nothing lands outside', async () => {
     const outside = mkdtempSync(join(tmpdir(), 'rx-outside-'));
     try {

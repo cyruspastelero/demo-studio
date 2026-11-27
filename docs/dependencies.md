@@ -12,7 +12,7 @@ each item below and prints the exact fix for anything missing.
 | Claude Code | current | Runs the skills | yes | Anthropic terms |
 | Node.js | 20+ (22 LTS recommended) | Recorder, frame receiver, card and look rendering, the local studio | yes | MIT |
 | Python | 3.10+, standard library only (no pip packages) | Edit, narration, handoff and check scripts | yes | PSF |
-| ffmpeg with libx264 | any recent build | All encoding, mixing and loudness measurement | yes | LGPL/GPL (your own install) |
+| ffmpeg with libx264 | 7.0 or newer (the keynote cut uses `-/filter_complex`) | All encoding, mixing and loudness measurement | yes | LGPL/GPL (your own install) |
 | Google Chrome | current stable | The recorded browser and the headless renderer for titles and overlays | yes | Google terms |
 | Playwright MCP | `@playwright/mcp@0.0.84` (pinned) | Lets Claude drive the logged-in browser | yes, for recording | Apache-2.0 |
 | macOS `say` | built into macOS | Free placeholder narration and timing previews | optional | Apple |

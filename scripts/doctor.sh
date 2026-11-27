@@ -37,15 +37,21 @@ if command -v python3 >/dev/null 2>&1 && python3 -c 'import sys; sys.exit(sys.ve
 else bad "Python 3.10+ not found" "$(brew_or python@3.12 'install Python 3.10+ from https://www.python.org')"; fi
 
 if command -v ffmpeg >/dev/null 2>&1 && command -v ffprobe >/dev/null 2>&1; then
-  if ffmpeg -hide_banner -encoders 2>/dev/null | grep -q libx264; then ok "ffmpeg $(ffmpeg -version | head -1 | awk '{print $3}') with libx264"
+  # Outputs are captured before grep: grep -q exits at the first match, and under pipefail the
+  # SIGPIPE ffmpeg then gets would fail the check on a working install.
+  ffversion="$(ffmpeg -version 2>/dev/null || true)"
+  ffv="$(printf '%s\n' "$ffversion" | awk 'NR == 1 {print $3}')"
+  ffencoders="$(ffmpeg -hide_banner -encoders 2>/dev/null || true)"
+  if grep -q libx264 <<<"$ffencoders"; then ok "ffmpeg $ffv with libx264"
   else bad "ffmpeg has no libx264 encoder" "$(brew_or ffmpeg 'install an ffmpeg build with --enable-libx264')"; fi
-  # ffmpeg parses media from demo folders other people made; old releases have known demuxer bugs.
-  ffv="$(ffmpeg -version 2>/dev/null | head -1 | awk '{print $3}')"
+  # 7.0+: the keynote cut passes its long filter graph as a file (-/filter_complex), new in 7.0.
+  # ffmpeg also parses media from demo folders other people made; old releases have known demuxer bugs.
   ffmajor="$(printf '%s' "$ffv" | sed -E 's/^n?([0-9]+).*/\1/')"
-  if printf '%s' "$ffmajor" | grep -Eq '^[0-9]+$' && [ "$ffmajor" -ge 6 ]; then ok "ffmpeg $ffv is 6.0 or newer"
-  elif printf '%s' "$ffmajor" | grep -Eq '^[0-9]+$'; then warn "ffmpeg $ffv is older than 6.0" "It reads media from shared demo folders; update it: $(brew_or ffmpeg 'apt install ffmpeg (or a newer static build)')"
-  else warn "could not read the ffmpeg version ($ffv)" "Make sure it is 6.0 or newer and kept updated: it parses media from shared demo folders"; fi
-  if ffmpeg -hide_banner -filters 2>/dev/null | grep -q ' drawtext '; then ok "ffmpeg drawtext (social caption text)"
+  if printf '%s' "$ffmajor" | grep -Eq '^[0-9]+$' && [ "$ffmajor" -ge 7 ]; then ok "ffmpeg $ffv is 7.0 or newer"
+  elif printf '%s' "$ffmajor" | grep -Eq '^[0-9]+$'; then bad "ffmpeg $ffv is older than 7.0 (the keynote cut needs 7.0+ for -/filter_complex)" "$(brew_or ffmpeg 'install ffmpeg 7.0 or newer (your distro package or a static build from https://ffmpeg.org/download.html)')"
+  else warn "could not read the ffmpeg version ($ffv)" "Make sure it is 7.0 or newer (the keynote cut needs it) and kept updated: it parses media from shared demo folders"; fi
+  fffilters="$(ffmpeg -hide_banner -filters 2>/dev/null || true)"
+  if grep -q ' drawtext ' <<<"$fffilters"; then ok "ffmpeg drawtext (social caption text)"
   else warn "ffmpeg has no drawtext filter" "Fine: render caption PNGs with: node \"$root/scripts/title-cards.mjs\" handoff.json --social"; fi
 else bad "ffmpeg/ffprobe not found" "$(brew_or ffmpeg 'apt install ffmpeg')"; fi
 

@@ -14,10 +14,13 @@ frames_dir="${1:?frames dir}"; scene="${2:?scene name}"; notes="${3:-}"
 mkdir -p raw
 [ -f takes.csv ] || echo "file,scene,take,duration_s,resolution,fps,recorded_at,status,notes" > takes.csv
 
+# Also skip numbers whose frames folder exists: mv would nest this take's frames inside it.
 take=1
-while [ -e "raw/${scene}-t${take}.mp4" ]; do take=$((take + 1)); done
+while [ -e "raw/${scene}-t${take}.mp4" ] || [ -e "frames/${scene}-t${take}" ]; do take=$((take + 1)); done
 out="raw/${scene}-t${take}.mp4"
-trap '[ -s "$out" ] || command rm -f "$out"' EXIT   # no empty take left behind on failure
+encoded=0
+# A failed or interrupted encode leaves no clip behind to take the number (empty or half-written).
+trap '[ "$encoded" = 1 ] || command rm -f "$out"' EXIT
 
 fc="$(python3 "$here/blur-filter.py" "$frames_dir" "${CSS_WIDTH:-1440}")"
 
@@ -47,6 +50,7 @@ ffmpeg -y -loglevel error -protocol_whitelist file,pipe -f concat -safe 0 -i "$l
 
 kept="frames/${scene}-t${take}"
 mv "$frames_dir" "$kept"
+encoded=1
 
 read -r w h dur < <(ffprobe -v error -protocol_whitelist file,pipe -select_streams v:0 \
   -show_entries stream=width,height:format=duration -of default=nw=1:nk=1 "$out" | tr '\n' ' '; echo)

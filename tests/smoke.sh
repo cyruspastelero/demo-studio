@@ -9,7 +9,11 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 S="$ROOT/scripts"
 TMP="$(mktemp -d "${TMPDIR:-/tmp}/demo-studio-smoke.XXXXXX")"
-cleanup() { if [ "${KEEP:-0}" = 1 ]; then echo "kept $TMP"; else command rm -rf "$TMP"; fi; }
+RX_PID=""
+cleanup() {
+  if [ -n "$RX_PID" ]; then kill "$RX_PID" 2>/dev/null || true; fi   # a die must not leave the receiver listening
+  if [ "${KEEP:-0}" = 1 ]; then echo "kept $TMP"; else command rm -rf "$TMP"; fi
+}
 trap cleanup EXIT
 
 pass=0
@@ -36,7 +40,9 @@ solid_png() {  # out WxH colour
 }
 
 for tool in ffmpeg ffprobe python3 node; do command -v "$tool" >/dev/null || die "$tool not installed"; done
-ffmpeg -hide_banner -encoders 2>/dev/null | grep -q libx264 || die "ffmpeg lacks libx264"
+# Captured first: grep -q exits early, and under pipefail ffmpeg's SIGPIPE would fail the check.
+encoders="$(ffmpeg -hide_banner -encoders 2>/dev/null)"
+grep -q libx264 <<<"$encoders" || die "ffmpeg lacks libx264"
 
 step "syntax"
 for f in "$S"/*.py "$S"/keynote/*.py "$S"/narration/*.py; do python3 -m py_compile "$f"; done; ok "python scripts compile"
@@ -75,7 +81,8 @@ R="$D/recordings"
 
 step "frame receiver"
 PORT=$((20000 + RANDOM % 20000))
-(cd "$R" && DEMO_RX_PORT=$PORT DEMO_MIN_FREE_GB=0 node "$S/frame-receiver.mjs" . >"$TMP/rx.log" 2>&1) &
+# exec: RX_PID is then node itself, not a subshell, so kill (here and in cleanup) stops it.
+(cd "$R" && DEMO_RX_PORT=$PORT DEMO_MIN_FREE_GB=0 exec node "$S/frame-receiver.mjs" . >"$TMP/rx.log" 2>&1) &
 RX_PID=$!
 for _ in 1 2 3 4 5 6 7 8 9 10; do curl -s "http://127.0.0.1:$PORT/" >/dev/null 2>&1 && break; sleep 0.3; done
 RX_TOKEN="$(python3 -I -c 'import json, sys; print(json.load(open(sys.argv[1]))[sys.argv[2]])' "$R/.rx-token" "$PORT")" \
@@ -98,7 +105,7 @@ rx "http://127.0.0.1:$PORT/blur" -d '{"x": 10, "y": 10, "w": 50, "h": 20, "t": 1
 code="$(curl -s -o /dev/null -w '%{http_code}' -X POST -H "x-rx-token: $RX_TOKEN" -d '{"x": "0);evil", "y": 1, "w": 1, "h": 1, "t": 1}' "http://127.0.0.1:$PORT/blur")"
 [ "$code" = 400 ] || die "receiver accepted a non-numeric blur box ($code)"; ok "receiver refuses a non-numeric blur box"
 rx "http://127.0.0.1:$PORT/stop" | grep -q '"frames":3' || die "receiver did not report 3 frames"
-kill "$RX_PID" 2>/dev/null || true
+kill "$RX_PID" 2>/dev/null || true; RX_PID=""
 exists "$R/frames/tmprx/ts.txt"; exists "$R/frames/tmprx/f00002.jpg"; exists "$R/frames/tmprx/blur.jsonl"
 command rm -rf "$R/frames/tmprx"
 

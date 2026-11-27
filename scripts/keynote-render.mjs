@@ -5,7 +5,7 @@
 // plugin's assets/fonts or, for a pill font picked in the editor, a file inside the demo's fonts/
 // folder (fonts.mjs checks it); images must be data: URIs; every network request is blocked.
 import { existsSync, lstatSync, readFileSync, realpathSync } from 'node:fs';
-import { isAbsolute, join, resolve, sep } from 'node:path';
+import { dirname, isAbsolute, join, resolve, sep } from 'node:path';
 import { FontError, fontFaceCss } from './fonts.mjs';
 import { PLUGIN_ROOT, launchChrome, loadPlaywright } from './pw.mjs';
 import { blockRequests } from './card-safety.mjs';
@@ -33,6 +33,17 @@ function outPath(relative) {
   }
   const full = resolve(outDir, relative);
   if (!full.startsWith(outDir + sep)) fail(`output path ${relative} leaves the work folder`);
+  // A symlinked folder on the way (e.g. png/ -> elsewhere) must not redirect the write. The folder may
+  // not exist yet (the screenshot creates it), so check the nearest one that does.
+  // lstat, not existsSync: a dangling link counts as there, and realpath then refuses it.
+  const present = (path) => { try { lstatSync(path); return true; } catch { return false; } };
+  let parent = dirname(full);
+  while (!present(parent)) parent = dirname(parent);
+  let realParent = null;
+  try { realParent = realpathSync(parent); } catch (error) { fail(`cannot resolve ${parent}: ${error.message}`); }
+  if (realParent !== outDir && !realParent.startsWith(outDir + sep)) {
+    fail(`${dirname(full)} resolves outside the work folder; remove the symlink`);
+  }
   let leaf = null;
   try { leaf = lstatSync(full); } catch { /* new file */ }
   if (leaf?.isSymbolicLink()) fail(`${full} is a symlink; refusing to write through it`);

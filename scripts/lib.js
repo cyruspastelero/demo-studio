@@ -30,7 +30,7 @@ async function prep(p) {
   await p.setViewportSize({ width: W, height: H });  // tab switches can reset the viewport
   await sleep(600);
   await p.evaluate(CURSOR_FN, CURSOR_STYLE).catch(() => {});
-  await p.evaluate(MASK_FN, MASK_CFG).catch(() => {});
+  await p.evaluate(MASK_FN, MASK_CFG);
   if (PROJECT.clutter) await hideClutter(p, PROJECT.clutter);
 }
 
@@ -63,9 +63,18 @@ async function record(p, take) {
   ctx._recStart = Date.now();
   const cdp = await ctx.newCDPSession(p);
   let chain = Promise.resolve();
+  // A refused or failed frame post (full disk, frame cap, receiver gone) would freeze the take
+  // silently, so stop() reports them. 'skip' is the receiver dropping a repeat inside 1/30 s: fine.
+  let dropped = 0, firstDrop = '';
+  const drop = reason => { dropped += 1; if (!firstDrop) firstDrop = reason; };
   cdp.on('Page.screencastFrame', f => {
     cdp.send('Page.screencastFrameAck', { sessionId: f.sessionId }).catch(() => {});
-    chain = chain.then(() => rxPost('/frame', { ts: f.metadata.timestamp, b64: f.data })).catch(() => {});
+    chain = chain.then(async () => {
+      const res = await rxPost('/frame', { ts: f.metadata.timestamp, b64: f.data });
+      const text = await res.text();
+      if (!res.ok()) drop(`HTTP ${res.status()}: ${text}`);
+      else if (text === 'full') drop('the take reached the receiver frame cap (3 min at 30fps)');
+    }).catch(e => drop(e.message));
   });
   await cdp.send('Page.startScreencast', { format: 'jpeg', quality: 88, maxWidth: W * 2, maxHeight: H * 2 });
   let stopped = false;
@@ -74,7 +83,9 @@ async function record(p, take) {
     await sleep(300);
     await cdp.send('Page.stopScreencast').catch(() => {});
     await chain; await cdp.detach().catch(() => {});
-    return (await rxPost('/stop')).json();
+    const summary = await (await rxPost('/stop')).json();
+    if (dropped) throw new Error(`take ${take}: ${dropped} frame${dropped === 1 ? ' was' : 's were'} dropped, first: ${firstDrop}; re-record it`);
+    return summary;
   };
 }
 
@@ -173,15 +184,23 @@ const CURSOR_FN = style => {
 };
 
 // Blurs secrets inside the page itself, so the blur follows scrolling and animation.
-// Re-scans on every DOM change. Extend via PROJECT.maskPatterns / PROJECT.maskLabels.
+// Re-scans on every DOM change. Extend via PROJECT.maskPatterns (regex sources) / PROJECT.maskLabels
+// (literal label text). Both are checked here, in Node, so a bad entry stops the scene before
+// anything records instead of throwing inside the page and leaving every secret unmasked.
+const nonBlank = list => (list || []).filter(v => typeof v === 'string' && v.trim());
+const escapeRegex = text => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+for (const source of nonBlank(PROJECT.maskPatterns)) {
+  try { new RegExp(source); } catch (e) { throw new Error(`PROJECT.maskPatterns entry ${JSON.stringify(source)} is not a valid regex: ${e.message}`); }
+}
 const MASK_CFG = {
   tokens: [
     '(xapp|xoxb|xoxp|xoxe)-[\\w-]{10,}', '\\bsk-[\\w-]{20,}', '\\bsk_(live|test)_\\w{10,}', '\\bvck_\\w{20,}',
     '\\bgh[pousr]_\\w{20,}', '\\beyJ[\\w-]{10,}\\.[\\w-]{10,}\\.[\\w-]{10,}', '\\b[0-9a-f]{64,}\\b', '\\bAKIA[0-9A-Z]{16}\\b',
-    ...(PROJECT.maskPatterns || []),
+    ...nonBlank(PROJECT.maskPatterns),
   ],
-  labels: ['Verification Token', 'Signing Secret', 'Client Secret', 'Bot User OAuth Token', 'API key', 'Client ID', 'Secret key', 'Access token', ...(PROJECT.maskLabels || [])],
+  labels: ['Verification Token', 'Signing Secret', 'Client Secret', 'Bot User OAuth Token', 'API key', 'Client ID', 'Secret key', 'Access token', ...nonBlank(PROJECT.maskLabels)].map(escapeRegex),
 };
+new RegExp(MASK_CFG.tokens.join('|'));
 const MASK_FN = cfg => {
   if (window.__maskObs) return;
   const TOKEN = new RegExp(cfg.tokens.join('|'));
@@ -213,5 +232,5 @@ async function maskedSummary(p) { return p.evaluate(() => [...document.querySele
 // Cursor + masking on every page load in the recording context (installed once per context).
 if (!ctx._demoInit) {
   ctx._demoInit = true;
-  await ctx.addInitScript({ content: `window.addEventListener('DOMContentLoaded', () => { try { (${CURSOR_FN.toString()})(${JSON.stringify(CURSOR_STYLE)}); (${MASK_FN.toString()})(${JSON.stringify(MASK_CFG)}); } catch (e) {} });` });
+  await ctx.addInitScript({ content: `window.addEventListener('DOMContentLoaded', () => { try { (${CURSOR_FN.toString()})(${JSON.stringify(CURSOR_STYLE)}); } catch (e) { console.error('[demo-studio] cursor failed:', e); } try { (${MASK_FN.toString()})(${JSON.stringify(MASK_CFG)}); } catch (e) { console.error('[demo-studio] masking failed, secrets are NOT blurred on this page:', e); } });` });
 }

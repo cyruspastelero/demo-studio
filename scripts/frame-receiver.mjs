@@ -1,6 +1,8 @@
 // Local sink for Chrome screencast frames posted from the Playwright session.
-// POST /start?take=<name>  -> creates <rec>/frames/<name>/, resets the index
-// POST /frame  {ts, b64}    -> writes fNNNNN.jpg and records its timestamp
+// POST /start?take=<name>  -> creates <rec>/frames/<name>/ (clearing an earlier take's frames,
+//                              ts.txt, end.txt and blur.jsonl there), resets the index
+// POST /frame  {ts, b64}    -> writes fNNNNN.jpg and records its timestamp; replies "skip" for a
+//                              repeat inside 1/30 s, "full" once the take hit MAX_FRAMES
 // POST /blur   {x,y,w,h,t[,until]} -> appends a post-encode blur box (CSS px, epoch s)
 // POST /stop                -> writes ts.txt (timestamps) + end.txt (stop time)
 // Run from the recordings dir: node frame-receiver.mjs [recordings-dir]
@@ -15,8 +17,8 @@
 import { createServer } from "node:http";
 import { randomBytes, timingSafeEqual } from "node:crypto";
 import {
-  closeSync, constants, existsSync, lstatSync, mkdirSync, openSync, readFileSync, renameSync, statfsSync,
-  writeFileSync, writeSync,
+  closeSync, constants, existsSync, lstatSync, mkdirSync, openSync, readdirSync, readFileSync, renameSync, statfsSync,
+  unlinkSync, writeFileSync, writeSync,
 } from "node:fs";
 import { join, resolve } from "node:path";
 
@@ -32,6 +34,8 @@ const MAX_SMALL_BODY = 4 * 1024;
 const TAKE = /^[A-Za-z0-9_][\w.-]*$/;
 const MAX_COORD = 100_000;
 const TOKEN_FILE = join(recordings, ".rx-token");
+// What a take writes; cleared on /start so a re-recorded take never keeps old frames or blur boxes.
+const TAKE_FILE = /^(f\d+\.jpg|ts\.txt|end\.txt|blur\.jsonl)$/;
 
 if (!Number.isInteger(port) || port < 1 || port > 65535) {
   console.error(`[frame-receiver] DEMO_RX_PORT must be a port number, got ${process.env.DEMO_RX_PORT}`);
@@ -168,7 +172,13 @@ async function handle(req, res, url) {
     const free = statfsSync(root);
     if (free.bavail * free.bsize < minFreeBytes) throw new HttpError(507, "not enough free disk space to record");
     realDir(root);
-    dir = realDir(join(root, take));
+    const takeDir = realDir(join(root, take));
+    // Only regular files directly inside the (non-symlink) take folder; links and folders stay.
+    for (const name of readdirSync(takeDir)) {
+      const path = join(takeDir, name);
+      if (TAKE_FILE.test(name) && lstatSync(path).isFile()) unlinkSync(path);
+    }
+    dir = takeDir;
     stamps = [];
     lastTs = 0;
   } else if (url.pathname === "/frame") {
@@ -176,7 +186,8 @@ async function handle(req, res, url) {
     if (!dir) throw new HttpError(409, "no active take");
     const { ts, b64 } = parseJson(body) ?? {};
     if (!finite(ts) || typeof b64 !== "string") throw new HttpError(400, "frame needs a numeric ts and a b64 string");
-    if (ts - lastTs < MIN_GAP || stamps.length >= MAX_FRAMES) { res.end("skip"); return; }
+    if (stamps.length >= MAX_FRAMES) { res.end("full"); return; }
+    if (ts - lastTs < MIN_GAP) { res.end("skip"); return; }
     const jpeg = Buffer.from(b64, "base64");
     if (jpeg.length < 3 || jpeg[0] !== 0xff || jpeg[1] !== 0xd8) throw new HttpError(400, "frame is not a JPEG");
     lastTs = ts;
