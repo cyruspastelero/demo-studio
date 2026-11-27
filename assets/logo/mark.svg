@@ -1,5 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="demo-studio">
-  <rect x="2" y="2" width="60" height="60" rx="15" fill="#d2430e"/>
-  <path d="M23 17.5 L45.5 32 L23 46.5 Z" fill="#ffffff" stroke="#ffffff" stroke-width="4" stroke-linejoin="round"/>
-  <path d="M37 33 V51 L41.6 46.8 L44.8 54 L48.2 52.5 L45.1 45.4 L51.4 45.4 Z" fill="#171717" stroke="#ffffff" stroke-width="2.2" stroke-linejoin="round"/>
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2c2c2c"/>
+      <stop offset="1" stop-color="#0c0c0c"/>
+    </linearGradient>
+    <radialGradient id="ember" cx="0.5" cy="1.05" r="0.7">
+      <stop offset="0" stop-color="#ff7a2e" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#ff7a2e" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#tile)"/>
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#ember)"/>
+  <rect x="2.5" y="2.5" width="59" height="59" rx="15.5" fill="none" stroke="#ffffff" stroke-opacity="0.16"/>
+  <path d="M23.5 19.5 L44 32 L23.5 44.5 Z" fill="#ffffff" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M36.5 34 V50.5 L40.6 46.8 L43.5 53.2 L46.6 51.8 L43.8 45.5 L49.4 45.5 Z" fill="#ff7a2e" stroke="#0c0c0c" stroke-width="2.4" stroke-linejoin="round"/>
 </svg>

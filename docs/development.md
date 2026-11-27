@@ -46,10 +46,17 @@ npm run test:e2e                     # editor end to end, headless Chrome on a t
 npm run screenshots -w app           # refresh docs/img/
 ```
 
-## The GitHub Pages site
+## The homepage
 
-`site/index.html` is the demo page at https://cyruspastelero.github.io/demo-studio/. The Pages
-workflow (`.github/workflows/pages.yml`) builds it:
+`site/index.html` is the demo page at https://demo-studio.pastelero.ph/, a Vercel project
+(`demo-studio`) with no git link. The Site workflow (`.github/workflows/site.yml`) builds it on
+every push that touches the site and keeps the result as an artifact named `site`. To publish it:
+
+```bash
+gh run download <run id> -n site -D /tmp/site && cd /tmp/site && npx vercel deploy --prod --project demo-studio
+```
+
+The workflow's build steps:
 
 1. `npm run build -w app && npm run build:static -w app` makes the live editor: a server-less build
    of the studio (`vite build --mode static`), plus `app/scripts/snapshot-static-demo.mjs`, which runs

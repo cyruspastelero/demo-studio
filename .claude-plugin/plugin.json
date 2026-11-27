@@ -6,6 +6,6 @@
     "name": "Cyrus David Pastelero"
   },
   "repository": "https://github.com/cyruspastelero/demo-studio",
-  "license": "Apache-2.0",
+  "license": "MIT",
   "keywords": ["demo", "video", "screen-recording", "playwright", "ffmpeg", "voiceover"]
 }

@@ -4,417 +4,331 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>demo-studio: a finished demo video of your real app, made by your coding agent</title>
+<title>demo-studio: demo videos of your real app, made by your coding agent</title>
 <meta name="description" content="Open-source skills for coding agents (Claude Code, Codex, Cursor, Gemini CLI, Copilot) that plan, record, cut and narrate a demo video of your real product. Free and local.">
-<link rel="canonical" href="https://cyruspastelero.github.io/demo-studio/">
-<meta name="theme-color" content="#0a0a0a">
+<link rel="canonical" href="https://demo-studio.pastelero.ph/">
+<meta name="theme-color" content="#0c0c0c">
 <link rel="icon" href="logo/mark.svg" type="image/svg+xml">
 <link rel="icon" href="logo/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="logo/apple-touch-icon.png">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="demo-studio">
-<meta property="og:url" content="https://cyruspastelero.github.io/demo-studio/">
-<meta property="og:title" content="demo-studio: a finished demo video of your real app">
+<meta property="og:url" content="https://demo-studio.pastelero.ph/">
+<meta property="og:title" content="demo-studio: demo videos of your real app">
 <meta property="og:description" content="Your coding agent plans it, records it, cuts and narrates it. Free, local, open source.">
-<meta property="og:image" content="https://cyruspastelero.github.io/demo-studio/og-image.png">
+<meta property="og:image" content="https://demo-studio.pastelero.ph/og-image.png">
 <meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="demo-studio: a finished demo video of your real app, with a frame from a sample video">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="demo-studio: a finished demo video of your real app">
+<meta name="twitter:title" content="demo-studio: demo videos of your real app">
 <meta name="twitter:description" content="Your coding agent plans it, records it, cuts and narrates it. Free, local, open source.">
-<meta name="twitter:image" content="https://cyruspastelero.github.io/demo-studio/og-image.png">
+<meta name="twitter:image" content="https://demo-studio.pastelero.ph/og-image.png">
 <meta name="twitter:image:alt" content="demo-studio: a finished demo video of your real app, with a frame from a sample video">
 <style>
 @font-face { font-family: "DM Sans"; src: url(fonts/dm-sans.woff2) format("woff2"); font-weight: 100 1000; font-display: swap; }
 @font-face { font-family: "Geist"; src: url(fonts/GeistVariable.woff2) format("woff2"); font-weight: 100 900; font-display: swap; }
 @font-face { font-family: "Geist Mono"; src: url(fonts/GeistMonoVariable.woff2) format("woff2"); font-weight: 100 900; font-display: swap; }
+@property --glow-x { syntax: "<percentage>"; inherits: true; initial-value: 20%; }
+@property --glow { syntax: "<number>"; inherits: true; initial-value: 0.34; }
+@property --haze { syntax: "<color>"; inherits: true; initial-value: #5d5752; }
 
 :root {
-  --canvas: #0a0a0a;
-  --graphite: #161616;
-  --glass: rgba(212, 212, 212, 0.06);
+  --canvas: #0c0c0c;
   --snow: #ffffff;
   --bone: #ededed;
-  --ash: #c2c2c2;
-  --slate: #8a8a8a;
-  --rule: rgba(229, 229, 229, 0.12);
-  --edge: rgba(229, 229, 229, 0.28);
-  --inset: rgba(255, 255, 255, 0.1) 0 0 0 1px inset;
-  --violet-wash: linear-gradient(90deg, transparent, transparent 30%, rgba(107, 98, 242, 0.565) 50%, transparent 70%, transparent);
+  --ash: #c9c9c9;
+  --slate: #9a9a9a;
+  --ember: #ff7a2e;
+  --rule: rgba(255, 255, 255, 0.14);
+  --inset: rgba(255, 255, 255, 0.12) 0 0 0 1px inset;
+  --glass: rgba(212, 212, 212, 0.08);
   --sans: "DM Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --head: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --aside: 30rem;
 }
 
 * { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; scroll-padding-top: 96px; }
-@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
-body { margin: 0; background: var(--canvas); color: var(--bone); font: 400 16px/1.56 var(--sans); -webkit-font-smoothing: antialiased; }
-a { color: inherit; text-underline-offset: 3px; text-decoration-color: var(--edge); }
+html { -webkit-text-size-adjust: 100%; background: var(--canvas); }
+body { margin: 0; color: var(--bone); font: 400 16px/1.55 var(--sans); -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-underline-offset: 3px; text-decoration-color: rgba(255, 255, 255, 0.35); }
 a:hover { text-decoration-color: currentColor; }
 :focus-visible { outline: 2px solid var(--snow); outline-offset: 3px; }
-h1, h2, h3 { text-wrap: balance; margin: 0; }
-p { text-wrap: pretty; }
+h1, h2, h3 { margin: 0; text-wrap: balance; font-weight: 500; }
+p { margin: 0; text-wrap: pretty; }
 code, pre { font-family: var(--mono); font-size: 0.88em; }
-p code, dd code, td code, li code { color: var(--snow); }
-.wrap { max-width: 1200px; margin: 0 auto; padding: 0 16px; }
-@media (min-width: 720px) { .wrap { padding: 0 24px; } }
 
-/* Floating frosted nav */
-.top { position: sticky; top: 16px; z-index: 10; display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  margin: 16px 0 0; padding: 8px 8px 8px 16px; border-radius: 19px; border: 1px solid var(--rule);
-  background: rgba(22, 22, 22, 0.78); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
-  box-shadow: rgba(255, 255, 255, 0.02) 0 3px 4.5px, rgba(0, 0, 0, 0.04) 0 10px 8px, rgba(0, 0, 0, 0.1) 0 4px 3px; }
-.brand { display: flex; align-items: center; gap: 10px; font: 500 16px var(--sans); letter-spacing: 0.01em; text-decoration: none; color: var(--snow); }
-.brand img { width: 24px; height: 24px; }
-.top nav { display: flex; align-items: center; gap: 4px; font-size: 14px; letter-spacing: 0.025em; }
-.top nav a { padding: 6px 14px; border-radius: 9999px; text-decoration: none; color: rgba(255, 255, 255, 0.72); }
-.top nav a:hover { color: var(--snow); background: rgba(255, 255, 255, 0.06); }
-.top nav .ghost { border: 1px solid var(--edge); color: rgba(255, 255, 255, 0.85); margin-left: 4px; }
-.top nav .solid { background: var(--snow); color: var(--graphite); font-weight: 500; padding: 6px 16px; }
-.top nav .solid:hover { background: var(--bone); color: var(--graphite); }
-@media (max-width: 860px) { .top nav .wide { display: none; } }
+/* The sky: black to white, with an ember glow that moves as you scroll */
+.sky { position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(70% 55% at var(--glow-x) 108%, rgb(255 122 46 / var(--glow)), transparent 70%),
+    radial-gradient(90% 60% at 80% -10%, rgb(255 255 255 / 0.07), transparent 70%),
+    linear-gradient(180deg, #0c0c0c 0%, #1b1b1b 38%, #33312f 68%, var(--haze) 100%);
+  transition: --glow-x 1.2s cubic-bezier(.2, .7, .2, 1), --glow 1.2s ease, --haze 1.2s ease; }
+body[data-scene="1"] { --glow-x: 20%; --glow: 0.34; --haze: #5d5752; }
+body[data-scene="2"] { --glow-x: 85%; --glow: 0.22; --haze: #4a4846; }
+body[data-scene="3"] { --glow-x: 55%; --glow: 0.30; --haze: #6a6460; }
+body[data-scene="4"] { --glow-x: 10%; --glow: 0.42; --haze: #5a514b; }
+body[data-scene="5"] { --glow-x: 70%; --glow: 0.26; --haze: #4f4c49; }
+body[data-scene="6"] { --glow-x: 35%; --glow: 0.18; --haze: #3f3e3d; }
+body[data-scene="7"] { --glow-x: 50%; --glow: 0.48; --haze: #625a54; }
 
-/* Buttons */
-.btn { display: inline-flex; align-items: center; padding: 10px 20px; border-radius: 9999px; background: var(--snow); color: var(--graphite);
-  font: 500 15px var(--sans); letter-spacing: 0.01em; text-decoration: none; }
+/* Status pill and floating nav */
+.status { position: fixed; z-index: 30; top: 20px; left: calc(var(--aside) + 48px); display: inline-flex; align-items: center; gap: 10px;
+  padding: 6px 14px; border-radius: 9999px; font-size: 13px; letter-spacing: 0.02em; text-decoration: none; color: var(--bone);
+  background: rgba(0, 0, 0, 0.35); box-shadow: var(--inset); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+.status::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--ember); }
+.status span { color: var(--slate); }
+.dock { position: fixed; z-index: 30; bottom: 24px; left: calc(var(--aside) + 20px + (100vw - var(--aside) - 20px) / 2); transform: translateX(-50%); display: flex; align-items: center; gap: 4px;
+  padding: 8px; border-radius: 9999px; background: rgba(0, 0, 0, 0.45); box-shadow: var(--inset), 0 10px 30px rgba(0, 0, 0, 0.35);
+  -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); font-size: 14px; letter-spacing: 0.02em; white-space: nowrap; }
+.dock a { padding: 7px 14px; border-radius: 9999px; text-decoration: none; color: rgba(255, 255, 255, 0.78); }
+.dock a:hover { color: var(--snow); background: rgba(255, 255, 255, 0.08); }
+.dock .brand { display: flex; align-items: center; gap: 8px; color: var(--snow); font-weight: 500; padding-right: 16px; margin-right: 4px; border-right: 1px solid var(--rule); border-radius: 9999px 0 0 9999px; }
+.dock .brand img { width: 20px; height: 20px; }
+.dock .solid { background: var(--snow); color: #161616; font-weight: 500; margin-left: 8px; }
+.dock .solid:hover { background: var(--bone); color: #161616; }
+
+/* Layout: sticky intro, ruler, scrolling scenes */
+.page { display: grid; grid-template-columns: var(--aside) 20px minmax(0, 1fr); }
+.intro { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; justify-content: space-between; padding: 64px 40px 40px; }
+.ruler { position: sticky; top: 0; height: 100vh;
+  background: repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.22) 0 1px, transparent 1px 26px) 4px 0 / 8px 100% no-repeat;
+  border-left: 1px solid var(--rule); }
+.ruler::after { content: ""; position: absolute; left: -3px; top: 66px; width: 5px; height: 5px; border-radius: 50%; background: var(--snow); }
+.scenes::before { content: ""; position: fixed; top: 68px; left: calc(var(--aside) + 20px); right: 0; border-top: 1px solid var(--rule); z-index: 20; }
+.scenes::after { content: ""; position: fixed; top: 0; left: calc(var(--aside) + 21px); right: 0; height: 88px; z-index: 15; pointer-events: none;
+  background: linear-gradient(180deg, #0c0c0c 0 62px, rgba(12, 12, 12, 0)); }
+
+h1 { font: 500 46px/1.04 var(--sans); letter-spacing: -0.035em; color: var(--snow); max-width: 12ch; }
+.points { list-style: none; margin: 28px 0 28px; padding: 0; display: grid; gap: 12px; font-size: 14.5px; color: var(--bone); }
+.points li { display: flex; gap: 10px; align-items: center; }
+.points svg { flex: none; width: 16px; height: 16px; opacity: 0.85; }
+.btn { display: inline-flex; padding: 9px 18px; border-radius: 9999px; background: var(--snow); color: #161616; font-weight: 500; font-size: 15px; text-decoration: none; }
 .btn:hover { background: var(--bone); }
-.btn.ghost { background: transparent; color: var(--snow); border: 1px solid rgba(255, 255, 255, 0.55); }
-.btn.ghost:hover { background: rgba(255, 255, 255, 0.1); }
 
-/* Hero: amber-to-cobalt horizon, the product rising out of it */
-.hero { margin: 24px 0 0; border-radius: 42px; overflow: hidden; color: var(--snow);
-  background: linear-gradient(100deg, #b45a1e 0%, #a24a34 24%, #6a3f9a 56%, #2b44b4 82%, #1a2f8f 100%); }
-.hero-text { display: grid; grid-template-columns: 7fr 5fr; gap: 32px 56px; padding: 72px 56px 56px; align-items: end; }
-.hero h1 { margin: 0 0 28px; font: 500 clamp(40px, 6.2vw, 72px)/1 var(--sans); letter-spacing: -0.035em; max-width: 15ch; }
-.hero .intro { margin: 0; font-size: 18px; line-height: 1.5; max-width: 46ch; color: rgba(255, 255, 255, 0.92); }
-.points { list-style: none; margin: 0 0 28px; padding: 0; display: grid; gap: 14px; }
-.points li { display: flex; gap: 12px; align-items: flex-start; font-size: 16px; line-height: 1.45; }
-.points svg { flex: none; margin-top: 2px; width: 18px; height: 18px; }
-.actions { display: flex; flex-wrap: wrap; gap: 12px; }
-.device { margin: 0 56px; border-radius: 40px 40px 0 0; overflow: hidden; background: #000; box-shadow: var(--inset); }
-.device video { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; }
-.hero-caption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; margin: 14px 8px 0; font-size: 13px; letter-spacing: 0.025em; color: var(--slate); }
-@media (max-width: 860px) {
-  .hero { border-radius: 28px; background: linear-gradient(170deg, #b45a1e 0%, #9a4a3a 30%, #6a3f9a 60%, #2b44b4 100%); }
-  .hero-text { grid-template-columns: 1fr; padding: 48px 24px 32px; }
-  .device { margin: 0 16px; border-radius: 24px 24px 0 0; }
-}
+.toc h2 { font: 600 18px var(--head); color: var(--snow); margin: 0 0 14px; }
+.toc ol { list-style: none; margin: 0; padding: 0; }
+.toc a { position: relative; display: flex; justify-content: space-between; padding: 8px 10px; border-radius: 10px; text-decoration: none; color: rgba(255, 255, 255, 0.72); font-size: 15px; transition: background-color .3s, color .3s; }
+.toc a span { color: var(--slate); font-variant-numeric: tabular-nums; }
+.toc a:hover { color: var(--snow); }
+.toc a[aria-current="true"] { background: rgba(255, 255, 255, 0.09); color: var(--snow); padding-left: 18px; }
+.toc a[aria-current="true"]::before { content: ""; position: absolute; left: 8px; top: 9px; bottom: 9px; width: 2px; border-radius: 2px; background: var(--ember); }
 
-/* Sections */
-section { padding: 112px 0 0; }
-h2 { font: 600 clamp(26px, 3vw, 32px)/1.25 var(--head); letter-spacing: -0.01em; color: var(--bone); max-width: 26ch; }
-.lead { color: var(--ash); font-size: 18px; line-height: 1.55; max-width: 58ch; margin: 14px 0 40px; }
+.scene { min-height: 100vh; padding: 112px 48px 72px; display: flex; flex-direction: column; gap: 32px; }
+.scene header { max-width: 68ch; }
+.scene h2 { font: 500 40px/1.1 var(--sans); letter-spacing: -0.035em; color: var(--snow); }
+.scene header p { margin-top: 12px; font-size: 16px; color: var(--ash); }
+.scene header code { color: var(--snow); }
 
-/* Video frames and captions */
-.screen { margin: 0; border-radius: 24px; overflow: hidden; background: #000; box-shadow: var(--inset); }
-.screen video, .screen img { display: block; width: 100%; height: auto; }
-.screen video { aspect-ratio: 16 / 9; }
-.caption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; margin: 12px 8px 0; font-size: 13px; letter-spacing: 0.025em; color: var(--slate); }
-.caption a { color: var(--ash); }
+/* A slow ember sheen crosses each title once, when its scene arrives */
+.scene h2 { background: linear-gradient(100deg, #fff 0 42%, #ffc59e 50%, #fff 58% 100%) 100% 0 / 300% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; }
+.scene.seen h2 { animation: sheen 2.2s cubic-bezier(.3, .6, .2, 1) both; }
+@keyframes sheen { from { background-position: 100% 0; } to { background-position: 0 0; } }
 
-/* Numbered rows: used only where the content is a real sequence */
-.rows { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--rule); }
-.rows li { display: grid; grid-template-columns: 4fr 7fr auto; gap: 8px 32px; align-items: baseline; padding: 20px 0; border-bottom: 1px solid var(--rule); }
-.rows h3 { font: 500 18px/1.4 var(--sans); color: var(--bone); }
-.rows p { margin: 0; color: var(--ash); }
-.rows .n { font: 400 15px var(--sans); color: var(--slate); font-variant-numeric: tabular-nums; }
-.rows .skill { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 10px; border: 1px solid var(--rule); font-size: 12px; color: var(--ash); }
-@media (max-width: 720px) { .rows li { grid-template-columns: 1fr auto; } .rows p { grid-column: 1 / -1; grid-row: 2; } }
+/* Visuals */
+.frame { margin: 0; border-radius: 24px; overflow: hidden; background: #000; box-shadow: var(--inset), 0 30px 60px rgba(0, 0, 0, 0.35); }
+.frame video, .frame img { display: block; width: 100%; height: auto; }
+.frame video { aspect-ratio: 16 / 9; }
+.note { font-size: 13px; letter-spacing: 0.02em; color: var(--slate); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; margin-top: -16px; }
+.note a { color: var(--ash); }
 
-/* Live editor */
-.editor-frame { position: relative; border-radius: 24px; overflow: hidden; background: var(--graphite); box-shadow: var(--inset); }
-.editor-frame::before { content: ""; position: absolute; inset: 0 0 auto; height: 1px; background: var(--violet-wash); z-index: 1; }
-.editor-frame iframe { display: block; width: 100%; height: 720px; border: 0; }
-@media (min-width: 1260px) { .editor-frame { width: min(1400px, calc(100vw - 48px)); margin-left: 50%; transform: translateX(-50%); } }
-.editor-small { display: none; }
-@media (max-width: 899px) { .editor-frame { display: none; } .editor-small { display: block; } }
+.editor { position: relative; border-radius: 24px; overflow: hidden; background: #fafafa; box-shadow: var(--inset), 0 30px 60px rgba(0, 0, 0, 0.35); aspect-ratio: 1280 / 780; }
+.editor iframe { position: absolute; top: 0; left: 0; width: 1280px; height: 780px; border: 0; transform-origin: 0 0; }
+.editor-gif { display: none; }
 
-.split { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 48px; align-items: start; }
-@media (max-width: 760px) { .split { grid-template-columns: 1fr; } }
+.viewer { display: grid; gap: 16px; }
+.switch { justify-self: start; display: inline-flex; gap: 2px; padding: 4px; border-radius: 9999px; background: rgba(0, 0, 0, 0.35); box-shadow: var(--inset); }
+.switch button { padding: 7px 16px; border: 0; border-radius: 9999px; background: transparent; color: rgba(255, 255, 255, 0.72); font: 400 14px var(--sans); letter-spacing: 0.02em; cursor: pointer; transition: background-color .25s, color .25s; }
+.switch button:hover { color: var(--snow); }
+.switch button[aria-selected="true"] { background: var(--snow); color: #161616; font-weight: 500; }
+.stage img { aspect-ratio: 16 / 9; transition: opacity .35s ease; }
+.stage img.fading { opacity: 0; }
+.look-text { font-size: 14px; color: var(--ash); }
+.facts { margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.facts div { padding: 24px 28px; border-radius: 24px; background: var(--glass); box-shadow: var(--inset); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.facts dt { font-weight: 500; color: var(--snow); }
+.facts dd { margin: 6px 0 0; color: var(--ash); font-size: 15px; }
 
-/* Frosted fact panels */
-.facts { margin: 0; display: grid; gap: 8px; }
-.facts div { padding: 20px 24px; border-radius: 24px; background: var(--glass); box-shadow: var(--inset); }
-.facts dt { font: 500 16px/1.4 var(--sans); color: var(--snow); }
-.facts dd { margin: 4px 0 0; color: var(--ash); font-size: 15px; }
-.facts.pair { grid-template-columns: 1fr 1fr; }
-@media (max-width: 760px) { .facts.pair { grid-template-columns: 1fr; } }
-
-/* Templates */
-.strip { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin: 0 0 14px; }
-.strip img { display: block; width: 100%; height: auto; border-radius: 10px; box-shadow: var(--inset); }
-@media (max-width: 760px) { .strip { grid-template-columns: repeat(3, 1fr); } }
-.controls { margin: 0; font-size: 13px; letter-spacing: 0.025em; color: var(--slate); }
-.how { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 48px; }
-.how > div { padding: 28px; border-radius: 24px; background: var(--glass); box-shadow: var(--inset); }
-.how h3 { font: 500 18px/1.4 var(--sans); color: var(--snow); margin-bottom: 8px; }
-.how p { margin: 0 0 14px; color: var(--ash); font-size: 15px; }
-@media (max-width: 860px) { .how { grid-template-columns: 1fr; } }
-pre { margin: 0; padding: 16px 18px; background: var(--canvas); border-radius: 10px; box-shadow: var(--inset); overflow-x: auto; font-size: 13px; line-height: 1.65; color: var(--bone); }
-
-/* Style galleries */
-.styles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-top: 40px; }
-@media (max-width: 1100px) { .styles { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 560px) { .styles { grid-template-columns: 1fr; } }
-.styles figure { margin: 0; }
-.styles img { display: block; width: 100%; height: auto; border-radius: 10px; box-shadow: var(--inset); }
-.styles figcaption { margin-top: 12px; font-size: 15px; color: var(--ash); }
-.styles figcaption b { display: block; color: var(--snow); font: 500 16px var(--sans); margin-bottom: 2px; }
-.video-lead { margin-top: 0; }
-
-/* Tables */
-.table { overflow-x: auto; margin-top: 12px; }
-.rows + .table { margin-top: 48px; }
-table { width: 100%; border-collapse: collapse; font-size: 15px; }
-th, td { text-align: left; vertical-align: top; padding: 14px 20px 14px 0; border-top: 1px solid var(--rule); }
-th { font: 500 13px var(--sans); letter-spacing: 0.025em; color: var(--slate); border-top: 0; padding-top: 0; }
-td:first-child { font-weight: 500; color: var(--bone); white-space: nowrap; }
-td:last-child { white-space: nowrap; }
-td.m { color: var(--ash); }
-td code { overflow-wrap: anywhere; }
-@media (max-width: 600px) { td:first-child, td:last-child { white-space: normal; } th, td { padding-right: 12px; } }
-.cols { display: grid; grid-template-columns: 5fr 7fr; gap: 48px; margin-top: 8px; align-items: start; }
-.cols > * { min-width: 0; }
-.cols h3 { font: 500 18px var(--sans); color: var(--snow); margin: 0 0 12px; }
-@media (max-width: 860px) { .cols { grid-template-columns: 1fr; gap: 32px; } }
-.note { font-size: 15px; color: var(--slate); max-width: 64ch; margin: 20px 0 0; }
-.note a, .note code { color: var(--ash); }
-
-/* Start: the one prompt, lit from behind */
-#start .prompt { position: relative; margin-top: 8px; }
-#start .prompt::before { content: ""; position: absolute; inset: -80px -40px; z-index: -1; pointer-events: none;
-  background: radial-gradient(closest-side, rgba(107, 98, 242, 0.22), transparent); }
-.prompt pre { white-space: pre-wrap; overflow-wrap: anywhere; padding: 24px 104px 24px 24px; border-radius: 24px; background: var(--graphite); font-size: 14px; }
-.copy { position: absolute; top: 16px; right: 16px; padding: 7px 16px; border: 0; border-radius: 9999px; cursor: pointer;
-  background: var(--snow); color: var(--graphite); font: 500 14px var(--sans); }
+.prompt { position: relative; }
+.prompt pre { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; padding: 28px 112px 28px 28px; border-radius: 24px;
+  background: rgba(10, 10, 10, 0.7); box-shadow: var(--inset); font-size: 14px; line-height: 1.7; color: var(--bone); }
+.copy { position: absolute; top: 18px; right: 18px; padding: 7px 16px; border: 0; border-radius: 9999px; cursor: pointer; background: var(--snow); color: #161616; font: 500 14px var(--sans); }
 .copy:hover { background: var(--bone); }
-.say { border-radius: 24px; background: var(--glass); box-shadow: var(--inset); padding: 20px 24px; margin: 24px 0 0; }
-.say span { display: block; font-size: 13px; letter-spacing: 0.025em; color: var(--slate); margin-bottom: 4px; }
-.say p { margin: 0; font-size: 18px; color: var(--snow); }
+.say { padding: 22px 28px; border-radius: 24px; background: var(--glass); box-shadow: var(--inset); }
+.say span { display: block; font-size: 13px; color: var(--slate); margin-bottom: 4px; }
+.say p { font-size: 18px; color: var(--snow); }
+.small { font-size: 14px; color: var(--slate); max-width: 72ch; }
+.small code, .small a { color: var(--ash); }
 
-footer { margin-top: 128px; padding: 24px 0 40px; border-top: 1px solid var(--rule); font-size: 13px; letter-spacing: 0.025em; color: var(--slate);
-  display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; }
-footer a { color: var(--ash); }
+footer { position: relative; overflow: hidden; container-type: inline-size; margin-top: 48px; padding: 72px 48px 128px; border-top: 1px solid var(--rule); }
+.foot { display: grid; grid-template-columns: minmax(0, 2fr) repeat(3, minmax(0, 1fr)); gap: 32px; }
+.foot-brand { display: grid; gap: 16px; align-content: start; }
+.foot-brand p { max-width: 30ch; font-size: 15px; color: var(--ash); }
+.foot nav { display: grid; gap: 10px; align-content: start; font-size: 14px; }
+.foot h2 { font: 500 13px var(--sans); letter-spacing: 0.02em; color: var(--slate); margin: 0 0 4px; }
+.foot a { color: var(--bone); text-decoration: none; }
+.foot a:hover { color: var(--snow); text-decoration: underline; }
+.wordmark { margin: 72px 0 0; font: 500 15.5cqw/0.9 var(--sans); letter-spacing: -0.06em; white-space: nowrap; user-select: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0) 78%); -webkit-background-clip: text; background-clip: text; color: transparent;
+  padding-bottom: 0.08em; }
+@media (min-width: 1100px) {
+  html { scroll-snap-type: y proximity; }
+  .scene { scroll-snap-align: start; }
+}
+@media (max-width: 1099px) {
+  .page { display: block; }
+  .intro { position: static; height: auto; padding: 88px 20px 24px; }
+  .toc, .ruler, .scenes::before, .scenes::after { display: none; }
+  h1 { font-size: clamp(38px, 9vw, 52px); }
+  .status { position: absolute; left: 20px; top: 16px; }
+  .scene { min-height: 0; padding: 72px 20px 0; gap: 24px; }
+  .scene h2 { font-size: clamp(28px, 7vw, 36px); }
+  .editor { display: none; }
+  .editor-gif { display: block; }
+  .dock { left: 50%; }
+  .dock .wide { display: none; }
+  footer { padding: 56px 20px 112px; margin-top: 72px; }
+  .foot { grid-template-columns: 1fr 1fr; }
+  .foot-brand { grid-column: 1 / -1; }
+  .wordmark { margin-top: 48px; }
+}
+@media (max-width: 640px) {
+  .facts { grid-template-columns: 1fr; }
+  .switch { justify-self: stretch; justify-content: space-between; }
+  .switch button { padding: 7px 10px; }
+  .prompt pre { padding: 64px 20px 20px; }
+  .dock { width: calc(100% - 32px); justify-content: space-between; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sky { transition: none; }
+  .stage img { transition: none; }
+  .scene.seen h2 { animation: none; background-position: 0 0; }
+  html { scroll-snap-type: none; }
+}
 </style>
 </head>
-<body>
-<div class="wrap">
-  <header class="top">
-    <a class="brand" href="./"><img src="logo/mark.svg" alt="">demo-studio</a>
-    <nav aria-label="Page">
-      <a class="wide" href="#editor">Editor</a>
-      <a class="wide" href="#templates">Templates</a>
-      <a class="wide" href="#ads">Launch ads</a>
-      <a class="wide" href="#sound">Sound</a>
-      <a class="wide" href="#local">Local and safe</a>
-      <a class="ghost" href="https://github.com/cyruspastelero/demo-studio">GitHub</a>
-      <a class="solid" href="#start">Install</a>
-    </nav>
-  </header>
+<body data-scene="1">
+<div class="sky" aria-hidden="true"></div>
+<a class="status" href="https://github.com/cyruspastelero/demo-studio">Free and open source <span>MIT licensed, on GitHub</span></a>
 
-  <main>
-    <div class="hero">
-      <div class="hero-text">
-        <div>
-        <h1>Tell your coding agent the goal. Get a finished demo video of your real&nbsp;app.</h1>
-        <p class="intro">demo-studio is a set of open-source skills for Claude Code, Codex, Cursor, Gemini CLI, Copilot and other coding agents. Your agent plans the story, records each scene in a real browser, then cuts and narrates the video.</p>
-        </div>
-        <div>
-          <ul class="points">
-            <li><svg viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="8.25" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".6"/><path d="M5.5 9.2l2.3 2.3 4.7-4.9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Plans the story and shows it to you before recording anything</span></li>
-            <li><svg viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="8.25" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".6"/><path d="M5.5 9.2l2.3 2.3 4.7-4.9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Clicks through your real app in Chrome, with secrets blurred</span></li>
-            <li><svg viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="8.25" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".6"/><path d="M5.5 9.2l2.3 2.3 4.7-4.9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Cuts, narrates and mixes the video to a measured quality bar</span></li>
-            <li><svg viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="8.25" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".6"/><path d="M5.5 9.2l2.3 2.3 4.7-4.9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Runs on your machine. Nothing to sign up for</span></li>
-          </ul>
-          <div class="actions">
-            <a class="btn" href="#start">Install it</a>
-            <a class="btn ghost" href="#editor">Try the editor</a>
-          </div>
-        </div>
-      </div>
-      <figure class="device" style="margin-bottom:0">
+<div class="page">
+  <aside class="intro">
+    <div>
+      <h1>Demo videos of your real app, made by your coding agent.</h1>
+      <ul class="points">
+        <li><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="1.75" y="3.25" width="12.5" height="9.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M6.75 6.2v3.6L9.9 8z" fill="currentColor"/></svg>Records your product in a real browser</li>
+        <li><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 4.5h11M2.5 8h7M2.5 11.5h9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Shows you the plan before it films</li>
+        <li><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 9.5v-3M5.5 12V4M8.5 10V6M11.5 13V3M14 9V7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Cuts, narrates and mixes it for you</li>
+        <li><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>Runs on your machine, no account</li>
+      </ul>
+      <a class="btn" href="#start">Install it</a>
+    </div>
+    <nav class="toc" aria-label="Sections">
+      <h2>Inside demo-studio</h2>
+      <ol>
+        <li><a href="#record" aria-current="true">Record<span>01</span></a></li>
+        <li><a href="#editor">Edit<span>02</span></a></li>
+        <li><a href="#looks">Looks<span>03</span></a></li>
+        <li><a href="#ads">Launch ads<span>04</span></a></li>
+        <li><a href="#sound">Sound<span>05</span></a></li>
+        <li><a href="#local">Local and safe<span>06</span></a></li>
+        <li><a href="#start">Install<span>07</span></a></li>
+      </ol>
+    </nav>
+  </aside>
+  <div class="ruler" aria-hidden="true"></div>
+
+  <main class="scenes">
+    <section class="scene" id="record" data-scene="1" aria-labelledby="record-h">
+      <header>
+        <h2 id="record-h">Your real app, filmed and finished</h2>
+        <p>Tell Claude Code, Codex, Cursor, Gemini CLI or Copilot what the demo should show. It writes the plan and shows it to you, then clicks through your product in Chrome, records each scene with secrets blurred, and cuts the video.</p>
+      </header>
+      <figure class="frame">
         <video controls preload="none" playsinline poster="img/sample-showcase-poster.jpg" aria-label="Study app showcase, made by demo-studio">
           <source src="media/sample-showcase.mp4" type="video/mp4">
         </video>
       </figure>
-    </div>
-    <p class="hero-caption"><span>Study app showcase, 1:18, 1080p with sound</span><span>Recorded and finished by the plugin. No AI footage.</span></p>
-
-    <section id="stages" aria-labelledby="stages-h">
-      <h2 id="stages-h">Six stages, each one a skill you can also run on its own.</h2>
-      <p class="lead">Your agent shows you the plan first and records nothing until you say go. After that it runs every stage to the end, stopping only for a login code, or for a step that would cost money or can't be undone.</p>
-      <ol class="rows">
-        <li><h3>Plan</h3><p>Brief, run sheet with exact on-screen text, shot list, voiceover draft. <span class="skill">demo-plan</span></p><span class="n">01</span></li>
-        <li><h3>Prep</h3><p>Sandbox account, a seeded demo user, a test run of every step. <span class="skill">demo-plan</span></p><span class="n">02</span></li>
-        <li><h3>Record</h3><p>One clean 2x screencast per scene, secrets blurred in the page. <span class="skill">demo-record</span></p><span class="n">03</span></li>
-        <li><h3>Review</h3><p>The keeper takes, uncut, in story order, to check before editing. <span class="skill">demo-edit</span></p><span class="n">04</span></li>
-        <li><h3>Edit</h3><p>Keynote cut, narration and music, mixed to -14 LUFS. <span class="skill">demo-edit</span></p><span class="n">05</span></li>
-        <li><h3>Hand off</h3><p>Editor folder and zip, plus 4:5 and 9:16 cuts. <span class="skill">demo-handoff</span></p><span class="n">06</span></li>
-      </ol>
+      <p class="note"><span>Study app showcase, 1:18, with sound</span><span>Recorded and finished by the plugin. No AI footage.</span></p>
     </section>
 
-    <section id="editor" aria-labelledby="editor-h">
-      <h2 id="editor-h">Fix the cut yourself, in a timeline that runs on 127.0.0.1.</h2>
-      <p class="lead">This is the real editor, opened on the todo sample from the repo. Scrub the timeline, retime a shot, drag and edit text right on the video, pick a font, or rewrite a voiceover line. On your machine it saves to <code>demo.json</code> and renders; here, edits stay in the tab.</p>
-      <div class="editor-frame">
-        <iframe src="editor/?open" title="demo-studio editor, live demo with the todo sample" loading="lazy"></iframe>
-      </div>
-      <div class="editor-small">
-        <figure class="screen"><img src="img/editor.gif" alt="The editor on the todo sample: playing the cut, selecting a scene and editing its voiceover" loading="lazy"></figure>
-        <p class="caption"><span>The editor needs a wider screen.</span><a href="editor/?open">Open it anyway</a></p>
-      </div>
-      <p class="caption"><span>Live demo with no server. Rendering needs the local studio.</span><a href="editor/?open">Open full screen</a></p>
+    <section class="scene" id="editor" data-scene="2" aria-labelledby="editor-h">
+      <header>
+        <h2 id="editor-h">Fix the cut yourself</h2>
+        <p>This is the real editor, opened on the todo sample. Scrub the timeline, retime a shot, drag text on the video or rewrite a voiceover line. On your machine it saves to <code>demo.json</code> and renders. Here, edits stay in this tab.</p>
+      </header>
+      <div class="editor"><iframe src="editor/?open" title="demo-studio editor, live demo with the todo sample" loading="lazy"></iframe></div>
+      <figure class="frame editor-gif"><img src="img/editor.gif" alt="The editor on the todo sample: playing the cut, selecting a scene and editing its voiceover" loading="lazy"></figure>
+      <p class="note"><span>Live demo with no server. Rendering needs the local studio.</span><a href="editor/?open">Open full screen</a></p>
+    </section>
 
-      <div class="split">
-        <div>
-          <figure class="screen">
-            <video controls preload="none" playsinline poster="img/sample-todo-poster.jpg" aria-label="Todo app sample, the finished cut of the demo in the editor">
-              <source src="media/sample-todo.mp4" type="video/mp4">
-            </video>
-          </figure>
-          <p class="caption"><span>The finished todo sample, 0:37</span><a href="https://github.com/cyruspastelero/demo-studio/tree/main/examples/todo-sample">Its plan and takes</a></p>
+    <section class="scene" id="looks" data-scene="3" aria-labelledby="looks-h">
+      <header>
+        <h2 id="looks-h">Pick a look, or copy one</h2>
+        <p>The window, zooms, titles, ending and loudness all come from one <code>template.json</code>. Four looks are built in. Point the agent at a video you like and it measures that look and saves it as a new template.</p>
+      </header>
+      <div class="viewer">
+        <div class="switch" role="tablist" aria-label="Built-in looks">
+          <button type="button" role="tab" id="look-house" aria-controls="look-stage" aria-selected="true" data-src="img/looks/house-stage.png" data-alt="The todo sample in the House look" data-text="A floating window on soft pastels. The default.">House</button>
+          <button type="button" role="tab" id="look-midnight" aria-controls="look-stage" aria-selected="false" data-src="img/looks/midnight-stage.png" data-alt="The todo sample in the Midnight look" data-text="Dark and cinematic, for developer tools.">Midnight</button>
+          <button type="button" role="tab" id="look-paper" aria-controls="look-stage" aria-selected="false" data-src="img/looks/paper-stage.png" data-alt="The todo sample in the Paper look" data-text="Warm and editorial, with square corners.">Paper</button>
+          <button type="button" role="tab" id="look-mono" aria-controls="look-stage" aria-selected="false" data-src="img/looks/mono-stage.png" data-alt="The todo sample in the Mono look" data-text="Plain greys, so your product brings the colour.">Mono</button>
         </div>
-        <dl class="facts">
-          <div><dt>Your product, not a mock-up</dt><dd>Every frame is the app running in Chrome, driven by Playwright with an eased pointer and human typing.</dd></div>
-          <div><dt>Secrets never reach a frame</dt><dd>Sensitive fields are masked in the page before capture. Passwords stay in your macOS Keychain, never in a file.</dd></div>
-          <div><dt>Nothing leaves the laptop</dt><dd>No account, no cloud, no telemetry. Narration can be macOS <code>say</code> or your own voice; ElevenLabs only if you ask.</dd></div>
-          <div><dt>Checked, not eyeballed</dt><dd><code>check-cut.py</code> measures every finished cut against a written quality bar: zoom timing, loudness, end card.</dd></div>
-        </dl>
+        <figure class="frame stage" id="look-stage" role="tabpanel" aria-labelledby="look-house">
+          <img src="img/looks/house-stage.png" alt="The todo sample in the House look" width="1280" height="720">
+        </figure>
+        <p class="look-text" aria-live="polite">A floating window on soft pastels. The default.</p>
       </div>
     </section>
 
-    <section id="templates" aria-labelledby="templates-h">
-      <h2 id="templates-h">The look is a template, so the setup grows with you.</h2>
-      <p class="lead">Window, zooms, highlights, callouts, titles, ending and loudness all come from one <code>template.json</code>. Four looks are built in; these six frames are the default <code>house</code> look, drawn on the todo sample.</p>
-      <div class="strip" role="list" aria-label="The house look, six preview frames">
-        <img role="listitem" src="img/house/01.png" alt="Title card" loading="lazy">
-        <img role="listitem" src="img/house/02.png" alt="The window at rest on a pastel background" loading="lazy">
-        <img role="listitem" src="img/house/03.png" alt="A zoom with a highlight box" loading="lazy">
-        <img role="listitem" src="img/house/04.png" alt="A callout pill under the window" loading="lazy">
-        <img role="listitem" src="img/house/05.png" alt="End card" loading="lazy">
-        <img role="listitem" src="img/house/06.png" alt="Logo outro on dark" loading="lazy">
-      </div>
-      <p class="controls">A template sets the brand, window, zoom, highlight, pill, title, transitions, end card, pacing and audio.</p>
-      <div class="styles looks">
-        <figure><img src="img/looks/house.png" alt="House look: a title in Inter on a soft pastel background" loading="lazy"><figcaption><b>House</b>The default. A floating window on a soft drifting pastel background.</figcaption></figure>
-        <figure><img src="img/looks/midnight.png" alt="Midnight look: a huge bold title on near-black" loading="lazy"><figcaption><b>Midnight</b>Cinematic and dark, with huge bold titles. For dark apps and developer tools.</figcaption></figure>
-        <figure><img src="img/looks/paper.png" alt="Paper look: a thin title on a warm cream background" loading="lazy"><figcaption><b>Paper</b>Warm and editorial: wide margins, square corners, thin titles.</figcaption></figure>
-        <figure><img src="img/looks/mono.png" alt="Mono look: a bold title on plain greys" loading="lazy"><figcaption><b>Mono</b>Greys only, so your product's colour is the only colour.</figcaption></figure>
-      </div>
-
-      <div class="how">
-        <div>
-          <h3>Pick one per demo</h3>
-          <p>One line in the demo's plan. Your brand colours and logo still win, so one template serves every product.</p>
-<pre>{ "title": "Acme invoices",
-  "template": "house" }</pre>
-        </div>
-        <div>
-          <h3>Copy the look of any video</h3>
-          <p>Say "copy the look of launch.mp4". The <code>demo-template</code> skill measures zoom timing, colours, window shape and loudness from the file, fills the rest by eye, and saves a new template with previews.</p>
-        </div>
-        <div>
-          <h3>Share it as a folder</h3>
-          <p>A template is a folder: <code>template.json</code>, a README and six previews, with no file paths inside. Drop it in <code>_templates/</code> and the studio lists it; a same-named one replaces a built-in.</p>
-        </div>
-      </div>
-    </section>
-
-    <section id="ads" aria-labelledby="ads-h">
-      <h2 id="ads-h">The same footage, cut as a launch ad.</h2>
-      <p class="lead">Skill <code>demo-motion</code> turns a demo's real screens into a short motion piece: words that land on the beat, floating UI, a typed prompt, a finished check. It renders 16:9, 4:5 and 9:16 from one <code>storyboard.json</code>. This one is demo-studio's own launch ad, made with it.</p>
-      <figure class="screen">
+    <section class="scene" id="ads" data-scene="4" aria-labelledby="ads-h">
+      <header>
+        <h2 id="ads-h">The same footage, cut as a launch ad</h2>
+        <p>The <code>demo-motion</code> skill turns your real screens into a short piece timed to the music, in 16:9, 4:5 and 9:16. This is demo-studio's own launch ad, made with it.</p>
+      </header>
+      <figure class="frame">
         <video controls preload="none" playsinline poster="img/sample-launch-ad-poster.jpg" aria-label="demo-studio launch ad, made with the demo-motion skill">
           <source src="media/sample-launch-ad.mp4" type="video/mp4">
         </video>
       </figure>
-      <p class="caption"><span>demo-studio launch ad in the airy style, with sound</span><a href="https://github.com/cyruspastelero/demo-studio/tree/main/examples/launch-ad">Its storyboard</a></p>
-
-      <div class="styles">
-        <figure><img src="img/motion/airy.jpg" alt="Airy style: dark words on a warm off-white page, one accent word" loading="lazy"><figcaption><b>Airy</b>Light and calm. Words blur in one by one over floating panels.</figcaption></figure>
-        <figure><img src="img/motion/daylight.jpg" alt="Daylight style: a headline typed with a caret on a clean white page with a soft brand-colour glow" loading="lazy"><figcaption><b>Daylight</b>Clean white, rounded type, headlines typed with a caret. Brand-colour shapes sweep between sections.</figcaption></figure>
-        <figure><img src="img/motion/nocturne.jpg" alt="Nocturne style: large light text on near-black, with your brand colour glowing from below" loading="lazy"><figcaption><b>Nocturne</b>Near-black, with your brand colour glowing up from below. Suits finance and data products.</figcaption></figure>
-        <figure><img src="img/motion/showroom.jpg" alt="Showroom style: words typed on a grey stage, product on a deep blue lit stage" loading="lazy"><figcaption><b>Showroom</b>Words typed out on a grey stage, the product on a lit blue one. Hard cuts, slow pull-backs.</figcaption></figure>
-      </div>
-      <p class="note">A style is one <code>style.json</code> in <code>motion-templates/</code>: palette, type, easing and depth. Your logo and brand colour come from the storyboard, so every style fits any product. Add your own the same way.</p>
-
-      <div class="split">
-        <div>
-          <figure class="screen">
-            <video controls preload="none" playsinline poster="img/sample-launch-poster.jpg" aria-label="The narrated walkthrough of demo-studio, made with demo-studio">
-              <source src="media/sample-launch.mp4" type="video/mp4">
-            </video>
-          </figure>
-          <p class="caption"><span>The narrated walkthrough, 1:10</span><a href="https://github.com/cyruspastelero/demo-studio/tree/main/examples/demo-studio-launch">Its plan and scenes</a></p>
-        </div>
-        <dl class="facts">
-          <div><dt>Both made from one plan</dt><dd>The walkthrough is the keynote cut with narration; the ad reuses the same recorded screens.</dd></div>
-          <div><dt>Copy either one</dt><dd>Both samples are in <code>examples/</code>. Swap in your own screens, words and logo, and render.</dd></div>
-          <div><dt>Music on the beat</dt><dd>The ad's cuts are timed to the beats measured in its music track, then mixed to -14 LUFS.</dd></div>
-        </dl>
-      </div>
+      <p class="note"><span>Launch ad in the airy style, with sound</span><a href="https://github.com/cyruspastelero/demo-studio/tree/main/examples/launch-ad">Its storyboard</a></p>
     </section>
 
-    <section id="sound" aria-labelledby="sound-h">
-      <h2 id="sound-h">The voiceover is written with the plan, then timed, voiced and mixed by one script.</h2>
-      <p class="lead">Each shot in <code>demo.json</code> carries its own <code>voiceover</code> line. <code>narrate.py</code> turns those lines into the narrated cut, using plain ffmpeg on your machine.</p>
-      <ol class="rows">
-        <li><h3>Fit</h3><p>Every line is checked against the time before the next shot, at about 2.5 words a second. A long line is flagged before any voice is made, so nothing is paid for twice.</p><span class="n">01</span></li>
-        <li><h3>Voice</h3><p>Each line is rendered and placed at the start of its shot. Lines made through ElevenLabs are cached, so a re-run costs nothing.</p><span class="n">02</span></li>
-        <li><h3>Music</h3><p>A bed from <code>music/bed.m4a</code> loops under the cut, sits 13&nbsp;dB below the voice and drops 7&nbsp;dB more under each line, with no pumping. It fades in and out.</p><span class="n">03</span></li>
-        <li><h3>Mix</h3><p>Loudness lands at -14 LUFS with true peak under -1 dBTP, then <code>check-cut.py</code> measures it again on the finished file.</p><span class="n">04</span></li>
-      </ol>
-
-      <div class="table">
-        <table>
-          <thead><tr><th>Voice</th><th>Where it runs</th><th>Cost</th></tr></thead>
-          <tbody>
-            <tr><td>macOS <code>say</code></td><td class="m">On your Mac. The default when nothing else is set up.</td><td class="m">Free</td></tr>
-            <tr><td>Your own recordings</td><td class="m">Files you drop in <code>voiceover/01.mp3</code>, <code>02.mp3</code>… <code>--export-lines</code> lists each line with its time and word budget.</td><td class="m">Free</td></tr>
-            <tr><td>ElevenLabs</td><td class="m">Only if you choose it: an API key read from your shell or macOS Keychain, or the ElevenLabs MCP. The key is never written to a file.</td><td class="m">Your plan</td></tr>
-            <tr><td>Higgsfield</td><td class="m">Only if you choose it, through its MCP. The agent saves each line as a file, then mixes them like your own recordings.</td><td class="m">Your credits</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <p class="note">Music works the same way: your own licensed instrumental, or one made with ElevenLabs <code>compose_music</code> or Higgsfield. With no bed, a sine-pad placeholder fills in and the script warns until you replace it. Both sample videos on this page use ElevenLabs narration and music.</p>
+    <section class="scene" id="sound" data-scene="5" aria-labelledby="sound-h">
+      <header>
+        <h2 id="sound-h">Voice and music, mixed for you</h2>
+        <p>Each shot carries its own voiceover line. <code>narrate.py</code> checks every line fits its shot, voices it, lays music under it and mixes to -14 LUFS. Use macOS <code>say</code>, your own recordings, or ElevenLabs if you choose.</p>
+      </header>
+      <figure class="frame">
+        <video controls preload="none" playsinline poster="img/sample-launch-poster.jpg" aria-label="The narrated walkthrough of demo-studio, made with demo-studio">
+          <source src="media/sample-launch.mp4" type="video/mp4">
+        </video>
+      </figure>
+      <p class="note"><span>The narrated walkthrough, 1:10</span><a href="https://github.com/cyruspastelero/demo-studio/tree/main/examples/demo-studio-launch">Its plan and scenes</a></p>
     </section>
 
-    <section id="local" aria-labelledby="local-h">
-      <h2 id="local-h">It runs on your laptop. There is nothing to sign up for.</h2>
-      <p class="lead">No demo-studio account, no cloud service, no telemetry. Your footage, plans and renders stay in a <code>demos/</code> folder on your disk, and git ignores it.</p>
-      <div class="cols">
-        <dl class="facts">
-          <div><dt>Test accounts only</dt><dd>Recording uses a sandbox or demo login, signed in before the camera starts. Steps that cost money or can't be deleted stop and ask first.</dd></div>
-          <div><dt>Secrets are masked before capture</dt><dd>Token-shaped text and values next to known labels are blurred in the page itself, before a frame is taken, and every frame is checked after. Passwords stay in your macOS&nbsp;Keychain.</dd></div>
-          <div><dt>The editor is not on the network</dt><dd>The studio listens on 127.0.0.1 only. Demo folders from other people are treated as untrusted: paths stay inside the folder and title cards render sandboxed.</dd></div>
-          <div><dt>What does leave</dt><dd>Your coding agent talks to its own AI provider as it always does. ElevenLabs or Higgsfield get your voiceover text only if you pick them.</dd></div>
-        </dl>
-        <div>
-          <h3>What it runs on</h3>
-          <div class="table">
-            <table>
-              <thead><tr><th>Tool</th><th>For</th><th>Licence</th></tr></thead>
-              <tbody>
-                <tr><td>Node.js 20+</td><td class="m">Recorder, card rendering, the studio</td><td class="m">MIT</td></tr>
-                <tr><td>Python 3.10+</td><td class="m">Edit, narration and check scripts, standard library only</td><td class="m">PSF</td></tr>
-                <tr><td>ffmpeg</td><td class="m">Encoding, mixing, loudness</td><td class="m">LGPL/GPL</td></tr>
-                <tr><td>Google Chrome</td><td class="m">The recorded browser and the title renderer</td><td class="m">Google</td></tr>
-                <tr><td>Playwright MCP</td><td class="m">Lets your agent drive the browser, pinned to 0.0.84</td><td class="m">Apache-2.0</td></tr>
-                <tr><td>npm packages</td><td class="m">playwright-core, React, Ajv, lucide, pinned and locked</td><td class="m">Apache-2.0, MIT, ISC</td></tr>
-              </tbody>
-            </table>
-          </div>
-          <p class="note"><code>bash scripts/doctor.sh</code> checks each one and prints the fix. Versions, fonts and checksums: <a href="https://github.com/cyruspastelero/demo-studio/blob/main/docs/dependencies.md">dependencies</a>. How to report a problem: <a href="https://github.com/cyruspastelero/demo-studio/blob/main/SECURITY.md">security policy</a>.</p>
-        </div>
-      </div>
+    <section class="scene" id="local" data-scene="6" aria-labelledby="local-h">
+      <header>
+        <h2 id="local-h">It runs on your laptop</h2>
+        <p>No account, no cloud service, no telemetry. Footage, plans and renders stay in a <code>demos/</code> folder that git ignores.</p>
+      </header>
+      <dl class="facts">
+        <div><dt>Test accounts only</dt><dd>Recording uses a sandbox or demo login. Steps that cost money or can't be undone stop and ask.</dd></div>
+        <div><dt>Secrets blurred before capture</dt><dd>Tokens and sensitive fields are masked in the page itself. Passwords stay in your macOS Keychain.</dd></div>
+        <div><dt>The editor stays local</dt><dd>The studio listens on 127.0.0.1 only, and treats demo folders from other people as untrusted.</dd></div>
+        <div><dt>What does leave</dt><dd>Your agent talks to its own AI provider as usual. ElevenLabs gets your voiceover text only if you pick it.</dd></div>
+      </dl>
+      <p class="small">It needs Node.js 20+, Python 3.10+, ffmpeg and Chrome. <code>bash scripts/doctor.sh</code> checks each one. Details: <a href="https://github.com/cyruspastelero/demo-studio/blob/main/docs/dependencies.md">dependencies</a> and <a href="https://github.com/cyruspastelero/demo-studio/blob/main/SECURITY.md">security policy</a>.</p>
     </section>
 
-    <section id="start" aria-labelledby="start-h">
-      <h2 id="start-h">Paste one prompt into your coding agent, then say what the demo should show.</h2>
-      <p class="lead">It works in Claude Code, Codex, Cursor, Gemini CLI, Copilot and other agents. The agent sets everything up and asks before installing anything. Prefer to do it by hand? The <a href="https://github.com/cyruspastelero/demo-studio/blob/main/docs/getting-started.md">getting started guide</a> has every step.</p>
+    <section class="scene" id="start" data-scene="7" aria-labelledby="start-h">
+      <header>
+        <h2 id="start-h">Start with one prompt</h2>
+        <p>Paste this into your coding agent. It sets everything up and asks before installing anything. Prefer to do it by hand? Read the <a href="https://github.com/cyruspastelero/demo-studio/blob/main/docs/getting-started.md">getting started guide</a>.</p>
+      </header>
 <div class="prompt"><button type="button" class="copy" data-copy="setup-prompt">Copy</button>
 <pre id="setup-prompt">Set up demo-studio for me so I can make product demo videos.
 1. Clone https://github.com/cyruspastelero/demo-studio.git and work inside that folder.
@@ -426,36 +340,105 @@ footer a { color: var(--ash); }
 5. Run bash scripts/new-workspace.sh ./demos
 6. Tell me if I need to restart you to load the browser tool,
    then how to start my first demo.</pre></div>
-      <p class="note">Using Claude Code? You can also install it as a plugin: <code>/plugin marketplace add cyruspastelero/demo-studio</code>, then <code>/plugin install demo-studio@demo-studio</code>.</p>
       <div class="say">
         <span>Then say</span>
-        <p>Make a demo of app.example.com. Goal: a new user creates a project and invites a teammate. I'm logged in to the sandbox in the Playwright browser.</p>
+        <p>Make a demo of app.example.com. Goal: a new user creates a project and invites a teammate.</p>
       </div>
+      <p class="small">On Claude Code you can also install the plugin: <code>/plugin marketplace add cyruspastelero/demo-studio</code>, then <code>/plugin install demo-studio@demo-studio</code>.</p>
     </section>
-  </main>
 
-  <footer>
-    <span>Apache License 2.0. Made by Cyrus David Pastelero. Fonts under the SIL Open Font License.</span>
-    <a href="https://github.com/cyruspastelero/demo-studio">Source on GitHub</a>
-  </footer>
+    <footer>
+      <div class="foot">
+        <div class="foot-brand">
+          <img src="logo/mark.svg" alt="" width="36" height="36">
+          <p>Demo videos of your real app, made by your coding agent. Free, local and MIT licensed.</p>
+        </div>
+        <nav aria-label="Product"><h2>Product</h2><a href="#editor">Editor</a><a href="#looks">Looks</a><a href="#ads">Launch ads</a><a href="#sound">Sound</a></nav>
+        <nav aria-label="Project"><h2>Project</h2><a href="https://github.com/cyruspastelero/demo-studio">GitHub</a><a href="https://github.com/cyruspastelero/demo-studio/blob/main/docs/getting-started.md">Getting started</a><a href="https://github.com/cyruspastelero/demo-studio/blob/main/CHANGELOG.md">Changelog</a></nav>
+        <nav aria-label="Legal"><h2>Legal</h2><a href="https://github.com/cyruspastelero/demo-studio/blob/main/LICENSE">MIT License</a><a href="https://github.com/cyruspastelero/demo-studio/blob/main/SECURITY.md">Security</a><a href="https://github.com/cyruspastelero/demo-studio/blob/main/NOTICE">Font credits</a></nav>
+      </div>
+      <p class="wordmark" aria-hidden="true">demo-studio</p>
+    </footer>
+  </main>
 </div>
+
+<nav class="dock" aria-label="Page">
+  <a class="brand" href="#record"><img src="logo/mark.svg" alt="">demo-studio</a>
+  <a class="wide" href="#editor">Editor</a>
+  <a class="wide" href="#looks">Looks</a>
+  <a class="wide" href="#ads">Launch ads</a>
+  <a href="https://github.com/cyruspastelero/demo-studio">GitHub</a>
+  <a class="solid" href="#start">Install</a>
+</nav>
+
 <script>
 // Copy buttons: the text of the element named in data-copy. Without clipboard access, select it instead.
 for (const button of document.querySelectorAll('.copy')) {
   button.addEventListener('click', async () => {
-    const text = document.getElementById(button.dataset.copy).innerText;
+    const target = document.getElementById(button.dataset.copy);
     try {
-      await navigator.clipboard.writeText(text);
+      await navigator.clipboard.writeText(target.innerText);
       button.textContent = 'Copied';
     } catch {
       const range = document.createRange();
-      range.selectNodeContents(document.getElementById(button.dataset.copy));
+      range.selectNodeContents(target);
       getSelection().removeAllRanges();
       getSelection().addRange(range);
       button.textContent = 'Press Cmd+C';
     }
     setTimeout(() => { button.textContent = 'Copy'; }, 1800);
   });
+}
+
+// The scene in the middle of the screen drives the list highlight and the sky.
+const links = new Map([...document.querySelectorAll('.toc a')].map(a => [a.hash.slice(1), a]));
+const watcher = new IntersectionObserver(entries => {
+  for (const entry of entries) {
+    if (!entry.isIntersecting) continue;
+    const scene = entry.target;
+    scene.classList.add('seen');
+    document.body.dataset.scene = scene.dataset.scene;
+    for (const [id, a] of links) a.setAttribute('aria-current', String(id === scene.id));
+  }
+}, { rootMargin: '-45% 0px -45% 0px' });
+document.querySelectorAll('.scene').forEach(s => watcher.observe(s));
+
+// Look switcher: tabs swap the picture with a short crossfade; arrow keys move between tabs.
+const tabs = [...document.querySelectorAll('.switch [role="tab"]')];
+const stageImage = document.querySelector('#look-stage img');
+const lookText = document.querySelector('.look-text');
+function selectLook(tab) {
+  for (const t of tabs) { t.setAttribute('aria-selected', String(t === tab)); t.tabIndex = t === tab ? 0 : -1; }
+  document.getElementById('look-stage').setAttribute('aria-labelledby', tab.id);
+  lookText.textContent = tab.dataset.text;
+  const next = new Image();
+  next.src = tab.dataset.src;
+  stageImage.classList.add('fading');
+  next.decode().catch(() => {}).finally(() => {
+    stageImage.src = tab.dataset.src;
+    stageImage.alt = tab.dataset.alt;
+    stageImage.classList.remove('fading');
+  });
+}
+tabs.forEach((tab, i) => {
+  tab.tabIndex = i === 0 ? 0 : -1;
+  tab.addEventListener('click', () => selectLook(tab));
+  tab.addEventListener('keydown', event => {
+    const step = { ArrowRight: 1, ArrowLeft: -1 }[event.key];
+    if (!step) return;
+    const next = tabs[(i + step + tabs.length) % tabs.length];
+    next.focus();
+    selectLook(next);
+  });
+});
+
+// The live editor is laid out at 1280 px and scaled to fit its frame.
+const editor = document.querySelector('.editor');
+const frame = editor?.querySelector('iframe');
+if (editor && frame) {
+  new ResizeObserver(([entry]) => {
+    frame.style.transform = `scale(${entry.contentRect.width / 1280})`;
+  }).observe(editor);
 }
 </script>
 </body>

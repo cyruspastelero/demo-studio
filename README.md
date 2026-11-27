@@ -10,12 +10,12 @@
 
 <p align="center">
   <a href="https://github.com/cyruspastelero/demo-studio/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/cyruspastelero/demo-studio/actions/workflows/ci.yml/badge.svg"></a>
-  <a href="LICENSE"><img alt="License: Apache 2.0" src="https://img.shields.io/badge/license-Apache%202.0-d2430e"></a>
+  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-d2430e"></a>
   <img alt="Free and local" src="https://img.shields.io/badge/runs-locally-171717">
 </p>
 
 <p align="center">
-  <a href="https://cyruspastelero.github.io/demo-studio/"><b>Live demo</b></a>
+  <a href="https://demo-studio.pastelero.ph/"><b>Live demo</b></a>
   &nbsp;·&nbsp;
   <a href="#quick-start"><b>Quick start</b></a>
   &nbsp;·&nbsp;
@@ -141,7 +141,7 @@ end to end, no login needed ([10-minute walkthrough](docs/getting-started.md#fir
   editor.
 - **An editor to fix things yourself:** `npm run studio` opens it. Play the cut, retime shots, move and
   edit text on the video, and rewrite a voiceover line to see if it still fits.
-  [Try it in the browser](https://cyruspastelero.github.io/demo-studio/#editor).
+  [Try it in the browser](https://demo-studio.pastelero.ph/#editor).
 
 <p align="center">
   <img src="docs/img/editor.gif" alt="The editor on the todo sample: playing the cut, selecting a scene and adding words to its voiceover while the fit readout updates" width="860">
@@ -222,5 +222,5 @@ Plans: [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## License
 
-Apache License 2.0. If you use or adapt this code, keep the [NOTICE](NOTICE) file, which credits
-Cyrus David Pastelero. See [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE). The bundled fonts keep their own SIL Open Font License; [NOTICE](NOTICE)
+lists them.

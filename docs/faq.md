@@ -33,7 +33,7 @@ Two things do leave it:
 
 ### What does it cost?
 
-- demo-studio is free and open source (Apache 2.0).
+- demo-studio is free and open source (MIT).
 - Its tools are free: Playwright, Chrome, ffmpeg, Python and Node.
 - Your coding agent runs on your usual plan.
 - Narration is free with macOS `say` or your own voice. ElevenLabs and Higgsfield cost money only if

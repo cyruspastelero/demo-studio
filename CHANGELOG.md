@@ -4,6 +4,9 @@ Notable changes, newest first. Versions follow semver as described in CONTRIBUTI
 
 ## Unreleased
 
+- **License is now MIT** (was Apache-2.0). NOTICE now only credits the bundled fonts.
+- **New homepage at https://demo-studio.pastelero.ph**: a sticky intro with a list that follows
+  your scroll, one screen per feature, and the live editor. It is served from Vercel; GitHub Pages is retired.
 - **`video-gate.py`**: checks any finished mp4 with no plan file: a blank picture (FAIL at 1 s), the
   longest frozen and quiet stretches (LOOK), decoding to the end (FAIL) and a missing audio stream
   (LOOK). The edit and motion skills run it on every cut `check-cut.py` does not cover (G1 to G4a in
