@@ -10,6 +10,7 @@ import { isPassiveMedia, parseCsv, sendFile } from './media.mjs';
 import { insideAny, PathError, resolveInside } from './paths.mjs';
 import { renderCommand } from './render.mjs';
 import { createStudio } from './server.mjs';
+import { freeName } from './try-example.mjs';
 
 const REPO = fileURLToPath(new URL('../../', import.meta.url));
 const EXAMPLE = join(REPO, 'examples', 'acme-invoice-bot');
@@ -150,7 +151,7 @@ describe('save and load', () => {
     } finally {
       store.close();
     }
-  });
+  }, 15000); // fs.watch delivery slows under load; the poll inside allows 5 s
 
   it('reports an outside edit through the watcher', async () => {
     cpSync(join(EXAMPLE, 'demo.json'), join(dir, 'demo.json'));
@@ -171,6 +172,15 @@ describe('save and load', () => {
     } finally {
       store.close();
     }
+  }, 15000); // fs.watch delivery slows under load; the poll inside allows 5 s
+});
+
+describe('try a copy', () => {
+  it('names the copy after the example, then -2, -3 when taken', () => {
+    expect(freeName(dir, 'acme')).toBe(join(dir, 'acme'));
+    mkdirSync(join(dir, 'acme'));
+    mkdirSync(join(dir, 'acme-2'));
+    expect(freeName(dir, 'acme')).toBe(join(dir, 'acme-3'));
   });
 });
 
@@ -296,6 +306,18 @@ describe('http server', () => {
     for (const bad of ['/fonts/secret.woff2', '/fonts/fonts%2F..%2Fsecret.woff2', '/fonts/fonts%2Fmissing.woff2', '/fonts/handoff.json']) {
       expect((await get(bad)).status).toBe(404);
     }
+  });
+
+  it('makes a card picture from a still image too (a preview.jpg)', async () => {
+    cpSync(join(REPO, 'examples', 'acme-invoice-bot', 'preview.jpg'), join(demo, 'preview.jpg'));
+    const res = await get(`/api/demo-thumb?demo=${encodeURIComponent(demo)}&path=preview.jpg&t=1&w=160`);
+    expect(res.status).toBe(200);
+    expect(res.body.length).toBeGreaterThan(500);
+  });
+
+  it('copies only listed examples into the demos folder, under a free name', async () => {
+    expect((await post('/api/try-example', { path: demo })).status).toBe(403); // a demo of the user's, not an example
+    expect((await post('/api/try-example', { path: join(REPO, 'scripts') })).status).toBe(403);
   });
 
   it('rejects cross-site requests on every route', async () => {

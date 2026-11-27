@@ -139,7 +139,9 @@ export function thumbnail(file, seconds, width) {
   const key = `${file}:${statSync(file).mtimeMs}:${seconds.toFixed(2)}:${width}`;
   if (thumbs.has(key)) return thumbs.get(key);
   const promise = new Promise((resolvePromise, reject) => {
-    queue.push(() => run('ffmpeg', ['-v', 'error', '-ss', String(seconds), ...PROTOCOL_WHITELIST, ...FORMAT_WHITELIST, '-i', file, '-frames:v', '1',
+    // A still image (a folder's preview.jpg) has no time to seek to: -ss would give no frame at all.
+    const seek = /\.(png|jpe?g)$/i.test(file) ? [] : ['-ss', String(seconds)];
+    queue.push(() => run('ffmpeg', ['-v', 'error', ...seek, ...PROTOCOL_WHITELIST, ...FORMAT_WHITELIST, '-i', file, '-frames:v', '1',
       '-vf', `scale=${width}:-2`, '-f', 'image2pipe', '-c:v', 'mjpeg', '-q:v', '5', '-'], { binary: true })
       .then(resolvePromise, reject));
     pump();

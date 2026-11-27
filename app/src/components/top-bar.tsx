@@ -1,4 +1,4 @@
-import { ChevronLeft, Clapperboard, Film, Gauge, Image, Keyboard, Layers, Package, Redo2, Smartphone, Undo2 } from 'lucide-react';
+import { ChevronLeft, Clapperboard, Film, Gauge, Image, Keyboard, Layers, Redo2, Smartphone, Undo2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { ThemeSwitch } from './theme-switch';
 import type { SaveStatus } from '../state/use-documents';
@@ -6,10 +6,13 @@ import type { Aspect, FileKind } from '../lib/types';
 
 export interface RenderOption {
   kind: string;
+  group: string; // the heading it sits under in the menu
   label: string;
-  detail: string;
+  detail: string; // what it is for, in one plain sentence
+  output: string; // what you get and where: format, size, folder
   icon: React.ReactNode;
   enabled: boolean;
+  why?: string; // why it is greyed out
 }
 
 const STATUS_TEXT: Record<SaveStatus, string> = {
@@ -17,14 +20,25 @@ const STATUS_TEXT: Record<SaveStatus, string> = {
   error: 'Save failed', conflict: 'Changed on disk',
 };
 
+// What each export makes, said the way a person would ask for it. Paths are the defaults in recordings/.
 export function renderOptions(has: { handoff: boolean; demo: boolean; social: boolean; takes: boolean }, current: string): RenderOption[] {
   return [
-    { kind: 'quick', label: `Quick preview (${current})`, detail: '960x540, ultrafast. A faithful check of speed changes and cards.', icon: <Gauge size={16} />, enabled: true },
-    { kind: 'cards', label: 'Title cards', detail: 'title-cards.mjs: card PNGs from handoff.json', icon: <Image size={16} />, enabled: has.handoff },
-    { kind: 'handoff', label: 'Editor handoff', detail: 'build-handoff.py: clips, scripts, voiceover, zip', icon: <Package size={16} />, enabled: has.handoff },
-    { kind: 'keynote', label: 'Keynote cut', detail: 'build-keynote.py from demo.json', icon: <Film size={16} />, enabled: has.demo },
-    { kind: 'reel', label: 'Review reel', detail: 'review-reel.py: keeper takes in story order', icon: <Layers size={16} />, enabled: has.takes },
-    { kind: 'social', label: 'Social versions', detail: 'social-cut.py: 4:5 and 9:16 (needs the handoff first)', icon: <Smartphone size={16} />, enabled: has.handoff && has.social },
+    { kind: 'quick', group: 'Check your edit', label: `Quick preview of ${current}`, icon: <Gauge size={16} />, enabled: true,
+      detail: 'A fast, low-resolution video of this edit with its text, to check timing and cuts. Not for sharing.',
+      output: `MP4 · 960×540 · recordings/exports/${current}-quick-preview.mp4` },
+    { kind: 'keynote', group: 'Finished videos', label: 'Keynote video', icon: <Film size={16} />, enabled: has.demo,
+      detail: 'The polished video, ready to share: titles, the app in a floating window, zooms and caption pills.',
+      output: 'MP4 · 1920×1080 · recordings/exports/', why: 'Needs a demo.json plan' },
+    { kind: 'social', group: 'Finished videos', label: 'Social media versions', icon: <Smartphone size={16} />, enabled: has.handoff && has.social,
+      detail: 'Portrait copies of the promo for Instagram, TikTok and LinkedIn feeds, with a caption band on top.',
+      output: 'MP4 · 4:5 and 9:16 · recordings/editor-handoff/social/',
+      why: has.handoff ? 'Needs a social entry in handoff.json' : 'Needs a handoff.json' },
+    { kind: 'cards', group: 'Images and footage', label: 'Title cards as images', icon: <Image size={16} />, enabled: has.handoff,
+      detail: 'Each title card as a picture, to reuse in slides, posts or another editor.',
+      output: 'PNG · 1920×1080 · recordings/editor-handoff/assets/title-cards/', why: 'Needs a handoff.json' },
+    { kind: 'reel', group: 'Images and footage', label: 'Review reel', icon: <Layers size={16} />, enabled: has.takes,
+      detail: 'Every kept take back to back, in story order, to look over the raw footage.',
+      output: 'MP4 · 1920×1080 · recordings/exports/review-reel.mp4', why: 'Needs recorded takes' },
   ];
 }
 
@@ -104,12 +118,16 @@ export function TopBar({
           <Clapperboard size={15} />{rendering ? 'Rendering' : 'Render'}
         </button>
         {menu && (
-          <div className="menu" role="menu">
+          <div className="menu render-menu" role="menu" aria-label="Export">
+            <div className="render-menu-head"><b>Export</b><span>Files are saved in this demo's recordings/ folder.</span></div>
             {options.map((o, i) => (
               <div key={o.kind}>
-                {i === 1 && <hr />}
-                <button role="menuitem" disabled={!o.enabled} data-testid={`render-${o.kind}`} onClick={() => { setMenu(false); onRender(o.kind); }}>
-                  {o.icon}<span>{o.label}</span><small>{o.detail}</small>
+                {o.group !== options[i - 1]?.group && <div className="render-group eyebrow" role="presentation">{o.group}</div>}
+                <button role="menuitem" disabled={!o.enabled} data-testid={`render-${o.kind}`} title={o.enabled ? undefined : o.why}
+                  onClick={() => { setMenu(false); onRender(o.kind); }}>
+                  {o.icon}<span className="render-label">{o.label}</span>
+                  <small>{o.enabled ? o.detail : `${o.why}. ${o.detail}`}</small>
+                  <small className="render-output mono">{o.output}</small>
                 </button>
               </div>
             ))}

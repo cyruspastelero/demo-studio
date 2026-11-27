@@ -79,8 +79,10 @@ try {
 
   await step('trims a shared shot for this video only', async () => {
     await page.click('[data-testid="video-tab-PROMO"]');
+    await page.locator('[data-shot-id="0:0:1"]').click();
+    // No question: a shared shot used in several places changes in this video only by default.
+    assert.match(await page.locator('[data-testid="ref-note"]').innerText(), /PROMO only/);
     await dragHandle(page, '0:0:1', 'right', -40);
-    await page.click('[data-testid="ref-override"]');
     const shot = await waitFor(() => {
       const s = readHandoff(folder).videos[0].scenes[0].shots[1];
       return s.out !== undefined ? s : null;
@@ -350,7 +352,7 @@ try {
 
   await step('cancels a running render', async () => {
     await page.click('[data-testid="render-button"]');
-    await page.click('[data-testid="render-handoff"]');
+    await page.click('[data-testid="render-social"]'); // long: it builds the rough assemblies first
     await page.waitForSelector('[data-testid="render-drawer"][data-status="running"]');
     await page.click('[data-testid="render-drawer"] button:has-text("Cancel")');
     await page.waitForSelector('[data-testid="render-drawer"][data-status="cancelled"]', { timeout: 10000 });

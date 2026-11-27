@@ -63,8 +63,9 @@ export function Editor({ session, onClose }: {
   const [job, setJob] = useState<RenderState | null>(session.render);
   const [drawer, setDrawer] = useState(Boolean(session.render && session.render.status === 'running'));
   const [help, setHelp] = useState(false);
-  const [refAsk, setRefAsk] = useState<{ scene: number; shot: number; patch: ShotPatch; ref: string } | null>(null);
-  const refChoice = useRef(new Map<string, RefMode>());
+  // A shared shot ({"ref": ...}) used in several places: edits go to this video only unless the
+  // inspector's switch says "All uses". Used once, the shared shot itself is edited: same result.
+  const [refModes, setRefModes] = useState<Record<string, RefMode>>({});
   const [player, setPlayer] = useState<Player | null>(null);
   // The raw take open in the source viewer, and the cut playhead to return to.
   const [source, setSource] = useState<{ take: SourceTake; returnTo: number } | null>(null);
@@ -105,7 +106,6 @@ export function Editor({ session, onClose }: {
   useEffect(() => {
     player?.setLoop(loop && selectedShot ? { start: selectedShot.start, end: selectedShot.start + selectedShot.length } : null);
   }, [player, loop, selectedShot]);
-  useEffect(() => { refChoice.current.clear(); }, [selectedShot?.id]);
 
   const runEdit = useCallback((edit: Edit) => {
     if (!doc) return;
@@ -122,13 +122,12 @@ export function Editor({ session, onClose }: {
   const onShotPatch = useCallback((scene: number, shot: number, patch: ShotPatch) => {
     const spec = fileKind === 'handoff' ? (doc as HandoffDoc).videos[videoIndex]?.scenes[scene]?.shots[shot] : undefined;
     if (spec && isRefShot(spec)) {
-      const mode = refChoice.current.get(`${scene}:${shot}`);
-      if (mode) runEdit({ op: 'shot', scene, shot, patch, mode });
-      else setRefAsk({ scene, shot, patch, ref: spec.ref });
+      const shared = refUses(doc as HandoffDoc, spec.ref) <= 1 || refModes[spec.ref] === 'shared';
+      runEdit({ op: 'shot', scene, shot, patch, mode: shared ? 'shared' : 'override' });
       return;
     }
     runEdit({ op: 'shot', scene, shot, patch });
-  }, [doc, fileKind, videoIndex, runEdit]);
+  }, [doc, fileKind, videoIndex, runEdit, refModes]);
 
   const startRender = async (kind: string) => {
     const ok = (await Promise.all(fileTabs.map((k) => docs.saveNow(k)))).every(Boolean);
@@ -214,7 +213,7 @@ export function Editor({ session, onClose }: {
     help: () => setHelp((h) => !h),
     escape: () => undefined,
     markIn: () => undefined,
-  }, !help && !refAsk && !docs.conflict);
+  }, !help && !docs.conflict);
 
   const has = {
     handoff: Boolean(session.files.handoff), demo: Boolean(session.files.demo),
@@ -264,6 +263,7 @@ export function Editor({ session, onClose }: {
         )} />
       {doc ? (
         <Inspector kind={fileKind} doc={doc} videoIndex={videoIndex} timeline={timeline} selection={selection}
+          videoKey={videoKey ?? ''} refModes={refModes} onRefMode={(ref, mode) => setRefModes((m) => ({ ...m, [ref]: mode }))}
           onSelect={setSelection} onEdit={runEdit} onShotPatch={onShotPatch} durations={durations} fits={fits}
           errors={built.error ? [built.error, ...docs.errors[fileKind]] : docs.errors[fileKind]} />
       ) : <aside className="panel inspector"><div className="inspector-body"><div className="note bad">{built.error}</div></div></aside>}
@@ -273,24 +273,6 @@ export function Editor({ session, onClose }: {
 
       {drawer && job && <RenderDrawer job={job} onClose={() => setDrawer(false)} onError={(m) => notify(m, 'error')} />}
       {help && <ShortcutsOverlay onClose={() => setHelp(false)} />}
-      {refAsk && handoff && (
-        <Modal title={`Change the shared shot ${refAsk.ref}?`} onClose={() => setRefAsk(null)}>
-          <p>This shot reuses the named shot <b>{refAsk.ref}</b>, which appears {refUses(handoff, refAsk.ref)} time(s) across the videos.</p>
-          <div className="actions">
-            <button className="btn" onClick={() => setRefAsk(null)}>Cancel</button>
-            {(['override', 'shared'] as RefMode[]).map((mode) => (
-              <button key={mode} className={`btn${mode === 'shared' ? '' : ' primary'}`} data-testid={`ref-${mode}`}
-                onClick={() => {
-                  refChoice.current.set(`${refAsk.scene}:${refAsk.shot}`, mode);
-                  runEdit({ op: 'shot', scene: refAsk.scene, shot: refAsk.shot, patch: refAsk.patch, mode });
-                  setRefAsk(null);
-                }}>
-                {mode === 'shared' ? 'Change it everywhere' : `Only in ${videoKey}`}
-              </button>
-            ))}
-          </div>
-        </Modal>
-      )}
       {docs.conflict && (
         <Modal title={`${docs.conflict.kind}.json changed on disk`}>
           <p>Someone (maybe Claude) edited {docs.conflict.kind}.json while you had unsaved changes here. Which version do you want to keep?</p>

@@ -4,7 +4,7 @@
 // shared/static-key.mjs. The static build (vite --mode static) then replays them with no server.
 //
 //   npm run build -w app && npx vite build --mode static (in app/) && node app/scripts/snapshot-static-demo.mjs
-import { cpSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, mkdtempSync, readdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -25,8 +25,14 @@ function fail(message) {
 }
 
 // Local paths in recorded JSON become neutral ones, so the published files name no one's machine.
+// The workspace both as given and as its real path (macOS temp folders live under /private), so a
+// copied demo's folder scrubs as cleanly as the rest.
 function scrub(text, workspace) {
-  return text.split(REPO).join('~/demo-studio').split(join(workspace, 'demos')).join('~/demos').split(workspace).join('~');
+  let out = text.split(REPO).join('~/demo-studio');
+  for (const root of [realpathSync(workspace), workspace]) {
+    out = out.split(join(root, 'demos')).join('~/demos').split(root).join('~');
+  }
+  return out;
 }
 
 function save(key, body) {
@@ -43,11 +49,12 @@ async function record(page, workspace) {
     const method = res.request().method();
     if (!url.pathname.startsWith('/api/') || url.pathname === '/api/events' || !res.ok()) return;
     if (url.pathname.startsWith('/api/template-preview/')) return; // copied from look-templates
-    const isOpen = method === 'POST' && url.pathname === '/api/open';
+    // "Try a copy" opens the copied example; the static app replays it as its /api/open answer.
+    const isOpen = method === 'POST' && (url.pathname === '/api/open' || url.pathname === '/api/try-example');
     if (method !== 'GET' && !isOpen) return;
     // The app asks with the scrubbed paths it was given (encodeURIComponent keeps "~"), so name
     // the file after that request, not the one made against this machine's real paths.
-    const asked = (url.pathname + url.search)
+    const asked = (isOpen ? '/api/open' : url.pathname + url.search)
       .split(encodeURIComponent(REPO)).join(encodeURIComponent('~/demo-studio'))
       .split(encodeURIComponent(join(workspace, 'demos'))).join(encodeURIComponent('~/demos'))
       .split(encodeURIComponent(workspace)).join(encodeURIComponent('~'));
@@ -80,7 +87,8 @@ async function main() {
     await page.waitForTimeout(1500);
     await page.getByText('Overview', { exact: true }).first().click();
     await page.waitForTimeout(1000);
-    await page.getByTestId('demo-item').first().click();
+    // The todo sample: the example that ships its own takes, so the live demo plays real footage.
+    await page.locator('[data-testid="demo-card"][data-demo="todo-sample"] [data-testid="example-try"]').click();
     await page.waitForSelector('.timeline, [data-testid="timeline"]', { timeout: 20000 }).catch(() => {});
     await page.waitForTimeout(5000);
     await settle();

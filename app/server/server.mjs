@@ -9,6 +9,7 @@ import { demoDir, isPassiveMedia, mediaIndex, sendFile, thumbnail } from './medi
 import { insideAny, PathError, resolveInside } from './paths.mjs';
 import { RenderRunner } from './render.mjs';
 import { listTemplates, previewFile } from './templates.mjs';
+import { tryExample } from './try-example.mjs';
 import { FontError, fontFile, fontFormat, listFonts } from '../../scripts/fonts.mjs';
 
 const APP_DIR = fileURLToPath(new URL('..', import.meta.url));
@@ -179,6 +180,14 @@ export function createStudio({ repo, cwd, folder: initialFolder, dev = false, op
       const viewable = statSync(real).isFile() && (isPassiveMedia(real) || real.endsWith('.md'));
       opener(real, action === 'reveal' || !viewable);
       return json(res, 200, { ok: true });
+    }
+    if (route === 'POST /api/try-example') {
+      const { path } = await readBody(req);
+      const example = listDemos({ cwd, repo }).find((d) => d.path === path && d.group === 'Examples');
+      if (!example) throw new HttpError(403, 'not a listed example');
+      const copy = await tryExample({ example: example.path, root: demoRoot(cwd), script: join(APP_DIR, 'scripts', 'example-media.mjs') });
+      openFolder(copy);
+      return json(res, 200, session());
     }
     if (route === 'POST /api/open') {
       const { path } = await readBody(req);

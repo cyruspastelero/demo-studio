@@ -1,6 +1,6 @@
 import { Plus, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { refUses, type Edit, type ShotPatch } from '../lib/edits';
+import { refUses, type Edit, type RefMode, type ShotPatch } from '../lib/edits';
 import { spokenSeconds, wordCount, type VoiceoverFit } from '../lib/fit';
 import { isDemoCard } from '../lib/timeline';
 import type { DemoDoc, FileKind, HandoffDoc, Selection, Timeline, TimelineShot } from '../lib/types';
@@ -20,9 +20,12 @@ interface Props {
   durations: Record<string, number | null>;
   fits: VoiceoverFit[];
   errors: string[];
+  videoKey: string;
+  refModes: Record<string, RefMode>;
+  onRefMode: (ref: string, mode: RefMode) => void;
 }
 
-function ShotPanel({ kind, doc, timeline, selection, onEdit, onShotPatch, durations }: Props & { selection: { type: 'shot'; scene: number; shot: number } }) {
+function ShotPanel({ kind, doc, timeline, selection, onEdit, onShotPatch, durations, videoKey, refModes, onRefMode }: Props & { selection: { type: 'shot'; scene: number; shot: number } }) {
   const shot = timeline.scenes[selection.scene]?.shots[selection.shot];
   if (!shot) return <p className="muted">That shot is gone. Pick another on the timeline.</p>;
   const patch = (p: ShotPatch) => onShotPatch(selection.scene, selection.shot, p);
@@ -50,7 +53,16 @@ function ShotPanel({ kind, doc, timeline, selection, onEdit, onShotPatch, durati
       <h4>Shot</h4>
       {shot.ref && (
         <div className="note" data-testid="ref-note">
-          Uses the shared shot <b>{shot.ref}</b> ({uses} use{uses === 1 ? '' : 's'} across the videos). Changes ask whether to update the shared shot or this video only.
+          Uses the shared shot <b>{shot.ref}</b>{uses > 1 ? `, which ${uses} shots across the videos reuse.` : '.'}
+          {uses > 1 && (
+            <div className="ref-mode">
+              <span>Changes apply to</span>
+              <div className="segmented" role="group" aria-label="Changes apply to">
+                <button aria-pressed={refModes[shot.ref] !== 'shared'} onClick={() => onRefMode(shot.ref!, 'override')} data-testid="ref-override">{videoKey} only</button>
+                <button aria-pressed={refModes[shot.ref] === 'shared'} onClick={() => onRefMode(shot.ref!, 'shared')} data-testid="ref-shared">All {uses} uses</button>
+              </div>
+            </div>
+          )}
         </div>
       )}
       <dl className="kv">

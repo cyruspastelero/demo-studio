@@ -123,6 +123,14 @@ describe('demo overview', () => {
     expect(demoOverview(demo).poster).toBe('final/acme.mp4');
   });
 
+  it('falls back to the folder\'s preview.jpg when there is no take or video', () => {
+    expect(demoOverview(demo).poster).toBe(null);
+    put('preview.jpg');
+    expect(demoOverview(demo).poster).toBe('preview.jpg');
+    put('recordings/raw/01-why-t1.mp4');
+    expect(demoOverview(demo).poster).toBe('recordings/raw/01-why-t1.mp4');
+  });
+
   it('a review reel alone is not an edit', () => {
     put('recordings/exports/review-reel.mp4');
     expect(stageDone(demoOverview(demo)).edit).toBe(false);

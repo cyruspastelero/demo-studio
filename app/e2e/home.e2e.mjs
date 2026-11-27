@@ -3,7 +3,9 @@
 // Usage: node e2e/home.e2e.mjs      (the dashboard screenshots come from screenshots.mjs)
 import assert from 'node:assert/strict';
 import { FIXTURE_TEMPLATE, homeFixture } from './home-fixture.mjs';
-import { launch, startServer } from './harness.mjs';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
+import { launch, REPO, startServer } from './harness.mjs';
 
 const { dir, cleanup } = homeFixture();
 let server;
@@ -121,6 +123,18 @@ try {
     await page.waitForSelector('[data-testid="shot"]');
     await page.click('[data-testid="close-demo"]');
     await page.waitForSelector('[data-testid="demo-card"]');
+  });
+
+  await step('tries a copy of an example: sample footage for every shot, the example left alone', async () => {
+    const example = page.locator('#examples [data-testid="demo-card"][data-demo="acme-invoice-bot"]');
+    await example.locator('[data-testid="example-try"]').click();
+    await page.waitForSelector('[data-testid="shot"]', { timeout: 60000 });
+    await page.waitForFunction(() => document.querySelectorAll('[data-take]').length > 0, null, { timeout: 15000 });
+    assert.equal(await page.locator('.missing-media').count(), 0, 'every shot has footage');
+    await page.click('[data-testid="close-demo"]');
+    // The fixture already has an acme-invoice-bot of its own, so the copy is acme-invoice-bot-2.
+    await page.locator('[data-testid="demo-card"][data-demo="acme-invoice-bot-2"]').waitFor();
+    assert.equal(existsSync(join(REPO, 'examples', 'acme-invoice-bot', 'recordings')), false, 'the example itself is untouched');
   });
 
   assert.deepEqual(errors, [], `no page errors: ${errors.join('; ')}`);

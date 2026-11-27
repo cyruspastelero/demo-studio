@@ -20,6 +20,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import re
+import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -157,6 +158,16 @@ def with_defaults(entry: dict) -> dict:
     return {**DEFAULTS, **entry}
 
 
+def build_rough_assemblies(cfg_path: Path) -> None:
+    """The social versions are cut from each video's rough assembly; make them when they are not there
+    yet (build-handoff.py without the zip, the social step or macOS say)."""
+    print("social-cut: no rough assembly yet, building it with build-handoff.py first", flush=True)
+    result = subprocess.run([sys.executable, "-I", str(Path(__file__).resolve().parent / "build-handoff.py"),
+                             str(cfg_path), "--no-zip", "--no-social", "--no-say"])
+    if result.returncode:
+        sys.exit(f"social-cut: build-handoff.py failed (exit {result.returncode}); its message is above")
+
+
 def from_handoff(cfg_path: Path) -> None:
     cfg = lib.load_config(cfg_path, "handoff", "social-cut")
     root = cfg_path.parent.resolve()
@@ -176,7 +187,10 @@ def from_handoff(cfg_path: Path) -> None:
                 sys.exit(f"{TOOL}: {where}.video must be a video key like PROMO, got {entry['video']!r}")
             found = sorted(out_dir.glob(f"{entry['video']}_*/00_ROUGH-ASSEMBLY.mp4"))
             if not found:
-                sys.exit(f"social-cut: no rough assembly for {entry['video']}; run build-handoff.py first")
+                build_rough_assemblies(cfg_path)
+                found = sorted(out_dir.glob(f"{entry['video']}_*/00_ROUGH-ASSEMBLY.mp4"))
+            if not found:
+                sys.exit(f"social-cut: no rough assembly for {entry['video']} after building the handoff")
             src, name = found[0], entry["video"]
         else:
             sys.exit(f"social-cut: social[{done - 1}] needs \"video\" or \"input\"")

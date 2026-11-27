@@ -180,8 +180,9 @@ export function demoOverview(demo, indexStatus = null) {
     takes,
     attention,
     videos,
-    // The picture on the card: the best video there is, else the first recorded take.
-    poster: videos[0]?.rel ?? (firstTake ? rel(firstTake) : null),
+    // The picture on the card: the best video there is, else the first recorded take, else the
+    // folder's own preview.jpg (the examples that ship no footage have one).
+    poster: videos[0]?.rel ?? (firstTake ? rel(firstTake) : existsSync(join(demo, 'preview.jpg')) ? 'preview.jpg' : null),
     docs: DOCS.filter((doc) => existsSync(join(demo, doc)) && statSync(join(demo, doc)).isFile()).map((doc) => ({ name: doc.replace(/\.md$/, ''), rel: doc })),
     folders: { handoff: handoffDirs.filter((dir) => existsSync(dir)).map(rel)[0] ?? null },
   };

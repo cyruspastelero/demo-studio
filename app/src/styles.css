@@ -866,3 +866,15 @@ body:has(.static-demo-note) #root { flex: 1; min-height: 0; height: auto; }
   position: absolute; left: 0; transform: translate(-50%, 0); padding: 4px 8px; border-radius: var(--radius);
   background: var(--ink); color: var(--surface); font: 11px var(--sans); white-space: nowrap; pointer-events: none;
 }
+
+/* The Render menu: grouped by what you get, each with where it lands. */
+.render-menu { width: 380px; max-height: calc(100vh - 80px); overflow-y: auto; }
+.render-menu-head { display: grid; gap: 2px; padding: 10px 10px 8px; border-bottom: 1px solid var(--line); margin-bottom: 4px; }
+.render-menu-head b { font-size: 13px; font-weight: 600; color: var(--ink); }
+.render-menu-head span { font-size: 12px; color: var(--quiet); }
+.render-group { padding: 10px 10px 2px; font-size: 11px; color: var(--quiet); }
+.render-menu .render-label { font-weight: 500; }
+.render-menu .render-output { margin-top: 2px; font-size: 11px; color: var(--soft); overflow-wrap: anywhere; }
+/* Shared shot: where an edit goes, chosen once in the inspector instead of asked on every edit. */
+.ref-mode { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.ref-mode > span { font-size: 12px; color: var(--muted); }

@@ -21,6 +21,9 @@ export function App() {
     api.open(path).then(setSession).catch((e: Error) => setError(e.message));
   }, []);
 
+  // Errors stay on the card (the copy can fail, the home screen should not).
+  const tryExample = useCallback((path: string) => api.tryExample(path).then(setSession), []);
+
   const showPicker = useCallback(() => {
     api.home().then(setSession).catch((e: Error) => setError(e.message));
   }, []);
@@ -28,7 +31,7 @@ export function App() {
   if (error) return <div className="boot"><div><p>The editor could not load.</p><p className="muted">{error}</p></div></div>;
   if (!session) return <div className="boot"><Loader2 className="spin" size={20} aria-label="Loading" /></div>;
   if (session.mode === 'picker') {
-    return <Home session={session} onOpen={open} onRefresh={showPicker} />;
+    return <Home session={session} onOpen={open} onTry={tryExample} onRefresh={showPicker} />;
   }
   return (
     <Editor key={session.folder} session={session} onClose={showPicker} />

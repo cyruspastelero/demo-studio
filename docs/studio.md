@@ -57,11 +57,14 @@ npm run studio demos/acme -- --port 4400 --no-open
 ```
 
 It serves on `127.0.0.1` only (port 4317, or the next free one). The first run builds the UI, which
-takes a few seconds. To try it without footage, copy the example and make small synthetic takes:
+takes a few seconds. To try it without footage of your own, open the home screen and press **Try a
+copy** on an example: it copies the example into your demos folder, gives every take that has no
+footage a sample slate (the shot's name and what it shows, with a bar sweeping across), and opens the
+copy. The example itself is never edited. From a terminal, the same thing:
 
 ```bash
-cp -R examples/acme-invoice-bot /tmp/acme && node app/scripts/example-media.mjs /tmp/acme
-npm run studio /tmp/acme
+cp -R examples/acme-invoice-bot demos/acme && node app/scripts/example-media.mjs demos/acme --slates
+npm run studio demos/acme
 ```
 
 ![The editor with a shot selected](img/studio-1440.png)
@@ -99,8 +102,9 @@ the system player. Dragging a take onto the timeline works as before.
 in the schema shape, keeping `_comment` and other `_` keys. It saves about a second after each edit
 (to a temp file, then renamed), checks the file against the schema first and never writes an
 invalid one. If Claude changes the file while it is open, the editor reloads it, or asks which
-version to keep when you have unsaved edits. Editing a shot that uses `{"ref": ...}` asks whether
-to change the shared shot (every video) or only this video.
+version to keep when you have unsaved edits. A shot that uses `{"ref": ...}` (a shared shot) is
+changed in this video only, unless the inspector's "Changes apply to" switch is set to all uses; a shared
+shot used just once is simply edited.
 
 **Moving and editing text.** On-screen text (`handoff.json`) and caption pills (`demo.json`) sit on
 the preview as boxes you can work with directly. The toolbar above a selected box stays inside the
@@ -128,10 +132,13 @@ burns the text in; `build-handoff.py` writes each text as a transparent 1920x108
 `text/` folder (named by clip number) for the editor to lay over the clip; the keynote render draws
 pills in place. The editor e2e checks the exported PNG lands within 1.5 px of the preview.
 
-**Render** runs `title-cards.mjs`, `build-handoff.py`, `build-keynote.py`, `review-reel.py` or
-`social-cut.py`, one at a time, with a progress bar, the log, the output in a player, and Reveal in
-Finder and Open buttons. Cancel stops the script and everything it started. **Quick preview**
-renders the current video at 960x540 with fast settings, for a faithful check of speed changes and cards.
+**Render** (top right) lists what you can export, grouped by what you get: a Quick preview of the
+current video (960x540, fast, with its on-screen text, to check timing), the Keynote video and the
+Social media versions (finished videos), and the title cards as images and the review reel of all kept
+takes. Each says its format, size and the folder it lands in. Exports run one at a time with a
+progress bar, the log, the output in a player, and Reveal in Finder and Open buttons; Cancel stops the
+script and everything it started. The full editor handoff package is still made by
+`build-handoff.py` (ask Claude for it); Social media versions build the rough assemblies they need.
 
 | Keys | Action |
 | --- | --- |

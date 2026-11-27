@@ -124,6 +124,9 @@ export const api = {
   revealInDemo: (demo: string, path: string | null, action: 'reveal' | 'open') =>
     call('POST', '/api/demo-reveal', { demo, path, action }),
   open: (path: string) => call<Session>('POST', '/api/open', { path }),
+  // Copies an example into the user's demos with sample footage and opens the copy. The static demo
+  // has no server to copy with, so it opens the example itself (edits stay in the tab there).
+  tryExample: (path: string) => call<Session>('POST', STATIC_DEMO ? '/api/open' : '/api/try-example', { path }),
   media: () => call<MediaIndex>('GET', '/api/media'),
   fonts: () => call<FontInfo[]>('GET', '/api/fonts'),
   save: (kind: FileKind, data: unknown, baseHash: string | null) =>

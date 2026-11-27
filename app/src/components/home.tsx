@@ -1,4 +1,4 @@
-import { Check, Copy, ExternalLink, FileText, Film, FolderOpen, PencilRuler, Play, RefreshCw, Search } from 'lucide-react';
+import { Check, Copy, ExternalLink, FileText, Film, FolderOpen, Loader2, PencilRuler, Play, RefreshCw, Search } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { api, demoThumbUrl, type DemoEntry, type HomeSession } from '../api';
 import { fetchTemplates, type LookTemplate } from '../lib/templates';
@@ -75,8 +75,19 @@ function Menu({ label, icon, children }: { label: string; icon: React.ReactNode;
   );
 }
 
-function DemoCard({ demo, onOpen, onError }: { demo: DemoEntry; onOpen: (path: string) => void; onError: (message: string) => void }) {
+function DemoCard({ demo, onOpen, onTry, onError }: {
+  demo: DemoEntry; onOpen: (path: string) => void; onTry?: (path: string) => Promise<void>; onError: (message: string) => void;
+}) {
   const { overview } = demo;
+  const [copying, setCopying] = useState(false);
+  const tryCopy = () => {
+    if (!onTry) return;
+    setCopying(true);
+    onTry(demo.path).catch((e: Error) => {
+      setCopying(false);
+      onError(`Could not copy ${demo.title ?? demo.name}: ${e.message}`);
+    });
+  };
   const [posterFailed, setPosterFailed] = useState(false);
   const lead = overview.videos[0];
   const reveal = (path: string | null, action: 'reveal' | 'open') => {
@@ -123,10 +134,17 @@ function DemoCard({ demo, onOpen, onError }: { demo: DemoEntry; onOpen: (path: s
         )}
 
         <footer className="demo-actions">
-          <button className="btn primary" disabled={!demo.canEdit} onClick={() => onOpen(demo.path)} data-testid="demo-item"
-            title={demo.canEdit ? undefined : 'This demo has no handoff.json or demo.json to edit yet'}>
-            <PencilRuler size={14} />Open editor
-          </button>
+          {onTry ? (
+            <button className="btn primary" disabled={!demo.canEdit || copying} onClick={tryCopy} data-testid="example-try" aria-busy={copying}
+              title="Copies this example into your demos with sample footage for every shot, then opens the copy in the editor">
+              {copying ? <><Loader2 className="spin" size={14} />Making a copy…</> : <><Copy size={14} />Try a copy</>}
+            </button>
+          ) : (
+            <button className="btn primary" disabled={!demo.canEdit} onClick={() => onOpen(demo.path)} data-testid="demo-item"
+              title={demo.canEdit ? undefined : 'This demo has no handoff.json or demo.json to edit yet'}>
+              <PencilRuler size={14} />Open editor
+            </button>
+          )}
           {overview.videos.length > 1 && (
             <Menu label="Videos" icon={<Play size={14} />}>
               {(close) => overview.videos.map((video) => (
@@ -287,8 +305,8 @@ function Attention({ demos, onReveal }: { demos: DemoEntry[]; onReveal: (demo: D
   );
 }
 
-export function Home({ session, onOpen, onRefresh }: {
-  session: HomeSession; onOpen: (path: string) => void; onRefresh: () => void;
+export function Home({ session, onOpen, onTry, onRefresh }: {
+  session: HomeSession; onOpen: (path: string) => void; onTry: (path: string) => Promise<void>; onRefresh: () => void;
 }) {
   const [filter, setFilter] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -400,10 +418,10 @@ export function Home({ session, onOpen, onRefresh }: {
               <section id="examples" className="home-section">
                 <div className="section-bar">
                   <h2>Examples</h2>
-                  <p className="section-note">Filled-in plans you can open and try the editor on.</p>
+                  <p className="section-note">Ready-made demos to learn on. Try a copy: it lands in your demos with sample footage, and the example stays as it is.</p>
                 </div>
                 <div className="demo-grid">
-                  {examples.map((demo) => <DemoCard key={demo.path} demo={demo} onOpen={onOpen} onError={setError} />)}
+                  {examples.map((demo) => <DemoCard key={demo.path} demo={demo} onOpen={onOpen} onTry={onTry} onError={setError} />)}
                 </div>
               </section>
             )}
