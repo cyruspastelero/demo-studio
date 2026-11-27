@@ -1,31 +1,38 @@
 {
   "id": "house",
   "name": "House look",
-  "description": "The demo-studio default: a floating rounded window on a soft drifting pastel background, 1.15x whole-window zooms, product-coloured highlight boxes, white pills, Inter titles that blur in word by word, a brand sweep and logo outro.",
-  "best_for": ["default", "light ui", "saas", "web app", "dashboard", "productivity"],
+  "description": "The demo-studio default: a floating rounded window on soft warm greys with a faint ember glow, 1.15x whole-window zooms, product-coloured highlight boxes, white pills, one-colour Inter titles that blur in word by word, an ember sweep and logo outro.",
+  "best_for": [
+    "default",
+    "light ui",
+    "saas",
+    "web app",
+    "dashboard",
+    "productivity"
+  ],
   "created": "2026-11-18",
   "source": "built-in",
   "_comment": "Values equal scripts/keynote/spec.py (docs/quality-bar.md). brand.accent is left out on purpose: without it boxes and pills stay neutral ink and the title accent is #D9463B; a demo sets its product colour in demo.json brand.accent.",
   "look": {
     "brand": {
       "font": "inter",
-      "ink": "#24272B",
-      "secondary": "#5F656D",
+      "ink": "#1A1A1A",
+      "secondary": "#5E5E5E",
       "background": {
-        "base": "#E3E3E4",
+        "base": "#E4E3E1",
         "fields": [
-          "#FAF9F7",
-          "#BCC6D3F2",
-          "#E6C4C2F2",
-          "#DEDAD9",
-          "#F1EFEDD9"
+          "#FBFBFA",
+          "#CFCDCAF2",
+          "#F3CDB4E6",
+          "#D8D6D3",
+          "#F3F2F0D9"
         ]
       },
       "sweep": [
-        "#EF4849",
-        "#F68C41"
+        "#FF7A2E",
+        "#FFB48A"
       ],
-      "dark": "#1B1D21"
+      "dark": "#121212"
     },
     "window": {
       "rect": [
@@ -73,7 +80,7 @@
       "weight": 500,
       "tracking": -4,
       "reveal": "word-blur",
-      "accent_word": true
+      "accent_word": false
     },
     "transitions": {
       "window_in": 0.7,

@@ -1,7 +1,7 @@
 {
   "id": "midnight",
   "name": "Midnight",
-  "description": "Cinematic and dark: a bigger window on a near-black field with one low glow, huge bold titles that fade up, a slow window entrance and a plain end card instead of the sweep.",
+  "description": "Cinematic and dark: a bigger window on graphite with one low ember glow, large one-colour titles that blur in, a slow window entrance and a plain end card instead of the sweep.",
   "best_for": [
     "dark ui",
     "developer tool",
@@ -15,23 +15,23 @@
   "look": {
     "brand": {
       "font": "geist",
-      "ink": "#EEF1F6",
-      "secondary": "#9AA4B2",
+      "ink": "#F2F2F2",
+      "secondary": "#9C9C9C",
       "background": {
-        "base": "#07090D",
+        "base": "#0A0A0A",
         "fields": [
-          "#0B0E14",
-          "#141B2ECC",
-          "#1A1430B3",
-          "#0A0D12",
-          "#0F1A2499"
+          "#111111",
+          "#1E1E1ECC",
+          "#3A2416B3",
+          "#0C0C0C",
+          "#18181899"
         ]
       },
       "sweep": [
-        "#5B6CFF",
-        "#22C3B5"
+        "#FF7A2E",
+        "#FFB48A"
       ],
-      "dark": "#07090E"
+      "dark": "#080808"
     },
     "window": {
       "rect": [
@@ -41,7 +41,7 @@
         800
       ],
       "radius": 16,
-      "shadow": "0 40px 90px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.06)"
+      "shadow": "0 40px 90px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.08)"
     },
     "zoom": {
       "scale": 1.15,
@@ -75,11 +75,11 @@
       ]
     },
     "title": {
-      "size": 176,
-      "weight": 700,
-      "tracking": -7,
-      "reveal": "fade",
-      "accent_word": true
+      "size": 156,
+      "weight": 600,
+      "tracking": -6,
+      "reveal": "word-blur",
+      "accent_word": false
     },
     "transitions": {
       "window_in": 1.2,

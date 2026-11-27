@@ -9,13 +9,13 @@ Built-in look template `house`: the demo-studio default, the look every demo get
 - Zoom: whole window to 1.15x over 1.1 s, ease-in-out sine
 - Highlight boxes: 3 px stroke, 12 px corners, 15x9 px padding, 7% fill and a 6 px halo at 10%, 0.17 s after a zoom lands
 - Pills: 68 px tall, fully round, centred at y 962, 30 px Inter Medium
-- Titles: Inter Display Medium 132 px, -4 tracking, words blur in one by one, one accent word
-- Background: base #E3E3E4 with five drifting pastel fields
-- Ending: 7.9 s end card, brand sweep, logo on #1B1D21
+- Titles: Inter Display Medium 132 px, -4 tracking, words blur in one by one, one colour
+- Background: base #E4E3E1 with five drifting warm-grey fields and one faint ember glow
+- Ending: 7.9 s end card, ember sweep, logo on #121212
 - Audio: -14 LUFS, true peak under -1 dBTP, music 13 dB under the voice, 3 s silent tail
 
-`brand.accent` is left out on purpose: without it, highlight boxes and pills are neutral ink and the
-title accent is #D9463B. A demo sets its product colour in demo.json `brand.accent`.
+`brand.accent` is left out on purpose: without it, highlight boxes and pills are neutral ink. Titles stay
+one colour (`title.accent_word: false`). A demo sets its product colour in demo.json `brand.accent`.
 
 Previews (`preview/01..06.png`): the todo sample in this look (title, window at rest, zoom with a
 highlight, pill, end card, outro on dark), rendered with `scripts/template-validate.py house

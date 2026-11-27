@@ -1,7 +1,7 @@
 {
   "id": "paper",
   "name": "Paper",
-  "description": "Editorial and calm: a smaller window with wide margins and square print-like corners, the caption pill above it, thin titles that simply appear and a cream field.",
+  "description": "Editorial and calm: a smaller window with wide margins and square print-like corners, the caption pill above it, quiet one-colour titles that simply appear and a soft paper field.",
   "best_for": [
     "light ui",
     "friendly",
@@ -19,18 +19,18 @@
       "ink": "#2B2620",
       "secondary": "#6B6157",
       "background": {
-        "base": "#EFE8DC",
+        "base": "#EEEAE3",
         "fields": [
-          "#FBF7EF",
-          "#F3D9C4F2",
-          "#E9E1CFF2",
-          "#F6E9D6",
-          "#E7D3C3D9"
+          "#FAF8F4",
+          "#E9DED1F2",
+          "#F1E6D6F2",
+          "#F5EFE6",
+          "#E6D9CBD9"
         ]
       },
       "sweep": [
-        "#E0773A",
-        "#F2B05E"
+        "#C9622B",
+        "#E9A66A"
       ],
       "dark": "#2A221B"
     },
@@ -77,10 +77,10 @@
     },
     "title": {
       "size": 112,
-      "weight": 300,
-      "tracking": -2,
+      "weight": 400,
+      "tracking": -3,
       "reveal": "none",
-      "accent_word": true
+      "accent_word": false
     },
     "transitions": {
       "window_in": 0.9,

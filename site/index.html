@@ -93,7 +93,8 @@ body[data-scene="7"] { --glow-x: 50%; --glow: 0.48; --haze: #625a54; }
 
 /* Layout: sticky intro, ruler, scrolling scenes */
 .page { display: grid; grid-template-columns: var(--aside) 20px minmax(0, 1fr); }
-.intro { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; justify-content: space-between; padding: 64px 40px 40px; }
+.intro { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; justify-content: space-between; gap: 48px; padding: 64px 40px 40px; overflow-y: auto; scrollbar-width: none; }
+.intro::-webkit-scrollbar { display: none; }
 .ruler { position: sticky; top: 0; height: 100vh;
   background: repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.22) 0 1px, transparent 1px 26px) 4px 0 / 8px 100% no-repeat;
   border-left: 1px solid var(--rule); }
@@ -177,6 +178,15 @@ footer { position: relative; overflow: hidden; container-type: inline-size; marg
 @media (min-width: 1100px) {
   html { scroll-snap-type: y proximity; }
   .scene { scroll-snap-align: start; }
+}
+/* Short windows: tighten the intro so the headline, button and list all fit */
+@media (min-width: 1100px) and (max-height: 860px) {
+  .intro { padding: 40px 40px 28px; gap: 32px; }
+  h1 { font-size: 38px; }
+  .points { margin: 20px 0; gap: 8px; font-size: 14px; }
+  .toc h2 { margin-bottom: 8px; font-size: 16px; }
+  .toc a { padding: 5px 10px; font-size: 14px; }
+  .toc a[aria-current="true"]::before { top: 6px; bottom: 6px; }
 }
 @media (max-width: 1099px) {
   .page { display: block; }
@@ -272,15 +282,15 @@ footer { position: relative; overflow: hidden; container-type: inline-size; marg
       </header>
       <div class="viewer">
         <div class="switch" role="tablist" aria-label="Built-in looks">
-          <button type="button" role="tab" id="look-house" aria-controls="look-stage" aria-selected="true" data-src="img/looks/house-stage.png" data-alt="The todo sample in the House look" data-text="A floating window on soft pastels. The default.">House</button>
-          <button type="button" role="tab" id="look-midnight" aria-controls="look-stage" aria-selected="false" data-src="img/looks/midnight-stage.png" data-alt="The todo sample in the Midnight look" data-text="Dark and cinematic, for developer tools.">Midnight</button>
-          <button type="button" role="tab" id="look-paper" aria-controls="look-stage" aria-selected="false" data-src="img/looks/paper-stage.png" data-alt="The todo sample in the Paper look" data-text="Warm and editorial, with square corners.">Paper</button>
+          <button type="button" role="tab" id="look-house" aria-controls="look-stage" aria-selected="true" data-src="img/looks/house-stage.png" data-alt="The todo sample in the House look" data-text="A floating window on soft warm greys. The default.">House</button>
+          <button type="button" role="tab" id="look-midnight" aria-controls="look-stage" aria-selected="false" data-src="img/looks/midnight-stage.png" data-alt="The todo sample in the Midnight look" data-text="Graphite with an ember glow. Cinematic, for developer tools.">Midnight</button>
+          <button type="button" role="tab" id="look-paper" aria-controls="look-stage" aria-selected="false" data-src="img/looks/paper-stage.png" data-alt="The todo sample in the Paper look" data-text="Soft paper and square corners. Calm and editorial.">Paper</button>
           <button type="button" role="tab" id="look-mono" aria-controls="look-stage" aria-selected="false" data-src="img/looks/mono-stage.png" data-alt="The todo sample in the Mono look" data-text="Plain greys, so your product brings the colour.">Mono</button>
         </div>
         <figure class="frame stage" id="look-stage" role="tabpanel" aria-labelledby="look-house">
           <img src="img/looks/house-stage.png" alt="The todo sample in the House look" width="1280" height="720">
         </figure>
-        <p class="look-text" aria-live="polite">A floating window on soft pastels. The default.</p>
+        <p class="look-text" aria-live="polite">A floating window on soft warm greys. The default.</p>
       </div>
     </section>
 

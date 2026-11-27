@@ -58,10 +58,10 @@ look is checked against its own numbers, not the house ones.
 
 | id | Look |
 | --- | --- |
-| `house` | The default: 1560x800 window with 22 px corners on a soft drifting pastel background, 1.15x whole-window zooms over 1.1 s (ease-in-out sine), product-coloured highlight boxes, white pills under the window, Inter titles that blur in word by word, a brand sweep and logo outro, -14 LUFS |
-| `midnight` | Cinematic and dark: a bigger window on a near-black field with one low glow, huge bold titles that fade up, a slow window entrance and a plain end card instead of the sweep. Tags: dark ui, developer tool, ai, premium, cinematic |
-| `paper` | Editorial and calm: a smaller window with wide margins and square print-like corners, the caption pill above it, thin titles that simply appear and a cream field. Tags: light ui, friendly, consumer, education, creative, docs |
-| `mono` | Full screen and fast: the app is as large as the engine draws it, high in the frame, for detail-heavy products, small quick zooms, bold titles with no animation, greys only, and a short plain end card instead of the sweep. Tags: light ui, fintech, b2b, dashboard, dense ui, minimal |
+| `house` | The default: 1560x800 window with 22 px corners on soft drifting warm greys with a faint ember glow, 1.15x whole-window zooms over 1.1 s (ease-in-out sine), product-coloured highlight boxes, white pills under the window, one-colour Inter titles that blur in word by word, an ember sweep and logo outro, -14 LUFS |
+| `midnight` | Cinematic and dark: a bigger window on graphite with one low ember glow, large one-colour titles that blur in, a slow window entrance and a plain end card instead of the sweep. Tags: dark ui, developer tool, ai, premium, cinematic |
+| `paper` | Editorial and calm: a smaller window with wide margins and square print-like corners, the caption pill above it, quiet one-colour titles that simply appear and a soft paper field. Tags: light ui, friendly, consumer, education, creative, docs |
+| `mono` | Full screen and fast: the app is as large as the engine draws it, high in the frame, for detail-heavy products, small quick zooms, one-colour bold titles with no animation, greys only, and a short plain end card instead of the sweep. Tags: light ui, fintech, b2b, dashboard, dense ui, minimal |
 
 ## Where templates live
 

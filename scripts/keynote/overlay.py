@@ -31,7 +31,7 @@ def word_state(text: str, role: str, t: float, start: float, seconds: float, blu
 
 
 def words_of(text: str, accent: str, base_role: str) -> list[tuple[str, str]]:
-    marked = accent_index(text, accent) if accent else -1
+    marked = accent_index(text, accent) if accent and spec.ACCENT_WORD else -1  # T9: only when the look asks
     return [(w, "accent" if i == marked else base_role) for i, w in enumerate(text.split())]
 
 

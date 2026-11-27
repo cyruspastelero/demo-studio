@@ -103,8 +103,8 @@ TAGLINE = {"size": 40, "weight": 400, "tracking": -0.5}        # T6
 TITLE_FONT = None                                              # T1: None = brand.font
 TITLE_WEIGHT = 500                                             # T2, T4, T5
 TITLE_REVEAL = "word-blur"                                     # T10: word-blur | fade | none
-ACCENT_WORD = True                                             # T9: one accent word per title
-INK, SECONDARY, TERTIARY, ACCENT = "#24272B", "#5F656D", "#6B7178", "#D9463B"  # T8
+ACCENT_WORD = False                                            # T9: titles stay one colour unless a look turns it on
+INK, SECONDARY, TERTIARY, ACCENT = "#1A1A1A", "#5E5E5E", "#6E6E6E", "#E8622A"  # T8
 WORD_SECONDS, WORD_BLUR, WORD_SHIFT = 0.50, 16, 26             # T10
 TITLE_STAGGER, SUBTITLE_STAGGER = 0.13, 0.05                   # T10
 SETTLE_SECONDS, SETTLE_EARLIEST, SUBTITLE_AFTER_SETTLE = 0.60, 1.0, 0.20  # T11, O2
@@ -115,13 +115,13 @@ CUT_STYLE = "inside-window"                                    # W7: clips cut i
 SHOT_MAX = 8.0                                                 # P2: longest uninterrupted window shot
 
 # 2.2 Background: base fill plus five radial fields (colour at the centre, transparent at 68%).
-BG_BASE = "#E3E3E4"                                            # B1
+BG_BASE = "#E4E3E1"                                            # B1
 BG_FIELDS = (                                                  # B2: colour, radius, x%, y%
-    ("#FAF9F7", 1500, 16, 20),
-    ("#BCC6D3F2", 1400, 92, 8),
-    ("#E6C4C2F2", 1400, 95, 100),
-    ("#DEDAD9", 1200, 5, 98),
-    ("#F1EFEDD9", 1100, 50, 50),
+    ("#FBFBFA", 1500, 16, 20),
+    ("#CFCDCAF2", 1400, 92, 8),
+    ("#F3CDB4E6", 1400, 95, 100),
+    ("#D8D6D3", 1200, 5, 98),
+    ("#F3F2F0D9", 1100, 50, 50),
 )
 BG_FADE_AT = 0.68
 # B4: each field drifts on a sine, amplitude 2 to 4% of the frame, 0.03 to 0.08 rad/s.
@@ -131,8 +131,8 @@ BG_KEYFRAME_SECONDS = 1.0       # rendered once a second, blended to 30 fps (mot
 # 2.10 End card and outro
 END_LOGO_WIDTH, END_LOGO_TOP = 128, 330                        # X1
 END_REVEAL_LEAD = 0.10                                         # X1, a word shows before it is spoken
-SWEEP_FROM, SWEEP_TO, SWEEP_SKEW, SWEEP_SECONDS = "#EF4849", "#F68C41", -4, 0.80  # X2
-DARK_FIELD = "#1B1D21"                                         # X2
+SWEEP_FROM, SWEEP_TO, SWEEP_SKEW, SWEEP_SECONDS = "#FF7A2E", "#FFB48A", -4, 0.80  # X2
+DARK_FIELD = "#121212"                                         # X2
 OUTRO_SECONDS = 5.0                                            # X3: sweep + lockup + >= 3 s hold
 LOCKUP_SECONDS = 0.70
 SILENT_TAIL = 3.0                                              # X3, A6

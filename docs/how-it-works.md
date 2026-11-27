@@ -13,7 +13,7 @@ records each scene, builds the cut, adds narration and music, and checks the res
 | Plan | BRIEF, RUN-SHEET (beats and exact on-camera text), SHOT-LIST, VOICEOVER draft, PREP checklist |
 | Raw takes | One clean clip per scene: 1920x1080, 30fps, H.264, crisp 2x capture, secrets blurred in the page, logged in `takes.csv` |
 | Review reel | The keeper takes joined uncut in story order, for the first review |
-| Keynote cut | Built to the [quality bar](quality-bar.md): footage cropped into a floating window on a soft pastel background, whole-window zooms, highlight boxes, callout pills, word-by-word Inter titles, end card and logo outro |
+| Keynote cut | Built to the [quality bar](quality-bar.md): footage cropped into a floating window on soft warm greys, whole-window zooms, highlight boxes, callout pills, word-by-word Inter titles, end card and logo outro |
 | Narrated cut | The keynote cut with the voiceover recorded and placed over a music bed 13 dB under it, -14 LUFS, true peak under -1 dBTP |
 | Promo cut | About 1:30, the story, as numbered clips plus a rough assembly |
 | How-to cut | About 3:00, the story plus setup steps and an edge case |

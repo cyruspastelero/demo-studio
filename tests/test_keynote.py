@@ -210,7 +210,13 @@ class Pills(unittest.TestCase):
 class Titles(unittest.TestCase):
     CARD = Card(0, "card-intro", "hero", "Meet the team today", "Who builds it.", "team", "", False, 0, 90, 0, "")
 
+    def with_accent_word(self, on: bool) -> None:
+        saved = spec.ACCENT_WORD
+        spec.ACCENT_WORD = on
+        self.addCleanup(setattr, spec, "ACCENT_WORD", saved)
+
     def test_words_reveal_one_by_one_with_one_accent(self):
+        self.with_accent_word(True)
         state = title_card_state(self.CARD, 0.13, 3.0, 0.4)
         opacities = [w[2] for w in state["title"]["words"]]
         self.assertGreater(opacities[0], 0)
@@ -219,6 +225,11 @@ class Titles(unittest.TestCase):
         self.assertEqual(roles.count("accent"), 1)
         self.assertEqual(roles[2], "accent")
         self.assertEqual(state["title"]["words"][1][3], spec.WORD_BLUR)
+
+    def test_a_look_without_accent_words_draws_every_word_in_ink(self):
+        self.with_accent_word(False)
+        state = title_card_state(self.CARD, 2.0, 3.0, 0.4)
+        self.assertEqual({w[1] for w in state["title"]["words"]}, {"ink"})
 
     def test_hero_settles_to_0_52_and_the_subtitle_follows(self):
         before = title_card_state(self.CARD, 0.9, 3.0, 0.4)
@@ -333,7 +344,7 @@ class Background(unittest.TestCase):
 
     def test_brand_defaults_and_bad_colours(self):
         brand = load_brand(None)
-        self.assertEqual((brand.font, brand.accent, brand.base), ("inter", "#D9463B", "#E3E3E4"))
+        self.assertEqual((brand.font, brand.accent, brand.base), ("inter", "#E8622A", "#E4E3E1"))
         with self.assertRaises(PlanError) as caught:
             load_brand({"accent": "red; background:url(x)"})
         self.assertIn("brand.accent", str(caught.exception))
@@ -441,7 +452,10 @@ class Plans(unittest.TestCase):
         long_pill[0].pop("accent")
         warnings = "\n".join(self.plan(long_pill).warnings)
         self.assertIn("(C8)", warnings)
-        self.assertIn("(T9)", warnings)
+        self.assertNotIn("(T9)", warnings)  # the built-in looks draw titles in one colour
+        saved, spec.ACCENT_WORD = spec.ACCENT_WORD, True
+        self.addCleanup(setattr, spec, "ACCENT_WORD", saved)
+        self.assertIn("(T9)", "\n".join(self.plan(long_pill).warnings))
 
     def test_highlight_without_at_never_pairs_with_another_scenes_zoom(self):
         other = json.loads(json.dumps(self.SEQUENCE))

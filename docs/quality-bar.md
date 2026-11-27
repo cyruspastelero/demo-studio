@@ -8,7 +8,7 @@ All sizes are px in a 1920x1080 frame. All times are seconds. "Ease-out cubic" m
 
 ## 1. The bar in one paragraph
 
-A finished cut opens directly on a title, with no black frame. It sits on a soft, slowly drifting, multi-colour pastel background. The product appears in one floating rounded window that is cropped tight to the UI that matters, so app text reads at about 20 px cap height. That window rises in from below frame. It stays put while clips cut inside it, and the whole window (not just its contents) eases up to 1.15x to point at something, then eases back. An outline in the product's own accent colour marks the exact UI element being talked about. Short pill callouts sit centred under the window: a person (avatar + "Name, role") or a statement in the product's accent colour. All type is one grotesk (Inter) at medium weight with tight tracking, and words blur in one by one. Narration runs under about 60% of the runtime, over a music bed 12 to 14 dB below it. The cut ends on a timed end card, a brand-gradient sweep, and a logo outro on dark.
+A finished cut opens directly on a title, with no black frame. It sits on a soft, slowly drifting background of warm greys with a faint ember glow. The product appears in one floating rounded window that is cropped tight to the UI that matters, so app text reads at about 20 px cap height. That window rises in from below frame. It stays put while clips cut inside it, and the whole window (not just its contents) eases up to 1.15x to point at something, then eases back. An outline in the product's own accent colour marks the exact UI element being talked about. Short pill callouts sit centred under the window: a person (avatar + "Name, role") or a statement in the product's accent colour. All type is one grotesk (Inter) at medium weight with tight tracking, in one colour, and words blur in one by one. Narration runs under about 60% of the runtime, over a music bed 12 to 14 dB below it. The cut ends on a timed end card, a brand-gradient sweep, and a logo outro on dark.
 
 ---
 
@@ -99,8 +99,8 @@ A finished cut opens directly on a title, with no black frame. It sits on a soft
 | T5 | End-card title | 500, 104 px, −3 px | "A" cap 76 px |
 | T6 | Subtitle / tagline | 400, 42 px (−0.6 px) or 40 px (−0.5 px) | "A" cap 31 px |
 | T7 | Person name / role (cast card) | 500 46 px −1 px / 400 30 px | caps 36 / 23 px |
-| T8 | Colours | Ink `#24272B` (measured `#202124`), secondary `#5F656D` (measured `#6A6C6D`), tertiary `#6B7178`, accent `#D9463B` (measured `#DC4334`) | |
-| T9 | Accent rule | Exactly **one** accent word per title or subtitle: the key noun ("Meet the **team**", "Who is on the **team?**"). Never whole lines, never two colours. | |
+| T8 | Colours | Ink `#1A1A1A`, secondary `#5E5E5E`, tertiary `#6E6E6E`, accent `#E8622A` (pills and boxes when the product sets no colour) | |
+| T9 | Accent rule | Titles are one colour in the built-in looks (`title.accent_word: false`); a card's `accent` is then ignored. A look that turns it on gets exactly **one** accent word per title or subtitle: the key noun ("Meet the **team**"). Never whole lines, never two colours. | |
 | T10 | Word reveal | Per word, 0.50 s ease-out cubic: opacity 0→1, blur 16→0 px, translateX +26→0. Stagger 0.13 s (titles), 0.05 s (subtitles). | |
 | T11 | Settle | 0.60 s ease-in-out cubic after the title lands (scale 1→0.52, up 70 px). The subtitle starts 0.20 s after the settle begins. | |
 | T12 | Card exit | 0.40 s ease-in-out cubic: opacity→0 and translateY −50 to −70 px, with blur | |
@@ -119,8 +119,8 @@ A finished cut opens directly on a title, with no black frame. It sits on a soft
 | # | Property | Bar |
 |---|---|---|
 | O1 | First frame | No black or blank frame. The hero title is already blurring in at frame 0 (fully in by 0.5 s). |
-| O2 | Opening card | Hero 132 px holds until about 1.0 s, settles (T11), then subtitle words reveal with one accent word, hold until about 3.3 s, and exit 0.4 s. Card length about 3.4 s. |
-| O3 | Cast card (when people appear) | Heading 72 px at top=250 with one accent word. Two 230 px circular avatars at x = 960 ± 280, top 410, shadow `0 30px 70px rgba(45,40,60,0.16), 0 8px 20px rgba(45,40,60,0.08)`. Avatars reveal at +0.4 / +0.6 s (scale 0.88→1, blur 12→0); names (46 px) and roles (30 px) follow 0.2 s later. About 2.6 s, after which the window rises over it (W6). |
+| O2 | Opening card | Hero 132 px holds until about 1.0 s, settles (T11), then subtitle words reveal, hold until about 3.3 s, and exit 0.4 s. Card length about 3.4 s. |
+| O3 | Cast card (when people appear) | Heading 72 px at top=250. Two 230 px circular avatars at x = 960 ± 280, top 410, shadow `0 30px 70px rgba(45,40,60,0.16), 0 8px 20px rgba(45,40,60,0.08)`. Avatars reveal at +0.4 / +0.6 s (scale 0.88→1, blur 12→0); names (46 px) and roles (30 px) follow 0.2 s later. About 2.6 s, after which the window rises over it (W6). |
 | O4 | First UI | ≤ 6.0 s into the cut |
 | O5 | Section card | A mid-cut question title ("Who is on the team?" form), 2.2 to 2.6 s, same reveal and exit |
 
@@ -129,7 +129,7 @@ A finished cut opens directly on a title, with no black frame. It sits on a soft
 | # | Property | Bar |
 |---|---|---|
 | X1 | End card | Brand mark about 128 px wide at top=330. Title 104 px with words revealed **about 0.1 s before narration says them**, then a 40 px tagline revealed the same way. About 7.9 s. |
-| X2 | Sweep | A brand-gradient band (`linear-gradient(100deg, #EF4849, #F68C41)`; measured `#FE5541` → `#FF8D3C`), skewed −4°, sweeps up over 0.8 s ease-in-out cubic and reveals a dark field `#1B1D21` |
+| X2 | Sweep | A brand-gradient band (`linear-gradient(100deg, #FF7A2E, #FFB48A)`), skewed −4°, sweeps up over 0.8 s ease-in-out cubic and reveals a dark field `#121212` |
 | X3 | Logo outro | The mark animates into a centred lockup (measured 700x100 at centre) and holds ≥ 3 s. Music fades out by the last 3 s, which are silent. |
 | X4 | Tail | From the last UI frame to the end ≈ 13 s (reference 82.6 → 95.9) |
 
@@ -190,9 +190,9 @@ Measured the same way on an earlier sample cut (37.5 s), built by `scripts/build
 | Highlights | None | 3 px box in the product's brand accent, radius 12, halo, eased in after a zoom | Missing |
 | Zoom model | Content-only zoompan inside a fixed frame. 1.5x, smoothstep 1.6 s. It crops arbitrarily (logo cut to "rkitekto") and leaves about 30% of the frame as empty grey sidebar (t=33 s). | Whole window 1.15x, 1.1 s ease-in-out sine, window stays in frame | Wrong model; too deep and too slow |
 | Window | Fixed 1600x900 at (160,44) showing the full 16:9 viewport at 0.83x. Body text cap ≈ 13 px at rest. | 1560x800 tight crop at 1.15x, body cap ≥ 18 px | UI about 35% too small; no crop |
-| Background | Flat `#F2F3F5` at every sample point | Five-field pastel drift (`#C2CAD6` blue, `#E5C9C8` pink, `#FAF7F6` glow) | No colour, no depth |
+| Background | Flat `#F2F3F5` at every sample point | Five-field drift of warm greys (`#CFCDCA` grey, `#F3CDB4` ember, `#FBFBFA` glow) | No colour, no depth |
 | Transitions | Every cut dips through an empty background (0.4 s out + 0.4 s in; frame at t=3.0 s is blank) | Window rise 0.7 s ease-out, cuts inside a persistent window, no blank frames | Dead air at every join |
-| Title cards | Static PNG, SF 600 112 to 124 px, 3% push-in, no word reveal, no accent word | Inter 500 132 px, per-word blur reveal, settle, one accent word | Static and generic |
+| Title cards | Static PNG, SF 600 112 to 124 px, 3% push-in, no word reveal, no accent word | Inter 500 132 px, per-word blur reveal, settle, one colour | Static and generic |
 | Opening | 3.0 s static card; first UI at 3.0 s after a blank dip | Animated hero + subtitle (+ cast card); first UI ≤ 6 s | No motion and no "who" |
 | Outro | Static 3.6 s card with a URL | Timed end card, gradient sweep, logo animation on dark, ≈ 13 s tail | No closing beat |
 | Cursor | Drawn pointing hand at 0.83x | Drawn pointing hand, scales with window, never a dot | Small at 0.83x |
