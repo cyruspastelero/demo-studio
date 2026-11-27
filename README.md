@@ -153,9 +153,20 @@ still win. The demo-studio launch ad in `examples/launch-ad/` is one storyboard.
 
 ## Dependencies
 
-All free and local: Claude Code, Node.js 20+, Python 3.10+, ffmpeg, Google Chrome and the
-Playwright MCP. ElevenLabs or Higgsfield are optional, for voice and music. Versions, packages,
-fonts and licences: [docs/dependencies.md](docs/dependencies.md).
+All free, all on your machine. `bash scripts/doctor.sh` checks each one and prints the fix.
+
+| You need | What it does |
+| --- | --- |
+| Claude Code | Runs the skills that plan, record and edit |
+| Playwright MCP | Lets Claude click and type in your logged-in browser |
+| Google Chrome | The browser that gets recorded, and the renderer for titles |
+| Node.js 20+ | Records takes, renders overlays, runs the studio app |
+| Python 3.10+ | Cuts, narration, checks and the editor handoff (no pip packages) |
+| ffmpeg | Encodes video, mixes sound, measures loudness |
+
+`npm install` adds `playwright-core` (recording) and React with Vite (the studio app).
+Optional: macOS `say` for a free draft voice; ElevenLabs or Higgsfield for paid voice and music,
+used only when you ask. Versions and licences: [docs/dependencies.md](docs/dependencies.md).
 
 ## Docs
 
