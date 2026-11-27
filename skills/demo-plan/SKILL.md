@@ -49,6 +49,12 @@ If `./demos/README.md` (the index) exists, add a row: `| <name> | <one line> | P
 Then add a **Claims list** table (claim, proved by scene), as in `$P/samples/plan/BRIEF.md`.
 A claim with no scene that proves it is cut from the script.
 
+First learn the product from its own public pages (site, docs or README, pricing, changelog): what
+it does, who uses it, and the one job the video must show. Write that in "Our reading", then name the
+videos it calls for, with one reason each: a launch ad (skill `demo-motion`) for a launch or social
+post, a narrated keynote cut for a homepage or README, a how-to for docs and support. The user's
+own request always wins.
+
 Fill the **Look traits** line in "Our reading" from what you can see of the product: UI tone
 (`light ui` or `dark ui`, from the logged-in app), what kind of product it is (`fintech`,
 `developer tool`, `productivity`, `ai`, `mobile app`...), and who watches. Use plain words, comma
@@ -164,7 +170,16 @@ Then fill:
   `return getComputedStyle(document.querySelector('<primary button selector>')).backgroundColor;`
   (also try the page's CSS custom properties such as `--primary`). Convert `rgb(r, g, b)` to
   `#RRGGBB`. No live page: sample the button in a screenshot. Never leave the red default for a
-  product that is not red; without a value the boxes and pills fall back to neutral ink.
+  product that is not red; without a value the boxes and pills fall back to neutral ink. The outro
+  sweep and the look's coloured glow follow `brand.accent`, so never copy a look's own ember or pink.
+  A product with no colour of its own (a grey or black UI): pick one that suits what it does and
+  who it is for, and write the reason under "Decisions".
+- **Font and logo from the product.** Read the product's font (`getComputedStyle(document.body).fontFamily`).
+  Set `brand.font` to the bundled one closest to it (`geist` for Geist and similar geometric sans,
+  else `inter`). For a launch ad, use the product's own font files in `brand.fonts` when its licence
+  allows it (Google Fonts are OFL). Save the product's own logo: the header's inline `<svg>` or its
+  image file, else the largest `apple-touch-icon` or favicon. Put it in `assets/` and point
+  `logo` at it, plus `logo_on_dark` when the product ships a light version. Never redraw a logo.
 - `recordings/scenes/_project.js`: start from `$P/samples/scenes/_project.js`:
 
 | Setting | Default | Change when |
@@ -230,7 +245,9 @@ then go straight on to skill `demo-record` in the same turn. **Do not wait for a
 
 ## Done when
 
-- [ ] BRIEF.md has "Our reading" filled (Look traits too) and a claims list
+- [ ] BRIEF.md has "Our reading" filled (what the product does, who it is for, which videos and why,
+      Look traits) and a claims list
+- [ ] `brand.accent`, `brand.font` and the logo come from the product itself
 - [ ] demo.json has `template` set, and the look line is under "Decisions" and in the progress note
 - [ ] SHOT-LIST.md has every scene with caption, length, depends on and recipe
 - [ ] The Edit plan table has a window region, pill, zoom target, highlight selector and music
