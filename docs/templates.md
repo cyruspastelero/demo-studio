@@ -59,6 +59,9 @@ look is checked against its own numbers, not the house ones.
 | id | Look |
 | --- | --- |
 | `house` | The default: 1560x800 window with 22 px corners on a soft drifting pastel background, 1.15x whole-window zooms over 1.1 s (ease-in-out sine), product-coloured highlight boxes, white pills under the window, Inter titles that blur in word by word, a brand sweep and logo outro, -14 LUFS |
+| `midnight` | Dark apps: the window on a deep blue-grey field with indigo and teal glows, Geist titles that fade in, light text, an indigo-to-teal sweep, near-black outro. Tags: dark ui, developer tool, ai, analytics, premium |
+| `paper` | Warm and editorial: a cream field with peach and sand tints, 28 px corners, calmer 1.1x zooms, Inter titles that blur in, an amber-to-coral sweep. Tags: light ui, friendly, consumer, education, creative, mobile app |
+| `mono` | Crisp and neutral: greys only so the product colour is the only colour, 10 px corners, quicker zooms and hard cuts, Geist titles that fade in, a black sweep. Tags: light ui, fintech, b2b, dashboard, minimal |
 
 ## Where templates live
 

@@ -1,0 +1,102 @@
+{
+  "id": "midnight",
+  "name": "Midnight",
+  "description": "A dark look for dark apps: the window floats on a deep blue-grey field with slow indigo and teal glows, Geist titles that fade in, light text, a cool indigo-to-teal sweep and a near-black outro.",
+  "best_for": [
+    "dark ui",
+    "developer tool",
+    "ai",
+    "analytics",
+    "premium"
+  ],
+  "created": "2026-11-27",
+  "source": "hand-made",
+  "_comment": "Designed for demo-studio, not copied from a video. brand.accent is left out so a demo sets its own product colour.",
+  "look": {
+    "brand": {
+      "font": "geist",
+      "ink": "#EEF1F6",
+      "secondary": "#9AA4B2",
+      "background": {
+        "base": "#0F1420",
+        "fields": [
+          "#172036",
+          "#1E2A47F2",
+          "#2A2350E6",
+          "#13314AE6",
+          "#0B0F18D9"
+        ]
+      },
+      "sweep": [
+        "#5B6CFF",
+        "#22C3B5"
+      ],
+      "dark": "#07090E"
+    },
+    "window": {
+      "rect": [
+        180,
+        100,
+        1560,
+        800
+      ],
+      "radius": 18,
+      "shadow": "0 50px 120px rgba(0,0,0,0.55), 0 14px 34px rgba(0,0,0,0.35)"
+    },
+    "zoom": {
+      "scale": 1.15,
+      "dur": 1.0,
+      "ease": [
+        0.37,
+        0,
+        0.63,
+        1
+      ]
+    },
+    "highlight": {
+      "stroke": 3,
+      "radius": 12,
+      "pad": [
+        15,
+        9
+      ],
+      "delay": 0.17,
+      "fill_alpha": 0.07,
+      "halo_alpha": 0.1
+    },
+    "pill": {
+      "center_y": 962,
+      "height": 68,
+      "radius": 999,
+      "font_size": 30,
+      "kinds": [
+        "statement",
+        "person"
+      ]
+    },
+    "title": {
+      "size": 124,
+      "weight": 600,
+      "tracking": -3,
+      "reveal": "fade",
+      "accent_word": true
+    },
+    "transitions": {
+      "window_in": 0.6,
+      "cut": "inside-window"
+    },
+    "end": {
+      "kind": "sweep-logo",
+      "seconds": 7.5
+    },
+    "pacing": {
+      "shot_max": 7.0
+    },
+    "audio": {
+      "lufs": -14.0,
+      "true_peak": -1.0,
+      "music_gap_db": 13.0,
+      "outro_silence": 3.0
+    }
+  }
+}

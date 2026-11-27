@@ -1,0 +1,103 @@
+{
+  "id": "paper",
+  "name": "Paper",
+  "description": "A warm, editorial look: a cream paper field with soft peach and sand tints, rounder corners, gentle 1.1x zooms, Inter titles that blur in word by word, and an amber-to-coral sweep.",
+  "best_for": [
+    "light ui",
+    "friendly",
+    "consumer",
+    "education",
+    "creative",
+    "mobile app"
+  ],
+  "created": "2026-11-27",
+  "source": "hand-made",
+  "_comment": "Designed for demo-studio, not copied from a video. brand.accent is left out so a demo sets its own product colour.",
+  "look": {
+    "brand": {
+      "font": "inter",
+      "ink": "#2B2620",
+      "secondary": "#6B6157",
+      "background": {
+        "base": "#EFE8DC",
+        "fields": [
+          "#FBF7EF",
+          "#F3D9C4F2",
+          "#E9E1CFF2",
+          "#F6E9D6",
+          "#E7D3C3D9"
+        ]
+      },
+      "sweep": [
+        "#E0773A",
+        "#F2B05E"
+      ],
+      "dark": "#2A221B"
+    },
+    "window": {
+      "rect": [
+        180,
+        100,
+        1560,
+        800
+      ],
+      "radius": 28,
+      "shadow": "0 46px 100px rgba(80,55,30,0.18), 0 12px 30px rgba(80,55,30,0.10)"
+    },
+    "zoom": {
+      "scale": 1.1,
+      "dur": 1.3,
+      "ease": [
+        0.37,
+        0,
+        0.63,
+        1
+      ]
+    },
+    "highlight": {
+      "stroke": 3,
+      "radius": 12,
+      "pad": [
+        15,
+        9
+      ],
+      "delay": 0.17,
+      "fill_alpha": 0.07,
+      "halo_alpha": 0.1
+    },
+    "pill": {
+      "center_y": 962,
+      "height": 68,
+      "radius": 999,
+      "font_size": 30,
+      "kinds": [
+        "statement",
+        "person"
+      ]
+    },
+    "title": {
+      "size": 128,
+      "weight": 500,
+      "tracking": -3.5,
+      "reveal": "word-blur",
+      "accent_word": true
+    },
+    "transitions": {
+      "window_in": 0.8,
+      "cut": "inside-window"
+    },
+    "end": {
+      "kind": "sweep-logo",
+      "seconds": 7.9
+    },
+    "pacing": {
+      "shot_max": 9.0
+    },
+    "audio": {
+      "lufs": -14.0,
+      "true_peak": -1.0,
+      "music_gap_db": 13.0,
+      "outro_silence": 3.0
+    }
+  }
+}

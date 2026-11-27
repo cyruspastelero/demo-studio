@@ -3,7 +3,6 @@ refusing symlinks, schema checks, how a template's look merges under demo.json, 
 house template draws exactly the default plan, and that check-cut.py reads the effective look.
 Run: python3 -I tests/test_templates.py"""
 
-import copy
 import importlib.util
 import json
 import os
@@ -24,7 +23,7 @@ from keynote.brand import load_brand  # noqa: E402
 from keynote.overlay import OverlayTimeline  # noqa: E402
 from keynote.timeline import build_plan  # noqa: E402
 from keynote.window import canvas_size, run_frames, zoom_progress  # noqa: E402
-from keynote.model import Run, Zoom  # noqa: E402
+from keynote.model import Zoom  # noqa: E402
 
 
 def load_script(name: str):
@@ -409,10 +408,16 @@ class Suggest(TemplateCase):
         self.assertEqual((pick["id"], pick["where"]), ("my-house-look", "workspace"))
 
     def test_an_invalid_workspace_template_is_skipped_not_picked(self):
-        folder = write_tagged(self.root / "demos" / "_templates", "broken-look", ["fintech"])
+        # A tag no built-in look has, so only the broken template could match it.
+        folder = write_tagged(self.root / "demos" / "_templates", "broken-look", ["telescope"])
         (folder / "template.json").write_text("{not json")
-        pick = self.cli.suggest("look", "fintech", self.demo, cwd=self.root)
+        pick = self.cli.suggest("look", "telescope", self.demo, cwd=self.root)
         self.assertEqual(pick["id"], "house")
+
+    def test_the_built_in_looks_are_picked_by_their_tags(self):
+        self.assertEqual(self.cli.suggest("look", "dark ui developer tool", self.demo, cwd=self.root)["id"], "midnight")
+        self.assertEqual(self.cli.suggest("look", "friendly consumer education app", self.demo, cwd=self.root)["id"], "paper")
+        self.assertEqual(self.cli.suggest("look", "minimal b2b fintech", self.demo, cwd=self.root)["id"], "mono")
 
     def test_motion_styles_all_have_tags_and_a_dark_fintech_product_gets_nocturne(self):
         styles = sorted((REPO / "motion-templates").glob("*/style.json"))

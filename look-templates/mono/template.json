@@ -1,0 +1,102 @@
+{
+  "id": "mono",
+  "name": "Mono",
+  "description": "A crisp, neutral look: quiet greys with no colour in the background, tight 10 px corners, quicker zooms and hard cuts, Geist titles that fade in, and a black sweep. Lets the product's own colour be the only colour.",
+  "best_for": [
+    "light ui",
+    "fintech",
+    "b2b",
+    "dashboard",
+    "minimal"
+  ],
+  "created": "2026-11-27",
+  "source": "hand-made",
+  "_comment": "Designed for demo-studio, not copied from a video. brand.accent is left out so a demo sets its own product colour.",
+  "look": {
+    "brand": {
+      "font": "geist",
+      "ink": "#111111",
+      "secondary": "#6B6B6B",
+      "background": {
+        "base": "#EDEDED",
+        "fields": [
+          "#F7F7F7",
+          "#E2E2E2",
+          "#F0F0F0",
+          "#DADADA",
+          "#FAFAFA"
+        ]
+      },
+      "sweep": [
+        "#111111",
+        "#4A4A4A"
+      ],
+      "dark": "#0A0A0A"
+    },
+    "window": {
+      "rect": [
+        180,
+        100,
+        1560,
+        800
+      ],
+      "radius": 10,
+      "shadow": "0 30px 70px rgba(0,0,0,0.14), 0 6px 16px rgba(0,0,0,0.08)"
+    },
+    "zoom": {
+      "scale": 1.12,
+      "dur": 0.9,
+      "ease": [
+        0.37,
+        0,
+        0.63,
+        1
+      ]
+    },
+    "highlight": {
+      "stroke": 2,
+      "radius": 6,
+      "pad": [
+        15,
+        9
+      ],
+      "delay": 0.17,
+      "fill_alpha": 0.07,
+      "halo_alpha": 0.1
+    },
+    "pill": {
+      "center_y": 962,
+      "height": 60,
+      "radius": 12,
+      "font_size": 28,
+      "kinds": [
+        "statement",
+        "person"
+      ]
+    },
+    "title": {
+      "size": 120,
+      "weight": 600,
+      "tracking": -3,
+      "reveal": "fade",
+      "accent_word": true
+    },
+    "transitions": {
+      "window_in": 0.5,
+      "cut": "cut"
+    },
+    "end": {
+      "kind": "sweep-logo",
+      "seconds": 6.5
+    },
+    "pacing": {
+      "shot_max": 6.0
+    },
+    "audio": {
+      "lufs": -14.0,
+      "true_peak": -1.0,
+      "music_gap_db": 13.0,
+      "outro_silence": 3.0
+    }
+  }
+}
