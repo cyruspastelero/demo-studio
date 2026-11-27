@@ -1,7 +1,7 @@
 // Launch-ad engine (motion/): run with node tests/test_motion_validate.mjs (node:test, no browser).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { readFileSync, mkdtempSync, writeFileSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
@@ -156,4 +156,29 @@ test('the default exit (absent or auto) repeated is not warned about', () => {
 
 test('a board with no scenes array gives no warnings', () => {
   assert.deepEqual(repetitionWarnings({}), []);
+});
+
+test('a scene can place extra sound cues by name', () => {
+  const b = base();
+  b.scenes[0].cues = [{ at: 0.4, name: 'scroll' }, { at: 1.2, name: 'success', gain: -3 }];
+  b.audio = { sfxKit: 'synth' };
+  assert.deepEqual(validateStoryboard(b, schema, boardPath), []);
+});
+
+test('an unknown cue name or kit is rejected', () => {
+  const b = base();
+  b.scenes[0].cues = [{ at: 0.4, name: 'kaboom' }];
+  b.audio = { sfxKit: 'mp3' };
+  const errors = validateStoryboard(b, schema, boardPath);
+  assert.ok(errors.some((e) => e.startsWith('scenes[0].cues[0].name')), errors.join('\n'));
+  assert.ok(errors.some((e) => e.startsWith('audio.sfxKit')), errors.join('\n'));
+});
+
+test('every cue name has a sound and every recorded sound has a listed source', () => {
+  const kitDir = join(here, '../motion/sfx-kit');
+  const recorded = readdirSync(kitDir).filter((f) => f.endsWith('.wav')).map((f) => f.slice(0, -4));
+  const synth = ['whoosh', 'swish', 'click', 'tick', 'pop', 'hit', 'sparkle', 'typing'];
+  for (const name of schema.$defs.cueName.enum) assert.ok(recorded.includes(name) || synth.includes(name), `no sound for cue ${name}`);
+  const sources = readFileSync(join(kitDir, 'SOURCES.md'), 'utf8');
+  for (const name of recorded) assert.match(sources, new RegExp(`^\\| \`${name}\` \\|`, 'm'), `${name}.wav has no row in SOURCES.md`);
 });

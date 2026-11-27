@@ -125,6 +125,12 @@
         "sfxGainDb": {
           "type": "number"
         },
+        "sfxKit": {
+          "enum": [
+            "recorded",
+            "synth"
+          ]
+        },
         "sfx": {
           "type": "object",
           "additionalProperties": {
@@ -339,6 +345,12 @@
         },
         "sfx": {
           "type": "boolean"
+        },
+        "cues": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/sceneCue"
+          }
         },
         "id": {
           "type": "string"
@@ -564,6 +576,7 @@
         "exit": {},
         "tone": {},
         "sfx": {},
+        "cues": {},
         "id": {},
         "note": {}
       }
@@ -1088,6 +1101,47 @@
       "additionalPropertiesFrom": [
         "common"
       ]
+    },
+    "cueName": {
+      "enum": [
+        "whoosh",
+        "swish",
+        "click",
+        "tick",
+        "pop",
+        "hit",
+        "sparkle",
+        "typing",
+        "scroll",
+        "toggle",
+        "select",
+        "open",
+        "close",
+        "success",
+        "error",
+        "notify",
+        "drop"
+      ]
+    },
+    "sceneCue": {
+      "type": "object",
+      "required": [
+        "at",
+        "name"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "at": {
+          "type": "number",
+          "minimum": 0
+        },
+        "name": {
+          "$ref": "#/$defs/cueName"
+        },
+        "gain": {
+          "type": "number"
+        }
+      }
     }
   }
 }

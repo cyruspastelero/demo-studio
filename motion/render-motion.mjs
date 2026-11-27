@@ -6,7 +6,7 @@
 //        [--style <name>] [--from <s>] [--to <s>] [--no-audio] [--check]
 //        [--stills <t1,t2,...> --stills-dir <dir>]
 import { spawn, spawnSync } from 'node:child_process';
-import { readFileSync, mkdirSync, writeFileSync, existsSync, rmSync } from 'node:fs';
+import { readFileSync, mkdirSync, writeFileSync, existsSync, rmSync, readdirSync } from 'node:fs';
 import { resolve, dirname, join, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
@@ -23,6 +23,9 @@ const STYLES_DIR = join(ROOT, 'motion-templates');
 const FONT_DIRS = [join(ROOT, 'assets', 'fonts'), join(ROOT, 'site', 'fonts')];
 const SFX_DIR = join(HERE, 'sfx');
 const SFX_NAMES = ['whoosh', 'swish', 'click', 'tick', 'pop', 'hit', 'sparkle', 'typing'];
+// Recorded CC0 sounds (Kenney), committed; see motion/sfx-kit/SOURCES.md. They replace the synthesised
+// cue of the same name, and add UI cues (scroll, toggle, ...) the synthesiser does not make.
+const KIT_DIR = join(HERE, 'sfx-kit');
 
 function parseArgs(argv) {
   const args = { _: [] };
@@ -117,13 +120,19 @@ function encoder(out, fps, { stillsDir } = {}) {
   return { write, end: async () => { if (failure) throw failure; ff.stdin.end(); await done; } };
 }
 
-/** The synthesised SFX kit in motion/sfx (made by make-sfx.mjs on first use). */
-function builtinSfx() {
+/**
+ * The built-in SFX kit: the synthesised cues in motion/sfx (made by make-sfx.mjs on first use), overlaid
+ * with the recorded kit in motion/sfx-kit unless kit is 'synth'.
+ */
+function builtinSfx(kit = 'recorded') {
   if (!SFX_NAMES.every((n) => existsSync(join(SFX_DIR, `${n}.wav`)))) {
     const r = spawnSync(process.execPath, [join(HERE, 'make-sfx.mjs'), SFX_DIR], { encoding: 'utf8' });
     if (r.status !== 0) throw new Error(`making the SFX kit failed: ${r.stderr}`);
   }
-  return Object.fromEntries(SFX_NAMES.map((n) => [n, join(SFX_DIR, `${n}.wav`)]));
+  const synth = Object.fromEntries(SFX_NAMES.map((n) => [n, join(SFX_DIR, `${n}.wav`)]));
+  if (kit === 'synth') return synth;
+  const recorded = readdirSync(KIT_DIR).filter((f) => f.endsWith('.wav')).map((f) => [f.slice(0, -4), join(KIT_DIR, f)]);
+  return { ...synth, ...Object.fromEntries(recorded) };
 }
 
 /** A warning when the music runs out before the ad ends (the mix pads it with silence). */
@@ -192,7 +201,7 @@ export async function render(storyboardPath, opts) {
     if (opts['no-audio']) return { project, out };
     const audio = project.board.audio || {};
     const base = project.base;
-    const sfx = { ...builtinSfx(), ...Object.fromEntries(Object.entries(audio.sfx || {}).map(([k, v]) => [k, resolve(base, v)])) };
+    const sfx = { ...builtinSfx(audio.sfxKit), ...Object.fromEntries(Object.entries(audio.sfx || {}).map(([k, v]) => [k, resolve(base, v)])) };
     const raw = out.replace(/\.mp4$/, '.raw.wav'), norm = out.replace(/\.mp4$/, '.mix.wav');
     temps.push(raw, norm);
     const mix = renderMix({ music: audio.music ? resolve(base, audio.music) : null, musicStart: audio.musicStart || 0, musicGainDb: audio.musicGainDb || 0, duration: project.duration, fadeOut: audio.fadeOut ?? 1.5, cues, sfx, sfxGainDb: audio.sfxGainDb ?? -10, window: [from, to] }, raw, norm, { loudness: audio.loudness ?? -14, truePeak: audio.truePeak ?? -1.5 });

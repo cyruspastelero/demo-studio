@@ -95,7 +95,8 @@ Top level:
 | `timing.start` | number | Second at which scene 1 starts (default: the first beat). |
 | `timing.tail` | number | Seconds held after the last scene. |
 | `audio.music` | path | Music bed. `musicStart` (s) skips into it; `musicGainDb`; `fadeOut` (s). A track shorter than `musicStart` plus the ad is padded with silence, with a warning. |
-| `audio.sfx` | `{cue: path}` | Optional: your own files for the cue names scenes emit (see below). Without it the built-in synthesised kit is used. |
+| `audio.sfx` | `{cue: path}` | Optional: your own files for any cue name (see below). They win over the built-in kit. |
+| `audio.sfxKit` | `recorded`/`synth` | Built-in kit: `recorded` (default) uses the CC0 recordings in `motion/sfx-kit/`; `synth` uses only the old synthesised kit. |
 | `audio.sfxGainDb` | number | SFX level relative to music, default -10. |
 | `audio.loudness`, `audio.truePeak` | number | Loudnorm target, default -14 LUFS and -1.5 dBTP. |
 | `scenes` | array | Required, in order. |
@@ -103,7 +104,8 @@ Top level:
 Every scene has `type`, and either `beats` or `duration` (seconds). Optional on every scene:
 `exit` (`auto` = the style's transition, or `blurScale`, `whip`, `zoomThrough`, `fade`, `cut`),
 `tone` (`light`/`dark`: switch palettes for this scene; the background cross-fades), `sfx: false`
-to mute its cues, `id`, `note`.
+to mute its cues, `cues` (extra sounds: `[{"at": 1.5, "name": "scroll", "gain": -3}]`, `at` in the
+scene's beats or seconds like other `at` fields, `gain` in dB), `id`, `note`.
 
 **Media** values are an image path (png, jpg, webp, svg), a video or GIF path, or a clip object
 `{ "src": "take.mp4", "from": 12.2, "to": 18.6, "rate": 1.6, "crop": [x, y, w, h] }` (crop in
@@ -276,9 +278,12 @@ render at a time.
    the music stops for one bar at 15 s, so a 2-beat `sparkle` sits in that break and the pipeline lands
    on the drop.
 4. Scenes emit named cues (`whoosh`, `swish`, `click`, `tick`, `pop`, `hit`, `sparkle`, `typing`) at the
-   exact frame of the event. The built-in kit is synthesised with ffmpeg by `motion/make-sfx.mjs` on
-   the first render (into `motion/sfx/`, git-ignored), so there is nothing to license; `audio.sfx`
-   maps names to your own files instead. `<out>.timeline.json` lists every scene
+   exact frame of the event. A scene's `cues` adds more at chosen times, from the same names plus
+   the UI set: `scroll`, `toggle`, `select`, `open`, `close`, `success`, `error`, `notify`, `drop`.
+   The built-in kit is recorded: CC0 Kenney sounds in `motion/sfx-kit/`, sources and processing in
+   its `SOURCES.md`. `whoosh` and `hit` have no recording that fits, so they come from the ffmpeg
+   synthesiser `motion/make-sfx.mjs` (made on the first render into `motion/sfx/`, git-ignored).
+   `audio.sfxKit: "synth"` uses only the synthesised kit; `audio.sfx` maps names to your own files. `<out>.timeline.json` lists every scene
    time and cue.
 5. The mix is music + cues (`sfxGainDb` under the music), then EBU R128 loudnorm in two passes
    (measure, then apply linear gain) to `audio.loudness` LUFS and `audio.truePeak` dBTP.
@@ -305,6 +310,8 @@ render at a time.
 motion/render-motion.mjs     CLI: validate, time, prepare media, render frames, mix, mux
 motion/analyze-beats.mjs     music -> beats.json
 motion/make-sfx.mjs          synthesised SFX kit -> motion/sfx/*.wav (run automatically)
+motion/sfx-kit/              recorded CC0 SFX kit (Kenney); SOURCES.md lists every file
+motion/music/                bundled music: ad tracks and narration beds, each with beats.json
 motion/contact-sheet.mjs     review sheet of a video
 motion/engine/               the page Chrome renders: runtime.js (scenes, seek, backgrounds,
                              transitions, camera), kit.js (text fitting and reveals, media, panels,

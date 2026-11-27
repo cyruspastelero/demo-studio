@@ -120,6 +120,7 @@ async function load(config) {
     scene.exitSec = scene.exit === 'cut' ? 0 : style.motion.exitMs / 1000;
     scene.impl = def.build(cam, { ...def.defaults, ...params }, sctx, scene.dur);
     if (params.sfx !== false && def.enterCue) ctx.cue(0, def.enterCue);
+    if (params.sfx !== false) (params.cues || []).forEach((c) => ctx.cue(ctx.sec(c.at), c.name, c.gain || 0));
     state.scenes.push(scene);
   });
   state.currentScene = null;
