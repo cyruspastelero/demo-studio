@@ -135,6 +135,23 @@ describe('save and load', () => {
     }
   });
 
+  it('reports a quick write back to an old version once the page was served the one in between', async () => {
+    cpSync(join(EXAMPLE, 'demo.json'), join(dir, 'demo.json'));
+    const changes = [];
+    const store = new DocumentStore(dir, (doc) => changes.push(doc));
+    try {
+      const original = readFileSync(join(dir, 'demo.json'), 'utf8');
+      // Two writes inside one settle window: the page loads the middle version straight from disk.
+      writeFileSync(join(dir, 'demo.json'), JSON.stringify({ ...JSON.parse(original), title: 'Middle' }));
+      store.seen('demo', readDocument(dir, 'demo').hash);
+      writeFileSync(join(dir, 'demo.json'), original);
+      for (let waited = 0; !changes.length && waited < 5000; waited += 50) await new Promise((r) => setTimeout(r, 50));
+      expect(changes.at(-1)?.text).toBe(original);
+    } finally {
+      store.close();
+    }
+  });
+
   it('reports an outside edit through the watcher', async () => {
     cpSync(join(EXAMPLE, 'demo.json'), join(dir, 'demo.json'));
     const changes = [];

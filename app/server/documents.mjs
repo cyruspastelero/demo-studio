@@ -65,6 +65,12 @@ export class DocumentStore {
     }, WATCH_SETTLE_MS));
   }
 
+  // The page was just given this version straight from disk. Count it as known, so a quick write
+  // back to the older text (inside one watch settle window) still reaches the page as a change.
+  seen(kind, hash) {
+    this.known.set(kind, hash);
+  }
+
   // Validates, refuses to overwrite an outside edit the client has not seen, then writes a temp
   // file and renames it over the original so a reader never sees half a file.
   save(kind, data, baseHash) {

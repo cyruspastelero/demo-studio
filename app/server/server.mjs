@@ -125,6 +125,7 @@ export function createStudio({ repo, cwd, folder: initialFolder, dev = false, op
     if (!folder) return { mode: 'picker', repo, demos: listDemos({ cwd, repo }), workspace: workspace({ cwd }) };
     const files = Object.fromEntries(Object.keys(FILES).map((kind) => {
       const doc = readDocument(folder, kind);
+      if (doc) store?.seen(kind, doc.hash);
       return [kind, doc && { name: doc.name, text: doc.text, hash: doc.hash, data: doc.data, errors: doc.errors }];
     }));
     const job = runner.state();
