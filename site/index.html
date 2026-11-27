@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="color-scheme" content="light dark">
+<meta name="color-scheme" content="dark">
 <title>demo-studio: a finished demo video of your real app, made by your coding agent</title>
 <meta name="description" content="Open-source skills for coding agents (Claude Code, Codex, Cursor, Gemini CLI, Copilot) that plan, record, cut and narrate a demo video of your real product. Free and local.">
 <link rel="canonical" href="https://cyruspastelero.github.io/demo-studio/">
-<meta name="theme-color" content="#d2430e">
+<meta name="theme-color" content="#0a0a0a">
 <link rel="icon" href="logo/mark.svg" type="image/svg+xml">
 <link rel="icon" href="logo/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="logo/apple-touch-icon.png">
@@ -27,166 +27,177 @@
 <meta name="twitter:image" content="https://cyruspastelero.github.io/demo-studio/og-image.png">
 <meta name="twitter:image:alt" content="demo-studio: a finished demo video of your real app, with a frame from a sample video">
 <style>
-@font-face { font-family: "Bricolage Grotesque"; src: url(fonts/bricolage-grotesque.woff2) format("woff2"); font-weight: 200 800; font-display: swap; }
-@font-face { font-family: "Schibsted Grotesk"; src: url(fonts/schibsted-grotesk.woff2) format("woff2"); font-weight: 400 900; font-display: swap; }
+@font-face { font-family: "DM Sans"; src: url(fonts/dm-sans.woff2) format("woff2"); font-weight: 100 1000; font-display: swap; }
+@font-face { font-family: "Geist"; src: url(fonts/GeistVariable.woff2) format("woff2"); font-weight: 100 900; font-display: swap; }
 @font-face { font-family: "Geist Mono"; src: url(fonts/GeistMonoVariable.woff2) format("woff2"); font-weight: 100 900; font-display: swap; }
 
 :root {
-  --bg: #fbfbfa;
-  --raised: #ffffff;
-  --ink: #141414;
-  --muted: #5e5e5b;
-  --rule: #e4e4e0;
-  --accent: #d2430e;
-  --on-accent: #ffffff;
-  --well: #f1f1ee;
-  --display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
-  --body: "Schibsted Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --canvas: #0a0a0a;
+  --graphite: #161616;
+  --glass: rgba(212, 212, 212, 0.06);
+  --snow: #ffffff;
+  --bone: #ededed;
+  --ash: #c2c2c2;
+  --slate: #8a8a8a;
+  --rule: rgba(229, 229, 229, 0.12);
+  --edge: rgba(229, 229, 229, 0.28);
+  --inset: rgba(255, 255, 255, 0.1) 0 0 0 1px inset;
+  --violet-wash: linear-gradient(90deg, transparent, transparent 30%, rgba(107, 98, 242, 0.565) 50%, transparent 70%, transparent);
+  --sans: "DM Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --head: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #111110; --raised: #1a1a19; --ink: #ededeb; --muted: #a3a39e; --rule: #2d2d2b;
-    --accent: #ff7043; --on-accent: #141414; --well: #1f1f1d;
-  }
 }
 
 * { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; scroll-padding-top: 96px; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
-body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.6 var(--body); }
-a { color: inherit; text-underline-offset: 3px; }
-a:focus-visible, button:focus-visible, video:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-h1, h2, h3 { font-family: var(--display); font-weight: 650; text-wrap: balance; margin: 0; }
+body { margin: 0; background: var(--canvas); color: var(--bone); font: 400 16px/1.56 var(--sans); -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-underline-offset: 3px; text-decoration-color: var(--edge); }
+a:hover { text-decoration-color: currentColor; }
+:focus-visible { outline: 2px solid var(--snow); outline-offset: 3px; }
+h1, h2, h3 { text-wrap: balance; margin: 0; }
 p { text-wrap: pretty; }
-code, pre, .mono { font-family: var(--mono); }
-.wrap { max-width: 1120px; margin: 0 auto; padding: 0 16px; }
-@media (min-width: 720px) { .wrap { padding: 0 32px; } }
+code, pre { font-family: var(--mono); font-size: 0.88em; }
+p code, dd code, td code, li code { color: var(--snow); }
+.wrap { max-width: 1200px; margin: 0 auto; padding: 0 16px; }
+@media (min-width: 720px) { .wrap { padding: 0 24px; } }
 
-/* Top bar */
-.top { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 0; }
-.brand { display: flex; align-items: center; gap: 10px; font: 600 17px var(--display); text-decoration: none; }
-.brand img { width: 28px; height: 28px; }
-.top nav { display: flex; gap: 22px; font-size: 15px; }
-.top nav a { color: var(--muted); text-decoration: none; }
-.top nav a:hover { color: var(--ink); }
-@media (max-width: 600px) { .top nav .wide { display: none; } }
+/* Floating frosted nav */
+.top { position: sticky; top: 16px; z-index: 10; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin: 16px 0 0; padding: 8px 8px 8px 16px; border-radius: 19px; border: 1px solid var(--rule);
+  background: rgba(22, 22, 22, 0.78); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+  box-shadow: rgba(255, 255, 255, 0.02) 0 3px 4.5px, rgba(0, 0, 0, 0.04) 0 10px 8px, rgba(0, 0, 0, 0.1) 0 4px 3px; }
+.brand { display: flex; align-items: center; gap: 10px; font: 500 16px var(--sans); letter-spacing: 0.01em; text-decoration: none; color: var(--snow); }
+.brand img { width: 24px; height: 24px; }
+.top nav { display: flex; align-items: center; gap: 4px; font-size: 14px; letter-spacing: 0.025em; }
+.top nav a { padding: 6px 14px; border-radius: 9999px; text-decoration: none; color: rgba(255, 255, 255, 0.72); }
+.top nav a:hover { color: var(--snow); background: rgba(255, 255, 255, 0.06); }
+.top nav .ghost { border: 1px solid var(--edge); color: rgba(255, 255, 255, 0.85); margin-left: 4px; }
+.top nav .solid { background: var(--snow); color: var(--graphite); font-weight: 500; padding: 6px 16px; }
+.top nav .solid:hover { background: var(--bone); color: var(--graphite); }
+@media (max-width: 860px) { .top nav .wide { display: none; } }
 
-/* Section heads read like markers on a timeline */
-.mark { display: flex; align-items: baseline; gap: 14px; margin: 0 0 18px; font: 500 12px/1 var(--mono); letter-spacing: 0.04em; color: var(--muted); text-transform: uppercase; }
-.mark b { color: var(--accent); font-weight: 500; }
-.mark::after { content: ""; flex: 1; border-top: 1px solid var(--rule); transform: translateY(-3px); }
-section { padding: 72px 0 0; }
-h2 { font-size: clamp(26px, 3.2vw, 36px); line-height: 1.15; letter-spacing: -0.01em; max-width: 22ch; }
-.lead { color: var(--muted); max-width: 54ch; margin: 12px 0 28px; }
+/* Buttons */
+.btn { display: inline-flex; align-items: center; padding: 10px 20px; border-radius: 9999px; background: var(--snow); color: var(--graphite);
+  font: 500 15px var(--sans); letter-spacing: 0.01em; text-decoration: none; }
+.btn:hover { background: var(--bone); }
+.btn.ghost { background: transparent; color: var(--snow); border: 1px solid rgba(255, 255, 255, 0.55); }
+.btn.ghost:hover { background: rgba(255, 255, 255, 0.1); }
 
-/* Hero */
-.hero { padding: 48px 0 0; }
-.hero h1 { font-size: clamp(34px, 5vw, 58px); line-height: 1.06; letter-spacing: -0.015em; max-width: 17ch; }
-.hero .intro { font-size: 19px; color: var(--muted); max-width: 50ch; margin: 20px 0 28px; }
-.actions { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; }
-.btn { display: inline-block; padding: 11px 18px; border-radius: 8px; background: var(--accent); color: var(--on-accent); font-weight: 600; text-decoration: none; }
-.link { font-weight: 600; }
+/* Hero: amber-to-cobalt horizon, the product rising out of it */
+.hero { margin: 24px 0 0; border-radius: 42px; overflow: hidden; color: var(--snow);
+  background: linear-gradient(100deg, #b45a1e 0%, #a24a34 24%, #6a3f9a 56%, #2b44b4 82%, #1a2f8f 100%); }
+.hero-text { display: grid; grid-template-columns: 7fr 5fr; gap: 32px 56px; padding: 72px 56px 56px; align-items: end; }
+.hero h1 { margin: 0 0 28px; font: 500 clamp(40px, 6.2vw, 72px)/1 var(--sans); letter-spacing: -0.035em; max-width: 15ch; }
+.hero .intro { margin: 0; font-size: 18px; line-height: 1.5; max-width: 46ch; color: rgba(255, 255, 255, 0.92); }
+.points { list-style: none; margin: 0 0 28px; padding: 0; display: grid; gap: 14px; }
+.points li { display: flex; gap: 12px; align-items: flex-start; font-size: 16px; line-height: 1.45; }
+.points svg { flex: none; margin-top: 2px; width: 18px; height: 18px; }
+.actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.device { margin: 0 56px; border-radius: 40px 40px 0 0; overflow: hidden; background: #000; box-shadow: var(--inset); }
+.device video { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; }
+.hero-caption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; margin: 14px 8px 0; font-size: 13px; letter-spacing: 0.025em; color: var(--slate); }
+@media (max-width: 860px) {
+  .hero { border-radius: 28px; background: linear-gradient(170deg, #b45a1e 0%, #9a4a3a 30%, #6a3f9a 60%, #2b44b4 100%); }
+  .hero-text { grid-template-columns: 1fr; padding: 48px 24px 32px; }
+  .device { margin: 0 16px; border-radius: 24px 24px 0 0; }
+}
 
-.screen { margin: 40px 0 0; border: 1px solid var(--rule); border-radius: 12px; overflow: hidden; background: #000; }
+/* Sections */
+section { padding: 112px 0 0; }
+h2 { font: 600 clamp(26px, 3vw, 32px)/1.25 var(--head); letter-spacing: -0.01em; color: var(--bone); max-width: 26ch; }
+.lead { color: var(--ash); font-size: 18px; line-height: 1.55; max-width: 58ch; margin: 14px 0 40px; }
+
+/* Video frames and captions */
+.screen { margin: 0; border-radius: 24px; overflow: hidden; background: #000; box-shadow: var(--inset); }
 .screen video, .screen img { display: block; width: 100%; height: auto; }
 .screen video { aspect-ratio: 16 / 9; }
-.caption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; margin: 10px 2px 0; font: 13px/1.5 var(--mono); color: var(--muted); }
+.caption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; margin: 12px 8px 0; font-size: 13px; letter-spacing: 0.025em; color: var(--slate); }
+.caption a { color: var(--ash); }
 
-/* Stages: one track, six segments */
-.track { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(6, 1fr); border-top: 2px solid var(--ink); }
-.track li { padding: 14px 16px 0 0; }
-.track li + li { border-left: 1px solid var(--rule); padding-left: 16px; }
-.track .t { font: 12px var(--mono); color: var(--muted); }
-.track h3 { font-size: 19px; margin: 6px 0 6px; }
-.track p { margin: 0; font-size: 15px; color: var(--muted); }
-.track code { font-size: 12px; color: var(--ink); }
-@media (max-width: 900px) {
-  .track { grid-template-columns: 1fr 1fr; border-top: 0; }
-  .track li, .track li + li { border-left: 0; border-top: 1px solid var(--rule); padding: 14px 16px 16px 0; }
-}
-@media (max-width: 520px) { .track { grid-template-columns: 1fr; } }
+/* Numbered rows: used only where the content is a real sequence */
+.rows { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--rule); }
+.rows li { display: grid; grid-template-columns: 4fr 7fr auto; gap: 8px 32px; align-items: baseline; padding: 20px 0; border-bottom: 1px solid var(--rule); }
+.rows h3 { font: 500 18px/1.4 var(--sans); color: var(--bone); }
+.rows p { margin: 0; color: var(--ash); }
+.rows .n { font: 400 15px var(--sans); color: var(--slate); font-variant-numeric: tabular-nums; }
+.rows .skill { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 10px; border: 1px solid var(--rule); font-size: 12px; color: var(--ash); }
+@media (max-width: 720px) { .rows li { grid-template-columns: 1fr auto; } .rows p { grid-column: 1 / -1; grid-row: 2; } }
 
 /* Live editor */
-.editor-frame { position: relative; border: 1px solid var(--rule); border-radius: 12px; overflow: hidden; background: var(--raised); }
+.editor-frame { position: relative; border-radius: 24px; overflow: hidden; background: var(--graphite); box-shadow: var(--inset); }
+.editor-frame::before { content: ""; position: absolute; inset: 0 0 auto; height: 1px; background: var(--violet-wash); z-index: 1; }
 .editor-frame iframe { display: block; width: 100%; height: 720px; border: 0; }
-@media (min-width: 1200px) { .editor-frame { width: min(1400px, calc(100vw - 64px)); margin-left: 50%; transform: translateX(-50%); } }
+@media (min-width: 1260px) { .editor-frame { width: min(1400px, calc(100vw - 48px)); margin-left: 50%; transform: translateX(-50%); } }
 .editor-small { display: none; }
-@media (max-width: 899px) {
-  .editor-frame { display: none; }
-  .editor-small { display: block; }
-}
-.split { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-top: 32px; align-items: start; }
-.split .screen { margin: 0; }
+@media (max-width: 899px) { .editor-frame { display: none; } .editor-small { display: block; } }
+
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 48px; align-items: start; }
 @media (max-width: 760px) { .split { grid-template-columns: 1fr; } }
-.facts { margin: 0; }
-.facts div { padding: 12px 0; border-top: 1px solid var(--rule); }
-.facts dt { font-weight: 600; }
-.facts dd { margin: 2px 0 0; color: var(--muted); font-size: 15px; }
+
+/* Frosted fact panels */
+.facts { margin: 0; display: grid; gap: 8px; }
+.facts div { padding: 20px 24px; border-radius: 24px; background: var(--glass); box-shadow: var(--inset); }
+.facts dt { font: 500 16px/1.4 var(--sans); color: var(--snow); }
+.facts dd { margin: 4px 0 0; color: var(--ash); font-size: 15px; }
+.facts.pair { grid-template-columns: 1fr 1fr; }
+@media (max-width: 760px) { .facts.pair { grid-template-columns: 1fr; } }
 
 /* Templates */
-.strip { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin: 0 0 12px; }
-.strip img { display: block; width: 100%; height: auto; border-radius: 6px; border: 1px solid var(--rule); }
+.strip { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin: 0 0 14px; }
+.strip img { display: block; width: 100%; height: auto; border-radius: 10px; box-shadow: var(--inset); }
 @media (max-width: 760px) { .strip { grid-template-columns: repeat(3, 1fr); } }
-.how { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; margin-top: 36px; }
-.how h3 { font-size: 19px; margin-bottom: 6px; }
-.how p { margin: 0 0 12px; color: var(--muted); font-size: 15px; }
-@media (max-width: 860px) { .how { grid-template-columns: 1fr; gap: 20px; } }
-pre { margin: 0; padding: 14px 16px; background: var(--well); border-radius: 8px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; }
-/* The setup prompt: wraps on a phone so all of it is readable, with a copy button on top. */
-.prompt { position: relative; }
-.prompt pre { white-space: pre-wrap; overflow-wrap: anywhere; padding-right: 92px; }
-.copy { position: absolute; top: 10px; right: 10px; padding: 6px 12px; border: 0; border-radius: 6px; cursor: pointer;
-  background: var(--accent); color: var(--on-accent); font: 600 13px var(--body); }
-.copy:hover { filter: brightness(1.08); }
-.controls { font: 13px/1.8 var(--mono); color: var(--muted); }
+.controls { margin: 0; font-size: 13px; letter-spacing: 0.025em; color: var(--slate); }
+.how { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 48px; }
+.how > div { padding: 28px; border-radius: 24px; background: var(--glass); box-shadow: var(--inset); }
+.how h3 { font: 500 18px/1.4 var(--sans); color: var(--snow); margin-bottom: 8px; }
+.how p { margin: 0 0 14px; color: var(--ash); font-size: 15px; }
+@media (max-width: 860px) { .how { grid-template-columns: 1fr; } }
+pre { margin: 0; padding: 16px 18px; background: var(--canvas); border-radius: 10px; box-shadow: var(--inset); overflow-x: auto; font-size: 13px; line-height: 1.65; color: var(--bone); }
 
-/* Launch ads */
-.styles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-top: 32px; }
+/* Style galleries */
+.styles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-top: 40px; }
 @media (max-width: 1100px) { .styles { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .styles { grid-template-columns: 1fr; } }
 .styles figure { margin: 0; }
-.styles img { display: block; width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--rule); }
-.styles.looks { margin-top: 28px; }
-.styles figcaption { margin-top: 10px; font-size: 15px; color: var(--muted); }
-.styles figcaption b { display: block; color: var(--ink); font: 600 17px var(--display); margin-bottom: 2px; }
-@media (max-width: 760px) { .styles { grid-template-columns: 1fr; } }
-
-/* Sound */
-.chain { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); border-top: 2px solid var(--ink); }
-.chain li { padding: 14px 16px 0 0; }
-.chain li + li { border-left: 1px solid var(--rule); padding-left: 16px; }
-.chain .t { font: 12px var(--mono); color: var(--muted); }
-.chain h3 { font-size: 19px; margin: 6px 0; }
-.chain p { margin: 0; font-size: 15px; color: var(--muted); }
-@media (max-width: 900px) {
-  .chain { grid-template-columns: 1fr 1fr; border-top: 0; }
-  .chain li, .chain li + li { border-left: 0; border-top: 1px solid var(--rule); padding: 14px 16px 16px 0; }
-}
-@media (max-width: 520px) { .chain { grid-template-columns: 1fr; } }
+.styles img { display: block; width: 100%; height: auto; border-radius: 10px; box-shadow: var(--inset); }
+.styles figcaption { margin-top: 12px; font-size: 15px; color: var(--ash); }
+.styles figcaption b { display: block; color: var(--snow); font: 500 16px var(--sans); margin-bottom: 2px; }
+.video-lead { margin-top: 0; }
 
 /* Tables */
 .table { overflow-x: auto; margin-top: 12px; }
-.chain + .table { margin-top: 36px; }
+.rows + .table { margin-top: 48px; }
+table { width: 100%; border-collapse: collapse; font-size: 15px; }
+th, td { text-align: left; vertical-align: top; padding: 14px 20px 14px 0; border-top: 1px solid var(--rule); }
+th { font: 500 13px var(--sans); letter-spacing: 0.025em; color: var(--slate); border-top: 0; padding-top: 0; }
+td:first-child { font-weight: 500; color: var(--bone); white-space: nowrap; }
 td:last-child { white-space: nowrap; }
-.cols > * { min-width: 0; }
+td.m { color: var(--ash); }
 td code { overflow-wrap: anywhere; }
 @media (max-width: 600px) { td:first-child, td:last-child { white-space: normal; } th, td { padding-right: 12px; } }
-table { width: 100%; border-collapse: collapse; font-size: 15px; }
-th, td { text-align: left; vertical-align: top; padding: 10px 16px 10px 0; border-top: 1px solid var(--rule); }
-th { font: 500 12px var(--mono); letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); border-top: 0; }
-td:first-child { font-weight: 600; white-space: nowrap; }
-td.m { color: var(--muted); }
-.cols { display: grid; grid-template-columns: 5fr 7fr; gap: 40px; margin-top: 8px; align-items: start; }
-.cols h3 { font-size: 19px; margin: 0 0 4px; }
-@media (max-width: 860px) { .cols { grid-template-columns: 1fr; gap: 28px; } }
-.note { font-size: 15px; color: var(--muted); max-width: 60ch; margin: 16px 0 0; }
+.cols { display: grid; grid-template-columns: 5fr 7fr; gap: 48px; margin-top: 8px; align-items: start; }
+.cols > * { min-width: 0; }
+.cols h3 { font: 500 18px var(--sans); color: var(--snow); margin: 0 0 12px; }
+@media (max-width: 860px) { .cols { grid-template-columns: 1fr; gap: 32px; } }
+.note { font-size: 15px; color: var(--slate); max-width: 64ch; margin: 20px 0 0; }
+.note a, .note code { color: var(--ash); }
 
-/* Start */
-.say { border: 1px solid var(--rule); border-radius: 10px; background: var(--raised); padding: 14px 16px; margin: 16px 0 0; }
-.say span { display: block; font: 12px var(--mono); color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
-.say p { margin: 0; }
+/* Start: the one prompt, lit from behind */
+#start .prompt { position: relative; margin-top: 8px; }
+#start .prompt::before { content: ""; position: absolute; inset: -80px -40px; z-index: -1; pointer-events: none;
+  background: radial-gradient(closest-side, rgba(107, 98, 242, 0.22), transparent); }
+.prompt pre { white-space: pre-wrap; overflow-wrap: anywhere; padding: 24px 104px 24px 24px; border-radius: 24px; background: var(--graphite); font-size: 14px; }
+.copy { position: absolute; top: 16px; right: 16px; padding: 7px 16px; border: 0; border-radius: 9999px; cursor: pointer;
+  background: var(--snow); color: var(--graphite); font: 500 14px var(--sans); }
+.copy:hover { background: var(--bone); }
+.say { border-radius: 24px; background: var(--glass); box-shadow: var(--inset); padding: 20px 24px; margin: 24px 0 0; }
+.say span { display: block; font-size: 13px; letter-spacing: 0.025em; color: var(--slate); margin-bottom: 4px; }
+.say p { margin: 0; font-size: 18px; color: var(--snow); }
 
-footer { margin-top: 88px; padding: 24px 0 40px; border-top: 1px solid var(--rule); font-size: 14px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; }
+footer { margin-top: 128px; padding: 24px 0 40px; border-top: 1px solid var(--rule); font-size: 13px; letter-spacing: 0.025em; color: var(--slate);
+  display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; }
+footer a { color: var(--ash); }
 </style>
 </head>
 <body>
@@ -199,42 +210,53 @@ footer { margin-top: 88px; padding: 24px 0 40px; border-top: 1px solid var(--rul
       <a class="wide" href="#ads">Launch ads</a>
       <a class="wide" href="#sound">Sound</a>
       <a class="wide" href="#local">Local and safe</a>
-      <a href="https://github.com/cyruspastelero/demo-studio">GitHub</a>
+      <a class="ghost" href="https://github.com/cyruspastelero/demo-studio">GitHub</a>
+      <a class="solid" href="#start">Install</a>
     </nav>
   </header>
 
   <main>
     <div class="hero">
-      <h1>Tell your coding agent the goal. Get a finished demo video of your real&nbsp;app.</h1>
-      <p class="intro">demo-studio is a set of open-source skills for coding agents: Claude Code, Codex, Cursor, Gemini CLI, Copilot and others. Your agent plans the story, shows you the plan, clicks through your product in a real browser, records each scene, then cuts and narrates the video. Everything runs on your machine.</p>
-      <div class="actions">
-        <a class="btn" href="#start">Install it</a>
-        <a class="link" href="#editor">Try the editor</a>
+      <div class="hero-text">
+        <div>
+        <h1>Tell your coding agent the goal. Get a finished demo video of your real&nbsp;app.</h1>
+        <p class="intro">demo-studio is a set of open-source skills for Claude Code, Codex, Cursor, Gemini CLI, Copilot and other coding agents. Your agent plans the story, records each scene in a real browser, then cuts and narrates the video.</p>
+        </div>
+        <div>
+          <ul class="points">
+            <li><svg viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="8.25" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".6"/><path d="M5.5 9.2l2.3 2.3 4.7-4.9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Plans the story and shows it to you before recording anything</span></li>
+            <li><svg viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="8.25" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".6"/><path d="M5.5 9.2l2.3 2.3 4.7-4.9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Clicks through your real app in Chrome, with secrets blurred</span></li>
+            <li><svg viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="8.25" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".6"/><path d="M5.5 9.2l2.3 2.3 4.7-4.9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Cuts, narrates and mixes the video to a measured quality bar</span></li>
+            <li><svg viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="8.25" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".6"/><path d="M5.5 9.2l2.3 2.3 4.7-4.9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Runs on your machine. Nothing to sign up for</span></li>
+          </ul>
+          <div class="actions">
+            <a class="btn" href="#start">Install it</a>
+            <a class="btn ghost" href="#editor">Try the editor</a>
+          </div>
+        </div>
       </div>
-      <figure class="screen" style="margin-bottom:0">
+      <figure class="device" style="margin-bottom:0">
         <video controls preload="none" playsinline poster="img/sample-showcase-poster.jpg" aria-label="Study app showcase, made by demo-studio">
           <source src="media/sample-showcase.mp4" type="video/mp4">
         </video>
       </figure>
-      <p class="caption"><span>Study app showcase · 1:18 · 1080p with sound</span><span>Recorded and finished by the plugin. No AI footage.</span></p>
     </div>
+    <p class="hero-caption"><span>Study app showcase, 1:18, 1080p with sound</span><span>Recorded and finished by the plugin. No AI footage.</span></p>
 
     <section id="stages" aria-labelledby="stages-h">
-      <p class="mark"><b>00:01</b>How a demo gets made</p>
       <h2 id="stages-h">Six stages, each one a skill you can also run on its own.</h2>
       <p class="lead">Your agent shows you the plan first and records nothing until you say go. After that it runs every stage to the end, stopping only for a login code, or for a step that would cost money or can't be undone.</p>
-      <ol class="track">
-        <li><span class="t">01</span><h3>Plan</h3><p>Brief, run sheet with exact on-screen text, shot list, voiceover draft. <code>demo-plan</code></p></li>
-        <li><span class="t">02</span><h3>Prep</h3><p>Sandbox account, a seeded demo user, a test run of every step. <code>demo-plan</code></p></li>
-        <li><span class="t">03</span><h3>Record</h3><p>One clean 2x screencast per scene, secrets blurred in the page. <code>demo-record</code></p></li>
-        <li><span class="t">04</span><h3>Review</h3><p>The keeper takes, uncut, in story order, to check before editing. <code>demo-edit</code></p></li>
-        <li><span class="t">05</span><h3>Edit</h3><p>Keynote cut, narration and music, mixed to -14 LUFS. <code>demo-edit</code></p></li>
-        <li><span class="t">06</span><h3>Hand off</h3><p>Editor folder and zip, plus 4:5 and 9:16 cuts. <code>demo-handoff</code></p></li>
+      <ol class="rows">
+        <li><h3>Plan</h3><p>Brief, run sheet with exact on-screen text, shot list, voiceover draft. <span class="skill">demo-plan</span></p><span class="n">01</span></li>
+        <li><h3>Prep</h3><p>Sandbox account, a seeded demo user, a test run of every step. <span class="skill">demo-plan</span></p><span class="n">02</span></li>
+        <li><h3>Record</h3><p>One clean 2x screencast per scene, secrets blurred in the page. <span class="skill">demo-record</span></p><span class="n">03</span></li>
+        <li><h3>Review</h3><p>The keeper takes, uncut, in story order, to check before editing. <span class="skill">demo-edit</span></p><span class="n">04</span></li>
+        <li><h3>Edit</h3><p>Keynote cut, narration and music, mixed to -14 LUFS. <span class="skill">demo-edit</span></p><span class="n">05</span></li>
+        <li><h3>Hand off</h3><p>Editor folder and zip, plus 4:5 and 9:16 cuts. <span class="skill">demo-handoff</span></p><span class="n">06</span></li>
       </ol>
     </section>
 
     <section id="editor" aria-labelledby="editor-h">
-      <p class="mark"><b>00:02</b>The editor</p>
       <h2 id="editor-h">Fix the cut yourself, in a timeline that runs on 127.0.0.1.</h2>
       <p class="lead">This is the real editor, opened on the todo sample from the repo. Scrub the timeline, retime a shot, drag and edit text right on the video, pick a font, or rewrite a voiceover line. On your machine it saves to <code>demo.json</code> and renders; here, edits stay in the tab.</p>
       <div class="editor-frame">
@@ -244,7 +266,7 @@ footer { margin-top: 88px; padding: 24px 0 40px; border-top: 1px solid var(--rul
         <figure class="screen"><img src="img/editor.gif" alt="The editor on the todo sample: playing the cut, selecting a scene and editing its voiceover" loading="lazy"></figure>
         <p class="caption"><span>The editor needs a wider screen.</span><a href="editor/?open">Open it anyway</a></p>
       </div>
-      <p class="caption"><span>Live demo · no server · rendering needs the local studio</span><a href="editor/?open">Open full screen</a></p>
+      <p class="caption"><span>Live demo with no server. Rendering needs the local studio.</span><a href="editor/?open">Open full screen</a></p>
 
       <div class="split">
         <div>
@@ -253,7 +275,7 @@ footer { margin-top: 88px; padding: 24px 0 40px; border-top: 1px solid var(--rul
               <source src="media/sample-todo.mp4" type="video/mp4">
             </video>
           </figure>
-          <p class="caption"><span>The finished todo sample · 0:37</span><a href="https://github.com/cyruspastelero/demo-studio/tree/main/examples/todo-sample">Its plan and takes</a></p>
+          <p class="caption"><span>The finished todo sample, 0:37</span><a href="https://github.com/cyruspastelero/demo-studio/tree/main/examples/todo-sample">Its plan and takes</a></p>
         </div>
         <dl class="facts">
           <div><dt>Your product, not a mock-up</dt><dd>Every frame is the app running in Chrome, driven by Playwright with an eased pointer and human typing.</dd></div>
@@ -265,7 +287,6 @@ footer { margin-top: 88px; padding: 24px 0 40px; border-top: 1px solid var(--rul
     </section>
 
     <section id="templates" aria-labelledby="templates-h">
-      <p class="mark"><b>00:03</b>Look templates</p>
       <h2 id="templates-h">The look is a template, so the setup grows with you.</h2>
       <p class="lead">Window, zooms, highlights, callouts, titles, ending and loudness all come from one <code>template.json</code>. Four looks are built in; these six frames are the default <code>house</code> look, drawn on the todo sample.</p>
       <div class="strip" role="list" aria-label="The house look, six preview frames">
@@ -276,7 +297,7 @@ footer { margin-top: 88px; padding: 24px 0 40px; border-top: 1px solid var(--rul
         <img role="listitem" src="img/house/05.png" alt="End card" loading="lazy">
         <img role="listitem" src="img/house/06.png" alt="Logo outro on dark" loading="lazy">
       </div>
-      <p class="controls">brand · window · zoom · highlight · pill · title · transitions · end · pacing · audio</p>
+      <p class="controls">A template sets the brand, window, zoom, highlight, pill, title, transitions, end card, pacing and audio.</p>
       <div class="styles looks">
         <figure><img src="img/looks/house.png" alt="House look: a title in Inter on a soft pastel background" loading="lazy"><figcaption><b>House</b>The default. A floating window on a soft drifting pastel background.</figcaption></figure>
         <figure><img src="img/looks/midnight.png" alt="Midnight look: a huge bold title on near-black" loading="lazy"><figcaption><b>Midnight</b>Cinematic and dark, with huge bold titles. For dark apps and developer tools.</figcaption></figure>
@@ -303,15 +324,14 @@ footer { margin-top: 88px; padding: 24px 0 40px; border-top: 1px solid var(--rul
     </section>
 
     <section id="ads" aria-labelledby="ads-h">
-      <p class="mark"><b>00:04</b>Launch ads</p>
       <h2 id="ads-h">The same footage, cut as a launch ad.</h2>
       <p class="lead">Skill <code>demo-motion</code> turns a demo's real screens into a short motion piece: words that land on the beat, floating UI, a typed prompt, a finished check. It renders 16:9, 4:5 and 9:16 from one <code>storyboard.json</code>. This one is demo-studio's own launch ad, made with it.</p>
-      <figure class="screen" style="margin-top:0">
+      <figure class="screen">
         <video controls preload="none" playsinline poster="img/sample-launch-ad-poster.jpg" aria-label="demo-studio launch ad, made with the demo-motion skill">
           <source src="media/sample-launch-ad.mp4" type="video/mp4">
         </video>
       </figure>
-      <p class="caption"><span>demo-studio launch ad · airy style · with sound</span><a href="https://github.com/cyruspastelero/demo-studio/tree/main/examples/launch-ad">Its storyboard</a></p>
+      <p class="caption"><span>demo-studio launch ad in the airy style, with sound</span><a href="https://github.com/cyruspastelero/demo-studio/tree/main/examples/launch-ad">Its storyboard</a></p>
 
       <div class="styles">
         <figure><img src="img/motion/airy.jpg" alt="Airy style: dark words on a warm off-white page, one accent word" loading="lazy"><figcaption><b>Airy</b>Light and calm. Words blur in one by one over floating panels.</figcaption></figure>
@@ -328,7 +348,7 @@ footer { margin-top: 88px; padding: 24px 0 40px; border-top: 1px solid var(--rul
               <source src="media/sample-launch.mp4" type="video/mp4">
             </video>
           </figure>
-          <p class="caption"><span>The narrated walkthrough · 1:10</span><a href="https://github.com/cyruspastelero/demo-studio/tree/main/examples/demo-studio-launch">Its plan and scenes</a></p>
+          <p class="caption"><span>The narrated walkthrough, 1:10</span><a href="https://github.com/cyruspastelero/demo-studio/tree/main/examples/demo-studio-launch">Its plan and scenes</a></p>
         </div>
         <dl class="facts">
           <div><dt>Both made from one plan</dt><dd>The walkthrough is the keynote cut with narration; the ad reuses the same recorded screens.</dd></div>
@@ -339,14 +359,13 @@ footer { margin-top: 88px; padding: 24px 0 40px; border-top: 1px solid var(--rul
     </section>
 
     <section id="sound" aria-labelledby="sound-h">
-      <p class="mark"><b>00:05</b>Sound</p>
       <h2 id="sound-h">The voiceover is written with the plan, then timed, voiced and mixed by one script.</h2>
       <p class="lead">Each shot in <code>demo.json</code> carries its own <code>voiceover</code> line. <code>narrate.py</code> turns those lines into the narrated cut, using plain ffmpeg on your machine.</p>
-      <ol class="chain">
-        <li><span class="t">01</span><h3>Fit</h3><p>Every line is checked against the time before the next shot, at about 2.5 words a second. A long line is flagged before any voice is made, so nothing is paid for twice.</p></li>
-        <li><span class="t">02</span><h3>Voice</h3><p>Each line is rendered and placed at the start of its shot. Lines made through ElevenLabs are cached, so a re-run costs nothing.</p></li>
-        <li><span class="t">03</span><h3>Music</h3><p>A bed from <code>music/bed.m4a</code> loops under the cut, sits 13&nbsp;dB below the voice and drops 7&nbsp;dB more under each line, with no pumping. It fades in and out.</p></li>
-        <li><span class="t">04</span><h3>Mix</h3><p>Loudness lands at -14 LUFS with true peak under -1 dBTP, then <code>check-cut.py</code> measures it again on the finished file.</p></li>
+      <ol class="rows">
+        <li><h3>Fit</h3><p>Every line is checked against the time before the next shot, at about 2.5 words a second. A long line is flagged before any voice is made, so nothing is paid for twice.</p><span class="n">01</span></li>
+        <li><h3>Voice</h3><p>Each line is rendered and placed at the start of its shot. Lines made through ElevenLabs are cached, so a re-run costs nothing.</p><span class="n">02</span></li>
+        <li><h3>Music</h3><p>A bed from <code>music/bed.m4a</code> loops under the cut, sits 13&nbsp;dB below the voice and drops 7&nbsp;dB more under each line, with no pumping. It fades in and out.</p><span class="n">03</span></li>
+        <li><h3>Mix</h3><p>Loudness lands at -14 LUFS with true peak under -1 dBTP, then <code>check-cut.py</code> measures it again on the finished file.</p><span class="n">04</span></li>
       </ol>
 
       <div class="table">
@@ -364,7 +383,6 @@ footer { margin-top: 88px; padding: 24px 0 40px; border-top: 1px solid var(--rul
     </section>
 
     <section id="local" aria-labelledby="local-h">
-      <p class="mark"><b>00:06</b>Local and safe</p>
       <h2 id="local-h">It runs on your laptop. There is nothing to sign up for.</h2>
       <p class="lead">No demo-studio account, no cloud service, no telemetry. Your footage, plans and renders stay in a <code>demos/</code> folder on your disk, and git ignores it.</p>
       <div class="cols">
@@ -395,7 +413,6 @@ footer { margin-top: 88px; padding: 24px 0 40px; border-top: 1px solid var(--rul
     </section>
 
     <section id="start" aria-labelledby="start-h">
-      <p class="mark"><b>00:07</b>Start</p>
       <h2 id="start-h">Paste one prompt into your coding agent, then say what the demo should show.</h2>
       <p class="lead">It works in Claude Code, Codex, Cursor, Gemini CLI, Copilot and other agents. The agent sets everything up and asks before installing anything. Prefer to do it by hand? The <a href="https://github.com/cyruspastelero/demo-studio/blob/main/docs/getting-started.md">getting started guide</a> has every step.</p>
 <div class="prompt"><button type="button" class="copy" data-copy="setup-prompt">Copy</button>
@@ -418,7 +435,7 @@ footer { margin-top: 88px; padding: 24px 0 40px; border-top: 1px solid var(--rul
   </main>
 
   <footer>
-    <span>Apache License 2.0 · Cyrus David Pastelero · fonts under the SIL Open Font License</span>
+    <span>Apache License 2.0. Made by Cyrus David Pastelero. Fonts under the SIL Open Font License.</span>
     <a href="https://github.com/cyruspastelero/demo-studio">Source on GitHub</a>
   </footer>
 </div>

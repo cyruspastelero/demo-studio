@@ -20,7 +20,7 @@ mkdir -p "$OUT/logo" "$OUT/fonts" "$OUT/img" "$OUT/media"
 : > "$OUT/$MARKER"
 /bin/cp -f "$ROOT/site/index.html" "$OUT/"
 /bin/cp -f "$ROOT"/assets/logo/*.svg "$ROOT"/assets/logo/*.png "$OUT/logo/"
-/bin/cp -f "$ROOT"/site/fonts/* "$ROOT/assets/fonts/GeistMonoVariable.woff2" "$ROOT/assets/fonts/OFL-Geist.txt" "$OUT/fonts/"
+/bin/cp -f "$ROOT"/site/fonts/* "$ROOT/assets/fonts/GeistMonoVariable.woff2" "$ROOT/assets/fonts/GeistVariable.woff2" "$ROOT/assets/fonts/OFL-Geist.txt" "$OUT/fonts/"
 /bin/cp -f "$ROOT"/docs/img/sample-*-poster.jpg "$ROOT/docs/img/studio-1440.png" "$ROOT/docs/img/editor.gif" "$OUT/img/"
 mkdir -p "$OUT/img/house" && /bin/cp -f "$ROOT"/look-templates/house/preview/*.png "$OUT/img/house/"
 mkdir -p "$OUT/img/looks" && for l in house midnight paper mono; do /bin/cp -f "$ROOT/look-templates/$l/preview/01.png" "$OUT/img/looks/$l.png"; done
