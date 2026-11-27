@@ -11,6 +11,7 @@
     "id": { "$ref": "#/$defs/id" },
     "name": { "type": "string", "minLength": 1, "pattern": "^[^\\n]{1,80}$", "description": "Short human name, one line." },
     "description": { "type": "string", "pattern": "^[^\\n]{0,400}$", "description": "One or two sentences: what the look is like." },
+    "best_for": {"type": "array", "maxItems": 12, "items": {"type": "string", "pattern": "^[a-z0-9][a-z0-9 -]{0,39}$"}, "description": "Short lowercase tags for the products this look suits (UI tone, category, audience, for example \"dark ui\", \"fintech\", \"developer tool\"). `templates.py suggest` picks the template whose tags best match a demo's look traits. Never a product or company name."},
     "created": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$", "description": "YYYY-MM-DD." },
     "source": {
       "type": "string",

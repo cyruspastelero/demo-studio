@@ -2,6 +2,7 @@
   "id": "house",
   "name": "House look",
   "description": "The demo-studio default: a floating rounded window on a soft drifting pastel background, 1.15x whole-window zooms, product-coloured highlight boxes, white pills, Inter titles that blur in word by word, a brand sweep and logo outro.",
+  "best_for": ["default", "light ui", "saas", "web app", "dashboard", "productivity"],
   "created": "2026-11-18",
   "source": "built-in",
   "_comment": "Values equal scripts/keynote/spec.py (docs/quality-bar.md). brand.accent is left out on purpose: without it boxes and pills stay neutral ink and the title accent is #D9463B; a demo sets its product colour in demo.json brand.accent.",

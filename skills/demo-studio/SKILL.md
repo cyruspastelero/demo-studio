@@ -49,6 +49,7 @@ Expected last line: `All required checks passed.`
 | "organise my demos", "clean up", "tidy the folder" | Open skill `demo-organize` |
 | "copy the look of <video>", "make a template from <video>", "save this look as a template" | Open skill `demo-template` |
 | "use template <id>", "make it look like <template id>", "what looks are there" | Open skill `demo-template`, section "Use a template" |
+| "use style <name>" (for a launch ad) | Open skill `demo-motion`, Step 6 |
 | "make a launch ad", "make an ad", "motion graphics", "a promo with music and no voice" | Open skill `demo-motion` |
 
 ## Try-it route: the todo sample (about 10 minutes, no login)
@@ -181,6 +182,7 @@ final report, and offer the fix (usually a re-shoot). The bar is `$P/docs/qualit
 2. Post:
    - the path of every video made, review reel first
    - the scene table with one line per scene
+   - the look line (`Look: <name> (<id>), ...`) and, for an ad, the `Ad style: ...` line
    - the decisions you made on your own (from README.md "Decisions")
    - the checklist summary line from `check-cut.py` (`N pass, 0 fail, M to look at`) and any item
      accepted below the bar, with its measured value
@@ -213,6 +215,8 @@ It only reads files. Stop it when the session ends. If it fails with a missing m
 | Pointer motion | eased glides on a slight arc, 300 to 600ms pause before clicks, park after |
 | Typing | 45 to 75ms per key; paste anything longer than about 2 lines |
 | Look of the cut | `$P/docs/quality-bar.md`: pastel background, 1560x800 window cropped to the UI, rise-in, Inter titles with one accent word |
+| Look template | The one the user named, else `templates.py suggest` picks from BRIEF.md's "Look traits" (`house` when no tag matches); the user is told which and why, never asked |
+| Launch ad style | The one the user named, else `templates.py suggest --kind motion` (`airy` when no tag matches); told, never asked |
 | Zoom | whole window to 1.15x, 1.1 s ease, about one per 11 s, only where the narration makes a point |
 | Callouts | pills under the window, 3 to 5 s: person (name, role) or a statement of 6 words at most |
 | Highlights | red outline on the one element the narration names, 0.17 s after a zoom lands |

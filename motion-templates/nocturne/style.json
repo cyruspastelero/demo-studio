@@ -1,6 +1,7 @@
 {
   "name": "nocturne",
   "description": "Near-black with the brand colour glowing up from the bottom edge, big typed headlines with a caret, light cards with a coloured glow, blur-zoom transitions and a flip to light for the product section.",
+  "best_for": ["dark ui", "fintech", "finance", "security", "developer tool", "premium", "cinematic"],
   "source": "ANALYSIS.md (measured from a dark fintech product video); every value is traced in its section 8",
   "tone": "dark",
   "palette": {

@@ -360,5 +360,80 @@ class CopierHelpers(TemplateCase):
         self.assertEqual(times, sorted(set(times)))
 
 
+def write_tagged(root: Path, template_id: str, best_for: list[str], name: str = "T") -> Path:
+    folder = write_template(root, template_id, name=name)
+    data = json.loads((folder / "template.json").read_text())
+    (folder / "template.json").write_text(json.dumps({**data, "best_for": best_for}))
+    return folder
+
+
+class Suggest(TemplateCase):
+    """templates.py suggest: picks a look (or a motion style) from the product's traits, so a demo gets
+    a fitting template without the user naming one, and says why in a line to show the user."""
+
+    def setUp(self):
+        super().setUp()
+        self.cli = load_script("templates.py")
+        self.demo = self.root / "demos" / "acme"
+
+    def test_best_for_tags_are_optional_short_lowercase_and_unique(self):
+        base = {"id": "abc", "name": "x", "look": {}}
+        self.assertEqual(lib.validate({**base, "best_for": ["dark ui", "fintech"]}, "template"), [])
+        self.assertTrue(lib.validate({**base, "best_for": ["Dark UI"]}, "template"))
+        self.assertTrue(lib.validate({**base, "best_for": ["x" * 41]}, "template"))
+        self.assertTrue(lib.validate({**base, "best_for": "fintech"}, "template"))
+
+    def test_a_template_whose_tags_match_the_traits_is_picked_and_the_reason_named(self):
+        write_tagged(self.root / "demos" / "_templates", "night-look", ["dark ui", "fintech"])
+        write_tagged(self.root / "demos" / "_templates", "sunny-look", ["light ui", "kids"])
+        pick = self.cli.suggest("look", "Fintech dashboard, dark UI, for CFOs", self.demo, cwd=self.root)
+        self.assertEqual(pick["id"], "night-look")
+        self.assertEqual(pick["matched"], ["dark ui", "fintech"])
+        self.assertIn("night-look", pick["tell_user"])
+        self.assertIn("dark ui, fintech", pick["tell_user"])
+
+    def test_no_match_falls_back_to_the_default_and_says_so(self):
+        write_tagged(self.root / "demos" / "_templates", "night-look", ["dark ui", "fintech"])
+        pick = self.cli.suggest("look", "a recipe app for home cooks", self.demo, cwd=self.root)
+        self.assertEqual((pick["id"], pick["matched"]), ("house", []))
+        self.assertIn("default", pick["tell_user"])
+
+    def test_a_tag_matches_only_when_all_its_words_are_in_the_traits(self):
+        write_tagged(self.root / "demos" / "_templates", "night-look", ["dark ui"])
+        pick = self.cli.suggest("look", "dark mode marketing site", self.demo, cwd=self.root)
+        self.assertEqual(pick["id"], "house")
+
+    def test_on_a_tie_the_workspace_template_wins_over_a_built_in(self):
+        write_tagged(self.root / "demos" / "_templates", "my-house-look", ["light ui", "saas"])
+        pick = self.cli.suggest("look", "light ui saas tool", self.demo, cwd=self.root)
+        self.assertEqual((pick["id"], pick["where"]), ("my-house-look", "workspace"))
+
+    def test_an_invalid_workspace_template_is_skipped_not_picked(self):
+        folder = write_tagged(self.root / "demos" / "_templates", "broken-look", ["fintech"])
+        (folder / "template.json").write_text("{not json")
+        pick = self.cli.suggest("look", "fintech", self.demo, cwd=self.root)
+        self.assertEqual(pick["id"], "house")
+
+    def test_motion_styles_all_have_tags_and_a_dark_fintech_product_gets_nocturne(self):
+        styles = sorted((REPO / "motion-templates").glob("*/style.json"))
+        self.assertTrue(styles)
+        for path in styles:
+            self.assertTrue(json.loads(path.read_text()).get("best_for"), f"{path} has no best_for")
+        pick = self.cli.suggest("motion", "dark ui, fintech, premium", None, cwd=self.root)
+        self.assertEqual(pick["id"], "nocturne")
+        self.assertEqual(self.cli.suggest("motion", "a recipe app", None, cwd=self.root)["id"], "airy")
+
+    def test_cli_prints_the_pick_and_the_line_to_tell_the_user(self):
+        import contextlib
+        import io
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            code = self.cli.main(["suggest", "--traits", "a recipe app", "--demo-dir", str(self.demo)])
+        self.assertEqual(code, 0)
+        text = out.getvalue()
+        self.assertRegex(text, r"(?m)^pick house \(built-in\)")
+        self.assertRegex(text, r"(?m)^tell the user: ")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=1)

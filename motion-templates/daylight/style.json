@@ -1,6 +1,7 @@
 {
   "name": "daylight",
   "description": "Clean white stage with a soft accent glow, a rounded friendly sans, headlines typed with a tall caret, white floating UI with soft shadows and a gentle tilt, shape-sweep transitions.",
+  "best_for": ["productivity", "everyday tool", "office", "docs", "prompt", "bright", "light ui"],
   "source": "README.md (style notes from a bright 2024 productivity-suite launch film; values set by eye, not measured)",
   "tone": "light",
   "palette": {

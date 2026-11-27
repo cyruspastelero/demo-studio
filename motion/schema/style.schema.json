@@ -26,6 +26,15 @@
     "description": {
       "type": "string"
     },
+    "best_for": {
+      "type": "array",
+      "maxItems": 12,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9][a-z0-9 -]{0,39}$"
+      },
+      "description": "Short lowercase tags for the products this look suits (UI tone, category, audience, for example \"dark ui\", \"fintech\", \"developer tool\"). `templates.py suggest` picks the template whose tags best match a demo's look traits. Never a product or company name."
+    },
     "source": {
       "type": "string",
       "description": "Where the numbers come from (ANALYSIS.md)."

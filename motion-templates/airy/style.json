@@ -1,6 +1,7 @@
 {
   "name": "airy",
   "description": "Near-white with a faint brand tint, words that blur-zoom in from 2x, floating UI with an accent-coloured glow, quick scale-down exits and a slow pull back on holds.",
+  "best_for": ["default", "light ui", "saas", "friendly", "feature launch", "startup"],
   "source": "ANALYSIS.md (measured from a light SaaS launch ad); every value is traced in its section 8",
   "tone": "light",
   "palette": {

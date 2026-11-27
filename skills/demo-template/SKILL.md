@@ -33,8 +33,19 @@ python3 -I "$P/scripts/templates.py" list
 Expected: one line per template, `<id>  workspace|built-in  <name>: <description>`, then
 `N template(s).` The built-in `house` is the default look.
 
+With `[for: ...]` at the end of a line, the template lists the products it suits (its `best_for`
+tags). Skill `demo-plan` Step 7 uses them to pick a look on its own when the user names none:
+
+```bash
+python3 -I "$P/scripts/templates.py" suggest --demo-dir <demo> --traits "dark ui, fintech, for finance teams"
+```
+
+Expected: one line per template with what it matched, then `pick <id> (...)` and a `tell the user:`
+line. Send that line to the user as it is. No tag matched: the pick is `house`, the default.
+
 To use one, add `"template": "<id>"` to the demo's demo.json (top level, next to `title`), then
-build as usual (skill `demo-edit`). demo.json's own `brand` (accent, font, logo) still wins.
+build as usual (skill `demo-edit`). demo.json's own `brand` (accent, font, logo) still wins. Tell
+the user in one line: `Look: <name> (<id>), as you asked.`
 
 | If you see | Do this |
 | --- | --- |
@@ -71,7 +82,7 @@ template-from-video: <file>: 1920x1080 at 30.0 fps, 95.9s; id <slug>-<6 hex>; sc
 scenes: N change(s)
 measured: window [x, y, w, h], zooms N at 1.15x over 1.1s, pill y 962, loudness -14 LUFS, end sweep-logo
 review: K contact sheet(s) in .../sheets; measurements .../measurements.json
-fill by eye: 8 item(s), listed in ./demos/_templates/<id>/README.md
+fill by eye: 9 item(s), listed in ./demos/_templates/<id>/README.md
 next: python3 -I .../template-validate.py <id> --templates ... --reference ... --measurements ... --work ...
 OUTPUT ./demos/_templates/<id>
 ```
@@ -127,6 +138,10 @@ the "Filled by eye" list in its README.md and tick each item:
 7. **Ending.** Gradient sweep then logo on dark -> `sweep-logo`; ends on a light card -> `card`;
    just stops -> `none`. `end.seconds`: how long the end card holds before the outro.
 8. **name and description.** One line each, about the look, never naming the product or company.
+9. **best_for.** 3 to 8 short lowercase tags for the products this look suits, so `templates.py
+   suggest` can pick it: the UI tone (`light ui` or `dark ui`), kinds of product (`fintech`,
+   `developer tool`, `productivity`, `ai`, `mobile app`), the feel (`premium`, `friendly`). Never a
+   product or company name. Example: `"best_for": ["dark ui", "fintech", "premium"]`.
 
 Then:
 
@@ -178,4 +193,6 @@ Delete the scratch folder (`<work>`) when done: it holds the reference's frames.
 - [ ] The six compare pairs match at a glance; the checklist has no FAIL beyond the audio rows
 - [ ] `source.json` holds only file name, duration, sha256, size, date; the folder holds no video,
       audio, logo or text from the reference
+- [ ] `template.json` has `best_for` tags, and `templates.py suggest --traits "<those tags>"`
+      picks this id
 - [ ] Told the user the id and how to use it: `"template": "<id>"` in demo.json

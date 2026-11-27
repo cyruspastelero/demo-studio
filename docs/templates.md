@@ -114,6 +114,32 @@ Set `"template": "<id>"` in demo.json and build as usual. The build prints
 `template: <id> (workspace|built-in, <folder>)`. If the id is not found, the error lists the ids it
 did find and the command to list them.
 
+### Picking one automatically
+
+When the user names no template, skill `demo-plan` picks one from the "Look traits" line of the
+demo's BRIEF.md (UI tone, kind of product, audience) and tells the user which one and why. The pick
+comes from each template's `best_for` tags:
+
+```bash
+python3 -I scripts/templates.py suggest --demo-dir demos/acme --traits "dark ui, fintech, for finance teams"
+```
+
+```
+  night-look-1a2b3c            workspace matched: dark ui, fintech
+  house                        built-in  matched: -
+pick night-look-1a2b3c (workspace): matched dark ui, fintech
+tell the user: Look: Night look (night-look-1a2b3c), picked because the product is: dark ui, fintech. To change it, say "use template <id>" (others: house).
+```
+
+A tag matches when all its words are in the traits (a plural `s` is ignored). The template with the
+most matching tags wins; on a tie a workspace template beats a built-in, then the default. Nothing
+matched: `house`. The skill sends the `tell the user:` line as a notice and keeps going; it never
+asks. `--json` prints the same as JSON. `--kind motion` does the same for launch-ad styles.
+
+Give a template 3 to 8 `best_for` tags: the UI tone (`light ui`, `dark ui`), kinds of product
+(`fintech`, `developer tool`, `productivity`, `ai`), the feel (`premium`, `friendly`). Lowercase,
+up to 40 characters each, never a product or company name.
+
 ## Sharing a template
 
 A template is a plain folder with no media from the reference. Zip `<demos>/_templates/<id>/` and
@@ -124,8 +150,9 @@ plugin, put it in `look-templates/<id>/` with its previews and add a row to the 
 ## Motion templates for launch ads
 
 Look templates style the walkthrough cuts. Launch ads made by skill `demo-motion` use their own
-motion templates in `motion-templates/` (`airy`, `nocturne`, `showroom`), each measured from a
-reference ad the same way. See [motion.md](motion.md#styles).
+motion templates in `motion-templates/` (`airy`, `daylight`, `nocturne`, `showroom`). They carry
+`best_for` tags too, and `templates.py suggest --kind motion` picks one the same way (`airy` when
+nothing matches). See [motion.md](motion.md#styles).
 
 ## Copyright
 

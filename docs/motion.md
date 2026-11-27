@@ -205,6 +205,7 @@ Schibsted Grotesk in `site/fonts/`. A style's `fonts.*.file` is a file name in o
 | Field | Meaning |
 |---|---|
 | `tone` | `light` or `dark`: the default palette. Scenes can switch with `tone`. |
+| `best_for` | Optional: short lowercase tags for the products the style suits (`dark ui`, `fintech`, `premium`). `python3 -I scripts/templates.py suggest --kind motion --traits "..."` picks the style whose tags match best; `airy` when none do. |
 | `palette.light` / `palette.dark` | `bg`, `bg2` (gradient partner), `ink`, `muted`, `panel`, `panelInk` + `panelMuted` (text on panels when panels contrast with the stage), `line`, `shadowTint` (a colour or `accent`), `glow`. |
 | `palette.confetti` | Colours, or `accent`, `accentLight`, `accentDark`. |
 | `fonts.display` / `fonts.body` | `{family, file, weight, accentWeight}`; `file` is in `assets/fonts/` or `site/fonts/`. |

@@ -434,7 +434,8 @@ def draft_look(meas: dict) -> tuple[dict, list[str]]:
     todo = ["title.font (compare glyphs against bundled Inter and Geist)", "title.size, title.weight, title.tracking",
             "title.reveal and title.accent_word", "pill.radius, pill.font_size, pill.kinds",
             "highlight.* (stroke, radius, pad, delay, fill and halo)", "brand.ink, brand.secondary",
-            "brand.sweep and brand.dark (from the outro frames)", "window.shadow"]
+            "brand.sweep and brand.dark (from the outro frames)", "window.shadow",
+            "best_for (3 to 8 lowercase tags for the products this look suits, for templates.py suggest)"]
     w = meas.get("window") or {}
     if w.get("rect"):
         look["window"] = {"rect": w["rect"]}

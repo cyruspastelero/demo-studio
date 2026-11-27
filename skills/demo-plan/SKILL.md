@@ -49,6 +49,11 @@ If `./demos/README.md` (the index) exists, add a row: `| <name> | <one line> | P
 Then add a **Claims list** table (claim, proved by scene), as in `$P/samples/plan/BRIEF.md`.
 A claim with no scene that proves it is cut from the script.
 
+Fill the **Look traits** line in "Our reading" from what you can see of the product: UI tone
+(`light ui` or `dark ui`, from the logged-in app), what kind of product it is (`fintech`,
+`developer tool`, `productivity`, `ai`, `mobile app`...), and who watches. Use plain words, comma
+separated, no product or company names. Step 7 picks the look template from this line.
+
 ## Step 3: story arc
 
 Use this order unless the brief says otherwise:
@@ -133,11 +138,24 @@ Then fill:
   (`music/bed.m4a`) and one `voice.music_dips` entry. Shape: `$P/schemas/demo.schema.json`.
   Example: `$P/samples/plan/demo.json`. Add `brand` (`font`, `accent`, `logo_on_dark`), `browser.timezone` if the UI shows times, and `windows` for a
   two-person demo. Old `caption` and `zoom` fields still build but do not reach the bar.
-- `template`: if the user named a look template ("use template <id>", "in the look of <id>"), set
-  `"template": "<id>"` at the top of demo.json. Check the id exists first:
-  `python3 -I "$P/scripts/templates.py" show <id>` (expected: `<id> (workspace|built-in) <folder>`).
-  Not found: run `python3 -I "$P/scripts/templates.py" list`, pick the closest id and note it under
-  "Decisions"; if they asked to copy a video's look instead, open skill `demo-template` first.
+- `template`: the look of the cut. Work down this table; the first row that applies wins.
+
+  | Situation | Do this |
+  | --- | --- |
+  | The user asked to copy a video's look | Open skill `demo-template` first, then use the id it made |
+  | The user named a template ("use template <id>", "in the look of <id>") | Check it: `python3 -I "$P/scripts/templates.py" show <id> --demo-dir <demo>` (expected first line: `<id> (built-in) <folder>`, or `(workspace)`). Found: use it. Not found: go to the next row and say so in the note below |
+  | Anything else | Let the script pick from BRIEF.md's "Look traits" line (below) |
+
+  ```bash
+  python3 -I "$P/scripts/templates.py" suggest --demo-dir <demo> --traits "<the Look traits line>"
+  ```
+
+  Expected: one line per template with what it matched, then
+  `pick <id> (workspace|built-in): matched <tags>` and `tell the user: Look: ...`. Set
+  `"template": "<id>"` at the top of demo.json (next to `title`). Write the `tell the user:` sentence
+  under "Decisions" in README.md, and put it in the Step 10 progress note word for word. It is a
+  notice, not a question: keep going. If the user then says "use template <other>", change
+  demo.json and rebuild; nothing else changes.
   demo.json's own `brand` still wins over the template's, so keep setting `brand.accent` below.
 - `brand.accent`: **always set it from the product itself**, since highlight boxes and statement
   pills take this colour (quality bar H1, C4) and must look native to the UI. Read the primary
@@ -189,13 +207,15 @@ Fix each failure, or cut the scene and its claim.
 
 ## Step 10: post a progress note and keep going
 
-Post the scene table and a three-line story summary as a note, then go straight on to skill
+Post the scene table, a three-line story summary and the look line from Step 7 (`Look: <name>
+(<id>), ...`, as `templates.py suggest` printed it) as a note, then go straight on to skill
 `demo-record` in the same turn. **Do not wait for a reply.** Wait only if the user asked to check
 the plan first.
 
 ## Done when
 
-- [ ] BRIEF.md has "Our reading" filled and a claims list
+- [ ] BRIEF.md has "Our reading" filled (Look traits too) and a claims list
+- [ ] demo.json has `template` set, and the look line is under "Decisions" and in the progress note
 - [ ] SHOT-LIST.md has every scene with caption, length, depends on and recipe
 - [ ] The Edit plan table has a window region, pill, zoom target, highlight selector and music
       note for every scene, and the cards table has a kind and one accent word per title

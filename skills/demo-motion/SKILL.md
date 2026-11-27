@@ -142,10 +142,26 @@ Expected: `{"ok":true,"style":"airy","duration":36,...}`.
 
 ## Step 6: pick a style and check stills
 
-Pick the motion template that fits the product (read `$P/motion-templates/*/README.md`): `airy`
-(light and friendly, the default), `daylight` (clean white, rounded type, typed headlines with a caret,
-shape-sweep transitions; for bright productivity-suite style launch films), `nocturne` (dark and
-premium), `showroom` (grey and deep blue, devices, hard cuts). Set `"style"` in the storyboard. Render stills at the middle of every scene:
+The styles are `airy` (light and friendly, the default), `daylight` (clean white, typed headlines,
+shape sweeps; everyday productivity tools), `nocturne` (dark and premium) and `showroom` (grey and
+deep blue, devices, hard cuts). Each one's `$P/motion-templates/<name>/README.md` shows it.
+
+1. The user named a style ("use style nocturne", "make it dark like nocturne")? Use it and skip to 3.
+2. Otherwise let the script pick from the product's traits: the "Look traits" line of the demo's
+   BRIEF.md, or, with no BRIEF, a few words you write from the product (UI tone, kind of product,
+   audience; no product or company names):
+   ```bash
+   python3 -I "$P/scripts/templates.py" suggest --kind motion --demo-dir <demo> --traits "<traits>"
+   ```
+   Expected: one line per style with what it matched, then `pick <name> (built-in): matched <tags>`
+   and `tell the user: Ad style: ...`. A `(workspace)` pick lives in `<demos>/_motion-templates/`:
+   render with `MOTION_TEMPLATES_DIR=<demos>/_motion-templates` set.
+3. Set `"style"` in the storyboard. Write the style and why under the decisions in
+   `motion/README.md`, and send the user the `tell the user:` sentence word for word (for a named
+   style: `Ad style: <name>, as you asked.`) as a short note. It is a notice, not a question: keep
+   going. If they answer "use style <other>", change `"style"` and render again.
+
+Render stills at the middle of every scene:
 
 ```bash
 node "$P/motion/render-motion.mjs" motion/storyboard.json --size 16x9 --stills 2,6,9.5,13,17,21 --stills-dir motion/stills
@@ -217,5 +233,6 @@ set), compare side by side with
   zoom at full size (a still at 1920 wide): text in the zoom is as sharp as the headline.
 - `--check` printed no `warnings`.
 - Every claim on screen is true and every UI shot is the demo's own.
+- The user was told the style and why (the `tell the user:` line from Step 6).
 - `motion/README.md` lists the decisions (story, style, music source and its licence, anything not
   reproduced).

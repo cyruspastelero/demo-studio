@@ -1,6 +1,7 @@
 {
   "name": "showroom",
   "description": "Gallery-grey stage with a floor gradient and deep-blue night scenes, a slanted accent word, devices that start on the screen and pull back, typed lines and mostly hard cuts.",
+  "best_for": ["ai", "creative tool", "devices", "mobile app", "hardware", "dramatic"],
   "source": "ANALYSIS.md (measured from an AI product launch ad); every value is traced in its section 8",
   "tone": "light",
   "palette": {
