@@ -4,7 +4,7 @@ import { thumbUrl } from '../api';
 import type { BinItem, Edit, ShotPatch } from '../lib/edits';
 import type { VoiceoverFit } from '../lib/fit';
 import type { Player } from '../lib/player';
-import { edges, snap } from '../lib/timeline';
+import { edges, snap, timecode } from '../lib/timeline';
 import type { Selection, Timeline as TimelineModel, TimelineShot } from '../lib/types';
 import { DRAG_TYPE } from './media-bin';
 
@@ -57,6 +57,7 @@ export function Timeline({
   const [trim, setTrim] = useState<Trim | null>(null);
   const [drop, setDrop] = useState<{ x: number; scene: number; index: number } | null>(null);
   const [dragging, setDragging] = useState<string | null>(null);
+  const [hoverTime, setHoverTime] = useState<number | null>(null); // where a click on the ruler would land
   const width = Math.max(timeline.total * pps + 240, 400);
   const snapTargets = useMemo(() => edges(timeline), [timeline]);
   const step = tickStep(pps);
@@ -83,8 +84,9 @@ export function Timeline({
     player?.seek(snapTime(xToTime(e.clientX)));
   };
   const onRulerMove = (e: React.PointerEvent) => {
-    if (e.buttons !== 1 || !(e.currentTarget as HTMLElement).hasPointerCapture(e.pointerId)) return;
-    player?.seek(snapTime(xToTime(e.clientX)));
+    const scrubbing = e.buttons === 1 && (e.currentTarget as HTMLElement).hasPointerCapture(e.pointerId);
+    setHoverTime(scrubbing ? null : Math.max(0, Math.min(timeline.total, xToTime(e.clientX))));
+    if (scrubbing) player?.seek(snapTime(xToTime(e.clientX)));
   };
 
   // ------------------------------------------------------------ trimming
@@ -208,7 +210,15 @@ export function Timeline({
         </div>
         <div className="tl-scroll" ref={scroll} data-testid="timeline-scroll">
           <div className="tl-content" style={{ width }} onDragOver={onDragOver} onDrop={onDrop} onDragLeave={() => setDrop(null)}>
-            <div className="tl-ruler" onPointerDown={onRulerDown} onPointerMove={onRulerMove} data-testid="ruler">{ticks}</div>
+            <div className="tl-ruler" onPointerDown={onRulerDown} onPointerMove={onRulerMove} onPointerLeave={() => setHoverTime(null)}
+              title="Click or drag to move the playhead" data-testid="ruler">
+              {ticks}
+              {hoverTime !== null && (
+                <div className="tl-hover" style={{ left: hoverTime * pps }} aria-hidden="true">
+                  <span className="mono">{timecode(hoverTime)}</span>
+                </div>
+              )}
+            </div>
             <div className="tl-scenes">
               {timeline.scenes.map((scene) => (
                 <button
@@ -265,7 +275,11 @@ export function Timeline({
                 </div>
               ))}
             </div>
-            <div className="tl-playhead" style={{ left: time * pps }} data-testid="playhead" />
+            <div className="tl-playhead" style={{ left: time * pps }} data-testid="playhead">
+              {/* The head is a handle: drag it to scrub, like the ruler. */}
+              <div className="tl-playhead-grip" onPointerDown={onRulerDown} onPointerMove={onRulerMove} onPointerLeave={() => setHoverTime(null)}
+                title="Drag to scrub" data-testid="playhead-grip" />
+            </div>
           </div>
         </div>
       </div>

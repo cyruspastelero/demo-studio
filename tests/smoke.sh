@@ -263,6 +263,11 @@ PROMO="$(ls -d "$H"/PROMO_* | head -1)"; HOWTO="$(ls -d "$H"/HOW-TO_* | head -1)
 exists "$PROMO/00_ROUGH-ASSEMBLY.mp4"; size_is "$PROMO/00_ROUGH-ASSEMBLY.mp4" 1920x1080; fps_is "$PROMO/00_ROUGH-ASSEMBLY.mp4"
 exists "$HOWTO/00_ROUGH-ASSEMBLY.mp4"
 exists "$PROMO/01_scene1_the-deal-is-in-chat.mp4"
+if [ "$HAVE_CHROME" = 1 ]; then
+  size_is "$PROMO/text/01.png" 1920x1080
+  grep -q 'laid out in PROMO_.*/text/01.png' "$H/2-PROMO-SCRIPT.txt" || die "script does not point at the text overlay"
+  ok "on-screen text overlays drawn and named in the script"
+fi
 for f in 1-READ-ME-FIRST.txt 2-PROMO-SCRIPT.txt 3-PROMO-VOICEOVER.txt 4-HOW-TO-SCRIPT.txt 5-HOW-TO-VOICEOVER.txt assets/brand/BRAND.txt; do exists "$H/$f"; done
 exists "$H/source-footage/2-setup/03-add-key-t1.mp4"
 exists "$H/reference/take-contact-sheets/04-ask-bot-t2.jpg"

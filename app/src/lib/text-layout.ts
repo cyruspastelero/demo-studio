@@ -1,17 +1,18 @@
 // Where on-screen text sits in the preview, and how it snaps while dragged. Positions are the
 // text's centre as fractions of the frame, the same numbers saved in text_pos / caption_pos.
+import { DEFAULT_POS, keepInside } from '../../shared/text-style.mjs';
 import type { FileKind } from './types';
+
+export { keepInside };
 
 export type TextVariant = 'onscreen' | 'pill';
 export type Point = [number, number];
 export interface Guides { x: number[]; y: number[] }
 
 const SAFE = 0.05; // action-safe margin
-// keynote-page.mjs: the pill is centred at y 962 in a 1920x1080 frame.
-const DEFAULTS: Record<TextVariant, Point> = { onscreen: [0.5, 0.88], pill: [0.5, 962 / 1080] };
 
 export function defaultTextPos(variant: TextVariant): Point {
-  return DEFAULTS[variant];
+  return DEFAULT_POS[variant];
 }
 
 // demo.json captions become pills on scene clips; handoff text is a note for the editor on any shot.
@@ -51,3 +52,4 @@ function unique(value: number, index: number, list: number[]) {
 export function nudge(point: Point, dxPx: number, dyPx: number, frame: { W: number; H: number }): Point {
   return [clamp(point[0] + dxPx / frame.W, 0, 1), clamp(point[1] + dyPx / frame.H, 0, 1)];
 }
+

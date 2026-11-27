@@ -54,6 +54,10 @@
     }
   },
   "$defs": {
+    "fontId": {
+      "type": "string", "pattern": "^(inter|inter-display|geist|geist-mono|figtree|fonts/[A-Za-z0-9 ._()-]{1,120}\\.(woff2|woff|ttf|otf))$", "not": { "pattern": "\\.\\." },
+      "description": "A bundled font (inter, inter-display, geist, geist-mono, figtree) or a font file in the demo's fonts/ folder, as fonts/<file>."
+    },
     "framePoint": {
       "type": "array", "minItems": 2, "maxItems": 2, "items": { "type": "number", "minimum": 0, "maximum": 1 },
       "description": "[x, y] centre of the on-screen text as fractions of the frame (0 to 1). Set by dragging it in the editor."
@@ -108,7 +112,8 @@
         "screen": { "type": "string", "description": "What is on screen, for the script." },
         "text": { "type": "string", "description": "On-screen text the editor adds." },
         "text_pos": { "$ref": "#/$defs/framePoint" },
-        "text_size": { "type": "number", "minimum": 20, "maximum": 160, "description": "Text size in px at 1920x1080. Default 44." }
+        "text_size": { "type": "number", "minimum": 20, "maximum": 160, "description": "Text size in px at 1920x1080. Default 44." },
+        "text_font": { "$ref": "#/$defs/fontId" }
       }
     },
     "cardShot": {
@@ -121,7 +126,8 @@
         "screen": { "type": "string" },
         "text": { "type": "string" },
         "text_pos": { "$ref": "#/$defs/framePoint" },
-        "text_size": { "type": "number", "minimum": 20, "maximum": 160, "description": "Text size in px at 1920x1080. Default 44." }
+        "text_size": { "type": "number", "minimum": 20, "maximum": 160, "description": "Text size in px at 1920x1080. Default 44." },
+        "text_font": { "$ref": "#/$defs/fontId" }
       }
     },
     "refShot": {
@@ -136,7 +142,8 @@
         "screen": { "type": "string" },
         "text": { "type": "string" },
         "text_pos": { "$ref": "#/$defs/framePoint" },
-        "text_size": { "type": "number", "minimum": 20, "maximum": 160, "description": "Text size in px at 1920x1080. Default 44." }
+        "text_size": { "type": "number", "minimum": 20, "maximum": 160, "description": "Text size in px at 1920x1080. Default 44." },
+        "text_font": { "$ref": "#/$defs/fontId" }
       }
     },
     "shot": { "oneOf": [{ "$ref": "#/$defs/clip" }, { "$ref": "#/$defs/cardShot" }, { "$ref": "#/$defs/refShot" }] },

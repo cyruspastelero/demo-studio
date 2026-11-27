@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright-core';
 import { createStudio } from '../server/server.mjs';
 import { staticKey } from '../shared/static-key.mjs';
+import { BUNDLED, fontFile } from '../../scripts/fonts.mjs';
 
 const APP = fileURLToPath(new URL('..', import.meta.url));
 const REPO = join(APP, '..');
@@ -91,6 +92,9 @@ async function main() {
 
   // Media and template previews are copied, not recorded: video is fetched in ranges.
   cpSync(EXAMPLE, join(DATA, 'media'), { recursive: true });
+  // The bundled fonts, where fontUrl() in src/api.ts looks for them in the static build.
+  mkdirSync(join(DATA, 'fonts'), { recursive: true });
+  for (const font of BUNDLED) cpSync(fontFile(REPO, font.id), join(DATA, 'fonts', font.id));
   for (const id of readdirSync(join(REPO, 'look-templates'))) {
     cpSync(join(REPO, 'look-templates', id, 'preview'), join(DATA, 'api', 'template-preview', 'built-in', id), { recursive: true });
   }

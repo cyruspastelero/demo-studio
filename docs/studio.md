@@ -103,7 +103,8 @@ version to keep when you have unsaved edits. Editing a shot that uses `{"ref": .
 to change the shared shot (every video) or only this video.
 
 **Moving and editing text.** On-screen text (`handoff.json`) and caption pills (`demo.json`) sit on
-the preview as boxes you can work with directly. Click one to select it, drag it to move it, and
+the preview as boxes you can work with directly. The toolbar above a selected box stays inside the
+preview: it slides along at the side edges and drops below the text at the top. Click one to select it, drag it to move it, and
 double-click it (or press Enter) to type a new line; Enter saves, Esc cancels. While you drag, it
 snaps to the centre lines, the 5% safe margins and its default spot, with an orange guide; hold Alt
 to place it freely. Arrow keys nudge it 1 px (Shift: 10 px). On-screen text also has a corner handle
@@ -113,6 +114,19 @@ Positions are saved as `text_pos` and `text_size` on the shot, or `caption_pos` 
 callout) in `demo.json`, as fractions of the frame. The keynote render puts a moved pill exactly
 there; `check-cut.py` lists it as LOOK, because the quality bar wants pills under the window (C1).
 The editor script from `build-handoff.py` gives the place and size next to each line.
+
+**Fonts.** The toolbar of a selected text has a Font menu: Inter (the default), Inter Display, Geist,
+Geist Mono and Figtree are built in. To add your own, put the font file (`.woff2`, `.woff`, `.ttf` or
+`.otf`) in the demo's `fonts/` folder, or ask Claude to; it shows up under "This demo" the next time the
+editor window is focused. The choice is saved as `text_font` (or `caption_font` and callout `font` in
+`demo.json`).
+
+**The export matches the preview.** The preview, the exports and the keynote render draw text with the
+same CSS (`app/shared/text-style.mjs`) and the same font file, and place it with the same rule: its
+centre at the saved point, pushed back inside the frame if it has grown past an edge. Quick preview
+burns the text in; `build-handoff.py` writes each text as a transparent 1920x1080 PNG in the video's
+`text/` folder (named by clip number) for the editor to lay over the clip; the keynote render draws
+pills in place. The editor e2e checks the exported PNG lands within 1.5 px of the preview.
 
 **Render** runs `title-cards.mjs`, `build-handoff.py`, `build-keynote.py`, `review-reel.py` or
 `social-cut.py`, one at a time, with a progress bar, the log, the output in a player, and Reveal in

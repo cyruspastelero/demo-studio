@@ -125,12 +125,18 @@ function render(state, images, styles) {
   show($('pill'), Boolean(pill), 'flex');
   if (pill) {
     $('pill').className = pill.variant;
+    // A font picked in the editor (its @font-face is loaded by keynote-render.mjs); else the brand's.
+    $('pill').style.fontFamily = /^dsf-[A-Za-z0-9-]{1,200}$/.test(pill.family || '') ? `'${pill.family}', 'DS Text', sans-serif` : '';
     if (!(pill.variant === 'person' && image($('avatar'), pill.avatar))) show($('avatar'), false);
     words($('pilltext'), pill.words);
     // A pill moved in the editor carries its centre (x, y in frame px); otherwise the CSS spot holds.
+    // The whole pill stays in the 1920x1080 frame, as the editor draws it (keepInside in text-layout.ts).
     const moved = Number.isFinite(pill.x) && Number.isFinite(pill.y);
+    const inside = (value, size, frame) => (size >= frame ? frame / 2 : Math.min(Math.max(value, size / 2), frame - size / 2));
+    const x = moved ? inside(pill.x, $('pill').offsetWidth, 1920) : 0;
+    const y = moved ? inside(pill.y, $('pill').offsetHeight, 1080) : 0;
     Object.assign($('pill').style, { opacity: pill.opacity, filter: pill.blur ? `blur(${pill.blur}px)` : 'none',
-      left: moved ? `${pill.x}px` : '', top: moved ? `${pill.y}px` : '',
+      left: moved ? `${x}px` : '', top: moved ? `${y}px` : '',
       transform: `translateX(-50%) translateY(${moved ? 'calc(-50% + ' + pill.ty + 'px)' : pill.ty + 'px'}) scale(${pill.scale})` });
   }
 

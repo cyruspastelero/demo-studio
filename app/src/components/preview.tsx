@@ -4,6 +4,7 @@ import type { ShotPatch } from '../lib/edits';
 import { captionAt, windowGeometry, type Geometry } from '../lib/geometry';
 import { mediaUrl, Player } from '../lib/player';
 import { timecode } from '../lib/timeline';
+import type { FontInfo } from '../api';
 import { textVariant, type Point } from '../lib/text-layout';
 import type { Aspect, Brand, FileKind, SocialSpec, Timeline, TimelineShot } from '../lib/types';
 import { TextLayer } from './text-layer';
@@ -65,7 +66,7 @@ function CardView({ shot, brand }: { shot: TimelineShot; brand: Brand | undefine
   );
 }
 
-export function Preview({ kind, timeline, aspect, social, brand, missing, loop, onToggleLoop, onPlayer, overlay, selectedShotId, onSelectShot, onTextPatch }: {
+export function Preview({ kind, timeline, aspect, social, brand, missing, loop, onToggleLoop, onPlayer, overlay, selectedShotId, onSelectShot, onTextPatch, fonts, defaultFont, onRefreshFonts }: {
   kind: FileKind;
   timeline: Timeline;
   aspect: Aspect;
@@ -79,6 +80,9 @@ export function Preview({ kind, timeline, aspect, social, brand, missing, loop, 
   selectedShotId?: string;
   onSelectShot: (shot: TimelineShot) => void;
   onTextPatch: (shot: TimelineShot, patch: ShotPatch) => void;
+  fonts: FontInfo[];
+  defaultFont: string; // the font text uses until one is picked
+  onRefreshFonts: () => void;
 }) {
   const wrap = useRef<HTMLDivElement>(null);
   const videoA = useRef<HTMLVideoElement>(null);
@@ -207,14 +211,14 @@ export function Preview({ kind, timeline, aspect, social, brand, missing, loop, 
         {shot && variant && shot.text && (
           <TextLayer
             key={shot.id} variant={variant} text={shot.text} pos={shot.textPos} size={shot.textSize}
-            frame={frame} box={box} active={textActive} font={brand?.font}
+            frame={frame} box={box} active={textActive} font={shot.textFont} defaultFont={defaultFont} fonts={fonts} onRefreshFonts={onRefreshFonts}
             onActivate={grab} onDeactivate={() => setActiveText(null)} onCommit={(patch) => onTextPatch(shot, patch)}
           />
         )}
         {shot && variant && newText?.shotId === shot.id && !shot.text && (
           <TextLayer
             key={`new-${shot.id}`} variant={variant} text="" pos={newText.pos} frame={frame} box={box} active startEditing
-            font={brand?.font} onActivate={grab} onDeactivate={() => setNewText(null)}
+            font={undefined} defaultFont={defaultFont} fonts={fonts} onRefreshFonts={onRefreshFonts} onActivate={grab} onDeactivate={() => setNewText(null)}
             onCommit={(patch) => { setNewText(null); onTextPatch(shot, patch); }} onCancelNew={() => setNewText(null)}
           />
         )}

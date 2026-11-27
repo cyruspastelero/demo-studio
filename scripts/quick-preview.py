@@ -41,13 +41,21 @@ def handoff_segments(cfg: dict, cfg_path: Path, key: str) -> list[dict]:
     if key not in videos:
         sys.exit(f"quick-preview: no video '{key}' in handoff.json (have {', '.join(videos)})")
     paths = handoff.config_paths(cfg_path, cfg)  # every path confined to the demo folder
+    texts = {item["name"]: item for item in handoff.text_overlay_items(videos[key])}
     segments = []
-    for shot in videos[key].shots:
+    for number, shot in enumerate(videos[key].shots, start=1):
         if shot.is_card:
-            segments.append({"card": handoff.shot_input(shot, paths), "length": shot.end})
+            seg = {"card": handoff.shot_input(shot, paths), "length": shot.end}
         else:
-            segments.append({"source": handoff.shot_input(shot, paths), "in": shot.start, "out": shot.end, "speed": shot.speed})
+            seg = {"source": handoff.shot_input(shot, paths), "in": shot.start, "out": shot.end, "speed": shot.speed}
+        segments.append({**seg, "text": texts.get(f"{number:02d}")})
     return segments
+
+
+def text_overlays(segments: list[dict], root: Path, work: Path) -> dict[str, Path]:
+    """The on-screen text of each segment as a PNG drawn exactly as the studio editor shows it."""
+    handoff = load("build_handoff", "build-handoff.py")
+    return handoff.render_text_overlays([s["text"] for s in segments if s.get("text")], root, work / "text")
 
 
 def demo_segments(cfg: dict, root: Path) -> list[dict]:
@@ -64,19 +72,33 @@ def demo_segments(cfg: dict, root: Path) -> list[dict]:
     return segments
 
 
-def render_segment(seg: dict, target: Path, slate: str) -> None:
+def render_segment(seg: dict, target: Path, slate: str, text: Path | None = None) -> None:
     if "card" in seg:
         if seg["card"].exists():
             source = ["-loop", "1", "-framerate", str(FPS), "-t", f"{seg['length']}", "-i", seg["card"]]
         else:
             source = ["-f", "lavfi", "-t", f"{seg['length']}", "-i", f"color=c=0x{slate}:s=960x540:r={FPS}"]
-        lib.run(["ffmpeg", "-y", "-loglevel", "error", *source, "-vf", f"scale={SIZE}", *ENCODE, target])
+        picture = f"scale={SIZE}"
+    else:
+        if not seg["source"].exists():
+            sys.exit(f"quick-preview: missing take {seg['source']}")
+        window = ["-ss", f"{seg['in']}"] + (["-to", f"{seg['out']}"] if seg["out"] is not None else [])
+        source = [*window, "-i", seg["source"]]
+        picture = f"setpts=PTS/{seg['speed']},scale={SIZE},fps={FPS}"
+    if text is None:
+        lib.run(["ffmpeg", "-y", "-loglevel", "error", *source, "-vf", picture, *ENCODE, target])
         return
-    if not seg["source"].exists():
-        sys.exit(f"quick-preview: missing take {seg['source']}")
-    window = ["-ss", f"{seg['in']}"] + (["-to", f"{seg['out']}"] if seg["out"] is not None else [])
-    lib.run(["ffmpeg", "-y", "-loglevel", "error", *window, "-i", seg["source"],
-             "-vf", f"setpts=PTS/{seg['speed']},scale={SIZE},fps={FPS}", *ENCODE, target])
+    # The 1920x1080 text overlay scales with the frame, so it sits where the editor put it.
+    lib.run(["ffmpeg", "-y", "-loglevel", "error", *source, "-i", text, "-filter_complex",
+             f"[0:v]{picture}[v];[1:v]scale={SIZE}[t];[v][t]overlay=0:0:shortest=0:eof_action=repeat[out]",
+             "-map", "[out]", *ENCODE, "-t", f"{segment_seconds(seg)}", target])
+
+
+def segment_seconds(seg: dict) -> float:
+    if "card" in seg:
+        return seg["length"]
+    end = seg["out"] if seg["out"] is not None else seg["in"] + lib.duration(seg["source"])
+    return (end - seg["in"]) / seg["speed"]
 
 
 def main() -> None:
@@ -106,9 +128,10 @@ def main() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         work = Path(tmp)
         parts = []
+        texts = text_overlays(segments, root, work) if len(args) > 1 else {}
         for number, seg in enumerate(segments, start=1):
             part = work / f"{number:03d}.mp4"
-            render_segment(seg, part, slate)
+            render_segment(seg, part, slate, texts.get(seg["text"]["name"]) if seg.get("text") else None)
             parts.append(part)
             lib.progress("quick-preview", number, len(segments) + 1)
         listing = work / "list.txt"

@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { existsSync, realpathSync, statSync, watch } from 'node:fs';
+import { existsSync, readFileSync, realpathSync, statSync, watch } from 'node:fs';
 import { createServer } from 'node:http';
 import { join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -9,6 +9,7 @@ import { demoDir, isPassiveMedia, mediaIndex, sendFile, thumbnail } from './medi
 import { insideAny, PathError, resolveInside } from './paths.mjs';
 import { RenderRunner } from './render.mjs';
 import { listTemplates, previewFile } from './templates.mjs';
+import { FontError, fontFile, fontFormat, listFonts } from '../../scripts/fonts.mjs';
 
 const APP_DIR = fileURLToPath(new URL('..', import.meta.url));
 const UI_DIR = join(APP_DIR, 'out');
@@ -186,6 +187,8 @@ export function createStudio({ repo, cwd, folder: initialFolder, dev = false, op
       openFolder(path);
       return json(res, 200, session());
     }
+    // Bundled fonts plus the demo's fonts/ folder, read fresh each time so a newly added file shows up.
+    if (route === 'GET /api/fonts') return json(res, 200, listFonts(requireFolder()));
     if (route === 'GET /api/media') {
       const dir = requireFolder();
       return json(res, 200, await mediaIndex(dir, readDocument(dir, 'handoff')?.data));
@@ -266,11 +269,28 @@ export function createStudio({ repo, cwd, folder: initialFolder, dev = false, op
       throw new HttpError(403, 'missing x-studio header');
     }
     if (url.pathname.startsWith('/api/')) return api(req, res, url);
+    if (url.pathname.startsWith('/fonts/')) return sendFont(res, decodeURIComponent(url.pathname.slice('/fonts/'.length)));
     if (url.pathname.startsWith('/media/')) {
       const rel = decodeURIComponent(url.pathname.slice('/media/'.length));
       return sendFile(req, res, resolveInside(requireFolder(), rel), { untrusted: true });
     }
     return serveUi(req, res, url);
+  }
+
+  // A font for the editor's @font-face: only ids fonts.mjs accepts, only regular files inside fonts/.
+  function sendFont(res, id) {
+    let data;
+    try {
+      data = readFileSync(fontFile(requireFolder(), id));
+    } catch (error) {
+      if (error instanceof FontError) throw new HttpError(404, error.message);
+      throw error;
+    }
+    res.writeHead(200, {
+      'Content-Type': fontFormat(id)[0], 'Content-Length': data.length, 'Cache-Control': 'no-cache',
+      'X-Content-Type-Options': 'nosniff', 'Content-Security-Policy': "sandbox; default-src 'none'",
+    });
+    res.end(data);
   }
 
   const server = createServer((req, res) => {

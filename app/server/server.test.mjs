@@ -281,6 +281,23 @@ describe('http server', () => {
     expect((await get('/api/session')).status).toBe(200);
   });
 
+  it('lists the bundled fonts and the demo\'s own, and serves only checked font files', async () => {
+    mkdirSync(join(demo, 'fonts'));
+    writeFileSync(join(demo, 'fonts', 'Brand.woff2'), 'wOF2');
+    writeFileSync(join(demo, 'secret.woff2'), 'nope');
+    const fonts = JSON.parse((await get('/api/fonts')).body);
+    expect(fonts[0]).toEqual({ id: 'inter', name: 'Inter', source: 'bundled' });
+    expect(fonts.at(-1)).toEqual({ id: 'fonts/Brand.woff2', name: 'Brand', source: 'demo' });
+    const own = await get('/fonts/fonts%2FBrand.woff2');
+    expect(own.status).toBe(200);
+    expect(own.headers['content-type']).toBe('font/woff2');
+    expect(own.headers['x-content-type-options']).toBe('nosniff');
+    expect((await get('/fonts/inter')).status).toBe(200);
+    for (const bad of ['/fonts/secret.woff2', '/fonts/fonts%2F..%2Fsecret.woff2', '/fonts/fonts%2Fmissing.woff2', '/fonts/handoff.json']) {
+      expect((await get(bad)).status).toBe(404);
+    }
+  });
+
   it('rejects cross-site requests on every route', async () => {
     for (const path of ['/media/recordings/raw/a.mp4', '/api/session', '/']) {
       const res = await get(path, { 'sec-fetch-site': 'cross-site' });

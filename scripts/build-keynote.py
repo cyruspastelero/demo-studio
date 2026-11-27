@@ -93,7 +93,8 @@ def font_probe(plan) -> dict:
 
 def render_graphics(plan, brand, cfg, demo_dir: Path, work: Path) -> tuple[Path, tuple[Path, Path], dict, list[str], dict]:
     images = collect_images(cfg, demo_dir, plan)
-    renderer = Renderer(work, brand, images, has_logo="logo" in images)
+    text_fonts = tuple(sorted({c.font for c in plan.callouts if c.font}))
+    renderer = Renderer(work, brand, images, has_logo="logo" in images, demo_dir=demo_dir, text_fonts=text_fonts)
     windows = {n: run_frames(run) for n, run in enumerate(plan.runs)}
     by_frame = {run.start + i: f for n, run in enumerate(plan.runs) for i, f in enumerate(windows[n])}
     end_card = plan.cards[-1] if plan.cards and plan.cards[-1].kind == "end" else None

@@ -9,6 +9,7 @@ import { SourceViewer } from './components/source-viewer';
 import { Timeline } from './components/timeline';
 import { renderOptions, TopBar } from './components/top-bar';
 import { isPlaceholderTitle } from '../shared/placeholder.mjs';
+import { DEFAULT_FONT } from '../shared/text-style.mjs';
 import { applyEdit, EditError, refUses, type Edit, type RefMode, type ShotPatch } from './lib/edits';
 import { voiceoverFits } from './lib/fit';
 import { socialEntry } from './lib/geometry';
@@ -19,6 +20,7 @@ import type { Aspect, DemoDoc, FileKind, HandoffDoc, MediaIndex, Selection, Time
 import { useDocuments } from './state/use-documents';
 import { useEvents } from './state/use-events';
 import { useShortcuts } from './state/use-shortcuts';
+import { useFonts } from './state/use-fonts';
 
 const KINDS: FileKind[] = ['handoff', 'demo'];
 const ASPECTS: Aspect[] = ['16:9', '4:5', '9:16'];
@@ -44,6 +46,8 @@ export function Editor({ session, onClose }: {
     setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), TOAST_MS);
   }, []);
   const docs = useDocuments(session.files, notify);
+  const onFontError = useCallback((message: string) => notify(message, 'error'), [notify]);
+  const { fonts, refresh: refreshFonts } = useFonts(onFontError);
   const fileTabs = KINDS.filter((k) => session.files[k]?.data);
   // Open on a file that holds a real cut: a template's placeholder scenes read as lost edits.
   const [fileKind, setFileKind] = useState<FileKind>(() =>
@@ -252,6 +256,8 @@ export function Editor({ session, onClose }: {
         selectedShotId={selectedShot?.id}
         onSelectShot={(s) => setSelection({ type: 'shot', scene: s.sceneIndex, shot: s.shotIndex })}
         onTextPatch={(s, patch) => onShotPatch(s.sceneIndex, s.shotIndex, patch)}
+        fonts={fonts} onRefreshFonts={refreshFonts}
+        defaultFont={fileKind === 'demo' ? ((doc as DemoDoc | undefined)?.brand as { font?: string } | undefined)?.font ?? DEFAULT_FONT : DEFAULT_FONT}
         overlay={source && (
           <SourceViewer take={source.take} markable={Boolean(markShot)} onMark={mark} onClose={closeSource}
             onOpenExternal={() => openTakeExternally(source.take)} onControls={onSourceControls} />

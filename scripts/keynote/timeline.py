@@ -134,13 +134,14 @@ def _callouts(sequence: list[dict], shots: tuple[Shot, ...], runs: tuple[Run, ..
             at = spec.ENTRY_SECONDS + 0.06 if shot.start in run_starts else 0.1
             dur = min(spec.PILL_SECONDS_DEFAULT, seconds - at - spec.PILL_EXIT)
             entries = [{"at": at, "dur": dur, "kind": "statement", "text": item["caption"],
-                        **({"pos": item["caption_pos"]} if "caption_pos" in item else {})}] if dur >= 1.5 else []
+                        **({"pos": item["caption_pos"]} if "caption_pos" in item else {}),
+                        **({"font": item["caption_font"]} if "caption_font" in item else {})}] if dur >= 1.5 else []
         for n, c in enumerate(entries or []):
             dur = float(c.get("dur", spec.PILL_SECONDS_DEFAULT))
             kind = c.get("kind", "statement")
             callout = Callout(base + float(c["at"]), base + float(c["at"]) + dur, kind, c["text"].strip(),
                               c.get("role", "").strip(), c.get("avatar", ""),
-                              (float(c["pos"][0]), float(c["pos"][1])) if "pos" in c else None)
+                              (float(c["pos"][0]), float(c["pos"][1])) if "pos" in c else None, c.get("font"))
             out.append((callout, f"{where}.callouts[{n}]" if "callouts" in item else f"{where}.caption"))
             lo, hi = spec.PILL_SECONDS_RANGE
             if not lo <= dur <= hi:

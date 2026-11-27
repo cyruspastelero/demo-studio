@@ -6,6 +6,7 @@ Each frame is a small JSON-able dict. Python computes every animated value here;
 rendered once."""
 from __future__ import annotations
 
+import re
 from typing import Sequence
 
 from . import spec
@@ -118,6 +119,15 @@ def outro_state(title: str, t: float, has_logo: bool) -> dict:
     return state
 
 
+def font_family(font_id: str) -> str:
+    """The CSS family a font id is loaded under; the same rule as fontFamily() in text-style.mjs
+    (slug plus an FNV-1a 32-bit hash, so ids that slug alike stay apart)."""
+    value = 0x811C9DC5
+    for char in font_id:
+        value = ((value ^ ord(char)) * 0x01000193) & 0xFFFFFFFF
+    return f"dsf-{re.sub(r'[^A-Za-z0-9]+', '-', font_id)}-{value:08x}"
+
+
 def pill_state(callout: Callout, t: float) -> dict | None:
     """C6 entry, per-word blur reveal, C7 exit."""
     if t < callout.start or t >= callout.end + spec.PILL_EXIT:
@@ -132,6 +142,8 @@ def pill_state(callout: Callout, t: float) -> dict | None:
     words = [word_state(w, role, t, callout.start + i * spec.PILL_WORD_STAGGER, spec.PILL_WORD_SECONDS,
                         spec.PILL_WORD_BLUR, spec.PILL_WORD_SHIFT) for i, (w, role) in enumerate(parts)]
     where = {"x": r(callout.pos[0] * spec.FRAME_W, 1), "y": r(callout.pos[1] * spec.FRAME_H, 1)} if callout.pos else {}
+    if callout.font:  # loaded by keynote-render.mjs under this name (fontFamily in app/shared/text-style.mjs)
+        where["family"] = font_family(callout.font)
     return {**where, "variant": callout.kind, "avatar": callout.avatar if callout.kind == "person" else "",
             "opacity": r(e * (1 - x)), "ty": r(spec.PILL_ENTRY_RISE * (1 - e) + spec.PILL_EXIT_DROP * x, 2),
             "scale": r(spec.PILL_ENTRY_SCALE + (1 - spec.PILL_ENTRY_SCALE) * e), "blur": r(spec.PILL_EXIT_BLUR * x, 2),

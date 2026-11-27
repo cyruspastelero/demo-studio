@@ -12,6 +12,10 @@ cut renders the same on macOS and Linux. Pick the family with `brand.font` in de
 `FigtreeVariable.woff2` (`wght` axis, latin subset) is used by the `daylight` motion template, not by
 the keynote engine.
 
+All five families (Inter, Inter Display, Geist, Geist Mono, Figtree) are also the built-in choices in
+the studio editor's Font menu for on-screen text and caption pills (`scripts/fonts.mjs`). A demo can
+add its own font files in its `fonts/` folder.
+
 All are SIL Open Font License 1.1 (`OFL.txt` for Inter, `OFL-Geist.txt` for Geist, `OFL-Figtree.txt`
 for Figtree), credited in the repo `NOTICE`.
 

@@ -2,9 +2,11 @@
 // mask, and every unique overlay frame, as PNGs. build-keynote.py writes the job file and calls this.
 // Usage: node keynote-render.mjs <job.json>
 // Safety: every output path must sit inside the job's work folder; fonts load only from the
-// plugin's assets/fonts; images must be data: URIs; every network request is blocked.
+// plugin's assets/fonts or, for a pill font picked in the editor, a file inside the demo's fonts/
+// folder (fonts.mjs checks it); images must be data: URIs; every network request is blocked.
 import { existsSync, lstatSync, readFileSync, realpathSync } from 'node:fs';
 import { isAbsolute, join, resolve, sep } from 'node:path';
+import { FontError, fontFaceCss } from './fonts.mjs';
 import { PLUGIN_ROOT, launchChrome, loadPlaywright } from './pw.mjs';
 import { blockRequests } from './card-safety.mjs';
 import { html, render } from './keynote-page.mjs';
@@ -46,6 +48,15 @@ function fontFace(family, file, weight) {
 
 const font = job.font;
 let faces = fontFace('DS Text', font.text, '100 900');
+// Fonts picked for single pills in the editor: bundled or the demo's fonts/ folder, checked by fonts.mjs.
+for (const id of job.text_fonts || []) {
+  try {
+    faces += fontFaceCss(job.demo_dir, id);
+  } catch (error) {
+    if (error instanceof FontError) fail(error.message);
+    throw error;
+  }
+}
 const display = Object.entries(font.display || {});
 faces += display.length ? display.map(([w, file]) => fontFace('DS Display', file, w)).join('')
   : fontFace('DS Display', font.display_text || font.text, '100 900');

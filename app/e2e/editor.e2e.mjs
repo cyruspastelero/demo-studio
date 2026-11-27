@@ -2,7 +2,9 @@
 // takes: open, trim (plain and shared shots), play, 9:16 framing, an outside edit, and a title-card
 // render. Usage: npm run e2e -w app
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { exampleCopy, launch, REPO, startServer } from './harness.mjs';
 
@@ -232,6 +234,74 @@ try {
     assert.equal(card.text, 'Setup takes a minute');
     assert.ok(Math.abs(card.text_pos[0] - 0.3) < 0.01 && Math.abs(card.text_pos[1] - 0.2) < 0.01, `placed at ${card.text_pos}`);
     await page.click('[data-testid="video-tab-PROMO"]');
+  });
+
+  await step('lists a font dropped into fonts/ and saves it on the text', async () => {
+    await page.click('[data-testid="video-tab-HOW-TO"]');
+    await page.locator('[data-shot-id="1:5:1"]').click();
+    await page.locator('[data-testid="text-box"]').click();
+    mkdirSync(join(folder, 'fonts'), { recursive: true });
+    copyFileSync(join(REPO, 'assets', 'fonts', 'FigtreeVariable.woff2'), join(folder, 'fonts', 'Brand Sans.woff2'));
+    await page.evaluate(() => window.dispatchEvent(new Event('focus'))); // back from the terminal
+    await waitFor(async () => (await page.locator('[data-testid="text-font"] option').allTextContents()).includes('Brand Sans'), 'the new font in the list');
+    await page.selectOption('[data-testid="text-font"]', 'fonts/Brand Sans.woff2');
+    await waitFor(() => textShot().text_font === 'fonts/Brand Sans.woff2', 'text_font to be saved');
+    await waitFor(() => page.evaluate(() => document.fonts.check("44px 'dsf-fonts-Brand-Sans-woff2-b59e44fc'")), 'the font to load in the preview');
+  });
+
+  await step('exports the text on the same pixels as the preview', async () => {
+    await page.evaluate(() => document.fonts.ready);
+    const stage = await stageRect();
+    const box = await page.locator('[data-testid="text-box"]').boundingBox();
+    const k = stage.width / 1920;
+    const shown = { x: (box.x - stage.x) / k, y: (box.y - stage.y) / k, w: box.width / k, h: box.height / k };
+    const shot = textShot();
+    const work = mkdtempSync(join(tmpdir(), 'text-overlay-'));
+    writeFileSync(join(work, 'job.json'), JSON.stringify({ demo_dir: folder, out_dir: work, items: [
+      { name: 'check', text: shot.text, pos: shot.text_pos ?? null, size: shot.text_size ?? null, font: shot.text_font ?? null }] }));
+    const made = spawnSync(process.execPath, [join(REPO, 'scripts', 'text-overlays.mjs'), join(work, 'job.json')], { encoding: 'utf8' });
+    assert.equal(made.status, 0, made.stderr);
+    const uri = `data:image/png;base64,${readFileSync(join(work, 'check.png')).toString('base64')}`;
+    const drawn = await page.evaluate(async (src) => {
+      const img = new Image();
+      img.src = src;
+      await img.decode();
+      const c = new OffscreenCanvas(img.width, img.height);
+      const g = c.getContext('2d');
+      g.drawImage(img, 0, 0);
+      const d = g.getImageData(0, 0, img.width, img.height).data;
+      let x0 = Infinity; let y0 = Infinity; let x1 = -1; let y1 = -1;
+      for (let y = 0; y < img.height; y += 1) {
+        for (let x = 0; x < img.width; x += 1) {
+          if (d[(y * img.width + x) * 4 + 3] > 8) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+        }
+      }
+      return { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 };
+    }, uri);
+    for (const key of ['x', 'y', 'w', 'h']) {
+      assert.ok(Math.abs(drawn[key] - shown[key]) <= 1.5, `${key}: preview ${shown[key].toFixed(1)} vs export ${drawn[key]}`);
+    }
+    await page.click('[data-testid="video-tab-PROMO"]');
+  });
+
+  await step('the playhead head is a handle: hand cursors, a hover time, and drag to scrub', async () => {
+    const ruler = page.locator('[data-testid="ruler"]');
+    const r = await ruler.boundingBox();
+    await page.mouse.move(r.x + 300, r.y + r.height / 2);
+    assert.equal(await ruler.evaluate((el) => getComputedStyle(el).cursor), 'pointer');
+    await page.waitForSelector('.tl-hover');
+    const start = await page.textContent('[data-testid="timecode"]');
+    await page.mouse.click(r.x + 300, r.y + r.height / 2); // a click on the ruler brings the playhead here
+    assert.notEqual(await page.textContent('[data-testid="timecode"]'), start, 'clicking the ruler moves the playhead');
+    const grip = page.locator('[data-testid="playhead-grip"]');
+    assert.equal(await grip.evaluate((el) => getComputedStyle(el).cursor), 'grab');
+    const before = await page.textContent('[data-testid="timecode"]');
+    const g = await grip.boundingBox();
+    await page.mouse.move(g.x + g.width / 2, g.y + g.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(g.x + g.width / 2 + 120, g.y + g.height / 2, { steps: 6 });
+    await page.mouse.up();
+    assert.notEqual(await page.textContent('[data-testid="timecode"]'), before, 'dragging the head moves the playhead');
   });
 
   await step('frames 9:16 like social-cut.py', async () => {

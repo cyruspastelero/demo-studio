@@ -1,5 +1,6 @@
 // Document edits. Each one returns a new document and leaves the input untouched; key order and
 // unknown fields (including `_` keys) survive because edits work on a structured clone.
+import { TEXT_SIZE } from '../../shared/text-style.mjs';
 import { isCardShot, isDemoCard, isRefShot, KEYNOTE_CARD_DEFAULT } from './timeline';
 import type {
   Brand, CardText, ClipSpec, DemoDoc, DemoItem, DemoSceneItem, FileKind, HandoffDoc, RefShotSpec,
@@ -18,6 +19,7 @@ export interface ShotPatch {
   length?: number;
   textPos?: [number, number] | null; // null puts the text back in its default spot
   textSize?: number | null;
+  textFont?: string | null; // a font id; null goes back to the default
 }
 export type BinItem =
   | { kind: 'raw'; file: string; duration: number | null }
@@ -87,14 +89,15 @@ function shotOf(scene: SceneSpec, index: number): ShotSpec {
   return shot;
 }
 
-export const TEXT_SIZE = { min: 20, max: 160, default: 44 };
+export { TEXT_SIZE };
 const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
 const point = (p: [number, number]): [number, number] =>
   [Math.round(clamp(p[0], 0, 1) * 1000) / 1000, Math.round(clamp(p[1], 0, 1) * 1000) / 1000];
 
 // Where the on-screen text goes: a frame point (clamped, 3 decimals) or '' to clear the key.
-function textFields(patch: ShotPatch, posKey: string, sizeKey?: string): Record<string, unknown> {
+function textFields(patch: ShotPatch, posKey: string, sizeKey: string | undefined, fontKey: string): Record<string, unknown> {
   const out: Record<string, unknown> = {};
+  if (patch.textFont !== undefined) out[fontKey] = patch.textFont ?? '';
   if (patch.textPos !== undefined) out[posKey] = patch.textPos === null ? '' : point(patch.textPos);
   if (sizeKey && patch.textSize !== undefined) {
     out[sizeKey] = patch.textSize === null ? '' : Math.round(clamp(patch.textSize, TEXT_SIZE.min, TEXT_SIZE.max));
@@ -103,8 +106,8 @@ function textFields(patch: ShotPatch, posKey: string, sizeKey?: string): Record<
 }
 
 function patchClipFields(patch: ShotPatch): Record<string, unknown> {
-  const { length: _length, textPos: _pos, textSize: _size, ...rest } = patch;
-  return { ...rest, ...textFields(patch, 'text_pos', 'text_size') };
+  const { length: _length, textPos: _pos, textSize: _size, textFont: _font, ...rest } = patch;
+  return { ...rest, ...textFields(patch, 'text_pos', 'text_size', 'text_font') };
 }
 
 function updateRefShot(doc: HandoffDoc, spec: RefShotSpec, patch: ShotPatch, mode: RefMode) {
@@ -131,7 +134,7 @@ function updateHandoffShot(doc: HandoffDoc, spec: ShotSpec, patch: ShotPatch, mo
     const { length, screen, text } = patch;
     const next = length ?? (patch.out !== undefined ? patch.out - (patch.in ?? 0) : undefined);
     if (next !== undefined && next < MIN_LENGTH) throw new EditError('A card needs some length.');
-    assign(spec as unknown as Record<string, unknown>, defined({ length: next, screen, text, ...textFields(patch, 'text_pos', 'text_size') }));
+    assign(spec as unknown as Record<string, unknown>, defined({ length: next, screen, text, ...textFields(patch, 'text_pos', 'text_size', 'text_font') }));
     if (screen === '') delete (spec as Partial<typeof spec>).screen;
     return;
   }
@@ -292,7 +295,7 @@ function updateDemoItem(item: DemoItem, patch: ShotPatch) {
     if (end !== null) checkRange(start ?? 0, end);
     item.trim = [start, end];
   }
-  assign(item as unknown as Record<string, unknown>, defined({ speed: patch.speed, caption: patch.text, ...textFields(patch, 'caption_pos') }));
+  assign(item as unknown as Record<string, unknown>, defined({ speed: patch.speed, caption: patch.text, ...textFields(patch, 'caption_pos', undefined, 'caption_font') }));
 }
 
 function demoItemFromBin(doc: DemoDoc, item: BinItem): DemoItem {

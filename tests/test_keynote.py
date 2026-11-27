@@ -192,6 +192,12 @@ class Pills(unittest.TestCase):
         self.assertEqual((state["x"], state["y"]), (480, 540))
         self.assertNotIn("x", pill_state(self.CALLOUT, 12))
 
+    def test_a_pill_with_its_own_font_names_that_family_for_the_page(self):
+        own = Callout(0, 4, "statement", "Brand words", font="fonts/Brand Sans.woff2")
+        # The same name fontFamily() in app/shared/text-style.mjs gives (tests/test_fonts.mjs).
+        self.assertEqual(pill_state(own, 2)["family"], "dsf-fonts-Brand-Sans-woff2-b59e44fc")
+        self.assertNotIn("family", pill_state(self.CALLOUT, 12))
+
     def test_person_pill_has_name_in_ink_and_role_in_grey(self):
         person = Callout(0, 4, "person", "Ana Cruz", "Product lead", "people/ana.png")
         state = pill_state(person, 2)
@@ -401,6 +407,15 @@ class Plans(unittest.TestCase):
         moved[2].pop("highlights")
         plan = self.plan(moved)
         self.assertEqual([c.pos for c in plan.callouts], [(0.25, 0.1), (0.75, 0.5)])
+
+    def test_caption_and_callout_fonts_reach_the_pills(self):
+        styled = json.loads(json.dumps(self.SEQUENCE))
+        styled[1]["callouts"][0]["font"] = "geist"
+        plan = self.plan(styled)
+        self.assertEqual(plan.callouts[0].font, "geist")
+        old = [{"card": "a", "title": "Hi"}, {"scene": "01", "stem": "01-a", "trim": [0, 8], "caption": "It works.",
+                                              "caption_font": "fonts/Mine.ttf"}, {"card": "b", "title": "Bye"}]
+        self.assertEqual(self.plan(old).callouts[0].font, "fonts/Mine.ttf")
 
     def test_unmoved_pills_have_no_position(self):
         self.assertIsNone(self.plan(self.SEQUENCE).callouts[0].pos)

@@ -3,7 +3,9 @@
 // in place, arrow keys to nudge (Shift for 10 px), and the corner handle to resize.
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from 'react';
 import { TEXT_SIZE, type ShotPatch } from '../lib/edits';
-import { defaultTextPos, type Point, type TextVariant } from '../lib/text-layout';
+import { fontStack } from '../../shared/text-style.mjs';
+import type { FontInfo } from '../api';
+import { defaultTextPos, keepInside, type Point, type TextVariant } from '../lib/text-layout';
 import { useTextGesture } from '../state/use-text-gesture';
 import { TextTools } from './text-tools';
 
@@ -18,7 +20,10 @@ interface Props {
   box: StageBox;
   active: boolean;
   startEditing?: boolean; // a new text box opens straight into typing
-  font?: string;
+  font?: string; // the chosen font id; undefined uses defaultFont
+  defaultFont: string;
+  fonts: FontInfo[];
+  onRefreshFonts: () => void;
   onActivate: () => void;
   onDeactivate: () => void;
   onCommit: (patch: ShotPatch) => void;
@@ -28,22 +33,31 @@ interface Props {
 const singleLine = (s: string) => s.replace(/\s+/g, ' ').trim();
 
 export function TextLayer(props: Props) {
-  const { variant, text, pos, size, frame, box, active, font, onActivate, onDeactivate, onCommit } = props;
+  const { variant, text, pos, size, frame, box, active, font, defaultFont, fonts, onRefreshFonts, onActivate, onDeactivate, onCommit } = props;
   const saved = pos ?? defaultTextPos(variant);
   const savedSize = size ?? TEXT_SIZE.default;
   const span = { w: frame.W * box.scale, h: frame.H * box.scale };
   const inner = useRef<HTMLDivElement>(null);
   const wrapper = useRef<HTMLDivElement>(null);
-  const [height, setHeight] = useState(0);
+  const [measured, setMeasured] = useState({ w: 0, h: 0 }); // the box on screen, px
   const g = useTextGesture({ variant, saved, savedSize, frame, span, inner, onCommit });
   const edit = useInlineEdit(props, saved, wrapper);
 
-  const at = g.live?.pos ?? saved;
   const fontSize = g.live?.size ?? savedSize;
-  // The toolbar sits above the box, so it needs the box's on-screen height.
+  const at = keepInside(g.live?.pos ?? saved, { w: measured.w / span.w, h: measured.h / span.h });
+  // The box's size on screen: for keeping it inside the frame (also while typing) and placing the toolbar.
   useLayoutEffect(() => {
-    if (inner.current) setHeight(inner.current.getBoundingClientRect().height);
-  }, [text, fontSize, box.scale, edit.editing, active]);
+    const el = inner.current;
+    if (!el) return undefined;
+    const measure = () => {
+      const rect = el.getBoundingClientRect();
+      setMeasured((m) => (m.w === rect.width && m.h === rect.height ? m : { w: rect.width, h: rect.height }));
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [fontSize, box.scale, font]);
   useEffect(() => { if (active && !edit.editing) wrapper.current?.focus({ preventScroll: true }); }, [active, edit.editing]);
 
   const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
@@ -64,7 +78,7 @@ export function TextLayer(props: Props) {
     transform: `translate(-50%, -50%) scale(${box.scale})`,
     ['--s' as string]: box.scale,
     ...(variant === 'onscreen' ? { fontSize } : {}),
-    ...(font ? { fontFamily: font } : {}),
+    fontFamily: fontStack(font ?? defaultFont),
   };
   return (
     <>
@@ -88,8 +102,15 @@ export function TextLayer(props: Props) {
               onPointerCancel={g.end} title="Drag to resize" data-testid="text-resize" />
           )}
         </div>
+        {edit.editing && (
+          <div className="text-hint" role="note" style={at[1] > 0.85 ? { top: -measured.h / 2 - 34 } : { top: measured.h / 2 + 10 }}>
+            Enter to save · Esc to cancel
+          </div>
+        )}
         {active && !edit.editing && !g.live && (
-          <TextTools variant={variant} at={saved} size={savedSize} top={-height / 2 - 10} onEdit={edit.start} onCommit={onCommit}
+          <TextTools variant={variant} at={saved} size={savedSize} boxHalf={measured.h / 2} onEdit={edit.start} onCommit={onCommit}
+            anchor={`${at[0]}:${at[1]}:${measured.w}:${measured.h}:${box.scale}:${box.left}`}
+            font={font} defaultFont={defaultFont} fonts={fonts} onRefreshFonts={onRefreshFonts}
             moved={Boolean(pos) || (variant === 'onscreen' && size !== undefined)} />
         )}
       </div>

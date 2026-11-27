@@ -589,21 +589,9 @@ input[type='range']:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 1.5p
 /* On-screen text over the stage. The box is drawn in frame px and scaled with the stage (--s is that
    scale), so the preview keeps the rendered size; outlines and handles divide by --s to stay 1 to 2 px. */
 .text-layer { position: absolute; width: 0; height: 0; z-index: 2; outline: none; }
-.text-box {
-  position: absolute; left: 0; top: 0; width: max-content; transform-origin: 50% 50%; cursor: grab;
-  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; user-select: none; touch-action: none;
-}
+/* The box's look comes from shared/text-style.mjs (same as the exports); here only how it is handled. */
+.text-box { cursor: grab; user-select: none; touch-action: none; transform-origin: 50% 50%; }
 .text-box:active { cursor: grabbing; }
-.text-box.onscreen {
-  max-width: 1340px; padding: 18px 28px; border-radius: 10px; background: rgba(17, 18, 20, 0.82); color: #fff;
-  font-weight: 650; letter-spacing: -0.3px; line-height: 1.2;
-}
-/* keynote-page.mjs #pill.statement: the render's pill, centred where the render puts it. */
-.text-box.pill {
-  display: flex; align-items: center; height: 68px; box-sizing: border-box; padding: 16px 32px; border-radius: 999px;
-  background: rgba(255, 255, 255, 0.95); color: #171717; font-size: 30px; font-weight: 500; letter-spacing: -0.3px;
-  white-space: nowrap; box-shadow: 0 14px 40px rgba(60, 45, 60, 0.12), 0 2px 6px rgba(60, 45, 60, 0.06);
-}
 @media (hover: hover) { .text-layer:not(.active) .text-box:hover { outline: calc(1px / var(--s)) dashed var(--accent); outline-offset: calc(3px / var(--s)); } }
 .text-layer.active .text-box { outline: calc(2px / var(--s)) solid var(--accent); outline-offset: calc(3px / var(--s)); }
 .text-layer.editing .text-box { cursor: text; user-select: text; }
@@ -614,7 +602,7 @@ input[type='range']:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 1.5p
   border: calc(2px / var(--s)) solid var(--accent); border-radius: calc(3px / var(--s)); background: #fff; cursor: nwse-resize;
 }
 .text-tools {
-  position: absolute; left: 0; display: flex; align-items: center; gap: 2px; padding: 3px; transform: translate(-50%, -100%);
+  position: absolute; left: 0; display: flex; align-items: center; gap: 2px; padding: 3px;
   border-radius: var(--radius); background: var(--surface); box-shadow: var(--ring-strong), 0 6px 20px rgb(0 0 0 / 0.08); white-space: nowrap;
 }
 .text-tools .icon-btn { width: 28px; height: 28px; }
@@ -694,7 +682,17 @@ input[type='range']:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 1.5p
 .tl-lanes div { display: flex; align-items: center; padding-left: 16px; }
 .tl-scroll { position: relative; overflow-x: auto; overflow-y: hidden; background: var(--canvas); }
 .tl-content { position: relative; height: 100%; min-width: 100%; }
-.tl-ruler { position: relative; height: 28px; background: var(--surface); box-shadow: var(--hair-b); cursor: text; }
+.tl-ruler {
+  position: relative; height: 28px; background: var(--surface); box-shadow: var(--hair-b); cursor: pointer;
+  transition: background-color var(--fast) var(--ease);
+}
+@media (hover: hover) { .tl-ruler:hover { background: var(--accent-tint); } }
+/* Where a click would put the playhead: a faint line and the time. */
+.tl-hover { position: absolute; top: 0; bottom: 0; width: 0; border-left: 1px solid rgb(252 94 50 / 0.45); pointer-events: none; z-index: 4; }
+.tl-hover span {
+  position: absolute; left: 4px; top: 6px; padding: 0 4px; border-radius: 3px; background: var(--surface);
+  color: var(--accent-fill); font-size: 11px; line-height: 16px; white-space: nowrap;
+}
 .tl-tick {
   position: absolute; top: 0; height: 100%; padding: 6px 0 0 6px; border-left: 1px solid var(--line);
   font-size: 11px; color: var(--quiet); pointer-events: none;
@@ -754,10 +752,17 @@ input[type='range']:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 1.5p
 }
 .tl-vo-limit { position: absolute; top: 2px; height: 22px; border-left: 1px dashed var(--accent); }
 .tl-playhead { position: absolute; top: 0; bottom: 0; width: 0; border-left: 1.5px solid var(--accent); pointer-events: none; z-index: 5; }
-.tl-playhead::before {
-  content: ''; position: absolute; top: 0; left: -6px; width: 10.5px; height: 10px; background: var(--accent);
-  clip-path: polygon(0 0, 100% 0, 100% 55%, 50% 100%, 0 55%); border-radius: 2px 2px 0 0;
+.tl-playhead-grip {
+  position: absolute; top: -2px; left: -10px; width: 20px; height: 16px; /* a bigger target than the 10 px head */
+  pointer-events: auto; cursor: grab; touch-action: none;
 }
+.tl-playhead-grip::before {
+  content: ''; position: absolute; top: 2px; left: 4px; width: 10.5px; height: 10px; background: var(--accent);
+  clip-path: polygon(0 0, 100% 0, 100% 55%, 50% 100%, 0 55%); border-radius: 2px 2px 0 0; transform-origin: 50% 0;
+  transition: transform var(--fast) var(--ease), background-color var(--fast) var(--ease);
+}
+.tl-playhead-grip:active { cursor: grabbing; }
+@media (hover: hover) { .tl-playhead-grip:hover::before { transform: scale(1.35); background: var(--accent-fill); } }
 .tl-drop { position: absolute; top: 0; width: 0; border-left: 2px solid var(--accent); z-index: 6; pointer-events: none; }
 .tl-empty { padding: 28px 16px; font-size: 13px; color: var(--quiet); }
 
@@ -850,3 +855,14 @@ kbd {
 }
 body:has(.static-demo-note) { display: flex; flex-direction: column; }
 body:has(.static-demo-note) #root { flex: 1; min-height: 0; height: auto; }
+.text-tools .font-select {
+  height: 28px; max-width: 150px; padding: 0 6px; border: 0; border-radius: var(--radius); background: transparent;
+  color: var(--ink); font: 12px var(--sans); cursor: pointer;
+}
+@media (hover: hover) { .text-tools .font-select:hover { background: var(--hover, rgb(0 0 0 / 0.04)); } }
+.text-layer.editing .text-box { outline-style: dashed; }
+.text-edit::selection { background: rgb(252 94 50 / 0.45); color: inherit; }
+.text-hint {
+  position: absolute; left: 0; transform: translate(-50%, 0); padding: 4px 8px; border-radius: var(--radius);
+  background: var(--ink); color: var(--surface); font: 11px var(--sans); white-space: nowrap; pointer-events: none;
+}

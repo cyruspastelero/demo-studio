@@ -120,6 +120,16 @@ describe('handoff edits', () => {
     expect(moved.videos[0].scenes[0].shots[0]).toEqual({ ...card, text_pos: [0.4, 0.6] });
   });
 
+  it('sets a font on the text, bundled or the demo\'s own, and clears it back to the default', () => {
+    const own = applyHandoffEdit(handoff(), 1, { op: 'shot', scene: 1, shot: 1, patch: { textFont: 'fonts/Brand Sans.woff2' } });
+    expect((own.videos[1].scenes[1].shots[1] as ClipSpec).text_font).toBe('fonts/Brand Sans.woff2');
+    expect(validate('handoff', own)).toEqual([]);
+    expect(buildHandoffTimeline(own, 1).shots.find((s) => s.sceneIndex === 1 && s.shotIndex === 1)?.textFont).toBe('fonts/Brand Sans.woff2');
+    const back = applyHandoffEdit(own, 1, { op: 'shot', scene: 1, shot: 1, patch: { textFont: null } });
+    expect('text_font' in back.videos[1].scenes[1].shots[1]).toBe(false);
+    expect(validate('handoff', { ...own, videos: [{ ...own.videos[1], scenes: [{ name: 'x', shots: [{ card: 'card-open', length: 1, text_font: '../x.ttf' }] }] }] }).length).toBeGreaterThan(0);
+  });
+
   it('keeps a moved text inside the frame', () => {
     const moved = applyHandoffEdit(handoff(), 1, { op: 'shot', scene: 1, shot: 1, patch: { textPos: [1.4, -0.2] } });
     expect((moved.videos[1].scenes[1].shots[1] as ClipSpec).text_pos).toEqual([1, 0]);
@@ -159,6 +169,12 @@ describe('demo.json edits', () => {
     const item = doc.sequence[1];
     const moved = applyDemoEdit(doc, { op: 'shot', scene: 1, shot: 0, patch: { textPos: [0.5, 0.3] } }).sequence[1];
     expect(moved).toEqual({ ...item, caption_pos: [0.5, 0.3] });
+  });
+
+  it('sets the caption pill font into caption_font', () => {
+    const next = applyDemoEdit(demo(), { op: 'shot', scene: 1, shot: 0, patch: { textFont: 'geist' } });
+    expect((next.sequence[1] as DemoSceneItem).caption_font).toBe('geist');
+    expect(validate('demo', next)).toEqual([]);
   });
 
   it('moves a caption pill into caption_pos', () => {

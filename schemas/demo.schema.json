@@ -310,6 +310,10 @@
           "$ref": "#/$defs/framePoint",
           "description": "Where the caption pill sits. Default: centred under the window."
         },
+        "caption_font": {
+          "$ref": "#/$defs/fontId",
+          "description": "The caption pill's font. Default: brand.font."
+        },
         "speed": {
           "type": "number",
           "exclusiveMinimum": 0
@@ -486,6 +490,12 @@
         }
       }
     },
+    "fontId": {
+      "type": "string",
+      "pattern": "^(inter|inter-display|geist|geist-mono|figtree|fonts/[A-Za-z0-9 ._()-]{1,120}\\.(woff2|woff|ttf|otf))$",
+      "not": { "pattern": "\\.\\." },
+      "description": "A bundled font (inter, inter-display, geist, geist-mono, figtree) or a font file in the demo's fonts/ folder, as fonts/<file>."
+    },
     "framePoint": {
       "type": "array",
       "minItems": 2,
@@ -538,6 +548,10 @@
         "pos": {
           "$ref": "#/$defs/framePoint",
           "description": "Where the pill sits. Default: centred under the window."
+        },
+        "font": {
+          "$ref": "#/$defs/fontId",
+          "description": "The pill's font. Default: brand.font."
         },
         "avatar": {
           "$ref": "#/$defs/imagePath",

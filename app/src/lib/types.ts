@@ -11,6 +11,7 @@ export interface ClipSpec {
   text?: string;
   text_pos?: [number, number];
   text_size?: number;
+  text_font?: string;
 }
 export interface CardShotSpec {
   card: string;
@@ -19,6 +20,7 @@ export interface CardShotSpec {
   text?: string;
   text_pos?: [number, number];
   text_size?: number;
+  text_font?: string;
 }
 export interface RefShotSpec {
   ref: string;
@@ -29,6 +31,7 @@ export interface RefShotSpec {
   text?: string;
   text_pos?: [number, number];
   text_size?: number;
+  text_font?: string;
 }
 export type ShotSpec = ClipSpec | CardShotSpec | RefShotSpec;
 
@@ -103,6 +106,7 @@ export interface DemoSceneItem {
   take?: number;
   caption?: string;
   caption_pos?: [number, number];
+  caption_font?: string;
   speed?: number;
   trim?: [number | null, number | null];
   zoom?: number[];
@@ -153,6 +157,7 @@ export interface TimelineShot {
   text: string;
   textPos?: [number, number]; // centre of the on-screen text, frame fractions; undefined = default spot
   textSize?: number; // px in a 1920x1080 frame (handoff only)
+  textFont?: string; // a font id from scripts/fonts.mjs; undefined = the default
   ref?: string;
 }
 

@@ -85,8 +85,11 @@ def window_statics() -> list[dict]:
 class Renderer:
     """Collects unique states, renders the missing ones in one Chrome session, links sequences."""
 
-    def __init__(self, work: Path, brand: Brand, images: dict[str, str], has_logo: bool):
+    def __init__(self, work: Path, brand: Brand, images: dict[str, str], has_logo: bool,
+                 demo_dir: Path | None = None, text_fonts: tuple[str, ...] = ()):
         self.work = work
+        self.demo_dir = demo_dir
+        self.text_fonts = text_fonts  # fonts picked for single pills in the editor
         self.cache = work / "png"
         self.cache.mkdir(parents=True, exist_ok=True)
         self.brand = brand
@@ -97,6 +100,9 @@ class Renderer:
         code = "".join((SCRIPTS / name).read_text() for name in ("keynote-page.mjs", "keynote-render.mjs"))
         fonts = "".join(sorted(f"{f.name}:{f.stat().st_size}"
                                for f in (SCRIPTS.parent / "assets" / "fonts").glob("*.woff2")))
+        # A demo font picked for a pill: its bytes, so replacing the file redraws those pills.
+        fonts += "".join(f"{fid}:{hashlib.sha1((demo_dir / fid).read_bytes()).hexdigest()}"
+                         for fid in text_fonts if demo_dir and fid.startswith("fonts/") and (demo_dir / fid).is_file())
         self.look = page_look()
         salt = json.dumps([brand.__dict__, sorted(images.items()), self.styles, code, fonts, self.look,
                            title_family(brand)],
@@ -124,6 +130,7 @@ class Renderer:
                 "static" if "window" in entry["state"] else "frames")
             groups[target].append(entry)
         return {"out_dir": str(self.work), "kind": kind,
+                "demo_dir": str(self.demo_dir or ""), "text_fonts": list(self.text_fonts),
                 "font": {"text": font["text"], "display": display, "display_text": title["text"]},
                 "look": self.look,
                 "colors": {"ink": b.ink, "secondary": b.secondary, "accent": b.accent, "role": ROLE_GREY,

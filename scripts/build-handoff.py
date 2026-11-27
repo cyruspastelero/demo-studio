@@ -15,6 +15,7 @@ Prints PROGRESS <stage> <done>/<total> lines and OUTPUT <path> lines for tools t
 from __future__ import annotations
 
 import importlib.util
+import json
 import shutil
 import subprocess
 import sys
@@ -48,14 +49,16 @@ class Shot:
     text: str = ""      # on-screen text the editor adds
     text_pos: tuple[float, float] | None = None  # its centre as frame fractions, set in the studio editor
     text_size: float | None = None               # px in a 1920x1080 frame
+    text_font: str | None = None                 # a font id (scripts/fonts.mjs); None is the default, Inter
 
     @property
     def text_place(self) -> str:
         """Where the on-screen text goes, in words an editor can follow."""
-        if not self.text_pos and not self.text_size:
+        if not self.text_pos and not self.text_size and not self.text_font:
             return ""
         bits = [f"centre at {self.text_pos[0]:.0%} across, {self.text_pos[1]:.0%} down"] if self.text_pos else []
         bits += [f"{self.text_size:g} px at 1080p"] if self.text_size else []
+        bits += [f"font {self.text_font}"] if self.text_font else []
         return f" ({', '.join(bits)})"
 
     @property
@@ -93,9 +96,38 @@ class Paths:
 
 # ---------------------------------------------------------------- config -> model
 
-def text_layout(spec: dict) -> tuple[tuple[float, float] | None, float | None]:
+def text_layout(spec: dict) -> tuple[tuple[float, float] | None, float | None, str | None]:
     pos = spec.get("text_pos")
-    return (float(pos[0]), float(pos[1])) if pos else None, spec.get("text_size")
+    return (float(pos[0]), float(pos[1])) if pos else None, spec.get("text_size"), spec.get("text_font")
+
+
+NO_BROWSER = 3  # text-overlays.mjs: no playwright-core or Chrome to draw with
+
+
+def text_overlay_items(video: Video) -> list[dict]:
+    """One text-overlays.mjs item per shot with on-screen text, named by its clip number."""
+    return [{"name": f"{number:02d}", "text": shot.text, "pos": list(shot.text_pos) if shot.text_pos else None,
+             "size": shot.text_size, "font": shot.text_font}
+            for number, shot in enumerate(video.shots, start=1) if shot.text]
+
+
+def render_text_overlays(items: list[dict], demo_dir: Path, out_dir: Path) -> dict[str, Path]:
+    """Draws the text as transparent 1920x1080 PNGs, exactly as the editor shows it. Returns name -> PNG."""
+    if not items:
+        return {}
+    lib.require("node")
+    with tempfile.TemporaryDirectory() as tmp:
+        job = Path(tmp) / "text-overlays.json"
+        job.write_text(json.dumps({"demo_dir": str(demo_dir), "out_dir": str(out_dir), "items": items}))
+        result = subprocess.run(["node", str(Path(__file__).resolve().parent / "text-overlays.mjs"), str(job)],
+                                capture_output=True, text=True)
+    if result.returncode == NO_BROWSER:
+        # Same as title cards without Chrome: say so and carry on; the script still gives place and size.
+        print(f"WARN text overlays skipped: {result.stderr.strip()}", flush=True)
+        return {}
+    if result.returncode:
+        sys.exit(f"build-handoff: text overlays failed:\n{result.stderr[-1500:]}")
+    return {item["name"]: out_dir / f"{item['name']}.png" for item in items}
 
 
 def resolve_shot(spec: dict, named: dict, label: str) -> Shot:
@@ -209,6 +241,8 @@ def build(video: Video, paths: Paths, voice: dict, use_say: bool) -> tuple[list[
         cut(shot, clip, paths)
         clips.append(clip)
         lib.progress(f"cut-{video.key}", number, len(video.shots))
+    # The on-screen text, drawn exactly as the studio editor shows it, to lay over its clip.
+    overlays = render_text_overlays(text_overlay_items(video), paths.root, folder / "text")
 
     starts = scene_starts(video)
     narrated = [s for s in video.scenes if s in video.voiceover]
@@ -246,7 +280,7 @@ def build(video: Video, paths: Paths, voice: dict, use_say: bool) -> tuple[list[
                      "-map", "0:v", "-map", "[out]", "-c:v", "copy", "-c:a", "aac", "-shortest", preview])
             lib.output(preview)
 
-    write_script(video, folder, total, paths)
+    write_script(video, folder, total, paths, set(overlays))
     write_voiceover(video, lines, total, paths, bool(audio))
     print(f"{folder.name}: {len(clips)} clips, {timecode(total)}", flush=True)
     return problems, folder
@@ -285,7 +319,7 @@ def copy_source_footage(cfg: dict, paths: Paths) -> None:
 
 # ---------------------------------------------------------------- text files
 
-def write_script(video: Video, folder: Path, total: float, paths: Paths) -> None:
+def write_script(video: Video, folder: Path, total: float, paths: Paths, overlays: set[str]) -> None:
     out, clock, current = [], 0.0, None
     out.append(f"{video.title} SCRIPT ({timecode(total)})\n{'=' * 72}\n")
     out.append(f"Clips are in {folder.name}/, numbered in timeline order. 00_ROUGH-ASSEMBLY.mp4 is all of them joined.\n")
@@ -298,6 +332,8 @@ def write_script(video: Video, folder: Path, total: float, paths: Paths) -> None
         out.append(f"    {timecode(clock)}  clip {number:02d}{speed}: {shot.screen}")
         if shot.text:
             out.append(f"           ON-SCREEN TEXT{shot.text_place}: {shot.text}")
+            if f"{number:02d}" in overlays:
+                out.append(f"           (laid out in {folder.name}/text/{number:02d}.png: a 1920x1080 overlay, place it over the clip)")
         clock += shot.length
     target = lib.config_path(paths.out, video.script_file, f"videos[{video.key}].script_file", "build-handoff")
     target.write_text("\n".join(out) + "\n")

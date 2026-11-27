@@ -251,6 +251,29 @@ npm --prefix "$P" run studio <demo>        # run_in_background: true; first run:
 It reads and writes the same `handoff.json` and `demo.json`. Re-read both before you change them.
 It never writes a file that fails the schema, and keeps `_` keys.
 
+In the editor they can drag on-screen text and caption pills, edit them in place, resize them and pick a
+font. What they set is saved on the shot and every export draws it on the same pixels:
+
+| Field | File | Meaning |
+| --- | --- | --- |
+| `text_pos`, `caption_pos`, callout `pos` | handoff / demo | `[x, y]` centre of the text, 0 to 1 of the frame |
+| `text_size` | handoff | px at 1920x1080 (20 to 160, default 44) |
+| `text_font`, `caption_font`, callout `font` | handoff / demo | `inter` (default), `inter-display`, `geist`, `geist-mono`, `figtree`, or `fonts/<file>` |
+
+**When the user asks to add their own font** ("use our brand font", "import this font"):
+
+1. Get the font file from them (a path or a download they point to). Use `.woff2`, `.woff`, `.ttf` or
+   `.otf`. Check the licence allows embedding in video; if unsure, ask.
+2. Copy it into the demo, keeping a readable name (letters, digits, spaces, `. _ ( ) -` only):
+   ```bash
+   mkdir -p <demo>/fonts && cp "/path/to/Brand Sans-Bold.woff2" "<demo>/fonts/Brand Sans-Bold.woff2"
+   ```
+3. Tell the user it is in the Font menu of a selected text (the editor lists it as soon as its window
+   is focused again). To set it yourself, write `"text_font": "fonts/Brand Sans-Bold.woff2"` on the
+   shot (or `caption_font` in demo.json).
+4. Done when: `python3 -I "$P/scripts/quick-preview.py" handoff.json <VIDEO>` (or `build-keynote.py`)
+   finishes, and a frame of that shot shows the text in the new font.
+
 ## Done when
 
 - [ ] `recordings/exports/review-reel.mp4` exists and you checked it on a contact sheet (the user

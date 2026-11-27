@@ -56,6 +56,7 @@ class Callout:
     role: str = ""
     avatar: str = ""               # image id in the render job, "" for none
     pos: tuple[float, float] | None = None  # pill centre as frame fractions, None for the bar's spot
+    font: str | None = None        # a font id (scripts/fonts.mjs) chosen in the editor, None for brand.font
 
 
 @dataclass(frozen=True)

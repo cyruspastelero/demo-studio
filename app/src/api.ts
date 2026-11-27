@@ -69,6 +69,17 @@ export type Session =
     files: Record<FileKind, FileState | null>; render: RenderState | null;
   };
 
+export interface FontInfo {
+  id: string; // 'inter' or 'fonts/<file>' (see scripts/fonts.mjs)
+  name: string;
+  source: 'bundled' | 'demo';
+}
+
+// Where the editor loads a font file from. The static demo ships the bundled fonts next to the page.
+export function fontUrl(id: string): string {
+  return STATIC_DEMO ? `./data/fonts/${encodeURIComponent(id)}` : `/fonts/${encodeURIComponent(id)}`;
+}
+
 export class ApiError extends Error {
   constructor(message: string, public status: number, public body: Record<string, unknown>) {
     super(message);
@@ -114,6 +125,7 @@ export const api = {
     call('POST', '/api/demo-reveal', { demo, path, action }),
   open: (path: string) => call<Session>('POST', '/api/open', { path }),
   media: () => call<MediaIndex>('GET', '/api/media'),
+  fonts: () => call<FontInfo[]>('GET', '/api/fonts'),
   save: (kind: FileKind, data: unknown, baseHash: string | null) =>
     call<{ hash: string }>('PUT', `/api/file/${kind}`, { data, baseHash }),
   render: (kind: string, video?: string) => call<RenderState>('POST', '/api/render', { kind, video }),
