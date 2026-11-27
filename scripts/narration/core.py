@@ -21,7 +21,6 @@ FPS = 30
 DEFAULT_RATE = 165          # words per minute, for say and for estimates
 DEFAULT_LEAD_IN = 0.3       # seconds into an item before its line starts
 DEFAULT_CARD = 2.4          # build-keynote's default card length
-DEFAULT_MUSIC_VOLUME = 0.18
 MUSIC_FADE = 1.5
 TARGET_LUFS = -14          # quality bar A2: -14 LUFS +-1
 TARGET_TP = -2.0           # A3 asks <= -1.0 dBTP after AAC; aim lower for encoder overshoot

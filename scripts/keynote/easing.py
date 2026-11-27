@@ -11,10 +11,6 @@ def clamp(value: float, low: float = 0.0, high: float = 1.0) -> float:
     return low if value < low else high if value > high else value
 
 
-def lerp(a: float, b: float, p: float) -> float:
-    return a + (b - a) * p
-
-
 def progress(t: float, start: float, seconds: float) -> float:
     """Where t sits in [start, start + seconds], clamped to 0..1."""
     if seconds <= 0:

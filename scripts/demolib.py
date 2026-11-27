@@ -18,7 +18,6 @@ from pathlib import Path
 
 PLUGIN_ROOT = Path(__file__).resolve().parent.parent
 SCHEMAS = PLUGIN_ROOT / "schemas"
-ASSETS = PLUGIN_ROOT / "assets"
 
 _TYPES = {
     "object": lambda v: isinstance(v, dict),

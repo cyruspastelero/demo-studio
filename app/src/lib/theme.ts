@@ -6,7 +6,6 @@
 export type ThemeChoice = 'system' | 'light' | 'dark';
 
 export const THEME_KEY = 'demo-studio.theme';
-export const THEME_CHOICES: readonly ThemeChoice[] = ['system', 'light', 'dark'];
 
 export function normaliseTheme(value: unknown): ThemeChoice {
   return value === 'light' || value === 'dark' ? value : 'system';

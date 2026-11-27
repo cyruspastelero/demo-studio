@@ -1,6 +1,5 @@
 // The documents are plain JSON in the schema shape. These types cover the fields the app reads;
 // anything else (including `_` keys) rides along untouched.
-export type Json = Record<string, unknown>;
 
 export interface ClipSpec {
   source: string;

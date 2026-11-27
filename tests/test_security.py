@@ -5,7 +5,6 @@ writes, and a shared demo.json cannot spend ElevenLabs credits on its own.
 Run: python3 -I tests/test_security.py"""
 
 import contextlib
-import copy
 import importlib.util
 import io
 import json

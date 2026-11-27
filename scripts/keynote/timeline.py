@@ -117,10 +117,6 @@ def _check_zoom_pacing(zooms: tuple[Zoom, ...], run_seconds: float, first_index:
                     f"paces one every {every:g}s or less (template pacing.zoom_every)")
 
 
-def _shot_of(index: int, shots: tuple[Shot, ...]) -> tuple[int, Shot]:
-    return next((n, s) for n, s in enumerate(shots) if s.index == index)
-
-
 def _callouts(sequence: list[dict], shots: tuple[Shot, ...], runs: tuple[Run, ...],
               zoom_spans: list[tuple[float, float]], warn: list[str]) -> tuple[Callout, ...]:
     out: list[tuple[Callout, str]] = []
