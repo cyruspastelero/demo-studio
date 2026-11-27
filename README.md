@@ -39,8 +39,9 @@ money or create something it can't delete.
 - **Local and free.** It runs on your machine with free tools. Paid voices and music are optional.
 - **Safe.** Test accounts only, and secrets are masked before anything is captured.
   [More](#local-and-safe)
-- **Polished by default.** Every cut meets a [measured quality bar](docs/quality-bar.md), and
-  `check-cut.py` checks it, and `video-gate.py` checks any other cut.
+- **Polished by default.** Every cut is checked before you see it: the main cut against a
+  [measured quality bar](docs/quality-bar.md), every other cut for blank or frozen stretches, and the
+  plan for numbers on screen that the voiceover doesn't say.
 
 ## Sample videos
 
@@ -140,7 +141,8 @@ end to end, no login needed ([10-minute walkthrough](docs/getting-started.md#fir
 - **When you ask:** promo and how-to cuts, 4:5 and 9:16 social versions, and a package for a video
   editor.
 - **An editor to fix things yourself:** `npm run studio` opens it. Play the cut, retime shots, move and
-  edit text on the video, and rewrite a voiceover line to see if it still fits.
+  edit text on the video, and rewrite a voiceover line to see if it still fits. After a render it
+  lists what needs fixing.
   [Try it in the browser](https://demo-studio.pastelero.ph/#editor).
 
 <p align="center">
