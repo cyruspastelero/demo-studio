@@ -5,21 +5,17 @@ an open-source macOS app that gives each project its own desktop. It shows the `
 template: typed headlines with a caret, one button lifted out of the UI and clicked on the beat, a
 prompt box, a `shapeSweep` transition, a sharp zoom into a real dashboard take, and the lock-up.
 
-The five clips in `media/` are not in the repo (`.gitignore` keeps them out), so on a fresh clone the
-storyboard is there to read and copy from, and `--check` fails with `file not found: media/dashboard-sort.mp4`.
-The finished video is `sample-daylight-ad.mp4` on the
-[`samples` release](https://github.com/cyruspastelero/demo-studio/releases/tag/samples). To render it
-yourself, put your own five clips at the paths listed below, then run from the plugin root:
+Render it from the plugin root:
 
 ```bash
 node motion/render-motion.mjs examples/switchyard-launch/storyboard.json --check
 node motion/render-motion.mjs examples/switchyard-launch/storyboard.json --size 16x9 --out /tmp/switchyard-16x9.mp4
 ```
 
-With the clips in place, expected: `{"ok":true,"style":"daylight","duration":36,"bpm":119.999,"scenes":13,...}` with no
+Expected: `{"ok":true,"style":"daylight","duration":36,"bpm":119.999,"scenes":13,...}` with no
 `warnings`. About 6 minutes per size. Delete `examples/switchyard-launch/.motion-cache/` afterwards.
 
-`media/` (you supply these):
+`media/`:
 
 - `dashboard-sort.mp4`: a real take of Switchyard's dashboard sorting windows (demo data).
 - `rename-closeup.mp4`: a real close-up take, recorded with the panel zoomed to 260% and encoded at
