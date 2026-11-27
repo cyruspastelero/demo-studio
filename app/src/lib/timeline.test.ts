@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { voiceoverFits } from './fit';
 import { REPO, runPython } from './python';
 import {
-  buildDemoTimeline, buildHandoffTimeline, RefError, resolveRef, shotAt, snap, sourceTime, timecode, timelineTime,
+  buildDemoTimeline, buildHandoffTimeline, RefError, resolveRef, shotAt, snap, sourceTime, tickLabel, timecode, timelineTime,
 } from './timeline';
 import type { DemoDoc, HandoffDoc, MediaIndex } from './types';
 
@@ -87,13 +87,28 @@ describe('handoff timeline math', () => {
 });
 
 describe('demo.json timeline', () => {
-  it('uses card durations (default 2.4), trims and speed like build-keynote.py', () => {
+  it('uses card durations, trims and speed like build-keynote.py, with the end card\'s outro', () => {
     const doc = example('demo.json') as DemoDoc;
     const media: MediaIndex = { raw: [{ file: '05-approve-t1.mp4', path: 'recordings/raw/05-approve-t1.mp4', duration: 7 }], cards: {}, keynoteCards: {} };
     const tl = buildDemoTimeline(doc, media);
-    expect(tl.shots.map((s) => Number(s.length.toFixed(4)))).toEqual([3.2, Number((8 / 1.5).toFixed(4)), 2.4, Number((10.5 / 1.25).toFixed(4)), 7, 8.2, 3.8]);
+    // The last card is the end card: its 3.8 s plus the 5 s brand sweep and logo outro.
+    expect(tl.shots.map((s) => Number(s.length.toFixed(4)))).toEqual([3.2, Number((8 / 1.5).toFixed(4)), 2.4, Number((10.5 / 1.25).toFixed(4)), 7, 8.2, 8.8]);
     expect(tl.rateWpm).toBe(150);
     expect(tl.leadIn).toBe(0.5);
+  });
+
+  it('times cards without a duration by kind, like build-keynote.py\'s card_kind', () => {
+    const doc: DemoDoc = { title: 'T', sequence: [
+      { card: 'open', title: 'Open', subtitle: 'With a subtitle' }, // hero 3.0
+      { card: 'part', title: 'Part one' }, // section 2.4
+      { card: 'forced', title: 'Forced', subtitle: 'Sub', kind: 'section' }, // kind wins: 2.4
+      { card: 'end', title: 'The end', subtitle: 'example.com' }, // last: end 7.9 + outro 5.0
+    ] };
+    expect(buildDemoTimeline(doc).shots.map((s) => Number(s.length.toFixed(4)))).toEqual([3, 2.4, 2.4, 12.9]);
+    const noOutro = { ...doc, sequence: [...doc.sequence.slice(0, 3), { card: 'end', title: 'The end', outro: 0 }] };
+    expect(buildDemoTimeline(noOutro).total).toBeCloseTo(3 + 2.4 + 2.4 + 7.9);
+    // A one-item sequence has no end card (build_plan's index > 0).
+    expect(buildDemoTimeline({ title: 'T', sequence: [{ card: 'only', title: 'Only' }] }).total).toBe(2.4);
   });
 });
 
@@ -152,6 +167,15 @@ describe('helpers', () => {
   it('formats timecodes as m:ss.cc', () => {
     expect(timecode(0)).toBe('0:00.00');
     expect(timecode(65.255)).toBe('1:05.26');
+  });
+
+  it('keeps the half second in ruler labels past one minute', () => {
+    expect(tickLabel(30, 1)).toBe('30s');
+    expect(tickLabel(0.5, 0.5)).toBe('0.5s');
+    expect(tickLabel(60.5, 0.5)).toBe('1:00.5');
+    expect(tickLabel(119.5, 0.5)).toBe('1:59.5');
+    expect(tickLabel(120, 0.5)).toBe('2:00.0');
+    expect(tickLabel(90, 5)).toBe('1:30');
   });
 
   it('snaps to the nearest edge inside the tolerance', () => {

@@ -4,7 +4,7 @@ import { thumbUrl } from '../api';
 import type { BinItem, Edit, ShotPatch } from '../lib/edits';
 import type { VoiceoverFit } from '../lib/fit';
 import type { Player } from '../lib/player';
-import { edges, snap, timecode } from '../lib/timeline';
+import { edges, snap, tickLabel, timecode } from '../lib/timeline';
 import type { Selection, Timeline as TimelineModel, TimelineShot } from '../lib/types';
 import { DRAG_TYPE } from './media-bin';
 
@@ -127,6 +127,12 @@ export function Timeline({
     setTrim({ ...trim, length: result.length });
     if (result.source !== null) player?.scrub(trim.shot, Math.max(0, result.source - (trim.side === 'right' ? 1 / 30 : 0)));
   };
+  // A cancelled touch or pen trim drops the change and leaves scrub mode.
+  const onHandleCancel = () => {
+    if (!trim) return;
+    setTrim(null);
+    player?.endScrub();
+  };
   const onHandleUp = (e: React.PointerEvent) => {
     if (!trim) return;
     const result = trimPreview(trim, e.clientX - trim.x0);
@@ -178,7 +184,7 @@ export function Timeline({
 
   const ticks = [];
   for (let t = 0; t <= timeline.total + step; t += step) {
-    ticks.push(<div key={t} className="tl-tick mono" style={{ left: t * pps }}>{t >= 60 ? `${Math.floor(t / 60)}:${String(Math.round(t % 60)).padStart(2, '0')}` : `${t}s`}</div>);
+    ticks.push(<div key={t} className="tl-tick mono" style={{ left: t * pps }}>{tickLabel(t, step)}</div>);
   }
 
   return (
@@ -254,8 +260,8 @@ export function Timeline({
                     {s.kind === 'card' && <div className="strip card-strip">{s.cardTitle}</div>}
                     {s.ref && <span className="badge">{s.ref}</span>}
                     <div className="label">{s.kind === 'card' ? s.card : s.screen || s.file}</div>
-                    <div className="handle left" data-testid="handle-left" onPointerDown={(e) => onHandleDown(e, s, 'left')} onPointerMove={onHandleMove} onPointerUp={onHandleUp} />
-                    <div className="handle right" data-testid="handle-right" onPointerDown={(e) => onHandleDown(e, s, 'right')} onPointerMove={onHandleMove} onPointerUp={onHandleUp} />
+                    <div className="handle left" data-testid="handle-left" onPointerDown={(e) => onHandleDown(e, s, 'left')} onPointerMove={onHandleMove} onPointerUp={onHandleUp} onPointerCancel={onHandleCancel} />
+                    <div className="handle right" data-testid="handle-right" onPointerDown={(e) => onHandleDown(e, s, 'right')} onPointerMove={onHandleMove} onPointerUp={onHandleUp} onPointerCancel={onHandleCancel} />
                   </div>
                 );
               })}

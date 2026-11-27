@@ -201,7 +201,7 @@ function GettingStarted({ session }: { session: HomeSession }) {
 
 const DOCS = [
   { label: 'Read me', href: 'https://github.com/cyruspastelero/demo-studio#readme' },
-  { label: 'Local editor', href: 'https://github.com/cyruspastelero/demo-studio#local-editor' },
+  { label: 'Local editor', href: 'https://github.com/cyruspastelero/demo-studio/blob/main/docs/studio.md' },
   { label: 'Roadmap', href: 'https://github.com/cyruspastelero/demo-studio/blob/main/docs/ROADMAP.md' },
 ];
 

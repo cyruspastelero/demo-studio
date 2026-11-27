@@ -25,10 +25,12 @@ function OutputView({ file, onError }: { file: OutputFile; onError: (m: string) 
 
 export function RenderDrawer({ job, onClose, onError }: { job: RenderState; onClose: () => void; onError: (m: string) => void }) {
   const log = useRef<HTMLPreElement>(null);
+  // The log is capped, so its length stops changing on a long render; the last line still does.
+  const lastLine = job.log[job.log.length - 1];
   useEffect(() => {
     const el = log.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [job.log.length]);
+  }, [job.log.length, lastLine]);
   const p = job.progress;
   const pct = p && p.total ? Math.round((p.done / p.total) * 100) : null;
   const files = job.outputFiles ?? [];

@@ -97,6 +97,8 @@ export interface DemoCardItem {
   subtitle?: string;
   logo?: boolean;
   duration?: number;
+  kind?: 'hero' | 'section' | 'end';
+  outro?: number;
   voiceover?: string;
 }
 export interface DemoSceneItem {

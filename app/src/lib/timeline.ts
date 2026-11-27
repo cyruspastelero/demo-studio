@@ -11,6 +11,9 @@ export const HANDOFF_LEAD_IN = 0.3;
 export const KEYNOTE_RATE_WPM = 150;
 export const KEYNOTE_LEAD_IN = 0.5;
 export const KEYNOTE_CARD_DEFAULT = 2.4;
+// scripts/keynote/spec.py: CARD_SECONDS and OUTRO_SECONDS (a look can change both).
+export const KEYNOTE_CARD_SECONDS = { hero: 3.0, section: 2.4, end: 7.9 };
+export const KEYNOTE_OUTRO = 5.0;
 export const DEFAULT_RAW_DIR = 'recordings/raw';
 
 export const isCardShot = (s: ShotSpec): s is CardShotSpec => 'card' in s;
@@ -85,6 +88,15 @@ export function buildHandoffTimeline(doc: HandoffDoc, videoIndex: number, media?
   };
 }
 
+// scripts/keynote/model.py card_kind: kind wins; else the last item (of more than one) is the end
+// card and a card with a subtitle is a hero. The end card also gets the brand sweep and logo outro.
+export function demoCardTiming(doc: DemoDoc, index: number): { seconds: number; outro: number } {
+  const item = doc.sequence[index] as DemoCardItem;
+  const isLast = index === doc.sequence.length - 1 && index > 0;
+  const kind = item.kind ?? (isLast ? 'end' : item.subtitle ? 'hero' : 'section');
+  return { seconds: item.duration ?? KEYNOTE_CARD_SECONDS[kind], outro: kind === 'end' ? item.outro ?? KEYNOTE_OUTRO : 0 };
+}
+
 export function demoTakeFile(item: DemoSceneItem): string {
   return `${item.stem}-t${item.take ?? 1}.mp4`;
 }
@@ -98,7 +110,8 @@ export function buildDemoTimeline(doc: DemoDoc, media?: MediaIndex): Timeline {
     let shot: TimelineShot;
     let name: string;
     if (isDemoCard(item)) {
-      const length = item.duration ?? KEYNOTE_CARD_DEFAULT;
+      const { seconds, outro } = demoCardTiming(doc, sceneIndex);
+      const length = seconds + outro;
       name = `Card ${item.card}`;
       shot = {
         id, sceneIndex, shotIndex: 0, kind: 'card', card: item.card, cardTitle: item.title,
@@ -149,6 +162,13 @@ export function timecode(seconds: number): string {
   const m = Math.floor(centis / 6000);
   const s = Math.floor((centis % 6000) / 100);
   return `${m}:${String(s).padStart(2, '0')}.${String(centis % 100).padStart(2, '0')}`;
+}
+
+// A ruler label: seconds under a minute, then m:ss, keeping the tenth when ticks are under 1 s apart.
+export function tickLabel(t: number, step: number): string {
+  if (t < 60) return `${t}s`;
+  const seconds = t % 60;
+  return `${Math.floor(t / 60)}:${step < 1 ? seconds.toFixed(1).padStart(4, '0') : String(Math.round(seconds)).padStart(2, '0')}`;
 }
 
 // Edges for snapping: every shot boundary plus the start and the end.

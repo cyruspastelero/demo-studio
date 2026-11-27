@@ -5,7 +5,7 @@ import { validate } from '../state/validators';
 import { applyDemoEdit, applyHandoffEdit, EditError, refUses } from './edits';
 import { REPO } from './python';
 import { buildHandoffTimeline } from './timeline';
-import type { ClipSpec, DemoDoc, DemoSceneItem, HandoffDoc, RefShotSpec } from './types';
+import type { ClipSpec, DemoCardItem, DemoDoc, DemoSceneItem, HandoffDoc, RefShotSpec } from './types';
 
 const handoff = () => JSON.parse(readFileSync(join(REPO, 'examples/acme-invoice-bot/handoff.json'), 'utf8')) as HandoffDoc;
 const demo = () => JSON.parse(readFileSync(join(REPO, 'examples/acme-invoice-bot/demo.json'), 'utf8')) as DemoDoc;
@@ -202,5 +202,40 @@ describe('demo.json edits', () => {
   it('reorders items', () => {
     const next = applyDemoEdit(demo(), { op: 'move', from: { scene: 0, shot: 0 }, to: { scene: 1, index: 1 } });
     expect(next.sequence.slice(0, 2).map((i) => ('card' in i ? i.card : i.scene))).toEqual(['01', 'intro']);
+  });
+
+  it('gives every half of a twice-split card its own name', () => {
+    let doc = applyDemoEdit(demo(), { op: 'split', scene: 0, shot: 0, at: 1 });
+    doc = applyDemoEdit(doc, { op: 'split', scene: 0, shot: 0, at: 0.5 });
+    const names = doc.sequence.slice(0, 3).map((i) => ('card' in i ? i.card : ''));
+    expect(new Set(names).size).toBe(3);
+    expect(names[0]).toBe('intro');
+    expect(validate('demo', doc)).toEqual([]);
+  });
+
+  it('gives a duplicated card a new name and a duplicated scene a new id', () => {
+    const card = applyDemoEdit(demo(), { op: 'addScene', after: 0 });
+    const [a, b] = card.sequence.slice(0, 2) as DemoCardItem[];
+    expect(b.card).not.toBe(a.card);
+    expect(b.title).toBe(a.title);
+    const scene = applyDemoEdit(demo(), { op: 'addScene', after: 1 });
+    const [c, d] = scene.sequence.slice(1, 3) as DemoSceneItem[];
+    expect(d.scene).not.toBe(c.scene);
+    expect(d.stem).toBe(c.stem);
+    expect(validate('demo', scene)).toEqual([]);
+  });
+
+  it('splits a card without a duration at its kind\'s default length', () => {
+    const doc: DemoDoc = { title: 'T', sequence: [{ card: 'open', title: 'Open', subtitle: 'Hero' }, { scene: '01', stem: '01-x', take: 1 }] };
+    const next = applyDemoEdit(doc, { op: 'split', scene: 0, shot: 0, at: 1 });
+    expect(next.sequence.slice(0, 2).map((i) => ('card' in i ? i.duration : null))).toEqual([1, 2]);
+  });
+
+  it('keeps the end card\'s outro out of its duration when its length changes', () => {
+    const doc = demo();
+    const last = doc.sequence.length - 1;
+    const next = applyDemoEdit(doc, { op: 'shot', scene: last, shot: 0, patch: { length: 9 } });
+    expect((next.sequence[last] as DemoCardItem).duration).toBe(4);
+    expect(() => applyDemoEdit(doc, { op: 'split', scene: last, shot: 0, at: 5 })).toThrow(EditError);
   });
 });

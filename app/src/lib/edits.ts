@@ -1,7 +1,7 @@
 // Document edits. Each one returns a new document and leaves the input untouched; key order and
 // unknown fields (including `_` keys) survive because edits work on a structured clone.
 import { TEXT_SIZE } from '../../shared/text-style.mjs';
-import { isCardShot, isDemoCard, isRefShot, KEYNOTE_CARD_DEFAULT } from './timeline';
+import { demoCardTiming, isCardShot, isDemoCard, isRefShot, KEYNOTE_CARD_DEFAULT } from './timeline';
 import type {
   Brand, CardText, ClipSpec, DemoDoc, DemoItem, DemoSceneItem, FileKind, HandoffDoc, RefShotSpec,
   SceneSpec, ShotSpec, VideoSpec,
@@ -280,9 +280,19 @@ function nextSceneId(doc: DemoDoc, id: string): string {
   return id;
 }
 
-function updateDemoItem(item: DemoItem, patch: ShotPatch) {
+// A card name no other card in the sequence has: base, then base-2, base-3 ...
+function freeCardName(doc: DemoDoc, base: string): string {
+  const used = new Set(doc.sequence.filter(isDemoCard).map((c) => c.card));
+  let name = base;
+  for (let n = 2; used.has(name); n += 1) name = `${base}-${n}`;
+  return name;
+}
+
+// outro: the end card's outro seconds, which the timeline length includes and duration does not.
+function updateDemoItem(item: DemoItem, patch: ShotPatch, outro = 0) {
   if (isDemoCard(item)) {
-    const length = patch.length ?? (patch.out !== undefined ? patch.out - (patch.in ?? 0) : undefined);
+    const shown = patch.length ?? (patch.out !== undefined ? patch.out - (patch.in ?? 0) : undefined);
+    const length = shown === undefined ? undefined : shown - outro;
     if (length !== undefined && length < MIN_LENGTH) throw new EditError('A card needs some length.');
     assign(item as unknown as Record<string, unknown>, defined({ duration: length, title: patch.screen }));
     if (!item.title) throw new EditError('A card needs a title.');
@@ -304,19 +314,18 @@ function demoItemFromBin(doc: DemoDoc, item: BinItem): DemoItem {
     if (!match) throw new EditError('demo.json scenes need takes named <scene>-<name>-t<take>.mp4.');
     return { scene: match[1], stem: match[1] + match[2], take: Number(match[3]) };
   }
-  const used = new Set(doc.sequence.filter(isDemoCard).map((c) => c.card));
-  let name = 'card';
-  for (let n = 2; used.has(name); n += 1) name = `card-${n}`;
-  return { card: name, title: 'New card', duration: KEYNOTE_CARD_DEFAULT };
+  return { card: freeCardName(doc, 'card'), title: 'New card', duration: KEYNOTE_CARD_DEFAULT };
 }
 
 export function applyDemoEdit(input: DemoDoc, edit: Edit, durations: Record<string, number | null> = {}): DemoDoc {
   const doc = clone(input);
   const seq = doc.sequence;
   switch (edit.op) {
-    case 'shot':
-      updateDemoItem(itemOf(doc, edit.scene), edit.patch);
+    case 'shot': {
+      const item = itemOf(doc, edit.scene);
+      updateDemoItem(item, edit.patch, isDemoCard(item) ? demoCardTiming(doc, edit.scene).outro : 0);
       return doc;
+    }
     case 'move': {
       itemOf(doc, edit.from.scene);
       // In demo.json every item is its own scene, so a drop position maps to an item position.
@@ -342,9 +351,9 @@ export function applyDemoEdit(input: DemoDoc, edit: Edit, durations: Record<stri
       const item = itemOf(doc, edit.scene);
       const t = round(edit.at);
       if (isDemoCard(item)) {
-        const length = item.duration ?? KEYNOTE_CARD_DEFAULT;
+        const length = demoCardTiming(doc, edit.scene).seconds;
         if (t < MIN_LENGTH || length - t < MIN_LENGTH) throw new EditError('Move the playhead inside the card to split it.');
-        seq.splice(edit.scene, 1, { ...item, duration: t }, { ...item, card: `${item.card}-b`, duration: round(length - t) });
+        seq.splice(edit.scene, 1, { ...item, duration: t }, { ...item, card: freeCardName(doc, item.card), duration: round(length - t) });
         return doc;
       }
       const [start, end] = item.trim ?? [null, null];
@@ -362,8 +371,11 @@ export function applyDemoEdit(input: DemoDoc, edit: Edit, durations: Record<stri
       return doc;
     }
     case 'addScene': {
-      const item = itemOf(doc, edit.after);
-      seq.splice(edit.after + 1, 0, clone(item));
+      const item = clone(itemOf(doc, edit.after));
+      // Cards and scenes are keyed by name and id in the render, so the copy needs its own.
+      if (isDemoCard(item)) item.card = freeCardName(doc, item.card);
+      else item.scene = nextSceneId(doc, item.scene);
+      seq.splice(edit.after + 1, 0, item);
       return doc;
     }
     case 'video': {

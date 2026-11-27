@@ -68,10 +68,13 @@ export function TextLayer(props: Props) {
   };
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (edit.editing) return;
-    if (g.nudgeKey(e) || e.key === 'Enter' || e.key === 'Escape') e.stopPropagation();
-    if (NAV_KEYS.has(e.key) || e.key === 'Enter') e.preventDefault();
+    const erase = e.key === 'Delete' || e.key === 'Backspace';
+    // Delete clears this text; without the stop the editor's shortcut would delete the whole clip.
+    if (g.nudgeKey(e) || e.key === 'Enter' || e.key === 'Escape' || erase) e.stopPropagation();
+    if (NAV_KEYS.has(e.key) || e.key === 'Enter' || erase) e.preventDefault();
     if (e.key === 'Enter') edit.start();
     if (e.key === 'Escape') onDeactivate();
+    if (erase && text) onCommit({ text: '', textPos: null, textSize: null });
   };
 
   const innerStyle: CSSProperties = {

@@ -167,7 +167,7 @@ function CardFields({ kind, doc, name, onEdit }: { kind: FileKind; doc: HandoffD
           onCommit={(v) => {
             const list = v.split('\n').map((l) => l.trim()).filter(Boolean).map((l) => {
               const [person, ...role] = l.split(',');
-              const keep = people.find((p) => p.name === person.trim());
+              const { role: _role, ...keep } = people.find((p) => p.name === person.trim()) ?? { name: '' };
               return { ...keep, name: person.trim(), ...(role.join(',').trim() ? { role: role.join(',').trim() } : {}) };
             });
             edit({ people: list.length ? list : undefined });
