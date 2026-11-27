@@ -32,8 +32,8 @@ type EditorSession = Extract<Session, { mode: 'editor' }>;
 // A handoff.json or demo.json still carrying the template's title was scaffolded and never filled in.
 const isTemplate = (data: unknown) => isPlaceholderTitle((data as { title?: unknown } | null)?.title);
 const FILL_IN: Record<FileKind, string> = {
-  handoff: 'ask Claude to build the editor handoff to fill it in',
-  demo: 'ask Claude to plan the demo to fill it in',
+  handoff: 'ask your agent to build the editor handoff to fill it in',
+  demo: 'ask your agent to plan the demo to fill it in',
 };
 
 export function Editor({ session, onClose }: {
@@ -294,7 +294,7 @@ export function Editor({ session, onClose }: {
       {help && <ShortcutsOverlay onClose={() => setHelp(false)} />}
       {docs.conflict && (
         <Modal title={`${docs.conflict.kind}.json changed on disk`}>
-          <p>Someone (maybe Claude) edited {docs.conflict.kind}.json while you had unsaved changes here. Which version do you want to keep?</p>
+          <p>Someone (maybe your agent) edited {docs.conflict.kind}.json while you had unsaved changes here. Which version do you want to keep?</p>
           {docs.conflict.diskErrors.length > 0 && <div className="note bad">The version on disk has problems: {docs.conflict.diskErrors.slice(0, 3).join('; ')}</div>}
           <div className="actions">
             <button className="btn" disabled={!docs.conflict.data} onClick={() => docs.resolveConflict('disk')} data-testid="conflict-disk">Use the file on disk</button>

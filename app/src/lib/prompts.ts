@@ -1,6 +1,6 @@
 // Ready-to-copy prompts for the home screen's Prompts and Templates views. A part to change is
 // written as [[like this]] in the data: the view highlights it, and the copied text drops the
-// brackets, so what lands in Claude reads as one plain sentence.
+// brackets, so what lands in the agent reads as one plain sentence.
 
 export interface Prompt {
   id: string;
@@ -48,7 +48,7 @@ export function placeholders(text: string): string[] {
 export const TEMPLATE_COPIER: Prompt = {
   id: 'template-copier',
   text: 'Make a template from [[~/Videos/reference.mp4]]: split it, check it frame by frame and save its look.',
-  what: 'Claude splits the video into frames, checks them one by one and saves the colours, type and pacing as a template you can reuse.',
+  what: 'The agent splits the video into frames, checks them one by one and saves the colours, type and pacing as a template you can reuse.',
 };
 
 // Template ids come from template folders, which may be someone else's. Only an id of the
@@ -74,17 +74,17 @@ export const PROMPT_GROUPS: PromptGroup[] = [
       {
         id: 'try-it',
         text: 'Try it: record the todo sample end to end.',
-        what: 'Claude records the bundled todo app sample and cuts it into a video. No account or login needed.',
+        what: 'The agent records the bundled todo app sample and cuts it into a video. No account or login needed.',
       },
       {
         id: 'logged-in',
         text: 'Make a demo of [[app.example.com]]. Goal: [[what viewers should be able to do after watching]]. Audience: [[who will watch it]]. I\'m logged in to the sandbox in the Playwright browser.',
-        what: 'Claude plans the scenes with you, then records them in the browser you are already logged in to.',
+        what: 'The agent plans the scenes with you, then records them in the browser you are already logged in to.',
       },
       {
         id: 'keychain',
         text: 'Make a demo of [[app.example.com]]. The sandbox login is [[demo@example.com]] and the password is in my Keychain as [[demo-acme]].',
-        what: 'Claude logs in off camera with the password from your Keychain, and never writes it in the chat or a file.',
+        what: 'The agent logs in off camera with the password from your Keychain, and never writes it in the chat or a file.',
       },
     ],
   },
@@ -96,12 +96,12 @@ export const PROMPT_GROUPS: PromptGroup[] = [
       {
         id: 'use-template',
         text: templatePrompt('[[<id>]]'),
-        what: 'Claude makes the demo in the colours, type and pacing of that template. Find ids in the Templates menu.',
+        what: 'The agent makes the demo in the colours, type and pacing of that template. Find ids in the Templates menu.',
       },
       {
         id: 'list-templates',
         text: 'List my templates.',
-        what: 'Claude lists the templates in your demos folder and the ones built in, with their ids.',
+        what: 'The agent lists the templates in your demos folder and the ones built in, with their ids.',
       },
     ],
   },
@@ -113,22 +113,22 @@ export const PROMPT_GROUPS: PromptGroup[] = [
       {
         id: 'reshoot',
         text: 'Re-shoot scene [[03]], the reply was slow.',
-        what: 'Claude records that scene again and swaps the new take into the cut. The other scenes stay as they are.',
+        what: 'The agent records that scene again and swaps the new take into the cut. The other scenes stay as they are.',
       },
       {
         id: 'narrate',
         text: 'Narrate it with ElevenLabs and add a music bed.',
-        what: 'Claude writes the voiceover lines, has ElevenLabs read them and mixes them over music that dips under the voice.',
+        what: 'The agent writes the voiceover lines, has ElevenLabs read them and mixes them over music that dips under the voice.',
       },
       {
         id: 'social',
         text: 'Make 4:5 and 9:16 versions.',
-        what: 'Claude reframes the cut for feeds and stories, keeping the important part of each shot in view.',
+        what: 'The agent reframes the cut for feeds and stories, keeping the important part of each shot in view.',
       },
       {
         id: 'package',
         text: 'Package it for an editor.',
-        what: 'Claude builds a handoff folder with numbered clips, title cards, voiceover files and notes, ready to zip.',
+        what: 'The agent builds a handoff folder with numbered clips, title cards, voiceover files and notes, ready to zip.',
       },
     ],
   },
@@ -140,12 +140,12 @@ export const PROMPT_GROUPS: PromptGroup[] = [
       {
         id: 'organise',
         text: 'Organise my demos.',
-        what: 'Claude moves stray files into the standard layout, fixes the index and asks once before deleting anything.',
+        what: 'The agent moves stray files into the standard layout, fixes the index and asks once before deleting anything.',
       },
       {
         id: 'status',
         text: 'What state are my demos in?',
-        what: 'Claude reads every demo folder and tells you what is done and what to do next for each one.',
+        what: 'The agent reads every demo folder and tells you what is done and what to do next for each one.',
       },
     ],
   },

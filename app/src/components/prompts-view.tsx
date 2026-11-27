@@ -21,9 +21,9 @@ export function PromptsView({ copy, onTemplates }: { copy: Copier; onTemplates: 
     <section id="prompts" className="home-section" data-testid="prompts-view">
       <div className="home-heading">
         <p className="eyebrow quiet">Prompts</p>
-        <h1>Things to ask Claude</h1>
+        <h1>Things to ask your agent</h1>
         <p className="home-summary">
-          Copy one, paste it into Claude Code in your demos folder, and change the <mark className="prompt-ph">highlighted</mark> parts first.
+          Copy one, paste it into your coding agent in your demos folder, and change the <mark className="prompt-ph">highlighted</mark> parts first.
         </p>
       </div>
       {PROMPT_GROUPS.map((group) => (

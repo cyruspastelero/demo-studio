@@ -7,7 +7,7 @@ import { CopyPrompt, PromptText, type Copier } from './library';
 
 const STEPS = [
   'Copy the prompt.',
-  'Paste it into Claude Code and change the path to your video.',
+  'Paste it into your coding agent and change the path to your video.',
   'The new template appears here, ready to use.',
 ];
 
@@ -198,7 +198,7 @@ export function TemplatesView({ templates, adStyles, error, copy }: {
           <LayoutTemplate size={18} aria-hidden />
           <div>
             <p className="tpl-empty-title">No templates yet</p>
-            <p>Give Claude a video whose look you like with the prompt above. It saves the look here, and you can use it for any demo after that.</p>
+            <p>Give your agent a video whose look you like with the prompt above. It saves the look here, and you can use it for any demo after that.</p>
           </div>
         </div>
       )}

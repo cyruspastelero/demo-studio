@@ -1,5 +1,5 @@
 // Holds handoff.json and demo.json with undo/redo, autosaves after edits, and reconciles with
-// edits made outside the app (Claude, a text editor).
+// edits made outside the app (your agent, a text editor).
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiError, api, isStaleOpen, type FileState } from '../api';
 import { STATIC_DEMO } from '../lib/static-demo';

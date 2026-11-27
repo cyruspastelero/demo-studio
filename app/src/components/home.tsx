@@ -127,7 +127,7 @@ function DemoCard({ demo, onOpen, onTry, onError }: {
 
         {overview.next && (
           <div className="demo-next">
-            <span className="demo-next-label eyebrow quiet">Ask Claude</span>
+            <span className="demo-next-label eyebrow quiet">Ask your agent</span>
             <span className="demo-next-prompt">{overview.next.prompt}</span>
             <CopyButton text={overview.next.prompt} label="Copy the prompt" />
           </div>
@@ -190,11 +190,11 @@ function GettingStarted({ session }: { session: HomeSession }) {
           <strong>Log in to a sandbox account</strong> in the browser that Playwright MCP opens, not your everyday browser.
         </li>
         <li>
-          <strong>Ask Claude for the demo.</strong> Start Claude Code in the demos folder and say what the demo should show.
+          <strong>Ask your agent for the demo.</strong> Open your coding agent in the demos folder and say what the demo should show.
           <Command text="Make a demo of <product>. Goal: <what the viewer should be able to do>. Audience: <who watches>." />
         </li>
       </ol>
-      <p className="home-start-note">New demos appear here as soon as Claude scaffolds them. The examples below are filled-in plans you can open.</p>
+      <p className="home-start-note">New demos appear here as soon as your agent scaffolds them. The examples below are filled-in plans you can open.</p>
     </section>
   );
 }
@@ -317,7 +317,7 @@ export function Home({ session, onOpen, onTry, onRefresh }: {
   const { copy, toast } = useCopyToast();
   const inner = useRef<HTMLDivElement>(null);
   const { demos, workspace } = session;
-  // Listed again whenever the home data refreshes, so a template Claude just saved shows up.
+  // Listed again whenever the home data refreshes, so a template your agent just saved shows up.
   useEffect(() => {
     let live = true;
     fetchTemplates().then((list) => { if (live) { setTemplates(list); setTemplatesError(null); } })
@@ -386,7 +386,7 @@ export function Home({ session, onOpen, onTry, onRefresh }: {
                 <h1>{mine.length ? 'Your demos' : 'Make your first demo'}</h1>
                 <p className="home-summary">
                   {mine.length
-                    ? 'Where every demo in this folder stands, and what to ask Claude next.'
+                    ? 'Where every demo in this folder stands, and what to ask your agent next.'
                     : 'Nothing in this folder yet. A few steps take you from an empty folder to a planned demo.'}
                 </p>
               </div>

@@ -49,7 +49,7 @@ export function TextTools({ variant, at, size, moved, boxHalf, anchor, onEdit, o
 }
 
 // Built-in fonts first, then the demo's own (files in its fonts/ folder). The list is re-read when
-// the menu is opened, so a font Claude just added is there without a reload.
+// the menu is opened, so a font your agent just added is there without a reload.
 function FontSelect({ font, defaultFont, fonts, onRefresh, onPick }: {
   font?: string; defaultFont: string; fonts: FontInfo[]; onRefresh: () => void; onPick: (id: string) => void;
 }) {

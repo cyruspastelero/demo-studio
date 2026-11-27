@@ -1,5 +1,5 @@
 // What the home screen shows for each demo: which stages are done, what needs attention, the
-// videos and documents it has, and the next thing to ask Claude for. Read-only, files only.
+// videos and documents it has, and the next thing to ask your agent for. Read-only, files only.
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { isPlaceholderTitle } from '../shared/placeholder.mjs';
@@ -18,7 +18,7 @@ const STAGE_FOR_STATUS = {
 
 export { isPlaceholderTitle };
 
-// Folder names come from whoever made the demo. One goes into a prompt the user pastes into Claude,
+// Folder names come from whoever made the demo. One goes into a prompt the user pastes into their agent,
 // so only a plain name is used (in backticks); anything else (spaces, quotes, newlines, words that
 // read as instructions) gets a generic prompt instead.
 export const SAFE_DEMO_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
