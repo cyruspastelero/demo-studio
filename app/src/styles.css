@@ -219,9 +219,9 @@ button { cursor: pointer; }
 }
 .field input[type='number'] { font-family: var(--mono); font-size: 12px; font-variant-numeric: tabular-nums; }
 .field textarea { height: auto; min-height: 96px; padding: 8px 10px; resize: vertical; line-height: 1.5; }
-@media (hover: hover) { .field input:hover, .field textarea:hover { box-shadow: 0 0 0 1px var(--dim); } }
-.field input:focus, .field textarea:focus { outline: none; box-shadow: var(--ring-accent); }
-.field input:focus-visible, .field textarea:focus-visible { outline: none; }
+@media (hover: hover) { .field input:hover, .field textarea:hover, .field select:hover { box-shadow: 0 0 0 1px var(--dim); } }
+.field input:focus, .field textarea:focus, .field select:focus { outline: none; box-shadow: var(--ring-accent); }
+.field input:focus-visible, .field textarea:focus-visible, .field select:focus-visible { outline: none; }
 .field.invalid input { box-shadow: var(--ring-accent); }
 .field .hint { font-size: 12px; color: var(--quiet); }
 .field-note { font-size: 12px; line-height: 1.5; color: var(--quiet); }

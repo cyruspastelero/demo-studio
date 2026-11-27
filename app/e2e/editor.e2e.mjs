@@ -352,6 +352,7 @@ try {
   await step('quick preview renders the current video at 960x540', async () => {
     await page.click('[data-testid="render-button"]');
     await page.click('[data-testid="render-quick"]');
+    await page.waitForSelector('[data-testid="render-drawer"][data-status="running"]'); // not the title cards' "done"
     await page.waitForSelector('[data-testid="render-drawer"][data-status="done"]', { timeout: 60000 });
     const size = await page.locator('[data-testid="render-output"] video').evaluate((v) => new Promise((resolve) => {
       if (v.videoWidth) resolve([v.videoWidth, v.videoHeight]);
@@ -364,12 +365,64 @@ try {
     assert.equal(await page.locator('[data-testid="render-checks"]').count(), 0);
   });
 
+  await step('a finished keynote export is checked and the drawer lists the rows', async () => {
+    await page.click('[data-testid="render-button"]');
+    await page.click('[data-testid="render-keynote"]');
+    await page.waitForSelector('[data-testid="render-drawer"][data-status="running"]'); // not the quick preview's "done"
+    // The job stays running while video-gate.py and check-cut.py run, so "done" means the checks finished.
+    await page.waitForSelector('[data-testid="render-drawer"][data-status="done"]', { timeout: 150000 });
+    const checks = page.locator('[data-testid="render-output"] [data-testid="render-checks"]');
+    assert.equal(await checks.count(), 1, 'the keynote cut has one checks block');
+    // The example's synthetic footage may fail some rows: only that the checks ran and rendered counts.
+    assert.deepEqual(await checks.locator('.field-note').allTextContents(), [], 'no "could not check" note');
+    const toggle = checks.locator('.checks-toggle');
+    assert.equal(await toggle.getAttribute('aria-expanded'), 'false');
+    await toggle.click();
+    assert.equal(await toggle.getAttribute('aria-expanded'), 'true');
+    const more = checks.locator('.checks-more');
+    if (await more.count()) await more.click(); // passing rows sit behind "Show N passing"
+    const ids = await checks.locator('.check-id').allTextContents();
+    assert.ok(ids.some((id) => id.startsWith('G')), `a video-gate row (G...) is listed, got ${ids.join(' ')}`);
+    assert.ok(ids.includes('E1'), `a check-cut row (E1) is listed, got ${ids.join(' ')}`);
+    assert.equal(await page.locator('[data-testid="render-log"]:has-text("could not check")').count(), 0);
+  });
+
   await step('cancels a running render', async () => {
     await page.click('[data-testid="render-button"]');
     await page.click('[data-testid="render-social"]'); // long: it builds the rough assemblies first
     await page.waitForSelector('[data-testid="render-drawer"][data-status="running"]');
     await page.click('[data-testid="render-drawer"] button:has-text("Cancel")');
     await page.waitForSelector('[data-testid="render-drawer"][data-status="cancelled"]', { timeout: 10000 });
+  });
+
+  await step('times a pill to a spoken word on demo.json, then back to a time', async () => {
+    // The example's demo.json has no callouts: give scene 01 a pill and a line in this temp copy.
+    const path = join(folder, 'demo.json');
+    const demo = JSON.parse(readFileSync(path, 'utf8'));
+    const { caption: _caption, ...scene } = demo.sequence[1];
+    demo.sequence[1] = { ...scene, voiceover: 'Invite your team, then invite them again.', callouts: [{ at: 1, dur: 2, text: 'Invite' }] };
+    writeFileSync(path, `${JSON.stringify(demo, null, 2)}\n`);
+    const firstAt = () => JSON.parse(readFileSync(path, 'utf8')).sequence[1].callouts[0].at;
+    await page.reload();
+    await page.waitForSelector('[data-testid="shot"]');
+    const tab = page.locator('.topbar [role="tab"]:has-text("demo.json")');
+    await tab.click();
+    await page.waitForFunction(() => document.querySelector('.topbar [role="tab"][aria-selected="true"]')?.textContent?.includes('demo.json'));
+    await page.click('[data-shot-id="demo:1"]');
+    await page.waitForSelector('[data-testid="pill-timing"]');
+    assert.equal(await page.locator('[data-testid="pill-at"]').inputValue(), '1');
+
+    await page.click('[data-testid="pill-mode-word"]');
+    await page.waitForSelector('[data-testid="pill-word"]');
+    await page.selectOption('[data-testid="pill-word"]', { label: 'invite (2nd)' });
+    await waitFor(() => { const at = firstAt(); return typeof at === 'object' && at.word === 'invite' && at.nth === 2 && !('offset' in at); }, 'the word cue to be saved');
+    assert.match(await page.locator('[data-testid="pill-estimate"]').textContent(), /^Lands about \d+\.\d s in\. Estimated; the build measures the real line\.$/);
+    assert.equal(await page.locator('[data-testid="pill-problem"]').count(), 0);
+
+    await page.click('[data-testid="pill-mode-time"]');
+    await waitFor(() => typeof firstAt() === 'number', 'the time to be saved');
+    assert.ok(firstAt() > 0, 'the time is the estimated landing, not zero');
+    assert.equal(await page.locator('[data-testid="pill-word"]').count(), 0);
   });
 
   await step('opens on demo.json while handoff.json is still the template', async () => {

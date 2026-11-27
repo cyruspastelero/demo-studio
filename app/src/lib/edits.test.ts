@@ -213,6 +213,53 @@ describe('demo.json edits', () => {
     expect((kept.sequence[1] as DemoSceneItem).callouts).toEqual([second]);
   });
 
+  describe('pill timing', () => {
+    const withTwo = () => {
+      const doc = todo();
+      const item = doc.sequence[1] as DemoSceneItem;
+      item.callouts = [{ ...item.callouts![0], pos: [0.4, 0.2], font: 'geist' }, { at: 5, dur: 3, text: 'Second pill' }];
+      item.voiceover = 'Type it, then press Enter.';
+      return doc;
+    };
+
+    it('sets only the first callout\'s at to a word cue and leaves the rest alone', () => {
+      const doc = withTwo();
+      const before = doc.sequence[1] as DemoSceneItem;
+      const next = applyDemoEdit(doc, { op: 'cue', scene: 1, at: { word: 'press', offset: -0.2 } });
+      const item = next.sequence[1] as DemoSceneItem;
+      expect(item.callouts![0]).toEqual({ ...before.callouts![0], at: { word: 'press', offset: -0.2 } });
+      expect(item.callouts![1]).toEqual(before.callouts![1]);
+      expect({ ...item, callouts: undefined }).toEqual({ ...before, callouts: undefined });
+      expect(validate('demo', next)).toEqual([]);
+    });
+
+    it('switching to seconds drops word, nth and offset', () => {
+      const cued = applyDemoEdit(withTwo(), { op: 'cue', scene: 1, at: { word: 'it', nth: 2, offset: 0.5 } });
+      const timed = applyDemoEdit(cued, { op: 'cue', scene: 1, at: 1.2 });
+      expect((timed.sequence[1] as DemoSceneItem).callouts![0].at).toBe(1.2);
+      expect(JSON.stringify((timed.sequence[1] as DemoSceneItem).callouts![0])).not.toMatch(/word|nth|offset/);
+    });
+
+    it('leaves the input untouched, so undo can restore it', () => {
+      const doc = withTwo();
+      const snapshot = JSON.stringify(doc);
+      const next = applyDemoEdit(doc, { op: 'cue', scene: 1, at: { word: 'enter' } });
+      expect(JSON.stringify(doc)).toBe(snapshot);
+      expect(JSON.stringify(applyDemoEdit(next, { op: 'cue', scene: 1, at: (doc.sequence[1] as DemoSceneItem).callouts![0].at }))).toBe(snapshot);
+    });
+
+    it('refuses an item with no callout', () => {
+      expect(() => applyDemoEdit(demo(), { op: 'cue', scene: 1, at: 1 })).toThrow(EditError);
+    });
+
+    it('a document with only numeric at is byte-identical after an edit that does not touch timing', () => {
+      const doc = todo();
+      const item = doc.sequence[1] as DemoSceneItem;
+      const same = applyDemoEdit(doc, { op: 'shot', scene: 1, shot: 0, patch: { text: item.callouts![0].text } });
+      expect(JSON.stringify(same)).toBe(JSON.stringify(doc));
+    });
+  });
+
   it('still writes caption and caption_pos on an item without callouts', () => {
     const doc = demo();
     const item = doc.sequence[1] as DemoSceneItem;

@@ -156,6 +156,26 @@ describe('save and load', () => {
     }
   }, 15000); // fs.watch delivery slows under load; the poll inside allows 10 s
 
+  it('finds an outside edit by comparing the file, even when the watcher delivers nothing', () => {
+    cpSync(join(EXAMPLE, 'demo.json'), join(dir, 'demo.json'));
+    const changes = [];
+    const store = new DocumentStore(dir, (doc) => changes.push(doc));
+    try {
+      const original = readFileSync(join(dir, 'demo.json'), 'utf8');
+      store.rescan();
+      expect(changes).toHaveLength(0);
+      writeFileSync(join(dir, 'demo.json'), JSON.stringify({ ...JSON.parse(original), title: 'Middle' }));
+      store.seen('demo', readDocument(dir, 'demo').hash);
+      writeFileSync(join(dir, 'demo.json'), original);
+      store.rescan();
+      expect(changes.map((doc) => doc.text)).toEqual([original]);
+      store.rescan();
+      expect(changes).toHaveLength(1);
+    } finally {
+      store.close();
+    }
+  });
+
   it('reports an outside edit through the watcher', async () => {
     cpSync(join(EXAMPLE, 'demo.json'), join(dir, 'demo.json'));
     const changes = [];

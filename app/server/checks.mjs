@@ -2,9 +2,11 @@ import { existsSync } from 'node:fs';
 import { basename, dirname, extname, join } from 'node:path';
 import { insideAny } from './paths.mjs';
 
-export const MAX_ROWS = 60;
+// A real keynote cut already gives check-cut 62 rows; the cap only stops a runaway checker.
+export const MAX_ROWS = 300;
 export const MAX_TEXT = 300;
-const STATUSES = new Set(['PASS', 'FAIL', 'LOOK']);
+// check-cut also prints WARN rows for plan warnings; the drawer shows them as "worth a look".
+const STATUSES = new Set(['PASS', 'FAIL', 'LOOK', 'WARN']);
 
 // Same names check-cut.py's find_plan accepts: <slug>-keynote-cut[-narrated].mp4 -> <slug>-keynote-cut.plan.json.
 export function planSidecar(video) {
@@ -45,7 +47,7 @@ export function normalizeRows(data) {
       || typeof row.item !== 'string' || typeof row.text !== 'string') {
       throw new Error(`row ${i + 1} is not {status, item, text}`);
     }
-    return { status: row.status, item: row.item.slice(0, 24), text: row.text.slice(0, MAX_TEXT) };
+    return { status: row.status === 'WARN' ? 'LOOK' : row.status, item: row.item.slice(0, 24), text: row.text.slice(0, MAX_TEXT) };
   });
 }
 

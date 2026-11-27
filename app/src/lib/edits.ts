@@ -4,7 +4,7 @@ import { TEXT_SIZE } from '../../shared/text-style.mjs';
 import { demoCardTiming, isCardShot, isDemoCard, isRefShot, KEYNOTE_CARD_DEFAULT } from './timeline';
 import type {
   Brand, CardText, ClipSpec, DemoDoc, DemoItem, DemoSceneItem, FileKind, HandoffDoc, RefShotSpec,
-  SceneSpec, ShotSpec, VideoSpec,
+  SceneSpec, ShotSpec, VideoSpec, WordCue,
 } from './types';
 
 export class EditError extends Error {}
@@ -37,6 +37,7 @@ export type Edit =
   | { op: 'removeScene'; scene: number }
   | { op: 'video'; patch: { title?: string; label?: string } }
   | { op: 'card'; name: string; patch: Partial<CardText> }
+  | { op: 'cue'; scene: number; at: number | WordCue } // demo.json: when the scene's first pill appears
   | { op: 'brand'; patch: Partial<Brand> };
 
 const MIN_LENGTH = 0.1;
@@ -253,6 +254,8 @@ export function applyHandoffEdit(input: HandoffDoc, videoIndex: number, edit: Ed
       assign(card as unknown as Record<string, unknown>, edit.patch as Record<string, unknown>);
       return doc;
     }
+    case 'cue':
+      throw new EditError('Pill timing is edited on demo.json; handoff.json has no timed pills.');
     case 'brand': {
       doc.brand = doc.brand ?? {};
       assign(doc.brand as Record<string, unknown>, edit.patch as Record<string, unknown>);
@@ -409,6 +412,12 @@ export function applyDemoEdit(input: DemoDoc, edit: Edit, durations: Record<stri
       if (edit.patch.title !== undefined && !edit.patch.title) throw new EditError('A card needs a title.');
       const { people: _people, ...patch } = edit.patch;
       assign(item as unknown as Record<string, unknown>, patch as Record<string, unknown>);
+      return doc;
+    }
+    case 'cue': {
+      const callout = (itemOf(doc, edit.scene) as DemoSceneItem).callouts?.[0];
+      if (!callout) throw new EditError('That scene has no pill to time.');
+      callout.at = typeof edit.at === 'number' ? round(edit.at) : edit.at;
       return doc;
     }
     case 'brand':

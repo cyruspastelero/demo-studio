@@ -234,3 +234,13 @@ it('cancel stops a running check and the render stays cancelled', async () => {
   expect(children).toHaveLength(2); // check-cut never started
   expect(runner.start('keynote', { repo: '/repo', folder: dir }).status).toBe('running');
 });
+
+it('accepts what a real keynote cut gives check-cut (62 rows, a WARN) and still caps a runaway checker', async () => {
+  const { MAX_ROWS, normalizeRows } = await import('./checks.mjs');
+  const rows = (n) => Array.from({ length: n }, (_, i) => ({ status: 'PASS', item: `R${i}`, text: 'ok' }));
+  expect(normalizeRows(rows(62))).toHaveLength(62);
+  expect(() => normalizeRows(rows(MAX_ROWS + 1))).toThrow(/more than/);
+  // check-cut prints WARN rows for plan warnings; they must not make the whole result unreadable.
+  expect(normalizeRows([{ status: 'WARN', item: 'plan', text: 'no accent word' }])[0].status).toBe('LOOK');
+  expect(() => normalizeRows([{ status: 'MAYBE', item: 'x', text: 'y' }])).toThrow(/row 1/);
+});

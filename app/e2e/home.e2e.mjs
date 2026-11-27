@@ -93,6 +93,8 @@ try {
     assert.equal(await page.locator('[data-testid="ad-style-card"]').count(), 4);
     const daylight = page.locator('[data-testid="ad-style-card"][data-style="daylight"]');
     assert.equal(await daylight.locator('.tpl-thumb').count(), 10);
+    // The image loads after the card appears, so wait for it instead of reading it once.
+    await daylight.locator('.tpl-preview img').evaluate((img) => img.decode(), null, { timeout: 15000 });
     assert.ok(await daylight.locator('.tpl-preview img').evaluate((img) => img.complete && img.naturalWidth > 0), 'the frame loads');
     assert.match(await daylight.locator('[data-testid="ad-style-sample"]').getAttribute('href'), /sample-daylight-ad\.mp4$/);
     await daylight.locator('[data-testid="use-ad-style"]').click();

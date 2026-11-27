@@ -119,6 +119,13 @@ callout) in `demo.json`, as fractions of the frame. The keynote render puts a mo
 there; `check-cut.py` lists it as LOOK, because the quality bar wants pills under the window (C1).
 The editor script from `build-handoff.py` gives the place and size next to each line.
 
+**Pill timing.** On a `demo.json` scene with a pill, the inspector has a "Pill timing" group under
+Caption. Choose "At a time" and type the seconds into the scene, or "On a spoken word" and pick a word
+of that scene's voiceover from the list (a word said twice is listed as 1st and 2nd). An offset moves
+the pill a little earlier or later than the word. It is saved as the callout's `at`, as a number or as
+`{"word", "nth", "offset"}`. The "Lands about" line is an estimate from the word rate; the build
+measures the real line. If the word leaves the voiceover, the group says the build will stop.
+
 **Fonts.** The toolbar of a selected text has a Font menu: Inter (the default), Inter Display, Geist,
 Geist Mono and Figtree are built in. To add your own, put the font file (`.woff2`, `.woff`, `.ttf` or
 `.otf`) in the demo's `fonts/` folder, or ask your agent to; it shows up under "This demo" the next time the

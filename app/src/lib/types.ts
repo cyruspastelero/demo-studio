@@ -136,6 +136,7 @@ export interface DemoDoc {
   title: string;
   logo?: string;
   sequence: DemoItem[];
+  voice?: { rate_wpm?: number; lead_in?: number };
   [key: string]: unknown;
 }
 

@@ -9,6 +9,7 @@ Notable changes, newest first. Versions follow semver as described in CONTRIBUTI
   to warm greys with an ember glow and an ember sweep, `midnight` to graphite with an ember glow and
   blur-in titles, `paper` and `mono` get quieter title weights. Previews re-rendered.
 - **Link preview image** matches the new homepage.
+- **Pill timing in the editor**: set a `demo.json` pill to a time or to a spoken word of its scene's voiceover, with an offset and an estimate of where it lands.
 - **License is now MIT** (was Apache-2.0). NOTICE now only credits the bundled fonts.
 - **New homepage at https://demo-studio.pastelero.ph**: a sticky intro with a list that follows
   your scroll, one screen per feature, and the live editor. It is served from Vercel; GitHub Pages is retired.

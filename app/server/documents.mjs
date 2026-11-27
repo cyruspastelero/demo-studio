@@ -6,6 +6,9 @@ import { validators } from '../shared/schemas.mjs';
 
 export const FILES = { handoff: 'handoff.json', demo: 'demo.json' };
 const WATCH_SETTLE_MS = 150;
+// fs.watch can drop an event (a write right after the watch starts, or a busy machine), so the
+// files are also compared on a slow timer. A missed event then costs a second, not the change.
+const RESCAN_MS = 1000;
 
 export const hashText = (text) => createHash('sha1').update(text).digest('hex');
 
@@ -53,16 +56,25 @@ export class DocumentStore {
       if (kind) this.settle(kind);
     });
     this.watcher.on('error', (error) => console.error(`studio: file watch stopped: ${error.message}`));
+    this.rescanTimer = setInterval(() => this.rescan(), RESCAN_MS);
+    this.rescanTimer.unref();
+  }
+
+  rescan() {
+    for (const kind of Object.keys(FILES)) this.check(kind);
   }
 
   settle(kind) {
     clearTimeout(this.timers.get(kind));
-    this.timers.set(kind, setTimeout(() => {
-      const doc = readDocument(this.folder, kind);
-      if (!doc || doc.hash === this.known.get(kind)) return;
-      this.known.set(kind, doc.hash);
-      this.onOutsideChange(doc);
-    }, WATCH_SETTLE_MS));
+    this.timers.set(kind, setTimeout(() => this.check(kind), WATCH_SETTLE_MS));
+  }
+
+  // Reads the file and reports it when it differs from what this server last wrote or saw.
+  check(kind) {
+    const doc = readDocument(this.folder, kind);
+    if (!doc || doc.hash === this.known.get(kind)) return;
+    this.known.set(kind, doc.hash);
+    this.onOutsideChange(doc);
   }
 
   // The page was just given this version straight from disk. Count it as known, so a quick write
@@ -113,6 +125,7 @@ export class DocumentStore {
 
   close() {
     this.watcher.close();
+    clearInterval(this.rescanTimer);
     for (const timer of this.timers.values()) clearTimeout(timer);
   }
 }

@@ -5,6 +5,7 @@ import { spokenSeconds, wordCount, type VoiceoverFit } from '../lib/fit';
 import { isDemoCard } from '../lib/timeline';
 import type { DemoDoc, FileKind, HandoffDoc, Selection, Timeline, TimelineShot } from '../lib/types';
 import { ColorField, NumberField, TextArea, TextField } from './fields';
+import { PillTiming } from './pill-timing';
 
 type Tab = 'selection' | 'video' | 'brand';
 
@@ -80,6 +81,7 @@ function ShotPanel({ kind, doc, timeline, selection, onEdit, onShotPatch, durati
         : <dl className="kv"><dt>Stem</dt><dd>{shot.screen}</dd></dl>}
       <TextField label={kind === 'handoff' ? 'On-screen text' : 'Caption'} value={shot.text} onCommit={(v) => patch({ text: v })} testId="shot-text"
         hint={textHint(shot)} />
+      {kind === 'demo' && <PillTiming doc={doc as DemoDoc} scene={selection.scene} timeline={timeline} onEdit={onEdit} />}
       <ShotActions selection={selection} onEdit={onEdit} />
     </>
   );

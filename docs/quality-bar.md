@@ -58,7 +58,7 @@ A finished cut opens directly on a title, with no black frame. It sits on a soft
 | Z2 | Factor | 1.000 → **1.150** (1560x800 → 1794x920). Nothing bigger: the reference never exceeds 1.15x of rest. |
 | Z3 | Stays in frame | The zoomed window keeps ≥ 40 px clear on every side. Measured zoom rectangles: x 86 to 1880 / 58 to 1852, y 40 to 960, or y 120 to 1038 when the target sits low. The pan moves the centre ≤ 70 px toward the target. |
 | Z4 | Duration / easing | **1.10 s** (33 frames) both in and out, **ease-in-out sine** `cubic-bezier(0.37, 0, 0.63, 1)`. Measured progress at 0.1, 0.2, … 0.9 of the move: .02, .08, .17, .30, .43, .57, .71, .83, .92 |
-| Z5 | Hold | 2.4 to 4.3 s at 1.15x before easing back |
+| Z5 | Hold | 2.4 to 4.3 s measured at 1.15x before easing back. The bar is 2.4 to 4.5 s, which leaves a little room above the longest measured hold. |
 | Z6 | Frequency | 7 zoom-ins over 76 s of footage, so about one every 11 s. Zoom only to land a point that narration is making. |
 | Z7 | Callout interaction | The zoomed window covers the callout band, so a callout ends before a zoom and does not return until the zoom-out has finished. |
 
