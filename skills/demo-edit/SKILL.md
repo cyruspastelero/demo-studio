@@ -1,6 +1,6 @@
 ---
 name: demo-edit
-description: Edit recorded demo takes into videos. Builds the review reel of keepers, an Apple-keynote-style cut from demo.json, narrates it (macOS say, your own recordings, ElevenLabs by API key or MCP, or Higgsfield MCP) over an optional music bed with ducking and fades, the promo and how-to cuts from handoff.json (in/out/speed per shot, title cards, voiceover fit check), and 4:5 or 9:16 social versions. Use after recording, when cutting, re-timing, adding voiceover or music, or making vertical versions of a demo.
+description: Edit recorded demo takes into videos. Builds the review reel of keepers, a keynote-style cut from demo.json, narrates it for free (macOS say or your own recordings; ElevenLabs or Higgsfield only when asked) over an optional music bed with ducking and fades, the promo and how-to cuts from handoff.json (in/out/speed per shot, title cards, voiceover fit check), and 4:5 or 9:16 social versions. Use after recording, when cutting, re-timing, adding voiceover or music, or making vertical versions of a demo.
 ---
 
 # Demo edit
@@ -27,7 +27,10 @@ Expected: `recordings/exports/review-reel.mp4 (34.2s, 3 takes: ...)`.
 | `WARN no keeper for 04-...` | That scene has no `keep` row in `recordings/takes.csv`. Mark one or record it |
 | `keeper ... is in takes.csv but not on disk` | Fix the file name in takes.csv or re-encode the take |
 
-Show the reel to the user and agree on the takes before cutting.
+Check the reel yourself on a contact sheet, then read the PNG:
+`bash "$P/scripts/sheet.sh" recordings/exports/review-reel.mp4 recordings/exports/review-reel-sheet.png 2`.
+Then go straight on to Step 2. The reel goes in the final report. Wait for the user here only if
+they asked for review gates ("show me the reel before you edit").
 
 ## Step 2: keynote cut (from demo.json)
 
@@ -52,7 +55,7 @@ engine bakes in every look value; your job is the per-scene fields below, then S
    after the window lands. Old fields still build (`zoom` becomes one 1.15x zoom, `caption` a pill)
    but print `WARN`; switch them.
 
-2. Build it, **in the background** and through the heavy-job lock if the workspace has one:
+2. Build it **in the background**, and never next to another build, render or test run:
    ```bash
    python3 -I "$P/scripts/build-keynote.py" demo.json
    ```
@@ -72,13 +75,16 @@ engine bakes in every look value; your job is the per-scene fields below, then S
    | `Chrome painted [...], not the bundled Inter` | `git -C "$P" checkout assets/fonts`, then rebuild |
    | `raw take ... is missing` | Encode or record that take (skill `demo-record`) |
 
-## Step 2b: run the quality-bar checklist (after Step 3, on the narrated cut)
+## Step 2b: run the quality-bar checklist (twice: silent cut, then narrated cut)
 
-Never call a cut finished until this passes. Do it once now on the silent cut for the picture, and
-again on the narrated cut for the sound.
+Never call a cut finished until this passes. Run it once right after Step 2 on the silent cut for
+the picture, and again after Step 3 on the narrated cut for the sound.
 
-1. Run the automatic checks and save the sample frames:
+1. Run the automatic checks and save the sample frames, from the demo folder:
    ```bash
+   # after Step 2 (picture; audio rows such as E6 and the A rows may FAIL here, that is expected):
+   python3 -I "$P/scripts/check-cut.py" recordings/exports/<slug>-keynote-cut.mp4 --frames recordings/exports/checklist
+   # after Step 3 (picture and sound; this is the run that must show 0 FAIL):
    python3 -I "$P/scripts/check-cut.py" recordings/exports/<slug>-keynote-cut-narrated.mp4 --frames recordings/exports/checklist
    ```
    Expected: one line per item, `PASS`, `FAIL` (with the measured value and the bar) or `LOOK`, and
@@ -247,7 +253,8 @@ It never writes a file that fails the schema, and keeps `_` keys.
 
 ## Done when
 
-- [ ] The user has seen `recordings/exports/review-reel.mp4` and agreed the takes
+- [ ] `recordings/exports/review-reel.mp4` exists and you checked it on a contact sheet (the user
+      sees it in the final report; they approved it first only if they asked for review gates)
 - [ ] `build-keynote.py` printed no `WARN` you did not decide to accept (and say why to the user)
 - [ ] `brand.accent` is the product's own colour, and every highlight box and statement pill in the checklist frames matches the product (no red or orange that the product does not use)
 - [ ] `narrate.py --dry-run` shows no line running long, and the narrated cut plays

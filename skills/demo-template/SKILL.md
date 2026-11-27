@@ -21,8 +21,7 @@ Start every shell command with this line (it finds the plugin folder):
 P="${CLAUDE_PLUGIN_ROOT:-$(d=$PWD; while [ "$d" != / ] && [ ! -f "$d/.claude-plugin/plugin.json" ]; do d=$(dirname "$d"); done; [ -f "$d/.claude-plugin/plugin.json" ] && echo "$d" || ls -d ~/.claude/plugins/cache/*/demo-studio/*/ | tail -1)}"
 ```
 
-Heavy steps (Step 2 and Step 5) run one at a time. On a shared machine wrap them in the heavy-job lock
-if the workspace has one.
+Heavy steps (Step 2 and Step 5) run one at a time, never next to another build, render or test run.
 
 ## Use a template
 
@@ -60,6 +59,16 @@ own `<demos>/_templates/` and runs `python3 -I "$P/scripts/templates.py" validat
 ## Make a template from a video
 
 Work in the demos workspace (`./demos`, or `$DEMO_ROOT`). Templates go in `./demos/_templates/`.
+If `$DEMO_ROOT` is set, use it in place of `./demos` in every command below.
+
+### Step 0: make sure the workspace exists
+
+Templates in `_templates/` are only found inside a real workspace (it has `check.py` and
+`AGENTS.md`). Set one up if it is missing (existing files are never overwritten):
+
+```bash
+[ -f ./demos/check.py ] && [ -f ./demos/AGENTS.md ] || bash "$P/scripts/new-workspace.sh" ./demos
+```
 
 ### Step 1: check the video
 

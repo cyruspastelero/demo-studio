@@ -25,7 +25,7 @@ where its callouts, highlights, zooms, crops, title accents, voice and music are
 ## Step 1: scaffold
 
 ```bash
-DEMO_ROOT=./demos bash "$P/scripts/new-demo.sh" <name>      # <name> is lowercase-with-dashes
+DEMO_ROOT="${DEMO_ROOT:-./demos}" bash "$P/scripts/new-demo.sh" <name>      # <name> is lowercase-with-dashes
 ```
 
 Expected: `scaffolded ./demos/<name>` and `OUTPUT ./demos/<name>`.
@@ -174,10 +174,10 @@ Then fill:
 | `maskLabels` | `[]` | A secret sits next to a label like "Ingest key" |
 | `clutter` | `[]` | Any banner or toast shows. Use its full wording, never a short word |
 
-Check demo.json against the schema:
+Check demo.json against the schema (`<demo>` is the demo folder, for example `./demos/<name>`):
 
 ```bash
-python3 -I -c 'import importlib.util,json,sys; s=importlib.util.spec_from_file_location("d", sys.argv[1]+"/scripts/demolib.py"); d=importlib.util.module_from_spec(s); s.loader.exec_module(d); e=d.validate(json.load(open("demo.json")),"demo"); print("\n".join(e) or "ok")' "$P"
+python3 -I -c 'import importlib.util,json,sys; s=importlib.util.spec_from_file_location("d", sys.argv[1]+"/scripts/demolib.py"); d=importlib.util.module_from_spec(s); s.loader.exec_module(d); e=d.validate(json.load(open(sys.argv[2])),"demo"); print("\n".join(e) or "ok")' "$P" <demo>/demo.json
 ```
 
 Expected: `ok`. Otherwise each line names a field (`sequence[3].callouts[0]: missing required field 'at'`); fix it.

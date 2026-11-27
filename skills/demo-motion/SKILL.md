@@ -26,8 +26,7 @@ Start every shell command with this line (it finds the plugin folder):
 P="${CLAUDE_PLUGIN_ROOT:-$(d=$PWD; while [ "$d" != / ] && [ ! -f "$d/.claude-plugin/plugin.json" ]; do d=$(dirname "$d"); done; [ -f "$d/.claude-plugin/plugin.json" ] && echo "$d" || ls -d ~/.claude/plugins/cache/*/demo-studio/*/ | tail -1)}"
 ```
 
-Renders are heavy. Run them one at a time; on a shared machine wrap each in the heavy-job lock if the
-workspace has one.
+Renders are heavy. Run them one at a time, never next to another render, build or test run.
 
 ## Step 1: set up the folder
 
@@ -42,7 +41,7 @@ Expected: `motion/` with `media/` (stills, clips, music) and `out/` (renders).
 
 ## Step 2: write the story (about 10 beats)
 
-Read the demo's `PLAN.md` / `demo.json` (goal, story arc, voiceover draft) or the user's brief. Write
+Read the demo's `BRIEF.md` (goal, claims list), `VOICEOVER.md` and `demo.json`, or the user's brief. Write
 8 to 12 beats, each one line of on-screen text plus what is on screen, in this shape:
 
 1. Hook: the pain, in 3 short phrases (one accent word).
@@ -161,7 +160,14 @@ deep blue, devices, hard cuts). Each one's `$P/motion-templates/<name>/README.md
    style: `Ad style: <name>, as you asked.`) as a short note. It is a notice, not a question: keep
    going. If they answer "use style <other>", change `"style"` and render again.
 
-Render stills at the middle of every scene:
+Render stills at the middle of every scene. Print each scene's start and middle (no render needed):
+
+```bash
+node --input-type=module -e "const {loadProject}=await import('$P/motion/render-motion.mjs'); const p=loadProject(process.argv[1]); for (const s of p.timeline) console.log(s.index, p.board.scenes[s.index].type, 'start', s.start.toFixed(2), 'mid', ((s.start+s.end)/2).toFixed(2))" motion/storyboard.json
+```
+
+Expected: one line per scene, such as `12 logoLockup start 33.00 mid 34.50`. Pass every `mid` value
+to `--stills` (the numbers below are an example ad's):
 
 ```bash
 node "$P/motion/render-motion.mjs" motion/storyboard.json --size 16x9 --stills 2,6,9.5,13,17,21 --stills-dir motion/stills
@@ -203,6 +209,7 @@ renders a window for a quick look).
 Then make the poster and the GIF:
 
 ```bash
+# -ss: the logoLockup scene's start plus 1 s, from the scene list in Step 6 (34.6 is an example)
 ffmpeg -v error -y -ss 34.6 -i motion/out/ad-16x9.mp4 -frames:v 1 -q:v 2 motion/out/poster.jpg
 ffmpeg -v error -y -i motion/out/ad-16x9.mp4 -vf "fps=12,scale=640:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=128:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4" motion/out/ad-16x9.gif
 ```
