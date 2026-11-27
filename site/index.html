@@ -4,14 +4,28 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<title>demo-studio</title>
-<meta name="description" content="A Claude Code plugin that records your real product with Playwright, then cuts, narrates and hands off a finished demo video. Free, local, open source.">
+<title>demo-studio: a finished demo video of your real app, made by your coding agent</title>
+<meta name="description" content="Open-source skills for coding agents (Claude Code, Codex, Cursor, Gemini CLI, Copilot) that plan, record, cut and narrate a demo video of your real product. Free and local.">
+<link rel="canonical" href="https://cyruspastelero.github.io/demo-studio/">
+<meta name="theme-color" content="#d2430e">
 <link rel="icon" href="logo/mark.svg" type="image/svg+xml">
 <link rel="icon" href="logo/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="logo/apple-touch-icon.png">
-<meta property="og:title" content="demo-studio">
-<meta property="og:description" content="Tell Claude the goal. Get a finished demo video of your real app.">
-<meta property="og:image" content="img/sample-showcase-poster.jpg">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="demo-studio">
+<meta property="og:url" content="https://cyruspastelero.github.io/demo-studio/">
+<meta property="og:title" content="demo-studio: a finished demo video of your real app">
+<meta property="og:description" content="Your coding agent plans it, records it, cuts and narrates it. Free, local, open source.">
+<meta property="og:image" content="https://cyruspastelero.github.io/demo-studio/og-image.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="demo-studio: a finished demo video of your real app, with a frame from a sample video">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="demo-studio: a finished demo video of your real app">
+<meta name="twitter:description" content="Your coding agent plans it, records it, cuts and narrates it. Free, local, open source.">
+<meta name="twitter:image" content="https://cyruspastelero.github.io/demo-studio/og-image.png">
+<meta name="twitter:image:alt" content="demo-studio: a finished demo video of your real app, with a frame from a sample video">
 <style>
 @font-face { font-family: "Bricolage Grotesque"; src: url(fonts/bricolage-grotesque.woff2) format("woff2"); font-weight: 200 800; font-display: swap; }
 @font-face { font-family: "Schibsted Grotesk"; src: url(fonts/schibsted-grotesk.woff2) format("woff2"); font-weight: 400 900; font-display: swap; }
@@ -119,6 +133,12 @@ h2 { font-size: clamp(26px, 3.2vw, 36px); line-height: 1.15; letter-spacing: -0.
 .how p { margin: 0 0 12px; color: var(--muted); font-size: 15px; }
 @media (max-width: 860px) { .how { grid-template-columns: 1fr; gap: 20px; } }
 pre { margin: 0; padding: 14px 16px; background: var(--well); border-radius: 8px; overflow-x: auto; font-size: 13.5px; line-height: 1.6; }
+/* The setup prompt: wraps on a phone so all of it is readable, with a copy button on top. */
+.prompt { position: relative; }
+.prompt pre { white-space: pre-wrap; overflow-wrap: anywhere; padding-right: 92px; }
+.copy { position: absolute; top: 10px; right: 10px; padding: 6px 12px; border: 0; border-radius: 6px; cursor: pointer;
+  background: var(--accent); color: var(--on-accent); font: 600 13px var(--body); }
+.copy:hover { filter: brightness(1.08); }
 .controls { font: 13px/1.8 var(--mono); color: var(--muted); }
 
 /* Launch ads */
@@ -126,6 +146,7 @@ pre { margin: 0; padding: 14px 16px; background: var(--well); border-radius: 8px
 @media (max-width: 1100px) { .styles { grid-template-columns: repeat(2, 1fr); } }
 .styles figure { margin: 0; }
 .styles img { display: block; width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--rule); }
+.styles.looks { margin-top: 28px; }
 .styles figcaption { margin-top: 10px; font-size: 15px; color: var(--muted); }
 .styles figcaption b { display: block; color: var(--ink); font: 600 17px var(--display); margin-bottom: 2px; }
 @media (max-width: 760px) { .styles { grid-template-columns: 1fr; } }
@@ -184,8 +205,8 @@ footer { margin-top: 88px; padding: 24px 0 40px; border-top: 1px solid var(--rul
 
   <main>
     <div class="hero">
-      <h1>Tell Claude the goal. Get a finished demo video of your real&nbsp;app.</h1>
-      <p class="intro">demo-studio is a Claude Code plugin. It plans the story, clicks through your product in a real browser, records each scene, then cuts, narrates and packages the video. Everything runs on your machine.</p>
+      <h1>Tell your coding agent the goal. Get a finished demo video of your real&nbsp;app.</h1>
+      <p class="intro">demo-studio is a set of open-source skills for coding agents: Claude Code, Codex, Cursor, Gemini CLI, Copilot and others. Your agent plans the story, shows you the plan, clicks through your product in a real browser, records each scene, then cuts and narrates the video. Everything runs on your machine.</p>
       <div class="actions">
         <a class="btn" href="#start">Install it</a>
         <a class="link" href="#editor">Try the editor</a>
@@ -201,7 +222,7 @@ footer { margin-top: 88px; padding: 24px 0 40px; border-top: 1px solid var(--rul
     <section id="stages" aria-labelledby="stages-h">
       <p class="mark"><b>00:01</b>How a demo gets made</p>
       <h2 id="stages-h">Six stages, each one a skill you can also run on its own.</h2>
-      <p class="lead">Claude runs them end to end and stops only for a login code, or for a step that would cost money or can't be undone. Ask, and it pauses after the plan or the review reel for you to check.</p>
+      <p class="lead">Your agent shows you the plan first and records nothing until you say go. After that it runs every stage to the end, stopping only for a login code, or for a step that would cost money or can't be undone.</p>
       <ol class="track">
         <li><span class="t">01</span><h3>Plan</h3><p>Brief, run sheet with exact on-screen text, shot list, voiceover draft. <code>demo-plan</code></p></li>
         <li><span class="t">02</span><h3>Prep</h3><p>Sandbox account, a seeded demo user, a test run of every step. <code>demo-plan</code></p></li>
@@ -215,7 +236,7 @@ footer { margin-top: 88px; padding: 24px 0 40px; border-top: 1px solid var(--rul
     <section id="editor" aria-labelledby="editor-h">
       <p class="mark"><b>00:02</b>The editor</p>
       <h2 id="editor-h">Fix the cut yourself, in a timeline that runs on 127.0.0.1.</h2>
-      <p class="lead">This is the real editor, opened on the todo sample from the repo. Scrub the timeline, play it, retime a shot or rewrite a voiceover line. On your machine it saves to <code>demo.json</code> and renders; here, edits stay in the tab.</p>
+      <p class="lead">This is the real editor, opened on the todo sample from the repo. Scrub the timeline, retime a shot, drag and edit text right on the video, pick a font, or rewrite a voiceover line. On your machine it saves to <code>demo.json</code> and renders; here, edits stay in the tab.</p>
       <div class="editor-frame">
         <iframe src="editor/?open" title="demo-studio editor, live demo with the todo sample" loading="lazy"></iframe>
       </div>
@@ -246,7 +267,7 @@ footer { margin-top: 88px; padding: 24px 0 40px; border-top: 1px solid var(--rul
     <section id="templates" aria-labelledby="templates-h">
       <p class="mark"><b>00:03</b>Look templates</p>
       <h2 id="templates-h">The look is a template, so the setup grows with you.</h2>
-      <p class="lead">Window, zooms, highlights, callouts, titles, ending and loudness all come from one <code>template.json</code>. These six frames are the built-in <code>house</code> look, drawn on the todo sample.</p>
+      <p class="lead">Window, zooms, highlights, callouts, titles, ending and loudness all come from one <code>template.json</code>. Four looks are built in; these six frames are the default <code>house</code> look, drawn on the todo sample.</p>
       <div class="strip" role="list" aria-label="The house look, six preview frames">
         <img role="listitem" src="img/house/01.png" alt="Title card" loading="lazy">
         <img role="listitem" src="img/house/02.png" alt="The window at rest on a pastel background" loading="lazy">
@@ -256,6 +277,12 @@ footer { margin-top: 88px; padding: 24px 0 40px; border-top: 1px solid var(--rul
         <img role="listitem" src="img/house/06.png" alt="Logo outro on dark" loading="lazy">
       </div>
       <p class="controls">brand · window · zoom · highlight · pill · title · transitions · end · pacing · audio</p>
+      <div class="styles looks">
+        <figure><img src="img/looks/house.png" alt="House look: a title in Inter on a soft pastel background" loading="lazy"><figcaption><b>House</b>The default. A floating window on a soft drifting pastel background.</figcaption></figure>
+        <figure><img src="img/looks/midnight.png" alt="Midnight look: a huge bold title on near-black" loading="lazy"><figcaption><b>Midnight</b>Cinematic and dark, with huge bold titles. For dark apps and developer tools.</figcaption></figure>
+        <figure><img src="img/looks/paper.png" alt="Paper look: a thin title on a warm cream background" loading="lazy"><figcaption><b>Paper</b>Warm and editorial: wide margins, square corners, thin titles.</figcaption></figure>
+        <figure><img src="img/looks/mono.png" alt="Mono look: a bold title on plain greys" loading="lazy"><figcaption><b>Mono</b>Greys only, so your product's colour is the only colour.</figcaption></figure>
+      </div>
 
       <div class="how">
         <div>
@@ -329,7 +356,7 @@ footer { margin-top: 88px; padding: 24px 0 40px; border-top: 1px solid var(--rul
             <tr><td>macOS <code>say</code></td><td class="m">On your Mac. The default when nothing else is set up.</td><td class="m">Free</td></tr>
             <tr><td>Your own recordings</td><td class="m">Files you drop in <code>voiceover/01.mp3</code>, <code>02.mp3</code>… <code>--export-lines</code> lists each line with its time and word budget.</td><td class="m">Free</td></tr>
             <tr><td>ElevenLabs</td><td class="m">Only if you choose it: an API key read from your shell or macOS Keychain, or the ElevenLabs MCP. The key is never written to a file.</td><td class="m">Your plan</td></tr>
-            <tr><td>Higgsfield</td><td class="m">Only if you choose it, through its MCP. Claude saves each line as a file, then mixes them like your own recordings.</td><td class="m">Your credits</td></tr>
+            <tr><td>Higgsfield</td><td class="m">Only if you choose it, through its MCP. The agent saves each line as a file, then mixes them like your own recordings.</td><td class="m">Your credits</td></tr>
           </tbody>
         </table>
       </div>
@@ -345,7 +372,7 @@ footer { margin-top: 88px; padding: 24px 0 40px; border-top: 1px solid var(--rul
           <div><dt>Test accounts only</dt><dd>Recording uses a sandbox or demo login, signed in before the camera starts. Steps that cost money or can't be deleted stop and ask first.</dd></div>
           <div><dt>Secrets are masked before capture</dt><dd>Token-shaped text and values next to known labels are blurred in the page itself, before a frame is taken, and every frame is checked after. Passwords stay in your macOS&nbsp;Keychain.</dd></div>
           <div><dt>The editor is not on the network</dt><dd>The studio listens on 127.0.0.1 only. Demo folders from other people are treated as untrusted: paths stay inside the folder and title cards render sandboxed.</dd></div>
-          <div><dt>What does leave</dt><dd>Claude Code talks to Anthropic as it always does. ElevenLabs or Higgsfield get your voiceover text only if you pick them.</dd></div>
+          <div><dt>What does leave</dt><dd>Your coding agent talks to its own AI provider as it always does. ElevenLabs or Higgsfield get your voiceover text only if you pick them.</dd></div>
         </dl>
         <div>
           <h3>What it runs on</h3>
@@ -357,7 +384,7 @@ footer { margin-top: 88px; padding: 24px 0 40px; border-top: 1px solid var(--rul
                 <tr><td>Python 3.10+</td><td class="m">Edit, narration and check scripts, standard library only</td><td class="m">PSF</td></tr>
                 <tr><td>ffmpeg</td><td class="m">Encoding, mixing, loudness</td><td class="m">LGPL/GPL</td></tr>
                 <tr><td>Google Chrome</td><td class="m">The recorded browser and the title renderer</td><td class="m">Google</td></tr>
-                <tr><td>Playwright MCP</td><td class="m">Lets Claude drive the browser, pinned to 0.0.84</td><td class="m">Apache-2.0</td></tr>
+                <tr><td>Playwright MCP</td><td class="m">Lets your agent drive the browser, pinned to 0.0.84</td><td class="m">Apache-2.0</td></tr>
                 <tr><td>npm packages</td><td class="m">playwright-core, React, Ajv, lucide, pinned and locked</td><td class="m">Apache-2.0, MIT, ISC</td></tr>
               </tbody>
             </table>
@@ -369,10 +396,20 @@ footer { margin-top: 88px; padding: 24px 0 40px; border-top: 1px solid var(--rul
 
     <section id="start" aria-labelledby="start-h">
       <p class="mark"><b>00:07</b>Start</p>
-      <h2 id="start-h">Two commands in Claude Code, then say what the demo should show.</h2>
-      <p class="lead">You need Node 20+, Python 3.10+, ffmpeg, Chrome and the Playwright MCP. The <a href="https://github.com/cyruspastelero/demo-studio/blob/main/docs/getting-started.md">getting started guide</a> sets them up and walks through a first demo in about ten minutes.</p>
-<pre>/plugin marketplace add cyruspastelero/demo-studio
-/plugin install demo-studio@demo-studio</pre>
+      <h2 id="start-h">Paste one prompt into your coding agent, then say what the demo should show.</h2>
+      <p class="lead">It works in Claude Code, Codex, Cursor, Gemini CLI, Copilot and other agents. The agent sets everything up and asks before installing anything. Prefer to do it by hand? The <a href="https://github.com/cyruspastelero/demo-studio/blob/main/docs/getting-started.md">getting started guide</a> has every step.</p>
+<div class="prompt"><button type="button" class="copy" data-copy="setup-prompt">Copy</button>
+<pre id="setup-prompt">Set up demo-studio for me so I can make product demo videos.
+1. Clone https://github.com/cyruspastelero/demo-studio.git and work inside that folder.
+2. Check for Node.js 20+, Python 3.10+, ffmpeg and Google Chrome.
+   Ask me before installing anything that is missing.
+3. Run npm install, then bash scripts/doctor.sh, and fix what it reports.
+4. Add the Playwright MCP server to your MCP settings.
+   Command: npx -y @playwright/mcp@0.0.84 --browser chrome
+5. Run bash scripts/new-workspace.sh ./demos
+6. Tell me if I need to restart you to load the browser tool,
+   then how to start my first demo.</pre></div>
+      <p class="note">Using Claude Code? You can also install it as a plugin: <code>/plugin marketplace add cyruspastelero/demo-studio</code>, then <code>/plugin install demo-studio@demo-studio</code>.</p>
       <div class="say">
         <span>Then say</span>
         <p>Make a demo of app.example.com. Goal: a new user creates a project and invites a teammate. I'm logged in to the sandbox in the Playwright browser.</p>
@@ -385,5 +422,24 @@ footer { margin-top: 88px; padding: 24px 0 40px; border-top: 1px solid var(--rul
     <a href="https://github.com/cyruspastelero/demo-studio">Source on GitHub</a>
   </footer>
 </div>
+<script>
+// Copy buttons: the text of the element named in data-copy. Without clipboard access, select it instead.
+for (const button of document.querySelectorAll('.copy')) {
+  button.addEventListener('click', async () => {
+    const text = document.getElementById(button.dataset.copy).innerText;
+    try {
+      await navigator.clipboard.writeText(text);
+      button.textContent = 'Copied';
+    } catch {
+      const range = document.createRange();
+      range.selectNodeContents(document.getElementById(button.dataset.copy));
+      getSelection().removeAllRanges();
+      getSelection().addRange(range);
+      button.textContent = 'Press Cmd+C';
+    }
+    setTimeout(() => { button.textContent = 'Copy'; }, 1800);
+  });
+}
+</script>
 </body>
 </html>
