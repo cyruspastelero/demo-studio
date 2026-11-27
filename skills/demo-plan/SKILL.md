@@ -186,6 +186,13 @@ Expected: `ok`. Otherwise each line names a field (`sequence[3].callouts[0]: mis
 
 Every row of the claims list in BRIEF.md names a scene in SHOT-LIST.md. If not, cut the claim.
 
+## Step 8b: show the plan and wait for the go
+
+The test sweep and everything after it touch the app, so the user approves the plan first. Follow
+skill `demo-studio`, Step 4b: post the plan message, wait for a clear go, apply any changes, and
+write the "Plan approved" line under "Decisions" in the demo's README.md. Do not start Step 9 before
+that line is there.
+
 ## Step 9: test sweep
 
 From `$P/references/quality-gates.md` section 2. Off camera, from a freshly reset state:
@@ -207,10 +214,8 @@ Fix each failure, or cut the scene and its claim.
 
 ## Step 10: post a progress note and keep going
 
-Post the scene table, a three-line story summary and the look line from Step 7 (`Look: <name>
-(<id>), ...`, as `templates.py suggest` printed it) as a note, then go straight on to skill
-`demo-record` in the same turn. **Do not wait for a reply.** Wait only if the user asked to check
-the plan first.
+The plan was approved in Step 8b. Post a short note that the sweep passed (and anything it changed),
+then go straight on to skill `demo-record` in the same turn. **Do not wait for a reply here.**
 
 ## Done when
 
@@ -223,7 +228,8 @@ the plan first.
 - [ ] VOICEOVER.md has every line with a word count
 - [ ] demo.json validates (`ok`) with crop, callouts, zooms, highlights, accents, voice and music;
       `_project.js` has the masks, clutter and `cursor: 'hand'`
+- [ ] The user approved the plan, and README.md has the "Plan approved" line (Step 8b)
 - [ ] Every PREP.md box is ticked
 - [ ] The test sweep table has `pass` on every row
-- [ ] The scene table was posted as a progress note (not a question)
+- [ ] The sweep note was posted (not a question)
 - [ ] Next: skill `demo-record`, Step 0

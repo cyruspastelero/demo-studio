@@ -28,7 +28,7 @@ export function demoSubject(name) {
 }
 
 const STAGES = [
-  { key: 'plan', label: 'Plan', prompt: (it) => `Plan ${it}: brief, run sheet, shot list and voiceover draft.` },
+  { key: 'plan', label: 'Plan', prompt: (it) => `Plan ${it}: brief, run sheet, shot list and voiceover draft. Show me the plan before recording anything.` },
   { key: 'prep', label: 'Prep', prompt: (it) => `Prep ${it}: accounts, seed data, then the smoke run and the test sweep.` },
   { key: 'record', label: 'Record', prompt: (it) => `Record the scenes for ${it}.` },
   { key: 'review', label: 'Review', prompt: (it) => `Mark the takes for ${it} and build the review reel.` },

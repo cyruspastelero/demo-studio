@@ -29,9 +29,11 @@ Write the mode at the top of the demo's README.
 
 ## 2. How much to ask
 
-The person logs in, or hands over demo credentials, and Claude does the rest. Ask once at the
-start for what is missing (URL, goal, audience, how to get in). After that, run plan, prep, test
-sweep, record, QA, review reel, cuts, handoff and wrap-up without asking between stages. Write each
+The person logs in, or hands over demo credentials, approves the plan, and Claude does the rest. Ask
+once at the start for what is missing (URL, goal, audience, how to get in). Then plan, and show the
+plan (scenes, what each shows, the voiceover, the look, what will be created in the app) and wait for
+a clear go before anything touches the app. After the go, run prep, test sweep, record, QA, review
+reel, cuts, handoff and wrap-up without asking between stages. Write each
 choice under "Decisions" in the demo's README and show everything in one report at the end. The
 person can interrupt at any time.
 

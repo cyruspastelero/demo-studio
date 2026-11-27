@@ -51,7 +51,9 @@ or in your MCP config:
    that moment. It refuses credentials for an account with real customer data unless you confirm
    it is a test account.
 
-After that Claude runs every stage to the end without asking and shows you the results.
+Claude then writes the plan and shows it to you: the scenes, what each one shows, the voiceover, the
+look, and anything it will create in the app. Nothing is recorded until you reply "go" (or tell it what
+to change). After that it runs every stage to the end without asking and shows you the results.
 
 Working on the plugin itself? Clone the repo, run `npm install` there, and start Claude Code with
 `claude --plugin-dir /path/to/demo-studio`.

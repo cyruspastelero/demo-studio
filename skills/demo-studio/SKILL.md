@@ -1,6 +1,6 @@
 ---
 name: demo-studio
-description: Make a product demo video end to end, hands off. The user logs in or hands over demo credentials once, then it runs without further questions. Turns a goal or a client brief into a plan (story arc, run sheet, shot list, voiceover draft, prep checklist), records crisp 1080p browser takes with Playwright MCP and masked secrets, builds a review reel, a keynote-style cut with free narration, a promo cut and a how-to cut, optional 4:5 and 9:16 social versions, and an editor handoff zip. Use when someone asks to "make a demo of X", record or film a product walkthrough, produce demo footage, hand demo videos to an editor, or just wants to try demo-studio.
+description: Make a product demo video end to end. The user logs in or hands over demo credentials once and approves the plan before anything is recorded, then it runs without further questions. Turns a goal or a client brief into a plan (story arc, run sheet, shot list, voiceover draft, prep checklist), records crisp 1080p browser takes with Playwright MCP and masked secrets, builds a review reel, a keynote-style cut with free narration, a promo cut and a how-to cut, optional 4:5 and 9:16 social versions, and an editor handoff zip. Use when someone asks to "make a demo of X", record or film a product walkthrough, produce demo footage, hand demo videos to an editor, or just wants to try demo-studio.
 ---
 
 # Demo studio
@@ -76,8 +76,9 @@ Done when: `check-cut.py` reports 0 FAIL on the narrated cut and the user has se
 
 ## Full route
 
-The promise to the user: **they log in, or hand over demo credentials, and you do the rest.**
-After Stage 0 you run every stage to the end without asking anything, then show the results.
+The promise to the user: **they log in, or hand over demo credentials, approve the plan, and you do
+the rest.** After Stage 0 you plan, show the plan and wait for a go (Step 4b). After the go you run
+every stage to the end without asking anything, then show the results.
 
 If the folder has an `AGENTS.md` (the starter kit's playbook), read it first. It wins over this file.
 
@@ -137,7 +138,36 @@ reel, keynote cut, narrated cut. Add promo, how-to and the editor zip if an edit
 **3e. Done when:** `browser_snapshot` shows the logged-in app, not a login page, and the demo's
 README.md says which way was used and the login email (never the password).
 
-### Steps 4 to 8: run every stage without stopping
+### Step 4b: show the plan and wait for the go (always)
+
+Nothing touches the app (no seed data, no test sweep, no recording) until the user has seen the plan
+and said go. Do this after skill `demo-plan` Step 8, every time, even if the plan looks obvious. Skip
+it only if the user said in this conversation to skip the plan review.
+
+1. Post one message, filled in from BRIEF.md, SHOT-LIST.md, VOICEOVER.md and demo.json:
+   ```
+   Here is the plan for <demo name>. Nothing is recorded until you say go.
+
+   What viewers will see (about <total seconds> s):
+   1. <scene name>: <what happens on screen>. Voiceover: "<the line>"
+   2. ...
+
+   Look: <template name> (<why, as templates.py suggest said>). Videos: <the list>.
+   In the app I will create: <what THROWAWAYS.md will list, or "nothing">, as <login email>.
+   The plan files are in <demo>/ (BRIEF.md, SHOT-LIST.md, RUN-SHEET.md, VOICEOVER.md) and on the
+   studio home screen under the demo's Docs menu.
+
+   Reply "go" to record, or tell me what to change.
+   ```
+2. Wait for the reply. It is a go only when it clearly says so ("go", "yes", "approved", "looks
+   good, record it").
+3. A change request: update the plan files and demo.json, then post only the changed scenes and the
+   last line again. Repeat until the go.
+4. Write `Plan approved <YYYY-MM-DD>: "<their words>"` under "Decisions" in the demo's README.md.
+
+Done when: the README has the "Plan approved" line. Then go on to Step 5.
+
+### Steps 5 to 8: run every stage without stopping
 
 **Do not ask between stages. Show results at the end. The user can interrupt at any time.**
 Make the sensible choice yourself, write it down in the demo's README.md under "Decisions", and
@@ -159,6 +189,7 @@ that the footage cannot prove. If the user asked for review gates ("check with m
 | Step | Stage | Skill | Done when |
 | --- | --- | --- | --- |
 | 4 | Plan | `demo-plan` Steps 1 to 8 | BRIEF, SHOT-LIST, RUN-SHEET, VOICEOVER, PREP and demo.json filled; every claim maps to a scene |
+| 4b | Plan approval | this skill, Step 4b | README.md has the "Plan approved" line |
 | 5 | Prep and test sweep | `demo-plan` Steps 7 and 9 | Every PREP.md box ticked; the test sweep table in README.md has `pass` on every row |
 | 6 | Record and QA | `demo-record` | One `keep` row per scene in `recordings/takes.csv`, none `new`; THROWAWAYS.md lists everything created |
 | 7 | Review reel and cuts | `demo-edit` Steps 1 to 3 and 2b (4 and 5 if asked) | `review-reel.mp4` and every cut asked for exist in `recordings/exports/`, and `check-cut.py` reports **0 FAIL** on the narrated keynote cut with every LOOK frame read. **Stop here if the user asked only for raw footage** |
@@ -228,7 +259,7 @@ It only reads files. Stop it when the session ends. If it fails with a missing m
 | Demo folder | `$DEMO_ROOT/<name>`, default `./demos/<name>` |
 | Accounts | sandbox or test only, a dedicated seeded demo user |
 | Login | way A (user logs in) unless they hand over credentials; always before recording, never on camera |
-| Questions | none after Stage 0, except the four stop cases in Steps 4 to 8 |
+| Questions | none after Stage 0, except the plan approval (Step 4b) and the four stop cases in Steps 5 to 8 |
 | Review reel | shown in the final report, not a gate, unless the user asked for review gates |
 | Things created on camera | created for real, listed in THROWAWAYS.md, deleted when the user says clean up |
 | Footage | real screen recordings only, no AI-generated clips or imagery |
