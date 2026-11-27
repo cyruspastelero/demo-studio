@@ -610,6 +610,22 @@ class Schema(unittest.TestCase):
             self.assertTrue(self.check(scene={"zooms": [{"at": bad, "focus": [1, 2]}]}), bad)
             self.assertTrue(self.check(scene={"highlights": [{"at": bad, "rect": [1, 2, 3, 4]}]}), bad)
 
+    def test_a_bad_cue_time_says_what_is_wrong_with_it_once(self):
+        def message(at) -> str:
+            [error] = self.check(scene={"zooms": [{"at": at, "focus": [1, 2]}]})
+            return error
+
+        self.assertIn(".zooms[0].at: must be >= 0", message(-1))
+        self.assertIn(".zooms[0].at: expected number or object, got str", message("1"))
+        self.assertIn(".zooms[0].at: expected number or object, got bool", message(True))
+        # A word cue with a mistake is told about the word cue, not that it should have been a number.
+        self.assertIn(".zooms[0].at: unknown field 'wrd'", message({"wrd": "invite"}))
+        self.assertIn(".zooms[0].at: missing required field 'word'", message({"wrd": "invite"}))
+        self.assertIn(".zooms[0].at.nth: must be >= 1", message({"word": "invite", "nth": 0}))
+        for at in (-1, "1", True, {"wrd": "invite"}, {"word": "invite", "nth": 0}, {"word": "two words"}):
+            self.assertNotIn("got dict", message(at), at)
+            self.assertEqual(message(at).count("does not match any allowed shape"), 1, at)
+
     def test_file_fields_must_stay_inside_the_demo_folder(self):
         for path in ("/etc/passwd", "../outside.png", "C:\\x.png", "a/../../b.png"):
             errors = self.check(scene={"callouts": [{"at": 1, "text": "A", "avatar": path}]})

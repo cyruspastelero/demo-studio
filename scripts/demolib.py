@@ -53,6 +53,27 @@ def _matches(pattern: str, text: str) -> bool:
     return re.search(_END_ANCHOR.sub(r"\\Z", pattern), text) is not None
 
 
+def _kinds(schema: dict) -> list[str]:
+    kinds = schema.get("type", [])
+    return kinds if isinstance(kinds, list) else [kinds]
+
+
+def _no_shape_matches(value, shapes: list[dict], results: list[list[str]], root: dict, where: str) -> list[str]:
+    """The message for a value that fits none of a oneOf/anyOf's shapes. The closest shape is one of
+    the value's own type (a word cue with a typo is told about the word cue, not that it should have
+    been a number); when the type fits none, the allowed types are named."""
+    kinds = [_kinds(_resolve(shape, root)) for shape in shapes]
+    fitting = [result for result, allowed in zip(results, kinds)
+               if not allowed or any(_TYPES[k](value) for k in allowed)]
+    if not fitting and all(kinds):
+        allowed = list(dict.fromkeys(k for group in kinds for k in group))
+        return [f"{where}: expected {' or '.join(allowed)}, got {type(value).__name__}"]
+    best = min(fitting or results, key=len)
+    if len(fitting) == 1:
+        return best  # only one shape has this type, so its errors are the answer, not a guess
+    return [f"{where}: does not match any allowed shape; closest: {'; '.join(best)}"]
+
+
 def _check(value, schema: dict, root: dict, path: str) -> list[str]:
     """A small JSON Schema subset: type, enum, const, required, properties,
     patternProperties, additionalProperties, items, min/max items, minLength, pattern,
@@ -74,8 +95,7 @@ def _check(value, schema: dict, root: dict, path: str) -> list[str]:
             results = [_check(value, s, root, path) for s in schema[key]]
             passing = sum(1 for r in results if not r)
             if passing == 0:
-                best = min(results, key=len)
-                return [f"{where}: does not match any allowed shape; closest: {'; '.join(best)}"]
+                return _no_shape_matches(value, schema[key], results, root, where)
             if key == "oneOf" and passing > 1:
                 return [f"{where}: matches more than one allowed shape"]
 
