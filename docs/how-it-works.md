@@ -2,6 +2,10 @@
 
 [Back to the README](../README.md)
 
+**In short:** your agent plans the demo and shows you the plan. After you say go, it tests the flow,
+records each scene, builds the cut, adds narration and music, and checks the result against the
+[quality bar](quality-bar.md). Each stage is a skill you can also run on its own.
+
 ## What it makes
 
 | Deliverable | What it is |
@@ -23,9 +27,10 @@
  goal or brief
       |
   [plan]      demo-plan     BRIEF, RUN-SHEET, SHOT-LIST, VOICEOVER, PREP, demo.json
+  [approve]   you           the agent shows the plan; nothing is recorded until you say go
   [prep]      demo-plan     sandbox accounts, seeded demo user, reset scripts, test sweep
   [record]    demo-record   2x screencast per scene, secrets masked, contact-sheet QA, takes.csv
-  [review]    demo-edit     review reel of keepers, agreed with you
+  [review]    demo-edit     review reel of the kept takes, checked by the agent
   [edit]      demo-edit     keynote cut, narration, promo + how-to, title cards, voiceover fit check
   [handoff]   demo-handoff  editor folder + zip, READ-ME-FIRST, brand sheet
   [social]    demo-edit     4:5 and 9:16 versions
@@ -33,8 +38,8 @@
 ```
 
 The `demo-studio` skill runs the stages in order; each stage has its own skill you can also call
-directly. The skill also triggers on "record a walkthrough of...", "film a product demo..." or
-"hand these takes to an editor".
+directly. Ask in plain words: "make a demo of...", "record a walkthrough of..." or "hand these takes
+to an editor".
 
 ## What makes a demo look good
 
@@ -78,7 +83,7 @@ on a few things, written out in [references/quality-gates.md](../references/qual
 
 ## Finishing the video
 
-The video is finished on your machine in two commands:
+The video is finished on your machine: build the cut, add the voice and music, then check it.
 
 ```bash
 python3 -I "$P/scripts/build-keynote.py" demo.json      # the cut: window, pills, boxes, zooms, cards
@@ -86,10 +91,14 @@ python3 -I "$P/scripts/narrate.py" demo.json            # adds the voiceover and
 python3 -I "$P/scripts/check-cut.py" recordings/exports/<slug>-keynote-cut-narrated.mp4   # the bar's checklist
 ```
 
-`narrate.py` reads the `voiceover` lines in `demo.json`, renders each one, places it at its item's
-start, checks every line fits before the next one, loops a music bed, ducks it under the speech with a fixed envelope,
-fades it in and out, normalises loudness, and writes a `-narrated.mp4` next to the cut in
-`recordings/exports/`. `--dry-run` checks the timing without rendering. Pick the voice with `--voice`:
+`narrate.py` reads the `voiceover` lines in `demo.json`, then:
+
+1. Checks every line fits before the next one (`--dry-run` stops here, without rendering).
+2. Voices each line and places it at its scene's start.
+3. Loops the music bed under it, lowered under speech, faded in and out.
+4. Sets the loudness and writes a `-narrated.mp4` next to the cut in `recordings/exports/`.
+
+Pick the voice with `--voice`:
 
 | Voice | Cost | How |
 | --- | --- | --- |
@@ -100,19 +109,25 @@ fades it in and out, normalises loudness, and writes a `-narrated.mp4` next to t
 With no `--voice`, it uses your files when `voiceover/` has them, else ElevenLabs when it finds a
 key, else `say`.
 
-**MCP voice tools.** `narrate.py demo.json --export-lines` writes `voiceover/lines.json`: each
-line's text, the file to save it as (`voiceover/NN.mp3`), its start, time budget and a word budget.
-Claude reads it, makes each file with the ElevenLabs MCP (`text_to_speech`) or the Higgsfield MCP
-(`generate_audio`), and runs `narrate.py demo.json --voice files`. Missing files are listed by
-number with the next command. Higgsfield works only this way, since its public API has no text to
-speech endpoint.
+**Voices through an MCP tool** (ElevenLabs or Higgsfield):
 
-**Music.** Save a bed as `music/bed.m4a`. The default is one made with the ElevenLabs MCP
-(`compose_music`, instrumental) or your own licensed instrumental; the Higgsfield MCP
-(`generate_audio` with a music model) also works. `scripts/make-bed.py` makes only a placeholder
-(sine-pad test tones; replace before sharing), and narrate.py warns while it is in use. narrate.py
-sets the bed 13 dB under the voice and holds it 7 dB lower under each spoken line, with no pumping.
-`--export-lines` also writes `music/README.txt` with the length to ask for.
+1. `narrate.py demo.json --export-lines` writes `voiceover/lines.json`: each line's text, the file to
+   save it as (`voiceover/NN.mp3`), and its time and word budget.
+2. The agent makes each file with the ElevenLabs MCP (`text_to_speech`) or the Higgsfield MCP
+   (`generate_audio`).
+3. `narrate.py demo.json --voice files` mixes them. Any missing file is listed by number.
+
+Higgsfield works only this way, since its public API has no text-to-speech endpoint.
+
+**Music.** Save a bed as `music/bed.m4a`:
+
+- your own licensed instrumental, or one made with the ElevenLabs MCP (`compose_music`) or the
+  Higgsfield MCP (`generate_audio` with a music model);
+- `scripts/make-bed.py` makes only a placeholder of test tones, and narrate.py warns while it's in
+  use, so replace it before sharing.
+
+The bed sits 13 dB under the voice and drops 7 dB more under each spoken line, with no pumping.
+`--export-lines` also writes `music/README.txt` with the length of music to ask for.
 
 Optional settings go in a `voice` object in `demo.json`, for example
 `{"provider": "files", "music": "music/bed.m4a", "music_dips": [{"at": 12.0, "dur": 1.5}], "music_fade_in": 1.0}`.
@@ -131,5 +146,5 @@ and rough assemblies, the voiceover scripts with start times, and the handoff zi
 | Where | What it is |
 | --- | --- |
 | [samples/](../samples) | Scene recipes to copy (form with an error, dashboard tour, masked secret, AI reply, dialog, settings toggle, table search, two people) and a full sample plan for a fictional analytics product |
-| [examples/todo-sample](../examples/todo-sample) | The GIF above: a real demo recorded and cut with the plugin, with its scene scripts and configs |
-| [examples/acme-invoice-bot](../examples/acme-invoice-bot) | A filled-in plan for a fictional chat bot, with a client brief and two windows |
+| [examples/todo-sample](../examples/todo-sample) | A real demo recorded and cut with the plugin, with its scene scripts and configs |
+| [examples/acme-invoice-bot](../examples/acme-invoice-bot) | A filled-in plan for a fictional chat bot, with a brief and two windows |

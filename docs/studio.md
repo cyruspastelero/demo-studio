@@ -5,7 +5,7 @@
 ## Home screen
 
 A local page that shows every demo in your folder and where each one stands. Run it from the folder
-you start Claude Code in (or from inside the demos folder):
+you start your agent in (or from inside the demos folder):
 
 ```bash
 npm --prefix "$P" run studio        # opens http://127.0.0.1:4317
@@ -15,15 +15,15 @@ npm --prefix "$P" run studio        # opens http://127.0.0.1:4317
 
 Each card shows the demo's picture, its status from the index, the stages with the next one
 outlined, anything that needs attention (takes nobody reviewed, throwaways not cleaned up, frames
-left on disk), and the sentence to give Claude for the next step, with a copy button. From a card
+left on disk), and the sentence to give your agent for the next step, with a copy button. From a card
 you can open the editor, play a video, open the planning documents or show the folder. With no
 demos yet, it shows the four steps to make the first one. It only reads your files, and it runs on
 your machine only (`127.0.0.1`).
 
 ### Prompts
 
-The Prompts menu holds ready-to-copy things to ask Claude, grouped as Start, Templates, Fix and
-finish, and Housekeeping. Each card shows the prompt, one line on what Claude then does, and a Copy
+The Prompts menu holds ready-to-copy things to ask your agent, grouped as Start, Templates, Fix and
+finish, and Housekeeping. Each card shows the prompt, one line on what the agent then does, and a Copy
 button. The parts to change, such as `app.example.com` or a scene number, are highlighted, so you
 know what to edit after pasting.
 
@@ -37,8 +37,8 @@ ones from the plugin's `look-templates/`. Each card shows its preview frames (cl
 the next one), its name and id with a copy button, where it was copied from, and its colours.
 **Use** copies ``Make a demo of app.example.com using template `<id>`.`` with the id filled in.
 
-To make a new one, copy the prompt at the top of the menu, paste it into Claude Code with the path
-to your video, and the template appears in the list when Claude has saved it. The menu only reads
+To make a new one, copy the prompt at the top of the menu, paste it into your agent with the path
+to your video, and the template appears in the list when the agent has saved it. The menu only reads
 `template.json`, `source.json` and the six preview PNGs; it never serves other files from a
 template folder, and skips folders that are symlinks.
 
@@ -48,7 +48,7 @@ template folder, and skips folders that are symlinks.
 
 A local web app for reviewing and tweaking a cut without rendering. Open a demo folder, watch the
 edit play in real time, trim and reorder shots, edit on-screen text and voiceover, check the 4:5 and
-9:16 framing, then press Render to run the same scripts Claude runs.
+9:16 framing, then press Render to run the same scripts your agent runs.
 
 ```bash
 npm run studio demos/acme                     # or: npx demo-studio demos/acme
@@ -101,7 +101,7 @@ the system player. Dragging a take onto the timeline works as before.
 **Your files stay the source of truth.** The editor reads and writes `handoff.json` and `demo.json`
 in the schema shape, keeping `_comment` and other `_` keys. It saves about a second after each edit
 (to a temp file, then renamed), checks the file against the schema first and never writes an
-invalid one. If Claude changes the file while it is open, the editor reloads it, or asks which
+invalid one. If your agent changes the file while it is open, the editor reloads it, or asks which
 version to keep when you have unsaved edits. A shot that uses `{"ref": ...}` (a shared shot) is
 changed in this video only, unless the inspector's "Changes apply to" switch is set to all uses; a shared
 shot used just once is simply edited.
@@ -121,7 +121,7 @@ The editor script from `build-handoff.py` gives the place and size next to each 
 
 **Fonts.** The toolbar of a selected text has a Font menu: Inter (the default), Inter Display, Geist,
 Geist Mono and Figtree are built in. To add your own, put the font file (`.woff2`, `.woff`, `.ttf` or
-`.otf`) in the demo's `fonts/` folder, or ask Claude to; it shows up under "This demo" the next time the
+`.otf`) in the demo's `fonts/` folder, or ask your agent to; it shows up under "This demo" the next time the
 editor window is focused. The choice is saved as `text_font` (or `caption_font` and callout `font` in
 `demo.json`).
 
@@ -138,7 +138,7 @@ Social media versions (finished videos), and the title cards as images and the r
 takes. Each says its format, size and the folder it lands in. Exports run one at a time with a
 progress bar, the log, the output in a player, and Reveal in Finder and Open buttons; Cancel stops the
 script and everything it started. The full editor handoff package is still made by
-`build-handoff.py` (ask Claude for it); Social media versions build the rough assemblies they need.
+`build-handoff.py` (ask your agent for it); Social media versions build the rough assemblies they need.
 
 | Keys | Action |
 | --- | --- |

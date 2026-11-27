@@ -124,7 +124,7 @@ in your macOS Keychain, never in a file:
 
 > The sandbox login is demo@example.com, the password is in Keychain as demo-acme.
 
-More in the [FAQ on passwords](docs/faq.md#do-i-have-to-give-claude-my-password)
+More in the [FAQ on passwords](docs/faq.md#do-i-have-to-give-the-agent-my-password)
 
 **Just want to see it work?** Say **"try it"**. The agent records the [todo sample](examples/todo-sample)
 end to end, no login needed ([10-minute walkthrough](docs/getting-started.md#first-demo-in-10-minutes)).
