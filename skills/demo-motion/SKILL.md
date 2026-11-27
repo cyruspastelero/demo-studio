@@ -89,12 +89,14 @@ at a take directly with `{ "src": "...", "from": 12.2, "to": 18.6, "rate": 1.6 }
 The ad is cut to the music, so get the track before timing scenes. In order of preference:
 
 1. **The user's own licensed track**: copy it to `motion/media/music.mp3`.
-2. **ElevenLabs MCP `compose_music`**: prompt for "modern upbeat tech product launch music,
+2. **The bundled library**: pick an `ad-*` track from `$P/motion/music/README.md`. Copy it and its
+   `.beats.json` to `motion/media/music.mp3` and `music.beats.json`, and skip analyze-beats.
+3. **ElevenLabs MCP `compose_music`**: prompt for "modern upbeat tech product launch music,
    instrumental, no vocals, 120 BPM, four-on-the-floor kick, two soft intro bars, a clear drop at
    bar 3, a one-bar stop about two thirds through, a final hit and a short clean tail",
    `music_length_ms` about 2 s longer than the ad, `force_instrumental: true`, `output_directory`
    `motion/media`. Rename the file to `music.mp3`.
-3. **No account or no credits**: ask the user for a track (this is a stop: say why).
+4. **No account or no credits**: ask the user for a track (this is a stop: say why).
 
 | If you see | Do this |
 | --- | --- |
@@ -121,6 +123,8 @@ the media paths and the text with this demo's. Keep:
   (at 120 BPM a beat is 0.5 s; 2 to 8 beats per scene; big moments on multiples of 4).
 - `"audio": { "music": "media/music.mp3", "fadeOut": 1.2, "sfxGainDb": -14, "loudness": -14, "truePeak": -1.5 }`.
   The SFX kit is built in.
+- For on-screen actions a scene doesn't sound itself, add `"cues": [{ "at": 2, "name": "scroll" }]`
+  (also `toggle`, `select`, `open`, `close`, `success`, `error`, `notify`, `drop`). One per action.
 - `brand.accent` (hex), `brand.logo`, `brand.url`, and `brand.fonts` only if the product has its own.
 
 Check it:

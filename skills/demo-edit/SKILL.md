@@ -194,7 +194,8 @@ the picture, and again after Step 3 on the narrated cut for the sound.
 
    | Music source | How |
    | --- | --- |
-   | ElevenLabs MCP (default) | `compose_music` with a short prompt ("calm modern instrumental for a product demo"), `force_instrumental: true`, `music_length_ms` from `voiceover/lines.json`; move the file to `music/bed.m4a` |
+   | Bundled library (default) | Pick a `bed-*` track from `$P/motion/music/README.md`; `ffmpeg -v error -i <track>.mp3 -c:a aac -b:a 192k music/bed.m4a` |
+   | ElevenLabs MCP | `compose_music` with a short prompt ("calm modern instrumental for a product demo"), `force_instrumental: true`, `music_length_ms` from `voiceover/lines.json`; move the file to `music/bed.m4a` |
    | User's own file (default when they have one) | Copy it to `music/bed.m4a`. Instrumental, and music they are licensed to use |
    | Higgsfield MCP | `generate_audio` with a music model (for example `suno_music`, instrumental, `duration` in seconds); wait for the job; `curl -fsSL -o music/bed.m4a "<result url>"` |
    | Placeholder only | `python3 -I "$P/scripts/make-bed.py" music/bed.m4a --seconds 60`: sine-pad test tones to check timing and levels, **placeholder bed, replace before sharing**. narrate.py prints `WARN placeholder bed` on every render that uses it; never deliver a cut with it |

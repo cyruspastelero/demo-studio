@@ -1,0 +1,85 @@
+{
+ "model_id": "music_v2",
+ "composition_plan": {
+  "chunks": [
+   {
+    "text": "[Bed A]",
+    "duration_ms": 45000,
+    "positive_styles": [
+     "100 BPM",
+     "4/4",
+     "background music for a spoken product walkthrough",
+     "steady and unobtrusive",
+     "no lead melody",
+     "leaves the vocal midrange clear",
+     "no big changes or drops",
+     "consistent energy",
+     "soft analog synth pads",
+     "gentle pulsing arpeggio",
+     "light shaker",
+     "airy and modern",
+     "polished professional mix",
+     "modern production",
+     "instrumental"
+    ],
+    "negative_styles": [
+     "vocals",
+     "singing",
+     "spoken words",
+     "corporate stock music",
+     "ukulele",
+     "whistling",
+     "kazoo",
+     "cheesy",
+     "generic EDM riser",
+     "lo-fi tape hiss",
+     "muddy mix",
+     "dramatic build",
+     "loud lead synth",
+     "solo instrument"
+    ],
+    "context_adherence": "high"
+   },
+   {
+    "text": "[Bed B]",
+    "duration_ms": 45000,
+    "positive_styles": [
+     "100 BPM",
+     "4/4",
+     "background music for a spoken product walkthrough",
+     "steady and unobtrusive",
+     "no lead melody",
+     "leaves the vocal midrange clear",
+     "no big changes or drops",
+     "consistent energy",
+     "soft analog synth pads",
+     "gentle pulsing arpeggio",
+     "light shaker",
+     "airy and modern",
+     "polished professional mix",
+     "modern production",
+     "instrumental",
+     "slight variation, same energy",
+     "ends on a soft resolved chord"
+    ],
+    "negative_styles": [
+     "vocals",
+     "singing",
+     "spoken words",
+     "corporate stock music",
+     "ukulele",
+     "whistling",
+     "kazoo",
+     "cheesy",
+     "generic EDM riser",
+     "lo-fi tape hiss",
+     "muddy mix",
+     "dramatic build",
+     "loud lead synth",
+     "solo instrument"
+    ],
+    "context_adherence": "high"
+   }
+  ]
+ }
+}

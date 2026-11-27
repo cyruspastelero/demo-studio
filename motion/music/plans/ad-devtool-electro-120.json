@@ -1,0 +1,152 @@
+{
+ "model_id": "music_v2",
+ "composition_plan": {
+  "chunks": [
+   {
+    "text": "[Intro]",
+    "duration_ms": 4000,
+    "positive_styles": [
+     "120 BPM",
+     "4/4",
+     "two-bar intro, filtered and sparse, building anticipation",
+     "minimal electro",
+     "pulsing sixteenth-note synth arpeggio",
+     "deep sub bass",
+     "polished professional mix",
+     "modern production",
+     "instrumental"
+    ],
+    "negative_styles": [
+     "vocals",
+     "singing",
+     "spoken words",
+     "corporate stock music",
+     "ukulele",
+     "whistling",
+     "kazoo",
+     "cheesy",
+     "generic EDM riser",
+     "lo-fi tape hiss",
+     "muddy mix"
+    ],
+    "context_adherence": "high"
+   },
+   {
+    "text": "[Drop]",
+    "duration_ms": 20000,
+    "positive_styles": [
+     "120 BPM",
+     "4/4",
+     "full arrangement hits on the downbeat",
+     "steady driving groove",
+     "minimal electro",
+     "pulsing sixteenth-note synth arpeggio",
+     "deep sub bass",
+     "tight glitchy percussion",
+     "crisp hi-hats",
+     "precise and technical feel",
+     "polished professional mix",
+     "modern production",
+     "instrumental"
+    ],
+    "negative_styles": [
+     "vocals",
+     "singing",
+     "spoken words",
+     "corporate stock music",
+     "ukulele",
+     "whistling",
+     "kazoo",
+     "cheesy",
+     "generic EDM riser",
+     "lo-fi tape hiss",
+     "muddy mix"
+    ],
+    "context_adherence": "high"
+   },
+   {
+    "text": "[Break]",
+    "duration_ms": 4000,
+    "positive_styles": [
+     "first bar: the whole band cuts to silence",
+     "second bar: a single sparse pickup building back",
+     "minimal electro"
+    ],
+    "negative_styles": [
+     "vocals",
+     "singing",
+     "spoken words",
+     "corporate stock music",
+     "ukulele",
+     "whistling",
+     "kazoo",
+     "cheesy",
+     "generic EDM riser",
+     "lo-fi tape hiss",
+     "muddy mix",
+     "kick drum",
+     "bass"
+    ],
+    "context_adherence": "high"
+   },
+   {
+    "text": "[Return]",
+    "duration_ms": 8000,
+    "positive_styles": [
+     "120 BPM",
+     "4/4",
+     "full groove slams back in on the downbeat",
+     "biggest energy of the track",
+     "minimal electro",
+     "pulsing sixteenth-note synth arpeggio",
+     "deep sub bass",
+     "tight glitchy percussion",
+     "crisp hi-hats",
+     "precise and technical feel",
+     "polished professional mix",
+     "modern production",
+     "instrumental"
+    ],
+    "negative_styles": [
+     "vocals",
+     "singing",
+     "spoken words",
+     "corporate stock music",
+     "ukulele",
+     "whistling",
+     "kazoo",
+     "cheesy",
+     "generic EDM riser",
+     "lo-fi tape hiss",
+     "muddy mix"
+    ],
+    "context_adherence": "high"
+   },
+   {
+    "text": "[Final hit]",
+    "duration_ms": 4000,
+    "positive_styles": [
+     "one final full-band hit on the downbeat",
+     "short clean reverb tail",
+     "then silence"
+    ],
+    "negative_styles": [
+     "vocals",
+     "singing",
+     "spoken words",
+     "corporate stock music",
+     "ukulele",
+     "whistling",
+     "kazoo",
+     "cheesy",
+     "generic EDM riser",
+     "lo-fi tape hiss",
+     "muddy mix",
+     "fade out",
+     "groove continuing"
+    ],
+    "context_adherence": "high"
+   }
+  ]
+ }
+}

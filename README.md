@@ -35,7 +35,7 @@ Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot and other agents that rea
 After you approve the plan, it only stops to ask for a login code, or before a step that would cost
 money or create something it can't delete.
 
-- **Real footage.** Every frame is your product running. Nothing is AI-generated.
+- **Real footage.** Every frame is your product running. No AI-generated footage.
 - **Local and free.** It runs on your machine with free tools. Paid voices and music are optional.
 - **Safe.** Test accounts only, and secrets are masked before anything is captured.
   [More](#local-and-safe)
@@ -161,7 +161,17 @@ Music sits under the voice, and the mix lands at -14 LUFS, all with ffmpeg on yo
 | ElevenLabs (API key or MCP) | Your plan; re-runs are cached |
 | Higgsfield (MCP) | Your credits |
 
-Music is your own licensed track, or one made with ElevenLabs or Higgsfield.
+Sound effects come with the plugin. Each scene cues its own on the frame the action happens: a click
+when the cursor presses, a tick as a counter rolls, a swish as cards slide in. You can add the UI set
+yourself (`scroll`, `toggle`, `select`, `open`, `close`, `success`, `error`, `notify`, `drop`). They're
+real recordings from [Kenney](https://kenney.nl)'s CC0 packs, so they're free to use in any project,
+paid work included, and [every file's source](motion/sfx-kit/SOURCES.md) is listed. Only the scene-change
+whoosh and the final logo hit are made with ffmpeg.
+
+Music comes with it too: nine instrumental tracks, free to use in the videos you make. Five are cut
+for launch ads, with the tempo and drop already measured, and four are calm beds that sit under a
+voice. They're listed in the [music library](motion/music/README.md). You can also bring your own
+licensed track, or make one with ElevenLabs or Higgsfield.
 More in [How it works](docs/how-it-works.md).
 
 ## Local and safe
