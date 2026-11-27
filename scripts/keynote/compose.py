@@ -60,7 +60,9 @@ def run_layer(n: int, run: Run, frames: list[WindowFrame], total: int, inputs: t
     canvas_w, canvas_h = canvas_size()
     w = piecewise([f.canvas_w for f in frames], run.start)
     h = piecewise([f.canvas_h for f in frames], run.start)
-    chain = [f"[{mask}:v]alphaextract[r{n}m]",
+    # format=rgba first: a square-cornered window's mask is fully opaque, and its PNG then has no alpha
+    # plane for alphaextract to read.
+    chain = [f"[{mask}:v]format=rgba,alphaextract[r{n}m]",
              f"[{content}:v]format=rgba,trim=end_frame={run.frames},setpts=PTS-STARTPTS[r{n}c]",
              f"[r{n}c][r{n}m]alphamerge,pad={canvas_w}:{canvas_h}:{spec.CANVAS_PAD_SIDE}:{spec.CANVAS_PAD_TOP}:"
              f"color=black@0[r{n}p]",

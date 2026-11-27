@@ -1,13 +1,12 @@
 # Mono
 
-Built-in look template `mono`, made by hand for demo-studio (no reference video). A crisp, neutral look: quiet greys with no colour in the background, tight 10 px corners, quicker zooms and hard cuts, Geist titles that fade in, and a black sweep. Lets the product's own colour be the only colour.
+Built-in look template `mono`, made by hand for demo-studio (no reference video). Full screen and fast: the app nearly fills the frame for detail-heavy products, small quick zooms, bold titles with no animation, greys only, and a short plain end card instead of the sweep.
 
-- Window: 1560x800 at (180, 100), 10 px corners, a short crisp shadow
-- Zoom: whole window to 1.12x over 0.9 s; hard cuts between shots
-- Highlight boxes: 2 px stroke, 6 px corners; pills 60 px tall with 12 px corners, 28 px text
-- Titles: Geist SemiBold 120 px, -3 tracking, fade in
-- Background: greys only (#EDEDED base), so the product colour is the only colour
-- Pacing: shots up to 6 s; ending 6.5 s end card, black sweep, logo on #0A0A0A
+- Window: 1620x800 at (150, 40), the largest the engine draws, high in the frame, square corners and a 1 px line instead of a shadow
+- Zooms: only to 1.06x over 0.7 s
+- Caption pill: a slim 52 px bar under the window with 6 px corners; boxes 2 px with 4 px corners
+- Titles: Geist Bold 150 px, -6 tracking, no animation
+- Ending: a short 4 s plain end card, no sweep or logo outro
 - Audio: as the house look (-14 LUFS, music 13 dB under the voice)
 
 `brand.accent` is left out: a demo sets its product colour in demo.json.

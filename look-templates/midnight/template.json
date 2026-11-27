@@ -1,13 +1,13 @@
 {
   "id": "midnight",
   "name": "Midnight",
-  "description": "A dark look for dark apps: the window floats on a deep blue-grey field with slow indigo and teal glows, Geist titles that fade in, light text, a cool indigo-to-teal sweep and a near-black outro.",
+  "description": "Cinematic and dark: a bigger window on a near-black field with one low glow, huge bold titles that fade up, a slow window entrance and a plain end card instead of the sweep.",
   "best_for": [
     "dark ui",
     "developer tool",
     "ai",
-    "analytics",
-    "premium"
+    "premium",
+    "cinematic"
   ],
   "created": "2026-11-27",
   "source": "hand-made",
@@ -18,13 +18,13 @@
       "ink": "#EEF1F6",
       "secondary": "#9AA4B2",
       "background": {
-        "base": "#0F1420",
+        "base": "#07090D",
         "fields": [
-          "#172036",
-          "#1E2A47F2",
-          "#2A2350E6",
-          "#13314AE6",
-          "#0B0F18D9"
+          "#0B0E14",
+          "#141B2ECC",
+          "#1A1430B3",
+          "#0A0D12",
+          "#0F1A2499"
         ]
       },
       "sweep": [
@@ -36,20 +36,20 @@
     "window": {
       "rect": [
         180,
-        100,
+        90,
         1560,
         800
       ],
-      "radius": 18,
-      "shadow": "0 50px 120px rgba(0,0,0,0.55), 0 14px 34px rgba(0,0,0,0.35)"
+      "radius": 16,
+      "shadow": "0 40px 90px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.06)"
     },
     "zoom": {
       "scale": 1.15,
-      "dur": 1.0,
+      "dur": 1.6,
       "ease": [
-        0.37,
+        0.25,
         0,
-        0.63,
+        0.2,
         1
       ]
     },
@@ -65,8 +65,8 @@
       "halo_alpha": 0.1
     },
     "pill": {
-      "center_y": 962,
-      "height": 68,
+      "center_y": 968,
+      "height": 64,
       "radius": 999,
       "font_size": 30,
       "kinds": [
@@ -75,22 +75,22 @@
       ]
     },
     "title": {
-      "size": 124,
-      "weight": 600,
-      "tracking": -3,
+      "size": 176,
+      "weight": 700,
+      "tracking": -7,
       "reveal": "fade",
       "accent_word": true
     },
     "transitions": {
-      "window_in": 0.6,
+      "window_in": 1.2,
       "cut": "inside-window"
     },
     "end": {
-      "kind": "sweep-logo",
-      "seconds": 7.5
+      "kind": "card",
+      "seconds": 6.0
     },
     "pacing": {
-      "shot_max": 7.0
+      "shot_max": 8.0
     },
     "audio": {
       "lufs": -14.0,

@@ -202,6 +202,13 @@ class Schema(TemplateCase):
         self.assertIn("inside the 1920x1080 frame", str(caught.exception))
 
 
+    def test_a_window_too_big_for_its_shadow_layer_is_refused_before_any_render(self):
+        write_template(self.root / "demos" / "_templates", "huge", {"window": {"rect": [120, 40, 1680, 920]}})
+        with self.assertRaises(templates.TemplateError) as caught:
+            templates.find("huge", self.root / "demos" / "acme", cwd=self.root)
+        self.assertIn("at most 1620x800", str(caught.exception))
+
+
 class Merge(TemplateCase):
     def test_house_defaults_match_spec(self):
         d = looks.defaults()

@@ -1,12 +1,13 @@
 {
   "id": "mono",
   "name": "Mono",
-  "description": "A crisp, neutral look: quiet greys with no colour in the background, tight 10 px corners, quicker zooms and hard cuts, Geist titles that fade in, and a black sweep. Lets the product's own colour be the only colour.",
+  "description": "Full screen and fast: the app is as large as the engine draws it, high in the frame, for detail-heavy products, small quick zooms, bold titles with no animation, greys only, and a short plain end card instead of the sweep.",
   "best_for": [
     "light ui",
     "fintech",
     "b2b",
     "dashboard",
+    "dense ui",
     "minimal"
   ],
   "created": "2026-11-27",
@@ -35,17 +36,17 @@
     },
     "window": {
       "rect": [
-        180,
-        100,
-        1560,
+        150,
+        40,
+        1620,
         800
       ],
-      "radius": 10,
-      "shadow": "0 30px 70px rgba(0,0,0,0.14), 0 6px 16px rgba(0,0,0,0.08)"
+      "radius": 0,
+      "shadow": "0 0 0 1px rgba(0,0,0,0.10)"
     },
     "zoom": {
-      "scale": 1.12,
-      "dur": 0.9,
+      "scale": 1.06,
+      "dur": 0.7,
       "ease": [
         0.37,
         0,
@@ -55,7 +56,7 @@
     },
     "highlight": {
       "stroke": 2,
-      "radius": 6,
+      "radius": 4,
       "pad": [
         15,
         9
@@ -65,29 +66,29 @@
       "halo_alpha": 0.1
     },
     "pill": {
-      "center_y": 962,
-      "height": 60,
-      "radius": 12,
-      "font_size": 28,
+      "center_y": 905,
+      "height": 52,
+      "radius": 6,
+      "font_size": 26,
       "kinds": [
         "statement",
         "person"
       ]
     },
     "title": {
-      "size": 120,
-      "weight": 600,
-      "tracking": -3,
-      "reveal": "fade",
+      "size": 150,
+      "weight": 700,
+      "tracking": -6,
+      "reveal": "none",
       "accent_word": true
     },
     "transitions": {
-      "window_in": 0.5,
-      "cut": "cut"
+      "window_in": 0.4,
+      "cut": "inside-window"
     },
     "end": {
-      "kind": "sweep-logo",
-      "seconds": 6.5
+      "kind": "card",
+      "seconds": 4.0
     },
     "pacing": {
       "shot_max": 6.0

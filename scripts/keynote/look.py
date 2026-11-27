@@ -127,6 +127,13 @@ def problems(look: dict) -> list[str]:
     x, y, w, h = look["window"]["rect"]
     if w < 400 or h < 200:
         out.append(f"window.rect {look['window']['rect']}: at least 400x200 px")
+    # The window layer is the window plus fixed shadow margins (spec.CANVAS_PAD_*), and the renderer
+    # draws layers of at most 1920x1140 (keynote-render.mjs).
+    max_w = 1920 - 2 * spec.CANVAS_PAD_SIDE
+    max_h = 1140 - spec.CANVAS_PAD_TOP - spec.CANVAS_PAD_BOTTOM
+    if w > max_w or h > max_h:
+        out.append(f"window.rect {look['window']['rect']}: at most {max_w}x{max_h} px (the window plus its shadow margins "
+                   f"must fit the renderer)")
     if x + w > spec.FRAME_W or y + h > spec.FRAME_H:
         out.append(f"window.rect {look['window']['rect']}: must sit inside the 1920x1080 frame")
     x1, _, x2, _ = look["zoom"]["ease"]
