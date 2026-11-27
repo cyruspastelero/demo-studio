@@ -1,0 +1,5 @@
+# Allowlist for scripts/check-release.py. One entry per line: RULE path-glob [:: literal-substring].
+# Say why above each entry. An entry that matches nothing is reported as stale.
+
+# Fake key used as a test fixture for the narration key-redaction test, not a real credential.
+S1 tests/test_narrate.py :: SECRET = "sk-key

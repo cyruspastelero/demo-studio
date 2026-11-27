@@ -153,6 +153,29 @@ A finished cut opens directly on a title, with no black frame. It sits on a soft
 | A5 | Speech level | Speech-section RMS −13 to −16 dBFS; momentary peaks −8 to −10 LUFS | Same, ±2 dB |
 | A6 | Music bed | Music-only gaps −26 to −28 LUFS momentary (RMS −27 dBFS), so 12 to 14 dB under speech-section RMS. It drops to −35 dBFS (lows removed) under one key visual moment. Starts at t=0 (−33.5 LUFS momentary). Fades out over the last 4 s. | Bed present from frame 0, 12 to 18 dB under narration, with ≥ 1 deliberate drop on a key moment |
 
+### 2.13 Gates for any finished cut (`scripts/video-gate.py`)
+
+`check-cut.py` holds the keynote cut to this whole bar. `video-gate.py` needs no plan and takes any finished mp4 (promo, how-to, social cut, launch ad), so it checks only what every video shares. It reads the file, not the footage's story.
+
+| # | Property | Bar | Result |
+|---|---|---|---|
+| G1 | Blank picture | No run of flat frames of 1.0 s or more, except in the first and last 0.5 s. A run of 0.5 s or more is worth a look | FAIL at 1.0 s, LOOK from 0.5 s |
+| G2 | Frozen stretch | The longest stretch where the picture is effectively identical is under 6 s | LOOK at 6 s |
+| G3 | Quiet stretch | The longest stretch where little changes (a cursor or a clock still counts as quiet) is under 15 s | LOOK at 15 s |
+| G4 | Decodes to the end | The decoded frames match the file's duration within 0.5 s | FAIL |
+| G4a | Audio stream | The file has an audio stream. A silent cut is a normal intermediate | LOOK |
+
+The 1 s in G1 was set on demo-studio's own sample videos. The house look holds about 0.33 s of flat dark between the brand sweep and the outro words, so a shorter bar fails good cuts. The 6 s and 15 s in G2 and G3 are starting points borrowed from the film gate in the open-source huashu-art-motion project (MIT), where they were calibrated on art films. That is why they only ask for a look.
+
+### 2.14 Plan checks (`scripts/plan-lint.py`)
+
+These read only `demo.json`, so they run before anything is recorded. Every line is a LOOK unless the tool runs with `--strict`, which turns each LOOK into a FAIL.
+
+| # | Property | Bar | Result |
+|---|---|---|---|
+| N1 | Numbers on screen | A number in a card title or subtitle, a callout or a caption is also said in the same item's voiceover ("3" matches "three", "50%" matches "fifty percent"). Items with no voiceover are skipped | LOOK |
+| N2 | Monotony | Fewer than three scenes in a row that each zoom in their first second, or that repeat the same explicit callout position. A card breaks a run | LOOK |
+
 ---
 
 ## 3. Gap table: current story-mode keynote cut vs the bar

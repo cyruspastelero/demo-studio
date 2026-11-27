@@ -22,6 +22,7 @@ from keynote.overlay import box_geometry, pill_state, title_card_state  # noqa: 
 from keynote.spec import Rect  # noqa: E402
 from keynote.timeline import build_plan  # noqa: E402
 from keynote.voice_sync import end_card_times, match_times, word_offsets  # noqa: E402
+from narration.core import DEFAULT_LEAD_IN  # noqa: E402
 from keynote.window import quantize, rise_offset, run_frames, window_rect, zoom_center, zoom_progress  # noqa: E402
 
 FPS = spec.FPS
@@ -469,6 +470,114 @@ class Plans(unittest.TestCase):
             self.plan(bad)
 
 
+class WordCues(unittest.TestCase):
+    """`at` may name a spoken word of the scene's own voiceover; it is resolved to seconds at build time."""
+    LINE = "Please invite your team today."
+    SOURCE = "voiceover/01.mp3"
+
+    def sequence(self, at, voiceover=LINE, kind="callouts", extra=None):
+        cue = {"callouts": {"at": at, "dur": 3, "text": "Invite."},
+               "zooms": {"at": at, "focus": [900, 300], "dur": 2.5},
+               "highlights": {"at": at, "dur": 2, "rect": [800, 280, 200, 30]}}[kind]
+        scene = {"scene": "01", "stem": "01-a", "trim": [0, 6], "crop": [500, 100, 900, 460], kind: [cue],
+                 **({"voiceover": voiceover} if voiceover is not None else {}), **(extra or {})}
+        return [{"card": "intro", "title": "Hello"}, scene, {"card": "end", "title": "Bye"}]
+
+    def plan(self, at, seconds=3.0, **kwargs):
+        sequence = self.sequence(at, **kwargs)
+        with tempfile.TemporaryDirectory() as tmp:
+            cfg, raw = make_demo(Path(tmp), sequence)
+            self.assertEqual(lib.validate(cfg, "demo"), [])
+            return build_plan(cfg, raw, PROBE, lambda text, number: (seconds, self.SOURCE))
+
+    def fraction(self, word, line=LINE, nth=1):
+        hits = [f for w, f in word_offsets(line) if w == word]
+        return hits[nth - 1]
+
+    def test_seconds_cues_resolve_identically_to_before(self):
+        def refuse(text, number):
+            raise AssertionError("a seconds cue must not measure a line")
+
+        sequence = self.sequence(0.76)
+        with tempfile.TemporaryDirectory() as tmp:
+            cfg, raw = make_demo(Path(tmp), sequence)
+            plan = build_plan(cfg, raw, PROBE, refuse)
+        self.assertAlmostEqual(plan.callouts[0].start, plan.shots[0].start / FPS + 0.76, places=6)
+        self.assertEqual(plan.word_cues, ())
+
+    def test_word_cue_lands_at_lead_in_plus_line_fraction(self):
+        plan = self.plan({"word": "invite"})
+        expected = DEFAULT_LEAD_IN + self.fraction("invite") * 3.0
+        self.assertAlmostEqual(plan.callouts[0].start - plan.shots[0].start / FPS, expected, places=6)
+
+    def test_zooms_and_highlights_take_word_cues_too(self):
+        expected = DEFAULT_LEAD_IN + self.fraction("team") * 3.0
+        zoom = self.plan({"word": "team"}, kind="zooms").runs[0].zooms[0]
+        self.assertAlmostEqual(zoom.at, expected, places=6)
+        plan = self.plan({"word": "team"}, kind="highlights")
+        box = plan.highlights[0]
+        self.assertAlmostEqual(box.start - plan.shots[0].start / FPS, expected, places=6)
+
+    def test_offset_shifts_the_resolved_time(self):
+        plain = self.plan({"word": "team"}).callouts[0].start
+        early = self.plan({"word": "team", "offset": -0.2}).callouts[0].start
+        self.assertAlmostEqual(early, plain - 0.2, places=6)
+
+    def test_nth_picks_the_second_occurrence(self):
+        line = "Invite one person, then invite two."
+        plan = self.plan({"word": "invite", "nth": 2}, voiceover=line)
+        expected = DEFAULT_LEAD_IN + self.fraction("invite", line, 2) * 3.0
+        self.assertAlmostEqual(plan.callouts[0].start - plan.shots[0].start / FPS, expected, places=6)
+
+    def test_matching_ignores_case_and_punctuation(self):
+        line = "Please Invite, your team."
+        plan = self.plan({"word": "INVITE"}, voiceover=line)
+        self.assertAlmostEqual(plan.callouts[0].start - plan.shots[0].start / FPS, DEFAULT_LEAD_IN + self.fraction("invite", line) * 3.0,
+                               places=6)
+
+    def test_missing_word_fails_and_lists_the_line_words(self):
+        with self.assertRaises(PlanError) as caught:
+            self.plan({"word": "dashboard"})
+        message = str(caught.exception)
+        self.assertIn("sequence[1].callouts[0].at", message)
+        for word in ("please", "invite", "your", "team", "today"):
+            self.assertIn(word, message)
+
+    def test_nth_beyond_the_occurrences_fails(self):
+        with self.assertRaisesRegex(PlanError, "nth 3.*said 1 time"):
+            self.plan({"word": "invite", "nth": 3})
+
+    def test_scene_without_voiceover_fails(self):
+        with self.assertRaisesRegex(PlanError, "no `voiceover`"):
+            self.plan({"word": "invite"}, voiceover=None)
+
+    def test_cue_past_scene_end_fails_and_so_does_one_before_its_start(self):
+        with self.assertRaisesRegex(PlanError, "after the scene ends"):
+            self.plan({"word": "today", "offset": 5})
+        with self.assertRaisesRegex(PlanError, "before the scene starts"):
+            self.plan({"word": "please", "offset": -1})
+
+    def test_repeated_word_without_nth_warns_and_uses_the_first(self):
+        line = "Invite one person, then invite two."
+        plan = self.plan({"word": "invite"}, voiceover=line)
+        self.assertIn("sequence[1].callouts[0].at: 'invite' is said 2 times, using the first; set nth",
+                      plan.warnings)
+        self.assertAlmostEqual(plan.callouts[0].start - plan.shots[0].start / FPS, DEFAULT_LEAD_IN + self.fraction("invite", line) * 3.0,
+                               places=6)
+        self.assertNotIn("is said", " ".join(self.plan({"word": "invite", "nth": 2}, voiceover=line).warnings))
+
+    def test_cue_is_recorded_in_plan_json_with_its_source(self):
+        plan = self.plan({"word": "invite", "offset": 0.1})
+        [record] = plan.word_cues
+        self.assertEqual({k: v for k, v in record.items() if k != "at"},
+                         {"where": "sequence[1].callouts[0].at", "word": "invite", "nth": 1,
+                          "line": 1, "line_seconds": 3.0, "source": self.SOURCE})
+        self.assertAlmostEqual(record["at"], DEFAULT_LEAD_IN + self.fraction("invite") * 3.0 + 0.1, places=3)
+        sidecar = {"video": "x.mp4", "total": 10, "runs": [], "cards": [], "callouts": [], "highlights": [],
+                   "word_cues": list(plan.word_cues)}
+        self.assertEqual(lib.validate(sidecar, "sidecars", "plan"), [])
+
+
 class Schema(unittest.TestCase):
     def check(self, scene=None, card=None, brand=None):
         cfg = {"title": "x", "sequence": [{"card": "a", "title": "t", **(card or {})},
@@ -487,6 +596,19 @@ class Schema(unittest.TestCase):
             brand={"font": "geist", "accent": "#FF0000", "background": {"base": "#E3E3E4",
                    "fields": ["#FFFFFF", "#000000", "#111111", "#222222", "#333333CC"]},
                    "sweep": ["#EF4849", "#F68C41"], "dark": "#1B1D21", "logo_on_dark": "assets/logo-white.svg"}), [])
+
+    def test_schema_accepts_word_object_and_rejects_unknown_keys(self):
+        word = {"word": "invite", "nth": 2, "offset": -0.2}
+        scene = {"voiceover": "Invite, then invite.", "zooms": [{"at": word, "focus": [10, 20]}],
+                 "callouts": [{"at": {"word": "invite"}, "text": "A"}],
+                 "highlights": [{"at": word, "rect": [1, 2, 3, 4]}]}
+        self.assertEqual(self.check(scene=scene), [])
+        for bad in ({"word": "invite", "extra": 1}, {"nth": 1}, {"word": ""}, {"word": "two words"},
+                    {"word": "invite", "nth": 0}, {"word": "invite", "nth": 1.5}, {"word": "invite", "offset": 9},
+                    {"word": "x" * 80}):
+            self.assertTrue(self.check(scene={"callouts": [{"at": bad, "text": "A"}]}), bad)
+            self.assertTrue(self.check(scene={"zooms": [{"at": bad, "focus": [1, 2]}]}), bad)
+            self.assertTrue(self.check(scene={"highlights": [{"at": bad, "rect": [1, 2, 3, 4]}]}), bad)
 
     def test_file_fields_must_stay_inside_the_demo_folder(self):
         for path in ("/etc/passwd", "../outside.png", "C:\\x.png", "a/../../b.png"):

@@ -87,8 +87,37 @@ The numbers it holds a cut to (same as the bar):
 `LOOK` lines need eyes: read the frames it saved (body text size and empty panels, W2; the blue
 disc cursor, K1; end-card words in step with the voice, X1).
 
+Two more checks use the same Done-when. `scripts/video-gate.py <cut>.mp4` takes any finished mp4 with
+no plan (blank picture, frozen or quiet stretch, decode, audio stream), so it covers the promo,
+how-to, social and ad cuts that `check-cut.py` does not. `scripts/plan-lint.py <demo>` reads only
+`demo.json` before recording (numbers on screen that the voiceover does not say, three alike scenes
+in a row). A FAIL is fixed; a LOOK is fixed or explained.
+
 Done when: 0 FAIL, every LOOK frame read and fine, and anything accepted below the bar is named in
 the final report with its measured value.
+
+## 4c. Cold read (after the checkers pass, before the user sees it)
+
+The one who built a cut tends to rate it higher than a fresh viewer does. So a reviewer who did not
+build it checks it for facts, not looks.
+
+- **Who:** a fresh subagent with none of the build's context, where the agent can start one.
+  Otherwise the agent re-reads only the files below, as if seeing them for the first time.
+- **Given:** `BRIEF.md`, `VOICEOVER.md` and a contact sheet of the finished cut:
+  `bash "$P/scripts/sheet.sh" recordings/exports/<slug>-keynote-cut-narrated.mp4 recordings/exports/cold-read.png 2`
+  (or the frames `check-cut.py --frames` already saved).
+- **Checks:**
+  - Every number, name and claim that is said or shown matches what the footage shows.
+  - The narration and the on-screen text agree with each other.
+  - The cut does what the brief asked, in the brief's order.
+  - Nothing on screen breaks `references/secrets.md`.
+- **Outcome:** a short list of findings, each with a timestamp. Fix each one, or keep it with a
+  one-line reason in the wrap-up. When the builder and the reviewer disagree, the reviewer's
+  concern stands until someone checks the footage.
+
+It checks facts and logic only. Taste stays with the user.
+
+Done when: every finding is fixed or kept with a reason in the final report.
 
 ## 5. After the edit comes back
 

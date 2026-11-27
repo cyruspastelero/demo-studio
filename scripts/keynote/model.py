@@ -119,6 +119,7 @@ class Plan:
     total_frames: int
     outro_frames: int
     warnings: tuple[str, ...] = field(default=())
+    word_cues: tuple[dict, ...] = field(default=())  # resolved `at` words, for plan.json
 
     @property
     def seconds(self) -> float:

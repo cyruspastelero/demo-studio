@@ -140,6 +140,13 @@ progress bar, the log, the output in a player, and Reveal in Finder and Open but
 script and everything it started. The full editor handoff package is still made by
 `build-handoff.py` (ask your agent for it); Social media versions build the rough assemblies they need.
 
+When an export finishes, the drawer checks each finished video with `video-gate.py`, and a keynote cut
+that has its `.plan.json` next to it also with `check-cut.py`, one after the other. Under the video you
+see a line such as "1 needs fixing, 2 worth a look" (or "All checks pass"); open it to read each row,
+and the passing rows are behind "Show N passing". If a checker cannot run, the drawer says so and the
+export still counts as done. Cancel stops a running check too. The Quick preview is not checked: it is
+for timing, shows unrendered cards as plain slates and has no sound.
+
 | Keys | Action |
 | --- | --- |
 | Space, K, L | Play or pause, pause, play |

@@ -360,6 +360,8 @@ try {
       setTimeout(() => resolve(['timeout', v.currentSrc]), 8000);
     }));
     assert.deepEqual(size, [960, 540]);
+    // A quick preview is a timing check with plain slates and no sound, so it is not run through the checkers.
+    assert.equal(await page.locator('[data-testid="render-checks"]').count(), 0);
   });
 
   await step('cancels a running render', async () => {

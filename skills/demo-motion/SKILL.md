@@ -206,6 +206,16 @@ hidden behind a panel, a scene that starts before the previous one has gone, a w
 1080 wide, the wrong UI moment. Fix the storyboard and re-render only what changed (`--from`/`--to`
 renders a window for a quick look).
 
+Then gate each rendered size (a FAIL is a blank stretch of 1 s or more or a file that does not decode
+to the end; a LOOK is a stretch to watch):
+
+```bash
+python3 -I "$P/scripts/video-gate.py" motion/out/ad-16x9.mp4
+```
+
+`--check` also warns when three or more scenes in a row share a `type` or an exit. Vary one of them
+or keep the run on purpose.
+
 Then make the poster and the GIF:
 
 ```bash
@@ -238,7 +248,7 @@ set), compare side by side with
   true peak under -1 dBTP.
 - You read a contact sheet of each size and the frames at every scene change, and looked at every
   zoom at full size (a still at 1920 wide): text in the zoom is as sharp as the headline.
-- `--check` printed no `warnings`.
+- `--check` printed no `warnings`, and `video-gate.py` shows no FAIL on any size.
 - Every claim on screen is true and every UI shot is the demo's own.
 - The user was told the style and why (the `tell the user:` line from Step 6).
 - `motion/README.md` lists the decisions (story, style, music source and its licence, anything not

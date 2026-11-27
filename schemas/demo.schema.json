@@ -65,6 +65,35 @@
     }
   },
   "$defs": {
+    "wordCue": {
+      "type": "object",
+      "required": [
+        "word"
+      ],
+      "additionalProperties": false,
+      "description": "A cue placed on a word of the scene's own voiceover. The word's position in the line is an estimate (about 0.1 to 0.3 s on a three-second line).",
+      "properties": {
+        "word": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40,
+          "pattern": "^\\S{1,40}$",
+          "description": "One word of the scene's voiceover. Case and punctuation are ignored."
+        },
+        "nth": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50,
+          "description": "Which time the word is said. Default 1."
+        },
+        "offset": {
+          "type": "number",
+          "minimum": -5,
+          "maximum": 5,
+          "description": "Seconds added to the word's time (negative is earlier). Default 0."
+        }
+      }
+    },
     "voice": {
       "type": "object",
       "additionalProperties": false,
@@ -462,9 +491,16 @@
       },
       "properties": {
         "at": {
-          "type": "number",
-          "minimum": 0,
-          "description": "Seconds into the scene (after trim and speed) when the zoom-in starts."
+          "oneOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "$ref": "#/$defs/wordCue"
+            }
+          ],
+          "description": "Seconds into the scene (after trim and speed) when the zoom-in starts, or a spoken word of this scene's voiceover to land on."
         },
         "scale": {
           "type": "number",
@@ -519,9 +555,16 @@
       },
       "properties": {
         "at": {
-          "type": "number",
-          "minimum": 0,
-          "description": "Seconds into the scene when the pill enters."
+          "oneOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "$ref": "#/$defs/wordCue"
+            }
+          ],
+          "description": "Seconds into the scene when the pill enters, or a spoken word of this scene's voiceover to land on."
         },
         "dur": {
           "type": "number",
@@ -570,9 +613,16 @@
       },
       "properties": {
         "at": {
-          "type": "number",
-          "minimum": 0,
-          "description": "Seconds into the scene. Leave it out to show 0.17 s after the next zoom lands (H5)."
+          "oneOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "$ref": "#/$defs/wordCue"
+            }
+          ],
+          "description": "Seconds into the scene, or a spoken word of this scene's voiceover to land on. Leave it out to show 0.17 s after the next zoom lands (H5)."
         },
         "dur": {
           "type": "number",

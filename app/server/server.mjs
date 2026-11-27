@@ -97,18 +97,18 @@ export function createStudio({ repo, cwd, folder: initialFolder, dev = false, op
     for (const res of clients) res.write(payload);
   };
 
-  const describeOutputs = (outputs) => outputs.map((path) => {
+  const describeOutputs = (outputs, checks) => outputs.map((path) => {
     const real = folder ? insideAny([folder], path) : null;
     if (!real) return { path, rel: null, isDir: false };
-    return { path: real, rel: relative(folder, real), isDir: statSync(real).isDirectory() };
+    return { path: real, rel: relative(folder, real), isDir: statSync(real).isDirectory(), ...checks?.[real] };
   });
 
   const runner = new RenderRunner((event, data) => {
     if (event === 'render' && data) {
-      emit('render', { ...data, outputFiles: describeOutputs(data.outputs) });
+      emit('render', { ...data, outputFiles: describeOutputs(data.outputs, data.checks) });
       if (data.status !== 'running') emit('media-changed', {});
     } else if (event === 'render-line') {
-      emit(event, { ...data, outputFiles: describeOutputs(data.outputs) });
+      emit(event, { ...data, outputFiles: describeOutputs(data.outputs, data.checks) });
     } else emit(event, data);
   });
 
@@ -147,7 +147,7 @@ export function createStudio({ repo, cwd, folder: initialFolder, dev = false, op
     const job = runner.state();
     return {
       mode: 'editor', repo, folder, openId, name: folder.split('/').pop(), files, platform: process.platform,
-      render: job && { ...job, outputFiles: describeOutputs(job.outputs) },
+      render: job && { ...job, outputFiles: describeOutputs(job.outputs, job.checks) },
     };
   }
 

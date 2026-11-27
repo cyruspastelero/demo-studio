@@ -10,7 +10,7 @@ import { readFileSync, mkdirSync, writeFileSync, existsSync, rmSync } from 'node
 import { resolve, dirname, join, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
-import { validateStoryboard, validateStyle } from './lib/validate.mjs';
+import { validateStoryboard, validateStyle, repetitionWarnings } from './lib/validate.mjs';
 import { resolveScenes, totalDuration } from './lib/timing.mjs';
 import { planZoomSources, prepareMedia } from './lib/assets.mjs';
 import { startServer, fileUrl } from './lib/server.mjs';
@@ -146,13 +146,14 @@ export async function render(storyboardPath, opts) {
   const project = loadProject(storyboardPath, opts.style);
   project.storyboardPath = storyboardPath;
   if (opts.check) {
-    const warnings = [...planZoomSources(structuredClone(project.board), storyboardPath, 1920), ...musicLengthWarnings(project)];
+    const warnings = [...planZoomSources(structuredClone(project.board), storyboardPath, 1920), ...musicLengthWarnings(project), ...repetitionWarnings(project.board)];
     return { project, warnings };
   }
   const size = SIZES[opts.size || '16x9'];
   if (!size) throw new Error(`--size must be one of ${Object.keys(SIZES).join(', ')}`);
   const cacheDir = process.env.MOTION_CACHE || join(dirname(resolve(storyboardPath)), '.motion-cache');
   mkdirSync(cacheDir, { recursive: true });
+  for (const w of repetitionWarnings(project.board)) process.stderr.write(`warning: ${w}\n`);
   if (!opts.stills && !opts['no-audio']) for (const w of musicLengthWarnings(project)) process.stderr.write(`warning: ${w}\n`);
   const { page, result, logs, close } = await openRuntime(project, size, cacheDir);
   const temps = [];

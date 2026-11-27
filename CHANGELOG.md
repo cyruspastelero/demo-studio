@@ -4,6 +4,24 @@ Notable changes, newest first. Versions follow semver as described in CONTRIBUTI
 
 ## Unreleased
 
+- **`video-gate.py`**: checks any finished mp4 with no plan file: a blank picture (FAIL at 1 s), the
+  longest frozen and quiet stretches (LOOK), decoding to the end (FAIL) and a missing audio stream
+  (LOOK). The edit and motion skills run it on every cut `check-cut.py` does not cover (G1 to G4a in
+  `docs/quality-bar.md`).
+- **`plan-lint.py`**: reads only `demo.json`, before anything is recorded. Flags a number on screen
+  that the voiceover does not say (N1) and three scenes in a row that zoom at once or repeat a
+  callout position (N2). The plan skill runs it before the plan goes to the user.
+- **Launch-ad monotony warning**: `render-motion.mjs --check` now warns when three or more scenes in
+  a row share a `type` or a non-default exit.
+- **`check-release.py`**: scans tracked files, and with `--range` the added lines, commit messages and
+  file names of each commit, for secret-shaped strings, personal home paths, real email addresses
+  and files that must never be tracked. The allowlist is `.release-allow`. CI runs it as its own job.
+- **Word cues**: a zoom, callout or highlight `at` can be a spoken word, such as
+  `{"word": "invite", "nth": 1, "offset": -0.2}`, instead of seconds.
+- **Cold read**: a new review step after the checkers pass, where a reviewer who did not build the
+  cut checks it for facts against the brief and the voiceover (`references/quality-gates.md`).
+- **Render checks in the editor**: the render drawer runs the checks after a render and lists what
+  needs fixing.
 - **Editor opens on the real cut**: when `handoff.json` is still the scaffold template, the editor
   opens on `demo.json` instead. On a file that is still the template, a banner above the timeline
   says so and offers the filled-in file, so placeholder scenes no longer look like lost edits (#3).

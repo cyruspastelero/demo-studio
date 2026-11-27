@@ -40,7 +40,7 @@ money or create something it can't delete.
 - **Safe.** Test accounts only, and secrets are masked before anything is captured.
   [More](#local-and-safe)
 - **Polished by default.** Every cut meets a [measured quality bar](docs/quality-bar.md), and
-  `check-cut.py` checks it.
+  `check-cut.py` checks it, and `video-gate.py` checks any other cut.
 
 ## Sample videos
 

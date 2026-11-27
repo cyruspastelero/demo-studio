@@ -540,6 +540,40 @@ class Schema(unittest.TestCase):
         self.assertEqual(len(errors), 2, errors)
 
 
+class WordCueDrift(unittest.TestCase):
+    CUE = {"where": "sequence[2].zooms[0].at", "word": "invite", "nth": 1, "at": 1.2, "line": 2,
+           "line_seconds": 3.0, "source": "say"}
+
+    def spoken(self, seconds, measured=True):
+        line = narrate.Line(2, "02", "Please invite your team.", 6.3, 7.7)
+        return [narrate.Spoken(line, seconds, measured, None)]
+
+    def test_narrate_warns_when_line_length_drifted(self):
+        [warning] = narrate.drift_warnings([self.CUE], self.spoken(3.4), "REBUILD-CMD")
+        for part in ("sequence[2].zooms[0].at", "'invite'", "3.00", "3.40", "estimated", "REBUILD-CMD"):
+            self.assertIn(part, warning)
+
+    def test_small_drift_and_unmeasured_lines_are_quiet(self):
+        self.assertEqual(narrate.drift_warnings([self.CUE], self.spoken(3.1), "x"), [])
+        self.assertEqual(narrate.drift_warnings([self.CUE], self.spoken(9.0, measured=False), "x"), [])
+        self.assertEqual(narrate.drift_warnings([], self.spoken(9.0), "x"), [])
+
+    def test_unreadable_plan_sidecar_skips_the_drift_check_and_says_so(self):
+        # Narration must not stop here: the voice lines are already synthesised (and may have cost money).
+        import contextlib
+        with tempfile.TemporaryDirectory() as tmp:
+            cut = Path(tmp) / "x-keynote-cut.mp4"
+            cut.with_suffix(".plan.json").write_text('{"truncated": ')
+            stderr = io.StringIO()
+            with contextlib.redirect_stderr(stderr):
+                self.assertEqual(narrate.plan_word_cues(cut), [])
+            self.assertIn("word cues were not checked", stderr.getvalue())
+
+    def test_missing_plan_sidecar_is_quiet(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertEqual(narrate.plan_word_cues(Path(tmp) / "x-keynote-cut.mp4"), [])
+
+
 class QualityBarAudio(unittest.TestCase):
     def test_bed_is_set_a_gap_under_the_narration(self):
         volume = narrate.bed_volume(voice_lufs=-16.0, music_lufs=-20.0, gap_db=13.0)
