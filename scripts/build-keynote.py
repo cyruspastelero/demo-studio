@@ -192,7 +192,8 @@ def write_sidecars(final: Path, cfg: dict, plan, fonts: list[str], brand, look_i
                "cards": [{"key": c.key, "kind": c.kind, "start": round(c.start / spec.FPS, 3),
                           "end": round((c.start + c.frames) / spec.FPS, 3), "accent": c.accent,
                           "outro": round(c.outro_frames / spec.FPS, 3)} for c in plan.cards],
-               "callouts": [{"start": round(c.start, 3), "end": round(c.end, 3), "kind": c.kind, "text": c.text}
+               "callouts": [{"start": round(c.start, 3), "end": round(c.end, 3), "kind": c.kind, "text": c.text,
+                             **({"pos": list(c.pos)} if c.pos else {})}
                             for c in plan.callouts],
                "highlights": highlight_sidecar(plan, final.parent),
                "brand": {"accent": brand.accent, "sweep": list(brand.sweep), "highlight": brand.highlight,

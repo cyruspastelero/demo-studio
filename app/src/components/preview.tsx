@@ -1,9 +1,12 @@
 import { Pause, Play, Repeat, StepBack, StepForward, SkipBack } from 'lucide-react';
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
+import type { ShotPatch } from '../lib/edits';
 import { captionAt, windowGeometry, type Geometry } from '../lib/geometry';
 import { mediaUrl, Player } from '../lib/player';
 import { timecode } from '../lib/timeline';
+import { textVariant, type Point } from '../lib/text-layout';
 import type { Aspect, Brand, FileKind, SocialSpec, Timeline, TimelineShot } from '../lib/types';
+import { TextLayer } from './text-layer';
 
 const FULL = { W: 1920, H: 1080 };
 // build-keynote.py: footage window at 160,44 sized 1600x900 on a light background.
@@ -62,7 +65,7 @@ function CardView({ shot, brand }: { shot: TimelineShot; brand: Brand | undefine
   );
 }
 
-export function Preview({ kind, timeline, aspect, social, brand, missing, loop, onToggleLoop, onPlayer, overlay }: {
+export function Preview({ kind, timeline, aspect, social, brand, missing, loop, onToggleLoop, onPlayer, overlay, selectedShotId, onSelectShot, onTextPatch }: {
   kind: FileKind;
   timeline: Timeline;
   aspect: Aspect;
@@ -73,6 +76,9 @@ export function Preview({ kind, timeline, aspect, social, brand, missing, loop, 
   onToggleLoop: () => void;
   onPlayer: (player: Player | null) => void;
   overlay?: ReactNode; // the raw take source viewer, drawn over the cut while open
+  selectedShotId?: string;
+  onSelectShot: (shot: TimelineShot) => void;
+  onTextPatch: (shot: TimelineShot, patch: ShotPatch) => void;
 }) {
   const wrap = useRef<HTMLDivElement>(null);
   const videoA = useRef<HTMLVideoElement>(null);
@@ -80,6 +86,9 @@ export function Preview({ kind, timeline, aspect, social, brand, missing, loop, 
   const canvas = useRef<HTMLCanvasElement>(null);
   const [player, setPlayer] = useState<Player | null>(null);
   const [src, setSrc] = useState({ w: 1920, h: 1080 });
+  // The text box being worked on (by shot id), and a new one started by double-clicking the frame.
+  const [activeText, setActiveText] = useState<string | null>(null);
+  const [newText, setNewText] = useState<{ shotId: string; pos: Point } | null>(null);
 
   useEffect(() => {
     if (!videoA.current || !videoB.current) return undefined;
@@ -148,11 +157,30 @@ export function Preview({ kind, timeline, aspect, social, brand, missing, loop, 
   const isMissing = shot?.kind === 'clip' && shot.file && missing.has(shot.file);
   // Hidden, not unmounted, under the source viewer: the cut player and its playhead stay as they were.
   const under: React.CSSProperties | undefined = overlay ? { visibility: 'hidden' } : undefined;
+  const variant = shot && !frame.social ? textVariant(kind, shot.kind) : null;
+  const textActive = Boolean(shot && activeText === shot.id && selectedShotId === shot.id);
+  const grab = () => {
+    player?.pause();
+    if (shot) {
+      setActiveText(shot.id);
+      if (selectedShotId !== shot.id) onSelectShot(shot);
+    }
+  };
+  const addTextAt = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!shot || !variant || shot.text || (kind === 'demo' && shot.kind !== 'clip')) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const pos: Point = [(e.clientX - rect.left - box.left) / (frame.W * box.scale), (e.clientY - rect.top - box.top) / (frame.H * box.scale)];
+    if (pos[0] < 0 || pos[0] > 1 || pos[1] < 0 || pos[1] > 1) return;
+    grab();
+    setNewText({ shotId: shot.id, pos });
+  };
   const stageBg = frame.social ? (blur ? '#888' : social?.color ?? '#F3F3F6') : kind === 'demo' ? KEYNOTE.bg : '#000';
 
   return (
     <section className="preview" aria-label="Preview">
-      <div className="stage-wrap" ref={wrap} style={under}>
+      <div className="stage-wrap" ref={wrap} style={under}
+        onPointerDown={() => setActiveText(null)} onDoubleClick={addTextAt}
+        title={variant && shot && !shot.text ? 'Double-click the frame to add text' : undefined}>
         <div
           className="stage" data-testid="stage" data-aspect={aspect}
           style={{ width: frame.W, height: frame.H, background: stageBg, transform: `translate(${box.left}px, ${box.top}px) scale(${box.scale})` }}
@@ -175,9 +203,21 @@ export function Preview({ kind, timeline, aspect, social, brand, missing, loop, 
             {isMissing && <div className="missing-media">Missing take: {shot.file}</div>}
             {!shot && <div className="empty-stage">Nothing on the timeline yet</div>}
           </div>
-          {!frame.social && kind === 'handoff' && shot?.text && <div className="onscreen" data-testid="onscreen-text">{shot.text}</div>}
-          {!frame.social && kind === 'demo' && shot?.kind === 'clip' && shot.text && <div className="keynote-caption">{shot.text}</div>}
         </div>
+        {shot && variant && shot.text && (
+          <TextLayer
+            key={shot.id} variant={variant} text={shot.text} pos={shot.textPos} size={shot.textSize}
+            frame={frame} box={box} active={textActive} font={brand?.font}
+            onActivate={grab} onDeactivate={() => setActiveText(null)} onCommit={(patch) => onTextPatch(shot, patch)}
+          />
+        )}
+        {shot && variant && newText?.shotId === shot.id && !shot.text && (
+          <TextLayer
+            key={`new-${shot.id}`} variant={variant} text="" pos={newText.pos} frame={frame} box={box} active startEditing
+            font={brand?.font} onActivate={grab} onDeactivate={() => setNewText(null)}
+            onCommit={(patch) => { setNewText(null); onTextPatch(shot, patch); }} onCancelNew={() => setNewText(null)}
+          />
+        )}
       </div>
       <div className="transport" style={under}>
         <button className="icon-btn" aria-label="Go to start" title="Go to start (Home)" onClick={() => player?.seek(0)}><SkipBack size={16} /></button>

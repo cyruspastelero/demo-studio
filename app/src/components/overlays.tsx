@@ -64,6 +64,10 @@ const SHORTCUTS: [string[], string][] = [
   [['I'], 'Raw take: set the selected shot\'s in point'],
   [['O'], 'Raw take: set the selected shot\'s out point'],
   [['Esc'], 'Raw take: back to the cut'],
+  [['Enter'], 'Selected text: edit it'],
+  [['Arrows'], 'Selected text: nudge 1 px'],
+  [['Shift', 'Arrows'], 'Selected text: nudge 10 px'],
+  [['Alt'], 'Hold while dragging text: no snapping'],
   [['?'], 'Show this list'],
 ];
 

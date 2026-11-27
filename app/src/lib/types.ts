@@ -9,12 +9,16 @@ export interface ClipSpec {
   speed?: number;
   screen: string;
   text?: string;
+  text_pos?: [number, number];
+  text_size?: number;
 }
 export interface CardShotSpec {
   card: string;
   length: number;
   screen?: string;
   text?: string;
+  text_pos?: [number, number];
+  text_size?: number;
 }
 export interface RefShotSpec {
   ref: string;
@@ -23,6 +27,8 @@ export interface RefShotSpec {
   speed?: number;
   screen?: string;
   text?: string;
+  text_pos?: [number, number];
+  text_size?: number;
 }
 export type ShotSpec = ClipSpec | CardShotSpec | RefShotSpec;
 
@@ -96,6 +102,7 @@ export interface DemoSceneItem {
   stem: string;
   take?: number;
   caption?: string;
+  caption_pos?: [number, number];
   speed?: number;
   trim?: [number | null, number | null];
   zoom?: number[];
@@ -144,6 +151,8 @@ export interface TimelineShot {
   start: number; // timeline position in seconds
   screen: string;
   text: string;
+  textPos?: [number, number]; // centre of the on-screen text, frame fractions; undefined = default spot
+  textSize?: number; // px in a 1920x1080 frame (handoff only)
   ref?: string;
 }
 

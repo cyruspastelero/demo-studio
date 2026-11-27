@@ -249,6 +249,9 @@ export function Editor({ session, onClose }: {
         onSelectCard={(name) => setSelection({ type: 'card', name })} onViewTake={viewTake} onOpenTake={openTakeExternally} />
       <Preview kind={fileKind} timeline={timeline} aspect={aspect} social={entry} brand={handoff?.brand}
         missing={missing} loop={loop} onToggleLoop={() => setLoop((l) => !l)} onPlayer={setPlayer}
+        selectedShotId={selectedShot?.id}
+        onSelectShot={(s) => setSelection({ type: 'shot', scene: s.sceneIndex, shot: s.shotIndex })}
+        onTextPatch={(s, patch) => onShotPatch(s.sceneIndex, s.shotIndex, patch)}
         overlay={source && (
           <SourceViewer take={source.take} markable={Boolean(markShot)} onMark={mark} onClose={closeSource}
             onOpenExternal={() => openTakeExternally(source.take)} onControls={onSourceControls} />

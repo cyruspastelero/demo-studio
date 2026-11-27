@@ -156,6 +156,84 @@ try {
     await page.click('[data-testid="video-tab-PROMO"]');
   });
 
+  const textShot = () => readHandoff(folder).videos[1].scenes[5].shots[1];
+  const stageRect = () => page.locator('[data-testid="stage"]').boundingBox();
+  async function dragTo(locator, x, y, beforeUp) {
+    const b = await locator.boundingBox();
+    assert.ok(b, 'drag source is visible');
+    await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
+    await page.mouse.down();
+    for (let i = 1; i <= 8; i += 1) await page.mouse.move(b.x + b.width / 2 + ((x - b.x - b.width / 2) * i) / 8, b.y + b.height / 2 + ((y - b.y - b.height / 2) * i) / 8);
+    if (beforeUp) await beforeUp();
+    await page.mouse.up();
+  }
+
+  await step('drags on-screen text and it snaps to the frame centre', async () => {
+    await page.click('[data-testid="video-tab-HOW-TO"]');
+    await page.locator('[data-shot-id="1:5:1"]').click();
+    const box = page.locator('[data-testid="text-box"]');
+    await waitFor(async () => (await box.textContent()) === 'It asks instead of guessing', 'the shot text on the stage');
+    const stage = await stageRect();
+    await dragTo(box, stage.x + stage.width / 2 + 3, stage.y + stage.height / 2 - 2, async () => {
+      assert.ok(await page.locator('.snap-guide').count() >= 1, 'a snap guide shows while dragging');
+    });
+    const shot = await waitFor(() => textShot().text_pos, 'text_pos to be saved');
+    assert.deepEqual(shot, [0.5, 0.5]);
+    assert.equal(await page.locator('.snap-guide').count(), 0, 'guides go away on release');
+  });
+
+  await step('edits the text in place with a double-click', async () => {
+    await page.locator('[data-testid="text-box"]').dblclick();
+    await page.waitForSelector('[data-testid="text-edit"]');
+    await page.keyboard.type('Key never leaves the bot');
+    await page.keyboard.press('Enter');
+    await waitFor(() => textShot().text === 'Key never leaves the bot', 'the new text to be saved');
+    assert.equal(await page.locator('[data-testid="shot-text"]').inputValue(), 'Key never leaves the bot', 'inspector follows');
+    // Esc throws the typing away, and does not save on the blur that follows.
+    await page.locator('[data-testid="text-box"]').dblclick();
+    await page.waitForSelector('[data-testid="text-edit"]');
+    await page.keyboard.type('Not this');
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(1500);
+    assert.equal(textShot().text, 'Key never leaves the bot', 'Esc cancels the edit');
+    assert.equal(await page.locator('[data-testid="text-box"]').textContent(), 'Key never leaves the bot');
+  });
+
+  await step('resizes with the handle, nudges with arrows, and undoes', async () => {
+    const handle = page.locator('[data-testid="text-resize"]');
+    const h = await handle.boundingBox();
+    await dragTo(handle, h.x + h.width / 2 + 40, h.y + h.height / 2);
+    const size = await waitFor(() => textShot().text_size, 'text_size to be saved');
+    assert.ok(size > 44, `size grew to ${size}`);
+    await page.keyboard.press('Shift+ArrowRight');
+    await waitFor(() => textShot().text_pos?.[0] > 0.5, 'the nudge to be saved');
+    await page.keyboard.press('ControlOrMeta+z');
+    await waitFor(() => textShot().text_pos?.[0] === 0.5, 'undo to move it back');
+  });
+
+  await step('resets the text to its default spot', async () => {
+    await page.locator('[data-testid="text-box"]').click();
+    await page.click('[data-testid="text-reset"]');
+    await waitFor(() => !('text_pos' in textShot()) && !('text_size' in textShot()), 'text_pos and text_size to be cleared');
+  });
+
+  await step('adds text by double-clicking an empty frame', async () => {
+    await page.locator('[data-shot-id="1:1:0"]').click();
+    await waitFor(async () => (await page.locator('[data-testid="text-box"]').count()) === 0, 'a shot without text');
+    const stage = await stageRect();
+    await page.mouse.dblclick(stage.x + stage.width * 0.3, stage.y + stage.height * 0.2);
+    await page.waitForSelector('[data-testid="text-edit"]');
+    await page.keyboard.type('Setup takes a minute');
+    await page.keyboard.press('Enter');
+    const card = await waitFor(() => {
+      const c = readHandoff(folder).videos[1].scenes[1].shots[0];
+      return c.text ? c : null;
+    }, 'the new text to be saved');
+    assert.equal(card.text, 'Setup takes a minute');
+    assert.ok(Math.abs(card.text_pos[0] - 0.3) < 0.01 && Math.abs(card.text_pos[1] - 0.2) < 0.01, `placed at ${card.text_pos}`);
+    await page.click('[data-testid="video-tab-PROMO"]');
+  });
+
   await step('frames 9:16 like social-cut.py', async () => {
     await page.click('[data-testid="aspect-9x16"]');
     const stage = await page.locator('[data-testid="stage"]').evaluate((el) => ({ w: el.style.width, h: el.style.height }));

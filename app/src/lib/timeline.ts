@@ -57,6 +57,7 @@ export function buildHandoffTimeline(doc: HandoffDoc, videoIndex: number, media?
           cardSubtitle: text?.subtitle, cardPng: media?.cards[spec.card],
           in: 0, out: spec.length, speed: 1, length: spec.length, start: clock,
           screen: spec.screen ?? 'Title card placeholder', text: spec.text ?? '',
+          textPos: spec.text_pos, textSize: spec.text_size,
         };
       } else {
         const clip = isRefShot(spec) ? resolveRef(spec, doc.shots) : spec;
@@ -67,6 +68,7 @@ export function buildHandoffTimeline(doc: HandoffDoc, videoIndex: number, media?
           mediaPath: info?.path ?? `${rawDir(doc)}/${clip.source}`,
           in: clip.in, out: clip.out, speed, length: shotLength(clip.in, clip.out, speed), start: clock,
           screen: clip.screen ?? '', text: clip.text ?? '', ref: isRefShot(spec) ? spec.ref : undefined,
+          textPos: clip.text_pos, textSize: clip.text_size,
         };
       }
       clock += shot.length;
@@ -115,7 +117,7 @@ export function buildDemoTimeline(doc: DemoDoc, media?: MediaIndex): Timeline {
       shot = {
         id, sceneIndex, shotIndex: 0, kind: 'clip', file, mediaPath: info?.path ?? `${DEFAULT_RAW_DIR}/${file}`,
         in: start, out: end, speed, length: shotLength(start, end, speed), start: clock,
-        screen: item.stem, text: item.caption ?? '',
+        screen: item.stem, text: item.caption ?? '', textPos: item.caption_pos,
       };
     }
     clock += shot.length;

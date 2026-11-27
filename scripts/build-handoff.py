@@ -46,6 +46,17 @@ class Shot:
     speed: float        # 1.0 is real time
     screen: str         # what's on screen
     text: str = ""      # on-screen text the editor adds
+    text_pos: tuple[float, float] | None = None  # its centre as frame fractions, set in the studio editor
+    text_size: float | None = None               # px in a 1920x1080 frame
+
+    @property
+    def text_place(self) -> str:
+        """Where the on-screen text goes, in words an editor can follow."""
+        if not self.text_pos and not self.text_size:
+            return ""
+        bits = [f"centre at {self.text_pos[0]:.0%} across, {self.text_pos[1]:.0%} down"] if self.text_pos else []
+        bits += [f"{self.text_size:g} px at 1080p"] if self.text_size else []
+        return f" ({', '.join(bits)})"
 
     @property
     def is_card(self) -> bool:
@@ -82,16 +93,21 @@ class Paths:
 
 # ---------------------------------------------------------------- config -> model
 
+def text_layout(spec: dict) -> tuple[tuple[float, float] | None, float | None]:
+    pos = spec.get("text_pos")
+    return (float(pos[0]), float(pos[1])) if pos else None, spec.get("text_size")
+
+
 def resolve_shot(spec: dict, named: dict, label: str) -> Shot:
     if "card" in spec:
         return Shot(label, spec["card"], 0, spec["length"], 1,
-                    spec.get("screen", "Title card placeholder"), spec.get("text", ""))
+                    spec.get("screen", "Title card placeholder"), spec.get("text", ""), *text_layout(spec))
     base = named.get(spec["ref"]) if "ref" in spec else spec
     if base is None:
         sys.exit(f"build-handoff: scene '{label}' uses unknown shot ref '{spec['ref']}'")
     merged = {**base, **{k: v for k, v in spec.items() if k != "ref"}}
     shot = Shot(label, merged["source"], merged["in"], merged["out"], merged.get("speed", 1),
-                merged.get("screen", ""), merged.get("text", ""))
+                merged.get("screen", ""), merged.get("text", ""), *text_layout(merged))
     if shot.end <= shot.start:
         sys.exit(f"build-handoff: scene '{label}': out ({shot.end}) must be after in ({shot.start})")
     return shot
@@ -281,7 +297,7 @@ def write_script(video: Video, folder: Path, total: float, paths: Paths) -> None
         speed = "" if shot.speed == 1 or shot.is_card else f", {shot.speed}x speed"
         out.append(f"    {timecode(clock)}  clip {number:02d}{speed}: {shot.screen}")
         if shot.text:
-            out.append(f"           ON-SCREEN TEXT: {shot.text}")
+            out.append(f"           ON-SCREEN TEXT{shot.text_place}: {shot.text}")
         clock += shot.length
     target = lib.config_path(paths.out, video.script_file, f"videos[{video.key}].script_file", "build-handoff")
     target.write_text("\n".join(out) + "\n")

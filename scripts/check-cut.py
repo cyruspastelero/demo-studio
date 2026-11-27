@@ -336,10 +336,14 @@ def check_overlays(r: Report, cut: Path, plan: dict, save) -> None:
         t = (c["start"] + c["end"]) / 2
         frame = m.grab(cut, t)
         save(f"40-pill{k}", t)
-        box = m.pill_box(frame, pill_y)
-        centre = box[1] + box[3] / 2 if box else None
-        r.check(box is not None and abs(centre - pill_y) <= 3 and abs(box[3] - pill_h) <= 2, "C1-C2",
-                f"pill {k} {c['text']!r} box {box} (bar: centred at y {pill_y:g} +-3, {pill_h:g} +-2 tall)")
+        if c.get("pos"):  # moved in the editor: it no longer sits in the band the bar measures
+            r.add("LOOK", "C1-C2", f"pill {k} {c['text']!r} was moved to {c['pos']}; the bar puts pills "
+                  f"centred under the window, so its place is not measured")
+        else:
+            box = m.pill_box(frame, pill_y)
+            centre = box[1] + box[3] / 2 if box else None
+            r.check(box is not None and abs(centre - pill_y) <= 3 and abs(box[3] - pill_h) <= 2, "C1-C2",
+                    f"pill {k} {c['text']!r} box {box} (bar: centred at y {pill_y:g} +-3, {pill_h:g} +-2 tall)")
         seconds = c["end"] - c["start"]
         clash = [z for z in zooms if c["start"] < z[1] and c["end"] + spec.PILL_EXIT > z[0]]
         r.check(3.0 <= seconds <= 5.0 and not clash, "C8/Z7",

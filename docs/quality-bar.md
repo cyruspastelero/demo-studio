@@ -79,7 +79,7 @@ A finished cut opens directly on a title, with no black frame. It sits on a soft
 
 | # | Property | Bar |
 |---|---|---|
-| C1 | Position | Centred at (960, **962**), in the band between the window bottom (900) and the frame edge |
+| C1 | Position | Centred at (960, **962**), in the band between the window bottom (900) and the frame edge. A pill moved in the editor (`pos`, `caption_pos`) sits where it was put and is reported as LOOK, not measured |
 | C2 | Shape | Height 68 px (measured 928 to 995), radius 999, fill `rgba(255,255,255,0.95)`, shadow `0 14px 40px rgba(60,45,60,0.12), 0 2px 6px rgba(60,45,60,0.06)` |
 | C3 | Person variant ("a sales person callout") | 50 px circular avatar, padding `9px 30px 9px 9px`, gap 14. "Name," in ink `#24272B` (measured `#212123`), role in `#7A8089` (measured `#7A7C80`). Measured size 316x67. |
 | C4 | Statement variant | No avatar, padding `16px 32px`, all text in **the product's brand accent**, darkened in the same hue until it reads on the white pill (≥ 4.5:1); never a fixed red or orange. No `brand.accent`: neutral ink `#171717`. ≤ 6 words. Measured 453x67 for a 28-character line. |

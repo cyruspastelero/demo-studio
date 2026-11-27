@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { refUses, type Edit, type ShotPatch } from '../lib/edits';
 import { spokenSeconds, wordCount, type VoiceoverFit } from '../lib/fit';
 import { isDemoCard } from '../lib/timeline';
-import type { DemoDoc, FileKind, HandoffDoc, Selection, Timeline } from '../lib/types';
+import type { DemoDoc, FileKind, HandoffDoc, Selection, Timeline, TimelineShot } from '../lib/types';
 import { ColorField, NumberField, TextArea, TextField } from './fields';
 
 type Tab = 'selection' | 'video' | 'brand';
@@ -66,10 +66,17 @@ function ShotPanel({ kind, doc, timeline, selection, onEdit, onShotPatch, durati
       {kind === 'handoff'
         ? <TextArea label="Screen (what is on screen, for the script)" value={shot.screen} onCommit={(v) => patch({ screen: v })} />
         : <dl className="kv"><dt>Stem</dt><dd>{shot.screen}</dd></dl>}
-      <TextField label={kind === 'handoff' ? 'On-screen text' : 'Caption'} value={shot.text} onCommit={(v) => patch({ text: v })} testId="shot-text" />
+      <TextField label={kind === 'handoff' ? 'On-screen text' : 'Caption'} value={shot.text} onCommit={(v) => patch({ text: v })} testId="shot-text"
+        hint={textHint(shot)} />
       <ShotActions selection={selection} onEdit={onEdit} />
     </>
   );
+}
+
+// Where the text sits, so a moved text is visible from the inspector too.
+function textHint(shot: TimelineShot): string {
+  const where = shot.textPos ? `Moved to ${Math.round(shot.textPos[0] * 100)}% across, ${Math.round(shot.textPos[1] * 100)}% down. ` : '';
+  return `${where}Drag it on the preview to move it, double-click to edit.`;
 }
 
 function SpeedField({ value, onCommit }: { value: number; onCommit: (v: number) => void }) {

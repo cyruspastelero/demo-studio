@@ -117,7 +117,8 @@
               "start": { "$ref": "#/$defs/seconds" },
               "end": { "$ref": "#/$defs/seconds" },
               "kind": { "enum": ["statement", "person"] },
-              "text": { "$ref": "#/$defs/line" }
+              "text": { "$ref": "#/$defs/line" },
+              "pos": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "type": "number", "minimum": 0, "maximum": 1 } }
             }
           }
         },

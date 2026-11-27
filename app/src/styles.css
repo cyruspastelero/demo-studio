@@ -586,14 +586,43 @@ input[type='range']:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 1.5p
 .stage .card-view img { width: 100%; height: 100%; display: block; }
 .card-title { font-size: 96px; font-weight: 700; letter-spacing: -1.5px; line-height: 1.08; padding: 0 80px; }
 .card-subtitle { font-size: 40px; margin-top: 28px; padding: 0 80px; }
-.stage .onscreen {
-  position: absolute; left: 96px; bottom: 80px; max-width: 70%; padding: 18px 28px; border-radius: 10px;
-  background: rgba(17, 18, 20, 0.82); color: #fff; font-size: 44px; font-weight: 650; letter-spacing: -0.3px;
+/* On-screen text over the stage. The box is drawn in frame px and scaled with the stage (--s is that
+   scale), so the preview keeps the rendered size; outlines and handles divide by --s to stay 1 to 2 px. */
+.text-layer { position: absolute; width: 0; height: 0; z-index: 2; outline: none; }
+.text-box {
+  position: absolute; left: 0; top: 0; width: max-content; transform-origin: 50% 50%; cursor: grab;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; user-select: none; touch-action: none;
 }
-.stage .keynote-caption {
-  position: absolute; left: 0; right: 0; top: 944px; height: 136px; display: grid; place-items: center;
-  color: #1d1d1f; font-size: 48px; font-weight: 650; letter-spacing: -0.5px;
+.text-box:active { cursor: grabbing; }
+.text-box.onscreen {
+  max-width: 1340px; padding: 18px 28px; border-radius: 10px; background: rgba(17, 18, 20, 0.82); color: #fff;
+  font-weight: 650; letter-spacing: -0.3px; line-height: 1.2;
 }
+/* keynote-page.mjs #pill.statement: the render's pill, centred where the render puts it. */
+.text-box.pill {
+  display: flex; align-items: center; height: 68px; box-sizing: border-box; padding: 16px 32px; border-radius: 999px;
+  background: rgba(255, 255, 255, 0.95); color: #171717; font-size: 30px; font-weight: 500; letter-spacing: -0.3px;
+  white-space: nowrap; box-shadow: 0 14px 40px rgba(60, 45, 60, 0.12), 0 2px 6px rgba(60, 45, 60, 0.06);
+}
+@media (hover: hover) { .text-layer:not(.active) .text-box:hover { outline: calc(1px / var(--s)) dashed var(--accent); outline-offset: calc(3px / var(--s)); } }
+.text-layer.active .text-box { outline: calc(2px / var(--s)) solid var(--accent); outline-offset: calc(3px / var(--s)); }
+.text-layer.editing .text-box { cursor: text; user-select: text; }
+.text-edit { display: inline-block; min-width: 1ch; outline: none; caret-color: var(--accent); white-space: pre-wrap; }
+.text-layer:focus-visible .text-box { outline-width: calc(3px / var(--s)); }
+.resize-handle {
+  position: absolute; right: calc(-8px / var(--s)); bottom: calc(-8px / var(--s)); width: calc(12px / var(--s)); height: calc(12px / var(--s));
+  border: calc(2px / var(--s)) solid var(--accent); border-radius: calc(3px / var(--s)); background: #fff; cursor: nwse-resize;
+}
+.text-tools {
+  position: absolute; left: 0; display: flex; align-items: center; gap: 2px; padding: 3px; transform: translate(-50%, -100%);
+  border-radius: var(--radius); background: var(--surface); box-shadow: var(--ring-strong), 0 6px 20px rgb(0 0 0 / 0.08); white-space: nowrap;
+}
+.text-tools .icon-btn { width: 28px; height: 28px; }
+.text-tools .size { min-width: 38px; font-size: 12px; text-align: center; color: var(--muted); }
+.text-tools .sep { width: 1px; height: 16px; margin: 0 3px; background: var(--line); }
+.snap-guide { position: absolute; z-index: 1; pointer-events: none; background: var(--accent); }
+.snap-guide.vertical { width: 1px; }
+.snap-guide.horizontal { height: 1px; }
 .stage .empty-stage { position: absolute; inset: 0; display: grid; place-items: center; background: var(--stage-empty); color: var(--quiet); font: 40px var(--sans); }
 .missing-media { position: absolute; inset: 0; display: grid; place-items: center; padding: 40px; text-align: center; background: var(--stage-empty); color: var(--muted); font: 36px var(--mono); }
 

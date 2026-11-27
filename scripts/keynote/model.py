@@ -55,6 +55,7 @@ class Callout:
     text: str
     role: str = ""
     avatar: str = ""               # image id in the render job, "" for none
+    pos: tuple[float, float] | None = None  # pill centre as frame fractions, None for the bar's spot
 
 
 @dataclass(frozen=True)

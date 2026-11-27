@@ -306,6 +306,10 @@
           "type": "string",
           "description": "Old form: becomes a statement pill at the start of the scene. Prefer callouts."
         },
+        "caption_pos": {
+          "$ref": "#/$defs/framePoint",
+          "description": "Where the caption pill sits. Default: centred under the window."
+        },
         "speed": {
           "type": "number",
           "exclusiveMinimum": 0
@@ -482,6 +486,17 @@
         }
       }
     },
+    "framePoint": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1
+      },
+      "description": "[x, y] centre of the text as fractions of the frame (0 to 1). Set by dragging it in the editor."
+    },
     "callout": {
       "type": "object",
       "required": [
@@ -519,6 +534,10 @@
         "role": {
           "type": "string",
           "description": "Person pills: the role, shown in grey after the name."
+        },
+        "pos": {
+          "$ref": "#/$defs/framePoint",
+          "description": "Where the pill sits. Default: centred under the window."
         },
         "avatar": {
           "$ref": "#/$defs/imagePath",

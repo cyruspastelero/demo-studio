@@ -16,6 +16,8 @@ export interface ShotPatch {
   screen?: string;
   text?: string;
   length?: number;
+  textPos?: [number, number] | null; // null puts the text back in its default spot
+  textSize?: number | null;
 }
 export type BinItem =
   | { kind: 'raw'; file: string; duration: number | null }
@@ -50,6 +52,12 @@ function assign(target: Record<string, unknown>, patch: Record<string, unknown>)
   }
 }
 
+// The fields a patch actually sets. assign() reads undefined as "remove the key", so a patch that
+// only moves the text must not pass the fields it leaves alone.
+function defined(fields: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(fields).filter(([, value]) => value !== undefined));
+}
+
 function checkRange(start: number, end: number) {
   if (!(end - start >= MIN_LENGTH - 1e-9)) throw new EditError('The out point must be after the in point.');
   if (start < 0) throw new EditError('The in point cannot be before the start of the take.');
@@ -79,9 +87,24 @@ function shotOf(scene: SceneSpec, index: number): ShotSpec {
   return shot;
 }
 
+export const TEXT_SIZE = { min: 20, max: 160, default: 44 };
+const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
+const point = (p: [number, number]): [number, number] =>
+  [Math.round(clamp(p[0], 0, 1) * 1000) / 1000, Math.round(clamp(p[1], 0, 1) * 1000) / 1000];
+
+// Where the on-screen text goes: a frame point (clamped, 3 decimals) or '' to clear the key.
+function textFields(patch: ShotPatch, posKey: string, sizeKey?: string): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  if (patch.textPos !== undefined) out[posKey] = patch.textPos === null ? '' : point(patch.textPos);
+  if (sizeKey && patch.textSize !== undefined) {
+    out[sizeKey] = patch.textSize === null ? '' : Math.round(clamp(patch.textSize, TEXT_SIZE.min, TEXT_SIZE.max));
+  }
+  return out;
+}
+
 function patchClipFields(patch: ShotPatch): Record<string, unknown> {
-  const { length: _length, ...rest } = patch;
-  return rest;
+  const { length: _length, textPos: _pos, textSize: _size, ...rest } = patch;
+  return { ...rest, ...textFields(patch, 'text_pos', 'text_size') };
 }
 
 function updateRefShot(doc: HandoffDoc, spec: RefShotSpec, patch: ShotPatch, mode: RefMode) {
@@ -98,7 +121,7 @@ function updateRefShot(doc: HandoffDoc, spec: RefShotSpec, patch: ShotPatch, mod
   // An override equal to the shared value is noise; drop it.
   for (const key of Object.keys(fields) as (keyof ClipSpec)[]) {
     const own = (spec as unknown as Record<string, unknown>)[key];
-    if (own !== undefined && own === base[key]) delete (spec as unknown as Record<string, unknown>)[key];
+    if (own !== undefined && JSON.stringify(own) === JSON.stringify(base[key])) delete (spec as unknown as Record<string, unknown>)[key];
   }
   checkRange(spec.in ?? base.in, spec.out ?? base.out);
 }
@@ -108,7 +131,7 @@ function updateHandoffShot(doc: HandoffDoc, spec: ShotSpec, patch: ShotPatch, mo
     const { length, screen, text } = patch;
     const next = length ?? (patch.out !== undefined ? patch.out - (patch.in ?? 0) : undefined);
     if (next !== undefined && next < MIN_LENGTH) throw new EditError('A card needs some length.');
-    assign(spec as unknown as Record<string, unknown>, { length: next, screen, text });
+    assign(spec as unknown as Record<string, unknown>, defined({ length: next, screen, text, ...textFields(patch, 'text_pos', 'text_size') }));
     if (screen === '') delete (spec as Partial<typeof spec>).screen;
     return;
   }
@@ -258,7 +281,7 @@ function updateDemoItem(item: DemoItem, patch: ShotPatch) {
   if (isDemoCard(item)) {
     const length = patch.length ?? (patch.out !== undefined ? patch.out - (patch.in ?? 0) : undefined);
     if (length !== undefined && length < MIN_LENGTH) throw new EditError('A card needs some length.');
-    assign(item as unknown as Record<string, unknown>, { duration: length, title: patch.screen });
+    assign(item as unknown as Record<string, unknown>, defined({ duration: length, title: patch.screen }));
     if (!item.title) throw new EditError('A card needs a title.');
     return;
   }
@@ -269,7 +292,7 @@ function updateDemoItem(item: DemoItem, patch: ShotPatch) {
     if (end !== null) checkRange(start ?? 0, end);
     item.trim = [start, end];
   }
-  assign(item as unknown as Record<string, unknown>, { speed: patch.speed, caption: patch.text });
+  assign(item as unknown as Record<string, unknown>, defined({ speed: patch.speed, caption: patch.text, ...textFields(patch, 'caption_pos') }));
 }
 
 function demoItemFromBin(doc: DemoDoc, item: BinItem): DemoItem {

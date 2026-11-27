@@ -102,6 +102,18 @@ invalid one. If Claude changes the file while it is open, the editor reloads it,
 version to keep when you have unsaved edits. Editing a shot that uses `{"ref": ...}` asks whether
 to change the shared shot (every video) or only this video.
 
+**Moving and editing text.** On-screen text (`handoff.json`) and caption pills (`demo.json`) sit on
+the preview as boxes you can work with directly. Click one to select it, drag it to move it, and
+double-click it (or press Enter) to type a new line; Enter saves, Esc cancels. While you drag, it
+snaps to the centre lines, the 5% safe margins and its default spot, with an orange guide; hold Alt
+to place it freely. Arrow keys nudge it 1 px (Shift: 10 px). On-screen text also has a corner handle
+and a size control. The small toolbar above a selected box centres it across or down, or puts it back
+in its default spot. Double-click an empty part of the frame to add text to a shot that has none.
+Positions are saved as `text_pos` and `text_size` on the shot, or `caption_pos` (and `pos` on a
+callout) in `demo.json`, as fractions of the frame. The keynote render puts a moved pill exactly
+there; `check-cut.py` lists it as LOOK, because the quality bar wants pills under the window (C1).
+The editor script from `build-handoff.py` gives the place and size next to each line.
+
 **Render** runs `title-cards.mjs`, `build-handoff.py`, `build-keynote.py`, `review-reel.py` or
 `social-cut.py`, one at a time, with a progress bar, the log, the output in a player, and Reveal in
 Finder and Open buttons. Cancel stops the script and everything it started. **Quick preview**
@@ -118,6 +130,9 @@ renders the current video at 960x540 with fast settings, for a faithful check of
 | =, - | Zoom the timeline |
 | 1, 2, 3 | 16:9, 4:5, 9:16 |
 | ? | Show the shortcuts |
+| Enter, Esc | Selected text: edit it, or let go of it |
+| Arrows, Shift+Arrows | Selected text: nudge 1 px or 10 px |
+| Alt while dragging | Place text without snapping |
 
 Limits: the preview has no audio and does not draw the keynote cut's zooms or dissolves; use Quick
 preview or the real render for those. It is tested in Chrome, for the same machine only.

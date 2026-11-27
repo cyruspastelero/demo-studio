@@ -127,8 +127,11 @@ function render(state, images, styles) {
     $('pill').className = pill.variant;
     if (!(pill.variant === 'person' && image($('avatar'), pill.avatar))) show($('avatar'), false);
     words($('pilltext'), pill.words);
+    // A pill moved in the editor carries its centre (x, y in frame px); otherwise the CSS spot holds.
+    const moved = Number.isFinite(pill.x) && Number.isFinite(pill.y);
     Object.assign($('pill').style, { opacity: pill.opacity, filter: pill.blur ? `blur(${pill.blur}px)` : 'none',
-      transform: `translateX(-50%) translateY(${pill.ty}px) scale(${pill.scale})` });
+      left: moved ? `${pill.x}px` : '', top: moved ? `${pill.y}px` : '',
+      transform: `translateX(-50%) translateY(${moved ? 'calc(-50% + ' + pill.ty + 'px)' : pill.ty + 'px'}) scale(${pill.scale})` });
   }
 
   const outro = state.outro;

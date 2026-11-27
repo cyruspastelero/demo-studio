@@ -186,6 +186,12 @@ class Pills(unittest.TestCase):
         self.assertEqual(second[3], spec.PILL_WORD_BLUR)
         self.assertTrue(all(w[1] == "pill" for w in state["words"]))  # brand-derived pill colour
 
+    def test_a_pill_with_a_position_is_centred_there_in_frame_px(self):
+        moved = Callout(0, 4, "statement", "Over here", pos=(0.25, 0.5))
+        state = pill_state(moved, 2)
+        self.assertEqual((state["x"], state["y"]), (480, 540))
+        self.assertNotIn("x", pill_state(self.CALLOUT, 12))
+
     def test_person_pill_has_name_in_ink_and_role_in_grey(self):
         person = Callout(0, 4, "person", "Ana Cruz", "Product lead", "people/ana.png")
         state = pill_state(person, 2)
@@ -385,6 +391,19 @@ class Plans(unittest.TestCase):
         self.assertEqual(plan.runs[0].zooms[0].scale, 1.15)
         self.assertEqual(plan.callouts[0].text, "It works.")
         self.assertTrue(any("old [factor" in w for w in plan.warnings))
+
+    def test_a_moved_caption_or_callout_keeps_its_position(self):
+        moved = json.loads(json.dumps(self.SEQUENCE))
+        moved[1]["callouts"][0]["pos"] = [0.25, 0.1]
+        moved[2]["caption"] = "Moved."
+        moved[2]["caption_pos"] = [0.75, 0.5]
+        moved[2].pop("zooms")
+        moved[2].pop("highlights")
+        plan = self.plan(moved)
+        self.assertEqual([c.pos for c in plan.callouts], [(0.25, 0.1), (0.75, 0.5)])
+
+    def test_unmoved_pills_have_no_position(self):
+        self.assertIsNone(self.plan(self.SEQUENCE).callouts[0].pos)
 
     def test_overlapping_pills_are_refused(self):
         bad = json.loads(json.dumps(self.SEQUENCE))

@@ -131,7 +131,8 @@ def pill_state(callout: Callout, t: float) -> dict | None:
         parts = [(w, "pill") for w in callout.text.split()]  # C4: brand-derived, readable on white
     words = [word_state(w, role, t, callout.start + i * spec.PILL_WORD_STAGGER, spec.PILL_WORD_SECONDS,
                         spec.PILL_WORD_BLUR, spec.PILL_WORD_SHIFT) for i, (w, role) in enumerate(parts)]
-    return {"variant": callout.kind, "avatar": callout.avatar if callout.kind == "person" else "",
+    where = {"x": r(callout.pos[0] * spec.FRAME_W, 1), "y": r(callout.pos[1] * spec.FRAME_H, 1)} if callout.pos else {}
+    return {**where, "variant": callout.kind, "avatar": callout.avatar if callout.kind == "person" else "",
             "opacity": r(e * (1 - x)), "ty": r(spec.PILL_ENTRY_RISE * (1 - e) + spec.PILL_EXIT_DROP * x, 2),
             "scale": r(spec.PILL_ENTRY_SCALE + (1 - spec.PILL_ENTRY_SCALE) * e), "blur": r(spec.PILL_EXIT_BLUR * x, 2),
             "words": words}
