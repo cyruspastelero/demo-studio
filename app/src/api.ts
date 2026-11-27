@@ -9,10 +9,17 @@ export interface FileState {
   errors: string[];
 }
 
+export type CheckStatus = 'PASS' | 'FAIL' | 'LOOK';
+export interface CheckRow { status: CheckStatus; item: string; text: string }
+export interface CheckResult { tool: 'video-gate' | 'check-cut'; rows: CheckRow[] }
+
 export interface OutputFile {
   path: string;
   rel: string | null;
   isDir: boolean;
+  // Present on a finished video once the server has checked it (or tried to).
+  checks?: CheckResult[];
+  note?: string | null;
 }
 
 export interface RenderState {
@@ -23,6 +30,7 @@ export interface RenderState {
   progress: { stage: string; done: number; total: number } | null;
   outputs: string[];
   outputFiles?: OutputFile[];
+  checking?: boolean;
   log: { stream: string; line: string }[];
   error?: string | null;
 }

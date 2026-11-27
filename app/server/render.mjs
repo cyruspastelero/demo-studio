@@ -1,8 +1,12 @@
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { checkCommand, checkTargets, normalizeRows, oneLine } from './checks.mjs';
 
 export const KILL_GRACE_MS = 2000;
+// check-cut.py decodes about 60 frames and the audio; video-gate.py takes a few seconds. Past this a checker is stuck.
+export const CHECK_TIMEOUT_MS = 180000;
 const LOG_LIMIT = 2000;
 const VIDEO_KEY = /^[A-Z][A-Z0-9-]*$/;
 
@@ -51,9 +55,10 @@ export const RENDER_LABELS = {
 
 // One render at a time. Lines are parsed for PROGRESS and OUTPUT and pushed to listeners.
 export class RenderRunner {
-  constructor(emit) {
+  constructor(emit, { checkTimeoutMs = CHECK_TIMEOUT_MS } = {}) {
     this.emit = emit;
     this.job = null;
+    this.checkTimeoutMs = checkTimeoutMs;
   }
 
   state() {
@@ -67,6 +72,13 @@ export class RenderRunner {
     return this.job?.exited ?? Promise.resolve();
   }
 
+  // Every script and checker starts here: argument list, demo folder as cwd, own process group.
+  launch(cmd, args, ctx) {
+    // Templates are looked up in the same demos root the home screen lists them from.
+    const env = ctx.demoRoot ? { ...process.env, DEMO_ROOT: ctx.demoRoot } : process.env;
+    return spawn(cmd, args, { cwd: ctx.folder, detached: true, stdio: ['ignore', 'pipe', 'pipe'], env });
+  }
+
   start(kind, ctx) {
     if (this.job?.status === 'running') throw Object.assign(new Error('a render is already running'), { status: 409 });
     // A cancelled render's ffmpeg may still hold the output file until its group is gone.
@@ -74,12 +86,10 @@ export class RenderRunner {
       throw Object.assign(new Error('the previous render is still stopping'), { status: 409 });
     }
     const [cmd, args] = renderCommand(kind, ctx);
-    // Templates are looked up in the same demos root the home screen lists them from.
-    const env = ctx.demoRoot ? { ...process.env, DEMO_ROOT: ctx.demoRoot } : process.env;
-    const child = spawn(cmd, args, { cwd: ctx.folder, detached: true, stdio: ['ignore', 'pipe', 'pipe'], env });
+    const child = this.launch(cmd, args, ctx);
     this.job = {
       id: Date.now(), kind, label: RENDER_LABELS[kind] + (ctx.video ? ` (${ctx.video})` : ''), status: 'running',
-      progress: null, outputs: [], log: [], startedAt: Date.now(), child, hasExited: false,
+      progress: null, outputs: [], checking: false, checks: {}, log: [], startedAt: Date.now(), child, hasExited: false,
     };
     const job = this.job;
     let markExited;
@@ -105,9 +115,17 @@ export class RenderRunner {
       this.finish(job, 'failed', `could not start ${cmd}: ${error.message}`);
     });
     child.on('close', (code, signal) => {
-      onExit();
-      if (job.status !== 'running') return;
-      this.finish(job, code === 0 ? 'done' : 'failed', code === 0 ? null : `exited with ${signal ?? `code ${code}`}`);
+      job.child = null;
+      if (job.status !== 'running' || code !== 0) {
+        onExit();
+        if (job.status === 'running') this.finish(job, 'failed', `exited with ${signal ?? `code ${code}`}`);
+        return;
+      }
+      // The job stays 'running' while the checks run, so no second render can start.
+      this.runChecks(job, ctx)
+        .catch((error) => this.line(job, `could not check: ${oneLine(error.message)}`, 'err'))
+        .then(() => { if (job.status === 'running') this.finish(job, 'done', null); })
+        .finally(onExit);
     });
     return this.state();
   }
@@ -119,7 +137,7 @@ export class RenderRunner {
     const output = /^OUTPUT (.+)$/.exec(line);
     if (progress) job.progress = { stage: progress[1], done: Number(progress[2]), total: Number(progress[3]) };
     if (output) job.outputs = [...job.outputs, output[1].trim()];
-    this.emit('render-line', { id: job.id, stream, line, progress: job.progress, outputs: job.outputs });
+    this.emit('render-line', { id: job.id, stream, line, progress: job.progress, outputs: job.outputs, checks: job.checks });
   }
 
   finish(job, status, error) {
@@ -129,16 +147,84 @@ export class RenderRunner {
     this.emit('render', this.state());
   }
 
+  // Runs each finished video through the checkers, one process at a time. A checker that fails is
+  // recorded as a note on its output; it never fails the render.
+  async runChecks(job, ctx) {
+    const targets = checkTargets(job.kind, job.outputs, ctx.folder);
+    if (!targets.length) return;
+    job.checking = true;
+    job.checks = {};
+    this.emit('render', this.state());
+    for (const { path, tools } of targets) {
+      const entry = { checks: [], note: null };
+      job.checks = { ...job.checks, [path]: entry };
+      for (const tool of tools) {
+        if (job.status !== 'running') break;
+        try {
+          const rows = await this.runCheck(job, tool, path, ctx);
+          if (rows) entry.checks = [...entry.checks, { tool, rows }];
+        } catch (error) {
+          entry.note = `could not check: ${oneLine(error.message)}`;
+          this.line(job, `${tool}: ${entry.note}`, 'err');
+        }
+      }
+    }
+    job.checking = false;
+    if (job.status === 'running') this.emit('render', this.state());
+  }
+
+  // Resolves with the validated rows, or null when the job was cancelled meanwhile.
+  async runCheck(job, tool, video, ctx) {
+    const dir = mkdtempSync(join(tmpdir(), 'studio-check-'));
+    const json = join(dir, 'rows.json');
+    let timer;
+    try {
+      const [cmd, args] = checkCommand(tool, { repo: ctx.repo, video, json });
+      const child = this.launch(cmd, args, ctx);
+      job.child = child;
+      let errText = '';
+      // A checker that hangs would keep the job running and block the next render.
+      let timedOut = false;
+      timer = setTimeout(() => {
+        timedOut = true;
+        try { process.kill(-child.pid, 'SIGKILL'); } catch { /* group already gone */ }
+      }, this.checkTimeoutMs);
+      timer.unref();
+      child.stdout.resume();
+      child.stderr.setEncoding('utf8').on('data', (chunk) => { errText = (errText + chunk).slice(-2000); });
+      const code = await new Promise((resolvePromise, reject) => {
+        child.on('error', (error) => reject(new Error(`could not start ${cmd}: ${error.message}`)));
+        child.on('close', (exitCode, signal) => resolvePromise(exitCode ?? signal));
+      }).finally(() => { job.child = null; });
+      if (job.status !== 'running') return null;
+      if (timedOut) throw new Error(`${tool} took longer than ${Math.round(this.checkTimeoutMs / 1000)} s and was stopped`);
+      // Exit 1 means a row failed; the rows are still written.
+      if (code !== 0 && code !== 1) {
+        const last = errText.trim().split('\n').pop() ?? '';
+        throw new Error(`${tool} exited with ${code}${last ? `: ${last}` : ''}`);
+      }
+      // A checker that stops early (no plan file, unreadable video) exits 1 too, with its reason on stderr.
+      if (!existsSync(json)) throw new Error(errText.trim().split('\n').pop() || `${tool} wrote no results`);
+      return normalizeRows(JSON.parse(readFileSync(json, 'utf8')));
+    } finally {
+      clearTimeout(timer);
+      rmSync(dir, { recursive: true, force: true });
+    }
+  }
+
   cancel() {
     const job = this.job;
     if (!job || job.status !== 'running') return false;
     job.status = 'cancelled';
-    // The script was started in its own process group, so this reaches ffmpeg and Chrome too.
+    // The process was started in its own process group, so this reaches ffmpeg and Chrome too.
+    // During the checks that process is the running checker; between checkers there is none.
+    const child = job.child;
     const signal = (sig) => {
-      try { process.kill(-job.child.pid, sig); } catch { /* group already gone */ }
+      try { if (child) process.kill(-child.pid, sig); } catch { /* group already gone */ }
     };
     signal('SIGTERM');
     setTimeout(() => signal('SIGKILL'), KILL_GRACE_MS).unref();
+    job.checking = false;
     job.endedAt = Date.now();
     this.emit('render', this.state());
     return true;
