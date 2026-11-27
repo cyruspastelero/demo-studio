@@ -377,6 +377,80 @@ describe('http server', () => {
     for (const tag of html.match(/<script[^>]*>/g)) expect(tag).toMatch(/\ssrc=/);
   });
 
+  function send(method, path, text, headers = {}) {
+    return new Promise((resolvePromise, reject) => {
+      const req = request({ host: '127.0.0.1', port, path, method,
+        headers: { host: `127.0.0.1:${port}`, 'x-studio': '1', 'content-type': 'application/json', ...headers } }, (res) => {
+        let out = '';
+        res.on('data', (c) => { out += c; });
+        res.on('end', () => resolvePromise({ status: res.statusCode, headers: res.headers, body: out }));
+      });
+      req.on('error', reject);
+      req.end(text);
+    });
+  }
+
+  it('refuses a save from a tab whose demo is no longer the open one, and writes nothing', async () => {
+    const before = readFileSync(join(demo, 'handoff.json'), 'utf8');
+    const { files } = JSON.parse((await get('/api/session')).body);
+    const body = JSON.stringify({ data: { ...files.handoff.data, title: 'From an old tab' }, baseHash: files.handoff.hash });
+    for (const headers of [{ 'x-studio-open': 'an-older-open' }, {}]) {
+      const res = await send('PUT', '/api/file/handoff', body, headers);
+      expect(res.status).toBe(412);
+      expect(JSON.parse(res.body).code).toBe('stale-open');
+    }
+    const render = await send('POST', '/api/render', JSON.stringify({ kind: 'handoff' }), { 'x-studio-open': 'an-older-open' });
+    expect(render.status).toBe(412);
+    expect(readFileSync(join(demo, 'handoff.json'), 'utf8')).toBe(before);
+  });
+
+  it('saves from the tab that has the open demo', async () => {
+    const { files, openId } = JSON.parse((await get('/api/session')).body);
+    expect(typeof openId).toBe('string');
+    const body = JSON.stringify({ data: { ...files.handoff.data, title: 'Renamed here' }, baseHash: files.handoff.hash });
+    const res = await send('PUT', '/api/file/handoff', body, { 'x-studio-open': openId });
+    expect(res.status).toBe(200);
+    expect(readDocument(demo, 'handoff').data.title).toBe('Renamed here');
+  });
+
+  it('keeps a tab working when the same demo is opened again in another tab', async () => {
+    const first = JSON.parse((await get('/api/session')).body).openId;
+    const path = join(REPO, 'examples', 'todo-sample');
+    const other = await send('POST', '/api/open', JSON.stringify({ path }));
+    expect(other.status).toBe(200);
+    expect(JSON.parse(other.body).openId).not.toBe(first);
+    const again = await send('POST', '/api/open', JSON.stringify({ path }));
+    expect(JSON.parse(again.body).openId).toBe(JSON.parse(other.body).openId);
+  });
+
+  it('answers an oversized body with a 413 the browser can read', async () => {
+    const res = await send('POST', '/api/open', 'x'.repeat(5 * 1024 * 1024 + 10));
+    expect(res.status).toBe(413);
+    expect(JSON.parse(res.body).error).toBe('request body too large');
+    expect(res.headers.connection).toBe('close');
+  });
+
+  it('rejects a JSON body that is not an object with a 400', async () => {
+    for (const text of ['null', '5', '[]', '"x"']) {
+      const res = await send('POST', '/api/open', text);
+      expect(res.status).toBe(400);
+      expect(JSON.parse(res.body).error).toBe('request body must be a JSON object');
+    }
+  });
+
+  it('answers a thumbnail of a missing file with a 404 that names no path', async () => {
+    const res = await get('/api/thumb?path=recordings/raw/gone.mp4&t=1&w=160');
+    expect(res.status).toBe(404);
+    expect(res.body).not.toContain(dir);
+  });
+
+  it('serves a download whose name is not Latin-1', async () => {
+    writeFileSync(join(demo, 'notes \u2713.json'), '{}');
+    const res = await get(`/media/${encodeURIComponent('notes \u2713.json')}`);
+    expect(res.status).toBe(200);
+    expect(res.headers['content-disposition']).toBe(`attachment; filename="notes _.json"; filename*=UTF-8''${encodeURIComponent('notes \u2713.json')}`);
+  });
+
   it('lists no media from a paths.raw that leaves the demo folder', async () => {
     const outside = mkdtempSync(join(tmpdir(), 'studio-outside-'));
     writeFileSync(join(outside, 'secret.mp4'), 'x');

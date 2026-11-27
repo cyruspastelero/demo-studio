@@ -1,7 +1,8 @@
 // Holds handoff.json and demo.json with undo/redo, autosaves after edits, and reconciles with
 // edits made outside the app (Claude, a text editor).
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ApiError, api, type FileState } from '../api';
+import { ApiError, api, isStaleOpen, type FileState } from '../api';
+import { STATIC_DEMO } from '../lib/static-demo';
 import type { FileKind } from '../lib/types';
 import { commit, type Docs, type History, initHistory, redo as redoStep, undo as undoStep } from './history';
 import { validate } from './validators';
@@ -44,31 +45,34 @@ export function useDocuments(files: Record<FileKind, FileState | null>, notify: 
   });
   const [conflict, setConflict] = useState<Conflict | null>(null);
   const [tick, setTick] = useState(0);
-  const inFlight = useRef<Record<FileKind, boolean>>({ handoff: false, demo: false });
+  // The save under way for each file, so a second caller waits for it instead of reading "failed".
+  const inFlight = useRef<Record<FileKind, Promise<boolean> | null>>({ handoff: null, demo: null });
+  // Another tab opened a different demo: this tab must not write again (see api.ts openId).
+  const [stale, setStale] = useState(false);
+  const staleRef = useRef(false);
 
   const setKindStatus = (kind: FileKind, value: SaveStatus) => setStatus((s) => (s[kind] === value ? s : { ...s, [kind]: value }));
   const setKindErrors = (kind: FileKind, value: string[]) => setErrors((e) => ({ ...e, [kind]: value }));
 
-  // Resolves true when the file on disk matches the editor afterwards.
-  const save = useCallback(async (kind: FileKind): Promise<boolean> => {
-    const data = present.current[kind];
-    if (data === undefined || data === saved.current[kind].data) return true;
-    if (inFlight.current[kind]) return false;
-    const problems = validate(kind, data);
-    setKindErrors(kind, problems);
-    if (problems.length) {
-      setKindStatus(kind, 'invalid');
-      return false;
-    }
-    inFlight.current[kind] = true;
+  // One PUT; resolves true when it was written. Only a success with newer edits waiting asks the
+  // autosave to run again; after a failure it waits for the next edit, so a stopped server is not
+  // retried every 800 ms.
+  const write = useCallback(async (kind: FileKind, data: unknown, keepalive: boolean): Promise<boolean> => {
     setKindStatus(kind, 'saving');
     try {
-      const { hash } = await api.save(kind, data, saved.current[kind].hash);
+      const { hash } = await api.save(kind, data, saved.current[kind].hash, keepalive);
       saved.current = { ...saved.current, [kind]: { data, hash } };
-      setKindStatus(kind, present.current[kind] === data ? 'saved' : 'pending');
-      return present.current[kind] === data;
+      const current = present.current[kind] === data;
+      setKindStatus(kind, current ? 'saved' : 'pending');
+      if (!current) setTick((t) => t + 1);
+      return true;
     } catch (error) {
-      if (error instanceof ApiError && error.status === 409) {
+      if (isStaleOpen(error)) {
+        staleRef.current = true;
+        setStale(true);
+        setStatus({ handoff: 'error', demo: 'error' });
+        notify(`${(error as Error).message} Your last edits here were not saved.`, 'error');
+      } else if (error instanceof ApiError && error.status === 409) {
         let disk: unknown = null;
         try {
           disk = JSON.parse(String(error.body.text));
@@ -83,22 +87,56 @@ export function useDocuments(files: Record<FileKind, FileState | null>, notify: 
         notify(`Could not save ${kind}.json: ${(error as Error).message}`, 'error');
       }
       return false;
-    } finally {
-      inFlight.current[kind] = false;
-      setTick((t) => t + 1);
     }
   }, [notify]);
 
+  // Resolves true when the file on disk matches the editor afterwards. A save already under way is
+  // awaited first, then the file is saved again if it changed meanwhile (not after a failure).
+  const save = useCallback(async (kind: FileKind, keepalive = false): Promise<boolean> => {
+    const running = inFlight.current[kind];
+    if (running) return (await running) && save(kind, keepalive);
+    const data = present.current[kind];
+    if (data === undefined || data === saved.current[kind].data) return true;
+    if (staleRef.current) return false;
+    const problems = validate(kind, data);
+    setKindErrors(kind, problems);
+    if (problems.length) {
+      setKindStatus(kind, 'invalid');
+      return false;
+    }
+    const attempt = write(kind, data, keepalive);
+    inFlight.current[kind] = attempt;
+    try {
+      return (await attempt) && present.current[kind] === data;
+    } finally {
+      inFlight.current[kind] = null;
+    }
+  }, [write]);
+
   // Autosave, debounced, for each file that differs from what is on disk.
   useEffect(() => {
-    if (conflict) return undefined;
+    if (conflict || stale) return undefined;
     const timers = KINDS.filter((k) => history.present[k] !== undefined && history.present[k] !== saved.current[k].data)
       .map((kind) => {
         if (!inFlight.current[kind]) setKindStatus(kind, 'pending');
         return setTimeout(() => save(kind), AUTOSAVE_MS);
       });
     return () => timers.forEach(clearTimeout);
-  }, [history.present, save, tick, conflict]);
+  }, [history.present, save, tick, conflict, stale]);
+
+  // Closing or reloading the tab inside the autosave delay: start the saves (keepalive, so they
+  // outlive the page) and ask the browser to warn, since they may not finish in time.
+  useEffect(() => {
+    if (STATIC_DEMO) return undefined;
+    const onLeave = (event: BeforeUnloadEvent) => {
+      const dirty = KINDS.filter((k) => present.current[k] !== undefined && present.current[k] !== saved.current[k].data);
+      if (!dirty.length || staleRef.current) return;
+      dirty.forEach((kind) => { void save(kind, true); });
+      event.preventDefault();
+    };
+    window.addEventListener('beforeunload', onLeave);
+    return () => window.removeEventListener('beforeunload', onLeave);
+  }, [save]);
 
   const apply = useCallback((kind: FileKind, update: (doc: unknown) => unknown) => {
     setHistory((h) => {
@@ -110,7 +148,9 @@ export function useDocuments(files: Record<FileKind, FileState | null>, notify: 
 
   const replaceFromDisk = useCallback((kind: FileKind, data: unknown, hash: string) => {
     saved.current = { ...saved.current, [kind]: { data, hash } };
-    setHistory((h) => commit(h, { ...h.present, [kind]: data }));
+    // A fresh history: undoing past a reload would put the old version back and autosave it over
+    // the outside edit without asking.
+    setHistory((h) => initHistory({ ...h.present, [kind]: data }));
     setKindErrors(kind, validate(kind, data));
     setKindStatus(kind, 'saved');
   }, []);
@@ -160,5 +200,7 @@ export function useDocuments(files: Record<FileKind, FileState | null>, notify: 
     resolveConflict,
     onOutsideChange,
     saveNow: save,
+    // Read after an await: true once the server said another demo was opened since this tab's.
+    isStale: () => staleRef.current,
   };
 }

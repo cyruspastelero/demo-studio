@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process';
+import { randomUUID } from 'node:crypto';
 import { existsSync, readFileSync, realpathSync, statSync, watch } from 'node:fs';
 import { createServer } from 'node:http';
 import { join, relative, resolve } from 'node:path';
@@ -7,7 +8,7 @@ import { DocumentStore, FILES, readDocument, SaveError } from './documents.mjs';
 import { demoRoot, isDemoFolder, listDemos, templatesRoot, workspace } from './demos.mjs';
 import { demoDir, isPassiveMedia, mediaIndex, sendFile, thumbnail } from './media.mjs';
 import { insideAny, PathError, resolveInside } from './paths.mjs';
-import { RenderRunner } from './render.mjs';
+import { KILL_GRACE_MS, RenderRunner } from './render.mjs';
 import { listTemplates, previewFile } from './templates.mjs';
 import { tryExample } from './try-example.mjs';
 import { adStylePreview, listAdStyles } from './ad-styles.mjs';
@@ -42,23 +43,29 @@ function json(res, status, body) {
   res.end(text);
 }
 
+// An oversized body is read to the end and dropped, so the browser gets the 413 instead of a reset.
 function readBody(req) {
   return new Promise((resolvePromise, reject) => {
     let size = 0;
-    const chunks = [];
+    let chunks = [];
     req.on('data', (chunk) => {
       size += chunk.length;
-      if (size > BODY_LIMIT) {
-        reject(new HttpError(413, 'request body too large'));
-        req.destroy();
-      } else chunks.push(chunk);
+      if (size > BODY_LIMIT) chunks = [];
+      else chunks.push(chunk);
     });
     req.on('end', () => {
+      if (size > BODY_LIMIT) return reject(new HttpError(413, 'request body too large'));
+      let body;
       try {
-        resolvePromise(chunks.length ? JSON.parse(Buffer.concat(chunks).toString('utf8')) : {});
+        body = chunks.length ? JSON.parse(Buffer.concat(chunks).toString('utf8')) : {};
       } catch {
-        reject(new HttpError(400, 'request body is not JSON'));
+        return reject(new HttpError(400, 'request body is not JSON'));
       }
+      // Routes destructure the body, so null, a number or an array must not get that far.
+      if (body === null || typeof body !== 'object' || Array.isArray(body)) {
+        return reject(new HttpError(400, 'request body must be a JSON object'));
+      }
+      return resolvePromise(body);
     });
     req.on('error', reject);
   });
@@ -78,6 +85,9 @@ export function createStudio({ repo, cwd, folder: initialFolder, dev = false, op
   const clients = new Set();
   let folder = null;
   let store = null;
+  // A fresh id per opened demo. Tabs send it back on writes, so a tab still showing an earlier demo
+  // cannot save into, or render, the one another tab opened since.
+  let openId = null;
   let rawWatcher = null;
   let mediaTimer = null;
   let vite = null;
@@ -114,6 +124,9 @@ export function createStudio({ repo, cwd, folder: initialFolder, dev = false, op
     if (!isDemoFolder(dir)) throw new HttpError(400, `${dir} has no handoff.json or demo.json`);
     store?.close();
     rawWatcher?.close();
+    // The same demo opened again (a second tab, a reload from the home screen) keeps its id, so the
+    // first tab is not locked out of its own demo.
+    if (dir !== folder || !openId) openId = randomUUID();
     folder = dir;
     store = new DocumentStore(dir, (doc) => emit('file-changed', doc));
     const handoff = readDocument(dir, 'handoff')?.data;
@@ -133,7 +146,7 @@ export function createStudio({ repo, cwd, folder: initialFolder, dev = false, op
     }));
     const job = runner.state();
     return {
-      mode: 'editor', repo, folder, name: folder.split('/').pop(), files, platform: process.platform,
+      mode: 'editor', repo, folder, openId, name: folder.split('/').pop(), files, platform: process.platform,
       render: job && { ...job, outputFiles: describeOutputs(job.outputs) },
     };
   }
@@ -147,6 +160,16 @@ export function createStudio({ repo, cwd, folder: initialFolder, dev = false, op
 
   const requireFolder = () => {
     if (!folder) throw new HttpError(409, 'no demo folder is open');
+    return folder;
+  };
+
+  // 412 with a code, never 409: the client must not read this as an edit conflict and offer to
+  // overwrite the other demo with this tab's version.
+  const requireOpen = (req) => {
+    requireFolder();
+    if (req.headers['x-studio-open'] !== openId) {
+      throw new HttpError(412, 'Another demo was opened in this studio. Go back to all demos to keep working.', { code: 'stale-open' });
+    }
     return folder;
   };
 
@@ -212,7 +235,7 @@ export function createStudio({ repo, cwd, folder: initialFolder, dev = false, op
     }
     const save = /^PUT \/api\/file\/(handoff|demo)$/.exec(route);
     if (save) {
-      requireFolder();
+      requireOpen(req);
       const { data, baseHash } = await readBody(req);
       return json(res, 200, store.save(save[1], data, baseHash));
     }
@@ -225,14 +248,18 @@ export function createStudio({ repo, cwd, folder: initialFolder, dev = false, op
       return res.end(image);
     }
     if (route === 'POST /api/render') {
+      const dir = requireOpen(req);
       const { kind, video } = await readBody(req);
       try {
-        return json(res, 200, runner.start(kind, { repo, folder: requireFolder(), video, demoRoot: templatesRoot(cwd) ?? undefined }));
+        return json(res, 200, runner.start(kind, { repo, folder: dir, video, demoRoot: templatesRoot(cwd) ?? undefined }));
       } catch (error) {
         throw new HttpError(error.status ?? 400, error.message);
       }
     }
-    if (route === 'POST /api/render/cancel') return json(res, 200, { cancelled: runner.cancel() });
+    if (route === 'POST /api/render/cancel') {
+      requireOpen(req);
+      return json(res, 200, { cancelled: runner.cancel() });
+    }
     if (route === 'POST /api/reveal') {
       const { path, action } = await readBody(req);
       const real = insideAny([requireFolder()], String(path ?? ''));
@@ -316,6 +343,8 @@ export function createStudio({ repo, cwd, folder: initialFolder, dev = false, op
       const status = error instanceof HttpError || error instanceof SaveError || error instanceof PathError
         ? error.status : 500;
       if (status === 500) console.error(`studio: ${req.method} ${req.url} failed:`, error);
+      // The rest of an oversized body was dropped, so this connection is not reused.
+      if (status === 413 && !res.headersSent) res.setHeader('Connection', 'close');
       if (!res.headersSent) json(res, status, { error: error.message, ...(error.extra ?? {}) });
       else res.end();
     });
@@ -352,7 +381,14 @@ export function createStudio({ repo, cwd, folder: initialFolder, dev = false, op
     rawWatcher?.close();
     for (const res of clients) res.end();
     await vite?.close();
-    await new Promise((r) => server.close(r));
+    const closed = new Promise((r) => server.close(r));
+    // Paused <video> range responses keep their sockets open; without this close() waits on them.
+    server.closeAllConnections();
+    // Wait for a cancelled render to exit (it gets SIGKILL after the grace), so it is not orphaned.
+    let timer;
+    await Promise.race([runner.exited(), new Promise((r) => { timer = setTimeout(r, KILL_GRACE_MS + 500); })]);
+    clearTimeout(timer);
+    await closed;
   }
 
   return { server, listen, close };

@@ -2,7 +2,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
-const KILL_GRACE_MS = 2000;
+export const KILL_GRACE_MS = 2000;
 const LOG_LIMIT = 2000;
 const VIDEO_KEY = /^[A-Z][A-Z0-9-]*$/;
 
@@ -58,21 +58,36 @@ export class RenderRunner {
 
   state() {
     if (!this.job) return null;
-    const { child: _child, ...rest } = this.job;
+    const { child: _child, exited: _exited, hasExited: _hasExited, ...rest } = this.job;
     return rest;
+  }
+
+  // Resolves once the current render's process has exited (at once when there is none).
+  exited() {
+    return this.job?.exited ?? Promise.resolve();
   }
 
   start(kind, ctx) {
     if (this.job?.status === 'running') throw Object.assign(new Error('a render is already running'), { status: 409 });
+    // A cancelled render's ffmpeg may still hold the output file until its group is gone.
+    if (this.job && !this.job.hasExited) {
+      throw Object.assign(new Error('the previous render is still stopping'), { status: 409 });
+    }
     const [cmd, args] = renderCommand(kind, ctx);
     // Templates are looked up in the same demos root the home screen lists them from.
     const env = ctx.demoRoot ? { ...process.env, DEMO_ROOT: ctx.demoRoot } : process.env;
     const child = spawn(cmd, args, { cwd: ctx.folder, detached: true, stdio: ['ignore', 'pipe', 'pipe'], env });
     this.job = {
       id: Date.now(), kind, label: RENDER_LABELS[kind] + (ctx.video ? ` (${ctx.video})` : ''), status: 'running',
-      progress: null, outputs: [], log: [], startedAt: Date.now(), child,
+      progress: null, outputs: [], log: [], startedAt: Date.now(), child, hasExited: false,
     };
     const job = this.job;
+    let markExited;
+    job.exited = new Promise((resolvePromise) => { markExited = resolvePromise; });
+    const onExit = () => {
+      job.hasExited = true;
+      markExited();
+    };
     this.emit('render', this.state());
     const onData = (stream) => {
       let buffer = '';
@@ -85,8 +100,12 @@ export class RenderRunner {
     };
     child.stdout.setEncoding('utf8').on('data', onData('out'));
     child.stderr.setEncoding('utf8').on('data', onData('err'));
-    child.on('error', (error) => this.finish(job, 'failed', `could not start ${cmd}: ${error.message}`));
+    child.on('error', (error) => {
+      onExit();
+      this.finish(job, 'failed', `could not start ${cmd}: ${error.message}`);
+    });
     child.on('close', (code, signal) => {
+      onExit();
       if (job.status !== 'running') return;
       this.finish(job, code === 0 ? 'done' : 'failed', code === 0 ? null : `exited with ${signal ?? `code ${code}`}`);
     });

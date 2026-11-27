@@ -53,6 +53,12 @@ function stream(res, file, options) {
   source.pipe(res);
 }
 
+// A header may hold Latin-1 only: an ASCII stand-in for old clients, the real name as filename*.
+function attachment(name) {
+  const ascii = name.replace(/[^\x20-\x7e]/g, '_').replace(/["\\]/g, '');
+  return `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(name).replace(/['()*]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`)}`;
+}
+
 // Only regular files are served. A folder (EISDIR), socket or missing path is a 404; any page in
 // the browser can point an <img> at 127.0.0.1, so this path must never throw.
 export function sendFile(req, res, file, { untrusted = false } = {}) {
@@ -70,7 +76,7 @@ export function sendFile(req, res, file, { untrusted = false } = {}) {
   let headers = { 'Content-Type': type, 'Accept-Ranges': 'bytes', 'Cache-Control': 'no-cache' };
   if (untrusted) {
     headers = { ...headers, ...MEDIA_HEADERS };
-    if (!passive) headers = { ...headers, 'Content-Disposition': `attachment; filename="${basename(file).replace(/"/g, '')}"` };
+    if (!passive) headers = { ...headers, 'Content-Disposition': attachment(basename(file)) };
   }
   if (!range) {
     res.writeHead(200, { ...headers, 'Content-Length': size });
@@ -136,7 +142,15 @@ function pump() {
 }
 
 export function thumbnail(file, seconds, width) {
-  const key = `${file}:${statSync(file).mtimeMs}:${seconds.toFixed(2)}:${width}`;
+  let stat;
+  try {
+    stat = statSync(file);
+  } catch (error) {
+    // The error text holds the absolute path; the page only needs to know it is gone.
+    if (error.code === 'ENOENT') return Promise.reject(Object.assign(new PathError(`not found: ${basename(file)}`), { status: 404 }));
+    throw error;
+  }
+  const key = `${file}:${stat.mtimeMs}:${seconds.toFixed(2)}:${width}`;
   if (thumbs.has(key)) return thumbs.get(key);
   const promise = new Promise((resolvePromise, reject) => {
     // A still image (a folder's preview.jpg) has no time to seek to: -ss would give no frame at all.

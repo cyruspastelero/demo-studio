@@ -131,6 +131,8 @@ export function Editor({ session, onClose }: {
 
   const startRender = async (kind: string) => {
     const ok = (await Promise.all(fileTabs.map((k) => docs.saveNow(k)))).every(Boolean);
+    // A tab left on an older demo was already told why nothing saves; rendering would fail too.
+    if (docs.isStale()) return;
     if (!ok) {
       notify('Save the changes first: fix the errors shown in the inspector.', 'error');
       return;
@@ -142,6 +144,16 @@ export function Editor({ session, onClose }: {
     } catch (error) {
       notify((error as Error).message, 'error');
     }
+  };
+
+  // Leaving within the autosave delay would drop the last edit: save first, stay if that fails.
+  const close = async () => {
+    const ok = (await Promise.all(KINDS.map((k) => docs.saveNow(k)))).every(Boolean);
+    if (!ok && !docs.isStale()) {
+      notify('Your last changes could not be saved, so the editor stays open. Fix the problem shown, then try again.', 'error');
+      return;
+    }
+    onClose();
   };
 
   const splitAtPlayhead = () => {
@@ -241,7 +253,7 @@ export function Editor({ session, onClose }: {
       <div className="editor-narrow" role="note" data-testid="editor-narrow">
         <p className="editor-narrow-title">The editor needs a wider window</p>
         <p>Make the window at least 768 px wide, or open it on a laptop or desktop. Your changes are saved.</p>
-        <button className="btn" onClick={onClose}>Back to all demos</button>
+        <button className="btn" onClick={close}>Back to all demos</button>
       </div>
       <TopBar
         name={session.name} fileTabs={fileTabs} fileKind={fileKind}
@@ -252,7 +264,7 @@ export function Editor({ session, onClose }: {
         canUndo={docs.canUndo} canRedo={docs.canRedo} onUndo={docs.undo} onRedo={docs.redo}
         saveStatus={docs.status[fileKind]} onShortcuts={() => setHelp(true)}
         options={renderOptions(has, videoKey ?? '')} rendering={job?.status === 'running'}
-        onRender={startRender} onShowRender={() => setDrawer(true)} onClose={onClose}
+        onRender={startRender} onShowRender={() => setDrawer(true)} onClose={close}
       />
       <MediaBin kind={fileKind} doc={doc} media={media} viewing={source?.take.file ?? null}
         onSelectCard={(name) => setSelection({ type: 'card', name })} onViewTake={viewTake} onOpenTake={openTakeExternally} />

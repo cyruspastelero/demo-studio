@@ -65,7 +65,7 @@ export type HomeSession = { mode: 'picker'; repo: string; demos: DemoEntry[]; wo
 export type Session =
   | HomeSession
   | {
-    mode: 'editor'; repo: string; folder: string; name: string; platform: string;
+    mode: 'editor'; repo: string; folder: string; openId?: string; name: string; platform: string;
     files: Record<FileKind, FileState | null>; render: RenderState | null;
   };
 
@@ -86,15 +86,26 @@ export class ApiError extends Error {
   }
 }
 
-async function call<T>(method: string, path: string, body?: unknown): Promise<T> {
+// The id of the demo this tab opened. The server refuses saves and renders that carry an older one,
+// so a tab left on one demo cannot write into another demo opened since in a second tab.
+let openId: string | null = null;
+const KEEPALIVE_LIMIT = 60 * 1024;
+
+// The server's answer when another demo was opened since this tab opened its own.
+export const isStaleOpen = (error: unknown): boolean =>
+  error instanceof ApiError && error.status === 412 && error.body.code === 'stale-open';
+
+async function call<T>(method: string, path: string, body?: unknown, keepalive = false): Promise<T> {
   if (STATIC_DEMO) return staticCall<T>(method, path);
-  const res = await fetch(path, {
-    method,
-    headers: body === undefined ? { 'x-studio': '1' } : { 'content-type': 'application/json', 'x-studio': '1' },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
+  const headers: Record<string, string> = body === undefined ? { 'x-studio': '1' } : { 'content-type': 'application/json', 'x-studio': '1' };
+  if (openId) headers['x-studio-open'] = openId;
+  const text = body === undefined ? undefined : JSON.stringify(body);
+  // Browsers refuse a keepalive request over 64 KB, so a bigger body goes as a normal request.
+  const small = text === undefined || new TextEncoder().encode(text).length < KEEPALIVE_LIMIT;
+  const res = await fetch(path, { method, headers, body: text, keepalive: keepalive && small });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new ApiError(data.error ?? `${method} ${path} failed (${res.status})`, res.status, data);
+  if (data?.mode === 'editor' && typeof data.openId === 'string') openId = data.openId;
   return data as T;
 }
 
@@ -129,8 +140,9 @@ export const api = {
   tryExample: (path: string) => call<Session>('POST', STATIC_DEMO ? '/api/open' : '/api/try-example', { path }),
   media: () => call<MediaIndex>('GET', '/api/media'),
   fonts: () => call<FontInfo[]>('GET', '/api/fonts'),
-  save: (kind: FileKind, data: unknown, baseHash: string | null) =>
-    call<{ hash: string }>('PUT', `/api/file/${kind}`, { data, baseHash }),
+  // keepalive lets a save started as the tab closes finish after the page is gone.
+  save: (kind: FileKind, data: unknown, baseHash: string | null, keepalive = false) =>
+    call<{ hash: string }>('PUT', `/api/file/${kind}`, { data, baseHash }, keepalive),
   render: (kind: string, video?: string) => call<RenderState>('POST', '/api/render', { kind, video }),
   cancel: () => call<{ cancelled: boolean }>('POST', '/api/render/cancel', {}),
   reveal: (path: string, action: 'reveal' | 'open') => call('POST', '/api/reveal', { path, action }),
