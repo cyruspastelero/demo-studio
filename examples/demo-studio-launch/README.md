@@ -49,7 +49,7 @@ make your own bed and voice as below.
    licensed track), then build and narrate:
    ```bash
    python3 -I "$P/scripts/build-keynote.py" demo.json
-   python3 -I "$P/scripts/narrate.py" demo.json            # ElevenLabs voice from demo.json, else macOS say
+   python3 -I "$P/scripts/narrate.py" demo.json            # your voiceover files, else macOS say; add --voice elevenlabs for ElevenLabs
    python3 -I "$P/scripts/check-cut.py" recordings/exports/made-with-demo-studio-keynote-cut-narrated.mp4
    ```
 

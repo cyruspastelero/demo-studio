@@ -55,7 +55,7 @@ detail each planning document needs, then write your own from the templates `new
 | [`demo.json`](plan/demo.json) | The keynote cut: cards, trims, speeds, two hero zooms, captions, voiceover lines and a `voice` block |
 
 The `voice` block leaves `provider` unset, so the narrate step picks your own recordings, then
-ElevenLabs if `ELEVENLABS_API_KEY` is set in your shell, then macOS `say`. It names a music bed at
+macOS `say`. It uses ElevenLabs only if you pass `--voice elevenlabs`. It names a music bed at
 `assets/bed.mp3`: add your own file there or delete the `music` line.
 
 ## Adding a sample

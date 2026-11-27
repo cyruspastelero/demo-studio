@@ -33,7 +33,7 @@ cp -R "$P/examples/todo-sample" demos/todo-sample && cd demos/todo-sample/record
 mkdir -p raw frames exports && head -1 takes.csv > t && mv t takes.csv   # start a fresh take log
 command rm -f raw/*.mp4                                     # and drop the shipped takes
 export PLAYWRIGHT_MCP_OUT="<the folder Claude Code started in>/.playwright-mcp"
-node "$P/scripts/frame-receiver.mjs" .                      # leave running
+node "$P/scripts/frame-receiver.mjs" . &                    # runs in the background
 bash "$P/scripts/mk-setup.sh" https://todomvc.com/examples/react/dist/
 bash "$P/scripts/mk-scene.sh" 01-add-todos                  # then 02 and 03
 ```

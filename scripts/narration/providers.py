@@ -25,7 +25,12 @@ def has_voice_files(folder: Path) -> bool:
 
 def select_provider(requested: str | None, configured: str | None, has_key: bool,
                     has_say: bool, has_files: bool) -> str:
-    """--voice wins, then voice.provider, then files > elevenlabs (key set) > say (macOS)."""
+    """--voice wins, then voice.provider, then files > elevenlabs (key set) > say (macOS).
+
+    The caller passes has_key=False unless the user allowed ElevenLabs (--voice elevenlabs or
+    DEMO_STUDIO_ALLOW_CONFIG_VOICE=1), so a key in the environment alone never reaches the
+    elevenlabs step here.
+    """
     choice = requested or configured
     if choice == "say" and not has_say:
         raise NarrateError("provider 'say' needs macOS (the `say` command was not found). Use another voice:",

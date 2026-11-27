@@ -143,8 +143,8 @@ The frame shows the product and nothing else.
   The fit check says when a line runs long. Cut words or slow the footage; never speed up the voice.
 - **Shape:** open with the everyday pain, signpost each part ("First, set it up."), end with the
   payoff and where to get it.
-- **Voice choice:** the user's own recordings if they made them, else ElevenLabs if
-  `ELEVENLABS_API_KEY` is set in their shell, else macOS `say`. Full rules in `voiceover.md`; the
+- **Voice choice:** the user's own recordings if they made them, else macOS `say`.
+  ElevenLabs only when the user asks for it (`--voice elevenlabs`); a key in their shell is not enough. Full rules in `voiceover.md`; the
   narrate step is in the `demo-edit` skill.
 
 ## 12. Music and loudness (bar 2.12)

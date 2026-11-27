@@ -47,8 +47,9 @@ voice comes from:
 | ElevenLabs API key | `export ELEVENLABS_API_KEY=...` in your shell, or keep the key in the macOS Keychain and `export ELEVENLABS_KEYCHAIN_SERVICE=<item name>` |
 | macOS `say` | Free, used when nothing else is set up |
 
-With no `--voice`, narrate.py uses your files when `voiceover/` has them, else ElevenLabs when it
-finds a key, else `say`. Never paste a key into chat, a file or a commit. Higgsfield has no
+With no `--voice`, narrate.py uses your files when `voiceover/` has them, else `say`. It uses
+ElevenLabs only when you pass `--voice elevenlabs` or set `DEMO_STUDIO_ALLOW_CONFIG_VOICE=1`; a key in
+the environment or `voice.provider` in demo.json alone is not enough, and it prints a notice. Never paste a key into chat, a file or a commit. Higgsfield has no
 documented text to speech API, so it is MCP only. Commands and fixes: skill `demo-edit`, Step 3.
 
 For the MCP route, keep one voice for every line and remake a line's file after changing its text.

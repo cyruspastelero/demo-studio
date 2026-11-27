@@ -86,8 +86,10 @@ Update the demo README **Status** and the index row in `README.md` at the end of
 
 **Narration voice** (first match wins; the plugin's `narrate.py` picks the same way)
 - The person's own recordings in the demo's `voiceover/01.wav`, `02.wav`...
-- ElevenLabs, when `ELEVENLABS_API_KEY` is set in the shell. Never ask for the key in chat or write it in a file.
 - macOS `say` (free). Otherwise ask the person to record their own lines.
+- ElevenLabs only when the person asks for it: `--voice elevenlabs`, or `DEMO_STUDIO_ALLOW_CONFIG_VOICE=1`
+  to let demo.json choose. A key in the shell or `voice.provider` alone is not enough, because a shared
+  demo must not spend their credits. Never ask for the key in chat or write it in a file.
 
 **Secrets**
 - Sandbox or test accounts only. Mask in the page while recording, never in post. One unmasked frame is a leak.
