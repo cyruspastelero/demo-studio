@@ -110,6 +110,13 @@ describe('demo.json timeline', () => {
     // A one-item sequence has no end card (build_plan's index > 0).
     expect(buildDemoTimeline({ title: 'T', sequence: [{ card: 'only', title: 'Only' }] }).total).toBe(2.4);
   });
+
+  it('shows the first callout\'s text, position and font on a scene with callouts, like the keynote render', () => {
+    const doc: DemoDoc = { title: 'T', sequence: [{ scene: '01', stem: '01-x', take: 1, caption: 'Ignored',
+      callouts: [{ at: 0.5, dur: 3, text: 'First pill', pos: [0.4, 0.7], font: 'geist' }, { at: 4, text: 'Second' }] }] };
+    const [shot] = buildDemoTimeline(doc).shots;
+    expect(shot).toMatchObject({ text: 'First pill', textPos: [0.4, 0.7], textFont: 'geist' });
+  });
 });
 
 describe('voiceover fit', () => {

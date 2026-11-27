@@ -305,7 +305,25 @@ function updateDemoItem(item: DemoItem, patch: ShotPatch, outro = 0) {
     if (end !== null) checkRange(start ?? 0, end);
     item.trim = [start, end];
   }
+  if (item.callouts?.length) {
+    assign(item as unknown as Record<string, unknown>, defined({ speed: patch.speed }));
+    updateFirstCallout(item, patch);
+    return;
+  }
   assign(item as unknown as Record<string, unknown>, defined({ speed: patch.speed, caption: patch.text, ...textFields(patch, 'caption_pos', undefined, 'caption_font') }));
+}
+
+// The render draws callouts instead of caption, so the pill text lives on the first callout. A
+// callout needs text: clearing it removes the callout, and the key with the last one (an empty
+// array means no pill to the render).
+function updateFirstCallout(item: DemoSceneItem, patch: ShotPatch) {
+  const callouts = item.callouts ?? [];
+  if (patch.text === '') {
+    callouts.shift();
+    if (!callouts.length) delete item.callouts;
+    return;
+  }
+  assign(callouts[0] as unknown as Record<string, unknown>, defined({ text: patch.text, ...textFields(patch, 'pos', undefined, 'font') }));
 }
 
 function demoItemFromBin(doc: DemoDoc, item: BinItem): DemoItem {

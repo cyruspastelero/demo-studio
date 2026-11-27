@@ -127,10 +127,14 @@ export function buildDemoTimeline(doc: DemoDoc, media?: MediaIndex): Timeline {
       const end = trimOut ?? info?.duration ?? start + 1;
       const speed = item.speed ?? 1;
       name = `${item.scene} ${item.stem.replace(/^\d+[a-z]?-/, '')}`;
+      // scripts/keynote/timeline.py _callouts: callouts win over caption; the editor shows the first.
+      const pill = item.callouts?.length
+        ? { text: item.callouts[0].text, pos: item.callouts[0].pos, font: item.callouts[0].font }
+        : { text: item.caption, pos: item.caption_pos, font: item.caption_font };
       shot = {
         id, sceneIndex, shotIndex: 0, kind: 'clip', file, mediaPath: info?.path ?? `${DEFAULT_RAW_DIR}/${file}`,
         in: start, out: end, speed, length: shotLength(start, end, speed), start: clock,
-        screen: item.stem, text: item.caption ?? '', textPos: item.caption_pos, textFont: item.caption_font,
+        screen: item.stem, text: pill.text ?? '', textPos: pill.pos, textFont: pill.font,
       };
     }
     clock += shot.length;

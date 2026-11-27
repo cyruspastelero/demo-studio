@@ -101,6 +101,17 @@ export interface DemoCardItem {
   outro?: number;
   voiceover?: string;
 }
+// A timed pill on a scene. The render draws callouts instead of caption when the key is present.
+export interface DemoCallout {
+  at: number;
+  text: string;
+  dur?: number;
+  kind?: 'person' | 'statement';
+  role?: string;
+  avatar?: string;
+  pos?: [number, number];
+  font?: string;
+}
 export interface DemoSceneItem {
   scene: string;
   stem: string;
@@ -108,6 +119,7 @@ export interface DemoSceneItem {
   caption?: string;
   caption_pos?: [number, number];
   caption_font?: string;
+  callouts?: DemoCallout[];
   speed?: number;
   trim?: [number | null, number | null];
   zoom?: number[];

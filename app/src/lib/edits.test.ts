@@ -9,6 +9,7 @@ import type { ClipSpec, DemoCardItem, DemoDoc, DemoSceneItem, HandoffDoc, RefSho
 
 const handoff = () => JSON.parse(readFileSync(join(REPO, 'examples/acme-invoice-bot/handoff.json'), 'utf8')) as HandoffDoc;
 const demo = () => JSON.parse(readFileSync(join(REPO, 'examples/acme-invoice-bot/demo.json'), 'utf8')) as DemoDoc;
+const todo = () => JSON.parse(readFileSync(join(REPO, 'examples/todo-sample/demo.json'), 'utf8')) as DemoDoc;
 
 describe('handoff edits', () => {
   it('trims a clip without touching the input and keeps _ keys and key order', () => {
@@ -183,6 +184,42 @@ describe('demo.json edits', () => {
     expect(validate('demo', next)).toEqual([]);
     const reset = applyDemoEdit(next, { op: 'shot', scene: 1, shot: 0, patch: { textPos: null } });
     expect('caption_pos' in reset.sequence[1]).toBe(false);
+  });
+
+  it('edits the first callout\'s text, position and font on an item with callouts, adding no caption', () => {
+    const doc = todo();
+    const item = doc.sequence[1] as DemoSceneItem;
+    const two = { ...item, callouts: [...(item.callouts ?? []), { at: 5, dur: 3, text: 'Second pill' }] };
+    doc.sequence[1] = two;
+    const next = applyDemoEdit(doc, { op: 'shot', scene: 1, shot: 0, patch: { text: 'New pill', textPos: [0.5, 0.3], textFont: 'geist' } });
+    const edited = next.sequence[1] as DemoSceneItem;
+    expect(edited).toEqual({ ...two, callouts: [{ ...two.callouts[0], text: 'New pill', pos: [0.5, 0.3], font: 'geist' }, two.callouts[1]] });
+    expect(Object.keys(edited).some((k) => k.startsWith('caption'))).toBe(false);
+    expect(validate('demo', next)).toEqual([]);
+    const reset = applyDemoEdit(next, { op: 'shot', scene: 1, shot: 0, patch: { textPos: null, textFont: null } });
+    expect((reset.sequence[1] as DemoSceneItem).callouts?.[0]).toEqual({ ...two.callouts[0], text: 'New pill' });
+  });
+
+  it('removes the first callout when its text is cleared, and drops callouts when it was the only one', () => {
+    const doc = todo();
+    const item = doc.sequence[1] as DemoSceneItem;
+    const next = applyDemoEdit(doc, { op: 'shot', scene: 1, shot: 0, patch: { text: '' } });
+    const { callouts: _callouts, ...rest } = item;
+    expect(next.sequence[1]).toEqual(rest);
+    expect(validate('demo', next)).toEqual([]);
+    const second = { at: 5, text: 'Second pill' };
+    doc.sequence[1] = { ...item, callouts: [...(item.callouts ?? []), second] };
+    const kept = applyDemoEdit(doc, { op: 'shot', scene: 1, shot: 0, patch: { text: '' } });
+    expect((kept.sequence[1] as DemoSceneItem).callouts).toEqual([second]);
+  });
+
+  it('still writes caption and caption_pos on an item without callouts', () => {
+    const doc = demo();
+    const item = doc.sequence[1] as DemoSceneItem;
+    expect(item.callouts).toBeUndefined();
+    const next = applyDemoEdit(doc, { op: 'shot', scene: 1, shot: 0, patch: { text: 'Plain caption', textPos: [0.5, 0.3] } });
+    expect(next.sequence[1]).toEqual({ ...item, caption: 'Plain caption', caption_pos: [0.5, 0.3] });
+    expect(validate('demo', next)).toEqual([]);
   });
 
   it('splits a scene item, giving the second half a new scene id', () => {
