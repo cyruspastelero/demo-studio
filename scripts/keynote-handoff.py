@@ -91,19 +91,32 @@ def cut_segment(demo, final, start, seconds, dest):
              "-movflags", "+faststart", dest])
 
 
+def when(at):
+    """A cue's time for the notes: seconds, or the spoken word it lands on (placed by an estimate)."""
+    if not isinstance(at, dict):
+        return f"at {at}s"
+    text = f"on the word '{at['word']}'"
+    if at.get("nth", 1) > 1:
+        text += f" (occurrence {at['nth']})"
+    if at.get("offset"):
+        text += f", {at['offset']:+g}s"
+    return text + ", estimated"
+
+
 def motion_note(item):
     zooms = item.get("zooms") or []
-    parts = [f"zoom 1.15x at {z['at']}s onto ({z['focus'][0]}, {z['focus'][1]}), held {z.get('dur', 3.0)}s"
+    parts = [f"zoom 1.15x {when(z['at'])} onto ({z['focus'][0]}, {z['focus'][1]}), held {z.get('dur', 3.0)}s"
              for z in zooms]
     legacy = item.get("zoom")
     if legacy and not zooms:
         parts.append(f"zoom 1.15x from {legacy[3]}s onto ({legacy[1]}, {legacy[2]})")
-    parts += [f"highlight box on {h['rect']}" for h in item.get("highlights", [])]
+    parts += [f"highlight box on {h['rect']}" + (f" {when(h['at'])}" if isinstance(h.get("at"), dict) else "")
+              for h in item.get("highlights", [])]
     return "; ".join(parts) or "none (window at rest)"
 
 
 def callout_note(item):
-    pills = [f"{c.get('kind', 'statement')} \"{c['text']}{', ' + c['role'] if c.get('role') else ''}\" at {c['at']}s"
+    pills = [f"{c.get('kind', 'statement')} \"{c['text']}{', ' + c['role'] if c.get('role') else ''}\" {when(c['at'])}"
              for c in item.get("callouts", [])]
     if not pills and item.get("caption"):
         pills = [f"statement \"{item['caption']}\""]

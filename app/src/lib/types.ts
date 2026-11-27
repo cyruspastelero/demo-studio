@@ -101,9 +101,15 @@ export interface DemoCardItem {
   outro?: number;
   voiceover?: string;
 }
+// A cue placed on a spoken word of the scene's voiceover; the build turns it into seconds.
+export interface WordCue {
+  word: string;
+  nth?: number;
+  offset?: number;
+}
 // A timed pill on a scene. The render draws callouts instead of caption when the key is present.
 export interface DemoCallout {
-  at: number;
+  at: number | WordCue;
   text: string;
   dur?: number;
   kind?: 'person' | 'statement';

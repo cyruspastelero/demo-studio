@@ -122,6 +122,22 @@
             }
           }
         },
+        "word_cues": {
+          "type": "array", "maxItems": 500,
+          "items": {
+            "type": "object", "required": ["where", "word", "nth", "at", "line_seconds", "source"],
+            "additionalProperties": false,
+            "properties": {
+              "where": { "$ref": "#/$defs/line" },
+              "word": { "$ref": "#/$defs/line" },
+              "nth": { "type": "integer", "minimum": 1, "maximum": 50 },
+              "at": { "$ref": "#/$defs/seconds" },
+              "line": { "type": "integer", "minimum": 1, "maximum": 1000 },
+              "line_seconds": { "$ref": "#/$defs/seconds" },
+              "source": { "$ref": "#/$defs/line" }
+            }
+          }
+        },
         "highlights": {
           "type": "array", "maxItems": 500,
           "items": {

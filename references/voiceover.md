@@ -71,6 +71,16 @@ on the key moment,
 fades it out (silent for the last 3 s of an outro) and brings the mix to -14 LUFS with true peak
 under -1 dBTP. No vocals, and only music you have the rights to.
 
+## Landing a cue on a spoken word
+
+A zoom, callout or highlight can start on a word of its own scene's line instead of a number of
+seconds: `"at": {"word": "invite"}`. Add `"nth": 2` when the word is said more than once (without
+it the first is used and the build warns), and `"offset": -0.2` to start a little before the word.
+`at` is when a zoom starts, and a zoom takes 1.1 s to land, so to have it arrive on the word use an `offset` of about `-1.1`. Callouts and highlights appear at `at`, so they need no offset. One word only, and it must be in that scene's `voiceover`. The build turns it into seconds from the
+line's length, so the position is an estimate: expect it to be off by roughly 0.1 to 0.3 s on a
+three-second line. Rewriting a line, or changing the voice, moves the cue, so rebuild the cut
+afterwards; narrate.py warns when a line's length no longer matches the one the cut was built with.
+
 ## Promo vs how-to
 
 - **Promo (about 1:30):** the story only. One idea per scene, about 8 to 12 lines in total.

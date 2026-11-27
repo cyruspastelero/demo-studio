@@ -41,7 +41,7 @@ from keynote.motion import highlight_warnings  # noqa: E402
 from keynote.overlay import OverlayTimeline, pill_state, title_card_state  # noqa: E402
 from keynote.render import Renderer, RenderError, check_fonts, image_uri, window_statics  # noqa: E402
 from keynote.timeline import build_plan  # noqa: E402
-from keynote.voice_sync import sync_end_card  # noqa: E402
+from keynote.voice_sync import measure_line, sync_end_card  # noqa: E402
 from keynote.window import run_frames  # noqa: E402
 
 TOOL = "build-keynote"
@@ -197,6 +197,7 @@ def write_sidecars(final: Path, cfg: dict, plan, fonts: list[str], brand, look_i
                              **({"pos": list(c.pos)} if c.pos else {})}
                             for c in plan.callouts],
                "highlights": highlight_sidecar(plan, final.parent),
+               "word_cues": list(plan.word_cues),
                "brand": {"accent": brand.accent, "sweep": list(brand.sweep), "highlight": brand.highlight,
                          "pill": brand.pill_text},
                "fonts": fonts, "warnings": list(plan.warnings), **look_info}
@@ -227,8 +228,8 @@ def main() -> None:
     template_id, look, brand_cfg = resolve_look(cfg, demo_dir)
     try:
         brand = load_brand(brand_cfg)
-        plan = build_plan(cfg, rec / "raw", probe)
-    except PlanError as error:
+        plan = build_plan(cfg, rec / "raw", probe, lambda text, number: measure_line(demo_dir, cfg, text, number))
+    except (PlanError, lib.UnsafePath) as error:
         fail(f"{error}\nFix {cfg_path.name}, then run: python3 -I {Path(__file__).resolve()} {args.config}")
     extra = list(highlight_warnings(plan))
     if look["transitions"]["cut"] != "inside-window":
@@ -237,6 +238,9 @@ def main() -> None:
     if look["end"]["kind"] == "none" and plan.cards and plan.cards[-1].kind == "end":
         extra.append("template end.kind is \"none\" but demo.json ends on an end card; drop it or keep it on purpose")
     plan = dataclasses.replace(plan, warnings=plan.warnings + tuple(extra))
+    for cue in plan.word_cues:
+        print(f"word cue {cue['where']}: '{cue['word']}' at {cue['at']:.2f}s into the scene (estimated: line "
+              f"{cue['line']} is {cue['line_seconds']:.2f}s, from {cue['source']})", flush=True)
     for warning in plan.warnings:
         print(f"WARN {warning}", flush=True)
     if args.strict and plan.warnings:

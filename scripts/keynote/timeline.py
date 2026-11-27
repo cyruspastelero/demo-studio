@@ -7,14 +7,18 @@ from pathlib import Path
 from typing import Callable
 
 from . import spec
+from .voice_sync import Measure, WordCues
 from .model import (Callout, Card, Highlight, Plan, PlanError, Run, Shot, Zoom, _card_from, _shot_from,
                     source_to_rest)
 
 Probe = Callable[[Path], tuple[float, tuple[int, int]]]
 
 
-def build_plan(cfg: dict, raw_dir: Path, probe: Probe) -> Plan:
+def build_plan(cfg: dict, raw_dir: Path, probe: Probe, measure: Measure | None = None) -> Plan:
+    """`measure(text, line_number)` gives a voiceover line's (seconds, source) for word cues; without it
+    a cue measures the line by its word count."""
     warn: list[str] = []
+    cues = WordCues(cfg, warn, measure)
     sequence = cfg["sequence"]
     items, clock = [], 0
     for index, item in enumerate(sequence):
@@ -30,10 +34,10 @@ def build_plan(cfg: dict, raw_dir: Path, probe: Probe) -> Plan:
     cards = tuple(i for i in items if isinstance(i, Card))
     if any(c.kind == "end" for c in cards[:-1]) or (cards and cards[-1].kind == "end" and items[-1] is not cards[-1]):
         raise PlanError("an end card (kind \"end\") must be the last item of the sequence")
-    runs = _runs(items, shots, sequence, warn)
+    runs = _runs(items, shots, sequence, warn, cues)
     zoom_spans = [(r.start / spec.FPS + z.at, r.start / spec.FPS + z.end) for r in runs for z in r.zooms]
-    callouts = _callouts(sequence, shots, runs, zoom_spans, warn)
-    highlights = _highlights(sequence, shots, runs, warn)
+    callouts = _callouts(sequence, shots, runs, zoom_spans, warn, cues)
+    highlights = _highlights(sequence, shots, runs, warn, cues)
     if items and isinstance(items[0], Shot):
         warn.append("sequence[0]: the cut opens on footage, so frame 0 is an empty background; "
                     "start with a title card (bar O1)")
@@ -41,10 +45,11 @@ def build_plan(cfg: dict, raw_dir: Path, probe: Probe) -> Plan:
     if first_ui is not None and first_ui > 6.0:
         warn.append(f"first product UI appears at {first_ui:.1f}s; the bar wants it by 6.0s (O4)")
     outro = cards[-1].outro_frames if cards and cards[-1].kind == "end" else 0
-    return Plan(tuple(items), shots, cards, runs, callouts, highlights, clock, outro, tuple(warn))
+    return Plan(tuple(items), shots, cards, runs, callouts, highlights, clock, outro, tuple(warn), tuple(cues.records))
 
 
-def _runs(items: list, shots: tuple[Shot, ...], sequence: list[dict], warn: list[str]) -> tuple[Run, ...]:
+def _runs(items: list, shots: tuple[Shot, ...], sequence: list[dict], warn: list[str],
+          cues: WordCues) -> tuple[Run, ...]:
     runs, current = [], []
     position = {shot.index: n for n, shot in enumerate(shots)}
     for item in [*items, None]:
@@ -54,7 +59,7 @@ def _runs(items: list, shots: tuple[Shot, ...], sequence: list[dict], warn: list
         if current:
             start = current[0].start
             frames = sum(s.frames for s in current)
-            zooms = tuple(z for s in current for z in _zooms(sequence[s.index], s, start, warn))
+            zooms = tuple(z for s in current for z in _zooms(sequence[s.index], s, start, warn, cues))
             _check_zooms(zooms, frames / spec.FPS, current[0].index, warn)
             _check_zoom_pacing(zooms, frames / spec.FPS, current[0].index, warn)
             runs.append(Run(tuple(position[s.index] for s in current), start, frames, zooms,
@@ -63,7 +68,7 @@ def _runs(items: list, shots: tuple[Shot, ...], sequence: list[dict], warn: list
     return tuple(runs)
 
 
-def _zooms(item: dict, shot: Shot, run_start: int, warn: list[str]) -> list[Zoom]:
+def _zooms(item: dict, shot: Shot, run_start: int, warn: list[str], cues: WordCues) -> list[Zoom]:
     offset = (shot.start - run_start) / spec.FPS
     seconds = shot.frames / spec.FPS
     where = f"sequence[{shot.index}]"
@@ -71,7 +76,8 @@ def _zooms(item: dict, shot: Shot, run_start: int, warn: list[str]) -> list[Zoom
     for n, z in enumerate(item.get("zooms", [])):
         hold = float(z.get("dur", spec.ZOOM_HOLD_DEFAULT))
         focus = source_to_rest(tuple(z["focus"]), shot)
-        zooms.append(Zoom(offset + float(z["at"]), float(z.get("scale", spec.ZOOM_MAX)), focus, hold))
+        at = cues.at(z["at"], shot.index, seconds, f"{where}.zooms[{n}].at")
+        zooms.append(Zoom(offset + at, float(z.get("scale", spec.ZOOM_MAX)), focus, hold))
         lo, hi = spec.ZOOM_HOLD_RANGE
         if not lo <= hold <= hi:
             warn.append(f"{where}.zooms[{n}].dur: holds {hold:.1f}s; the bar wants {lo} to {hi}s (Z5)")
@@ -118,7 +124,7 @@ def _check_zoom_pacing(zooms: tuple[Zoom, ...], run_seconds: float, first_index:
 
 
 def _callouts(sequence: list[dict], shots: tuple[Shot, ...], runs: tuple[Run, ...],
-              zoom_spans: list[tuple[float, float]], warn: list[str]) -> tuple[Callout, ...]:
+              zoom_spans: list[tuple[float, float]], warn: list[str], cues: WordCues) -> tuple[Callout, ...]:
     out: list[tuple[Callout, str]] = []
     run_starts = {r.start for r in runs}
     for shot in shots:
@@ -135,7 +141,8 @@ def _callouts(sequence: list[dict], shots: tuple[Shot, ...], runs: tuple[Run, ..
         for n, c in enumerate(entries or []):
             dur = float(c.get("dur", spec.PILL_SECONDS_DEFAULT))
             kind = c.get("kind", "statement")
-            callout = Callout(base + float(c["at"]), base + float(c["at"]) + dur, kind, c["text"].strip(),
+            at = cues.at(c["at"], shot.index, seconds, f"{where}.callouts[{n}].at")
+            callout = Callout(base + at, base + at + dur, kind, c["text"].strip(),
                               c.get("role", "").strip(), c.get("avatar", ""),
                               (float(c["pos"][0]), float(c["pos"][1])) if "pos" in c else None, c.get("font"))
             out.append((callout, f"{where}.callouts[{n}]" if "callouts" in item else f"{where}.caption"))
@@ -162,7 +169,7 @@ def _callouts(sequence: list[dict], shots: tuple[Shot, ...], runs: tuple[Run, ..
 
 
 def _highlights(sequence: list[dict], shots: tuple[Shot, ...], runs: tuple[Run, ...],
-                warn: list[str]) -> tuple[Highlight, ...]:
+                warn: list[str], cues: WordCues) -> tuple[Highlight, ...]:
     out = []
     for run in runs:
         run_base = run.start / spec.FPS
@@ -178,7 +185,8 @@ def _highlights(sequence: list[dict], shots: tuple[Shot, ...], runs: tuple[Run, 
                 if x < 0 or y < 0 or x + w > shot.source_size[0] or y + hh > shot.source_size[1]:
                     raise PlanError(f"{where}.rect: {h['rect']} is outside the {shot.source_size[0]}x"
                                     f"{shot.source_size[1]} take (source px)")
-                start, zoom = _highlight_start(h, base, landings, own, where, automatic)
+                at = cues.at(h["at"], shot.index, shot.frames / spec.FPS, f"{where}.at") if "at" in h else None
+                start, zoom = _highlight_start(at, base, landings, own, where, automatic)
                 automatic += "at" not in h
                 end = start + float(h["dur"]) if "dur" in h else (zoom[1] if zoom else start + 2.5)
                 if zoom and not 0.1 <= start - zoom[0] <= 0.3:
@@ -203,14 +211,14 @@ def _shot_landings(run: Run, shot: Shot) -> list[tuple[float, float]]:
     return [(run_base + z.landed, run_base + z.end) for z in run.zooms if first <= run_base + z.at < last]
 
 
-def _highlight_start(h: dict, base: float, landings: list[tuple[float, float]],
+def _highlight_start(at: float | None, base: float, landings: list[tuple[float, float]],
                      own: list[tuple[float, float]], where: str,
                      automatic: int) -> tuple[float, tuple[float, float] | None]:
     """With `at`: that time. Without: 0.17 s after the zoom it pairs with, counted inside its own
     scene only (the first box without `at` follows the scene's first zoom, the second its second
     zoom, and so on). A zoom in another scene of the same window run never counts."""
-    if "at" in h:
-        start = base + float(h["at"])
+    if at is not None:
+        start = base + at
         before = [z for z in landings if z[0] <= start + 0.05 and start < z[1]]
         return start, (before[-1] if before else None)
     if len(own) <= automatic:

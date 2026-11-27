@@ -36,6 +36,18 @@ def format_table(spoken: list[Spoken]) -> str:
     return "\n".join(rows)
 
 
+DRIFT_SECONDS = 0.15  # a line this much longer or shorter than the cut was built for moves its word cues
+
+
+def drift_warnings(cues: list[dict], spoken: list[Spoken], rebuild: str) -> list[str]:
+    """One warning per word cue whose line is now measurably another length than the build assumed."""
+    real = {s.line.number: s.seconds for s in spoken if s.measured}
+    return [f"word cue {c['where']} ('{c['word']}') was placed for a {c['line_seconds']:.2f}s line, but line "
+            f"{c['line']} is now {real[c['line']]:.2f}s, so the cue may land "
+            f"early or late (its place in the line is estimated). Rebuild the cut: {rebuild}"
+            for c in cues if c.get("line") in real and abs(real[c["line"]] - c["line_seconds"]) > DRIFT_SECONDS]
+
+
 # ---------------------------------------------------------------- export for MCP voice tools
 
 VOICE_README = """Voiceover files for narrate.py

@@ -41,7 +41,7 @@ from narration.providers import *  # noqa: E402,F401,F403
 from narration.providers import (check_voice_files, find_api_key, has_voice_files, keychain_service,  # noqa: E402
                                  select_provider, speak)
 from narration.report import *  # noqa: E402,F401,F403
-from narration.report import format_table, lines_manifest, overrun_advice, write_exports  # noqa: E402
+from narration.report import drift_warnings, format_table, lines_manifest, overrun_advice, write_exports  # noqa: E402
 from narration.timing import *  # noqa: E402,F401,F403
 from narration.timing import derive_outro, derive_timing, load_timing, plan_lines, timing_outro  # noqa: E402
 
@@ -206,6 +206,21 @@ def use_template_audio(cut: Path) -> None:
               f"{narration_core.TARGET_LUFS} LUFS, true peak <= {narration_core.TRUE_PEAK_BAR} dBTP", flush=True)
 
 
+def plan_word_cues(cut: Path) -> list[dict]:
+    """The word cues build-keynote.py placed (plan.json `word_cues`), validated like the rest of plan.json.
+    A plan that cannot be read only skips the drift check: narration never needed plan.json before, and
+    by now the voice lines are synthesised."""
+    plan = cut.with_suffix(".plan.json")
+    if not plan.is_file():
+        return []
+    try:
+        return lib.load_sidecar(plan, "plan").get("word_cues", [])
+    except lib.SidecarError as error:
+        print(f"narrate: WARN word cues were not checked against the new line lengths: {error}",
+              file=sys.stderr, flush=True)
+        return []
+
+
 def narrate(args: argparse.Namespace) -> int:
     cfg_path = Path(args.config).resolve()
     cfg = lib.load_config(cfg_path, "demo", "narrate")
@@ -249,6 +264,8 @@ def narrate(args: argparse.Namespace) -> int:
         spoken.append(speak(line, ctx))
         lib.progress("voice", line.number, len(lines))
     print(format_table(spoken), flush=True)
+    for warning in drift_warnings(plan_word_cues(cut), spoken, keynote_command(args)):
+        print(f"narrate: WARN {warning}", file=sys.stderr, flush=True)
     advice = overrun_advice(spoken, voice.rate_wpm)
     if advice:
         report_overrun(advice, args)

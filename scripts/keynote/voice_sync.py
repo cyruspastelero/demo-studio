@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Callable
 
 from . import spec
-from .model import Card
+from .model import Card, PlanError
 
 Measure = Callable[[str, int], tuple[float, str]]
 
@@ -120,3 +120,61 @@ def sync_end_card(card: Card | None, demo_dir: Path, cfg: dict, measure: Measure
     lead_in = cfg.get("voice", {}).get("lead_in", DEFAULT_LEAD_IN)
     print(f"end card: words timed to line {number} ({seconds:.2f}s, from {source})", flush=True)
     return end_card_times(card, lead_in, seconds)
+
+
+class WordCues:
+    """Resolves a cue's `at` to scene-local seconds. A number passes through; {"word", "nth", "offset"}
+    lands on that spoken word of the scene's own voiceover. The word's place in the line is an
+    ESTIMATE (its character fraction times the measured line length). Every resolved cue is kept
+    in `records` for plan.json; narrate.py compares them with the real line length."""
+
+    def __init__(self, cfg: dict, warn: list[str], measure: Measure | None = None):
+        self.sequence, self.warn, self.records = cfg["sequence"], warn, []
+        self.voice = cfg.get("voice", {})
+        self.measure = measure
+
+    def at(self, value, index: int, scene_seconds: float, where: str) -> float:
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            return float(value)
+        return self._resolve(value, index, scene_seconds, where)
+
+    def _resolve(self, cue, index: int, scene_seconds: float, where: str) -> float:
+        from narration.core import DEFAULT_LEAD_IN  # the one lead_in the narration uses
+
+        text = self.sequence[index].get("voiceover", "").strip()
+        if not text:
+            raise PlanError(f"{where}: names the word {cue.get('word')!r}, but the scene has no `voiceover` to find it in. "
+                            "Add the line, or give `at` in seconds")
+        spoken = word_offsets(text)
+        word, nth = norm(str(cue.get("word", ""))), int(cue.get("nth", 1))
+        hits = [fraction for said, fraction in spoken if said == word] if word else []
+        if not hits or nth > len(hits):
+            raise PlanError(self._missing(where, cue, text, spoken, nth, len(hits)))
+        if "nth" not in cue and len(hits) > 1:
+            self.warn.append(f"{where}: {cue['word']!r} is said {len(hits)} times, using the first; set nth")
+        number = line_number(self.sequence, index)
+        seconds, source = self._line_length(text, number)
+        lead_in = self.voice.get("lead_in", DEFAULT_LEAD_IN)
+        at = lead_in + hits[nth - 1] * seconds + float(cue.get("offset", 0))
+        if not 0 <= at <= scene_seconds:
+            side = "before the scene starts" if at < 0 else "after the scene ends"
+            raise PlanError(f"{where}: the word {cue['word']!r} lands at {at:.2f}s, {side} "
+                            f"({scene_seconds:.2f}s long, estimated). Change `offset`, `nth` or the scene")
+        self.records.append({"where": where, "word": word, "nth": nth, "at": round(at, 3), "line": number,
+                             "line_seconds": round(seconds, 3), "source": source})
+        return at
+
+    def _line_length(self, text: str, number: int) -> tuple[float, str]:
+        if self.measure:
+            return self.measure(text, number)
+        from narration.core import DEFAULT_RATE
+        return len(text.split()) / self.voice.get("rate_wpm", DEFAULT_RATE) * 60, "word-count estimate"
+
+    @staticmethod
+    def _missing(where: str, cue: dict, text: str, spoken: list, nth: int, found: int) -> str:
+        if found:
+            return (f"{where}: nth {nth} was asked for, but {cue['word']!r} is said {found} time"
+                    f"{'s' if found > 1 else ''} in the line. Lower `nth`")
+        words = ", ".join(w for w, _ in spoken if w)
+        return (f"{where}: the word {cue.get('word')!r} is not in this scene's voiceover. "
+                f"The line's words are: {words}. Name one word of it, or give `at` in seconds")
