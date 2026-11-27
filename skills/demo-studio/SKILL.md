@@ -16,8 +16,11 @@ Every command uses `$P`, the plugin's root. Set it once in each shell command yo
 P="${CLAUDE_PLUGIN_ROOT:-$(d=$PWD; while [ "$d" != / ] && [ ! -f "$d/.claude-plugin/plugin.json" ]; do d=$(dirname "$d"); done; [ -f "$d/.claude-plugin/plugin.json" ] && echo "$d" || ls -d ~/.claude/plugins/cache/*/demo-studio/*/ | tail -1)}"; echo "$P"
 ```
 
-Expected: a path ending in `/demo-studio/<version>/`. If it prints nothing, the plugin is not
-installed: tell the user to run `/plugin install demo-studio@demo-studio`.
+Expected: the demo-studio clone (a folder holding `skills/` and `scripts/`), or, for the Claude Code
+plugin, a path ending in `/demo-studio/<version>/`. If it prints nothing, demo-studio is not found:
+tell the user to open their agent inside a clone of the repo (`git clone
+https://github.com/cyruspastelero/demo-studio.git`), or, in Claude Code, to run
+`/plugin install demo-studio@demo-studio`.
 
 Shell state does not carry between commands, so start each command with that `P=...` line.
 

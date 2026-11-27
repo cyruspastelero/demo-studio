@@ -14,7 +14,7 @@ Start every shell command with this line (it finds the plugin folder):
 P="${CLAUDE_PLUGIN_ROOT:-$(d=$PWD; while [ "$d" != / ] && [ ! -f "$d/.claude-plugin/plugin.json" ]; do d=$(dirname "$d"); done; [ -f "$d/.claude-plugin/plugin.json" ] && echo "$d" || ls -d ~/.claude/plugins/cache/*/demo-studio/*/ | tail -1)}"
 ```
 
-`<cwd>` below means the folder Claude Code was started in. `<demo>` is the demo folder.
+`<cwd>` below means the folder your agent was started in. `<demo>` is the demo folder.
 
 Do not ask the user anything in this skill except the stop cases in skill `demo-studio` (a login,
 2FA code or captcha; something that cannot be deleted; something that costs money; deleting data

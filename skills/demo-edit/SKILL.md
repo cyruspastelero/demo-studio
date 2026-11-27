@@ -139,8 +139,8 @@ the picture, and again after Step 3 on the narrated cut for the sound.
    `DEMO_STUDIO_ALLOW_CONFIG_VOICE=1` to let demo.json choose.
 
 3. **Keys.** Never ask the user to paste an API key into chat, into any file, or into a commit.
-   If they want ElevenLabs by key, tell them to run one of these in the shell they start Claude
-   Code from, then restart the session:
+   If they want ElevenLabs by key, tell them to run one of these in the shell they start their agent
+   from, then restart the session:
 
    ```bash
    export ELEVENLABS_API_KEY=...                                  # this shell only
