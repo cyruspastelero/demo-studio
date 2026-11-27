@@ -5,7 +5,7 @@ import { readFileSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
-import { validateStoryboard, validateStyle } from '../motion/lib/validate.mjs';
+import { validateStoryboard, validateStyle, repetitionWarnings } from '../motion/lib/validate.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const schema = JSON.parse(readFileSync(join(here, '../motion/schema/storyboard.schema.json'), 'utf8'));
@@ -122,4 +122,38 @@ test('media in folders with spaces, #, ? or % are served; bad escapes get 400; f
   } finally {
     server.close();
   }
+});
+
+const scenesOf = (types, extra = {}) => ({ ...base(), scenes: types.map((type) => ({ type, duration: 2, ...extra })) });
+
+test('three scenes in a row of one type are warned about, with their indexes', () => {
+  const warnings = repetitionWarnings(scenesOf(['kineticText', 'tiles', 'tiles', 'tiles', 'kineticText']));
+  assert.equal(warnings.length, 1);
+  assert.match(warnings[0], /scenes\[1\] to scenes\[3\]/);
+  assert.match(warnings[0], /tiles/);
+});
+
+test('two in a row, or the same type split by another, is not warned about', () => {
+  assert.deepEqual(repetitionWarnings(scenesOf(['tiles', 'tiles', 'kineticText', 'tiles', 'tiles'])), []);
+});
+
+test('a longer run is one warning, not one per window', () => {
+  assert.equal(repetitionWarnings(scenesOf(['tiles', 'tiles', 'tiles', 'tiles', 'tiles'])).length, 1);
+});
+
+test('three scenes with the same non-default exit are warned about', () => {
+  const b = scenesOf(['kineticText', 'tiles', 'tiltedPanel'], { exit: 'whip' });
+  const warnings = repetitionWarnings(b);
+  assert.equal(warnings.length, 1);
+  assert.match(warnings[0], /exit "whip"/);
+});
+
+test('the default exit (absent or auto) repeated is not warned about', () => {
+  const b = scenesOf(['kineticText', 'tiles', 'tiltedPanel']);
+  b.scenes[1].exit = 'auto';
+  assert.deepEqual(repetitionWarnings(b), []);
+});
+
+test('a board with no scenes array gives no warnings', () => {
+  assert.deepEqual(repetitionWarnings({}), []);
 });

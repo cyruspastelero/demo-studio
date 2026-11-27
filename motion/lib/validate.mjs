@@ -121,3 +121,29 @@ export function validateStoryboard(board, schema, storyboardPath) {
 export function validateStyle(style, schema) {
   return validateSchema(schema, style).map((e) => `${e.path}: ${e.message}`);
 }
+
+const REPEAT_LIMIT = 3;
+
+/** Runs of REPEAT_LIMIT or more consecutive scenes with the same key; `key` returns null to break a run. */
+function repeatedRuns(scenes, key) {
+  const runs = [];
+  let start = 0;
+  for (let i = 1; i <= scenes.length; i++) {
+    const same = i < scenes.length && key(scenes[i]) !== null && key(scenes[i]) === key(scenes[start]);
+    if (same) continue;
+    if (i - start >= REPEAT_LIMIT && key(scenes[start]) !== null) runs.push({ from: start, to: i - 1, value: key(scenes[start]) });
+    start = i;
+  }
+  return runs;
+}
+
+/** Monotony warnings (not errors): three or more scenes in a row with one type, or one non-default exit. */
+export function repetitionWarnings(board) {
+  const scenes = Array.isArray(board.scenes) ? board.scenes : [];
+  const span = (r) => `scenes[${r.from}] to scenes[${r.to}] (${r.to - r.from + 1} in a row)`;
+  const types = repeatedRuns(scenes, (s) => s.type ?? null)
+    .map((r) => `${span(r)} all use the scene type "${r.value}"; vary one of them`);
+  const exits = repeatedRuns(scenes, (s) => (s.exit && s.exit !== 'auto' ? s.exit : null))
+    .map((r) => `${span(r)} all use exit "${r.value}"; let the style choose (exit: "auto") for one of them`);
+  return [...types, ...exits];
+}
