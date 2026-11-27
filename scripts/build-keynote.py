@@ -260,7 +260,9 @@ def main() -> None:
         intermediate.unlink(missing_ok=True)
         for folder in ("seq-bg", "seq-under", "seq-over"):
             lib.safe_rmtree(work, work / folder, f".keynote/{folder}")
-    look_info = {"look": look, "look_samples": {"background": samples}}
+    # The background as drawn: brand_config may have tinted the look's glow to the product accent.
+    drawn_look = {**look, "brand": {**look.get("brand", {}), "background": brand_cfg.get("background", {})}}
+    look_info = {"look": drawn_look if brand_cfg.get("background") else look, "look_samples": {"background": samples}}
     if template_id:
         look_info["template"] = template_id
     timing = write_sidecars(final, cfg, plan, fonts, brand, look_info)

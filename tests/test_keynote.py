@@ -13,7 +13,7 @@ REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO / "scripts"))
 
 import demolib as lib  # noqa: E402
-from keynote import spec  # noqa: E402
+from keynote import look as looks, spec  # noqa: E402
 from keynote.brand import background_fields, load_brand  # noqa: E402
 from keynote.compose import piecewise  # noqa: E402
 from keynote.easing import EASE_IN_OUT_CUBIC, EASE_IN_OUT_SINE, EASE_OUT_CUBIC, cubic_bezier  # noqa: E402
@@ -675,6 +675,42 @@ class Fonts(unittest.TestCase):
     def test_no_system_font_in_the_page(self):
         page = (REPO / "scripts" / "keynote-page.mjs").read_text()
         self.assertIsNone(re.search(r"system-ui|-apple-system|SF Pro|Helvetica", page))
+
+
+
+class LookColoursFollowTheProduct(unittest.TestCase):
+    """A look's sweep and coloured glow take the demo's brand.accent, so no look forces its own hue."""
+
+    def setUp(self):
+        self.look = json.loads((REPO / "look-templates/midnight/template.json").read_text())["look"]
+
+    def hue_is_blue(self, value):
+        r, g, b = (int(value[i:i + 2], 16) for i in (1, 3, 5))
+        return b > r and b > g
+
+    def test_sweep_and_glow_follow_the_accent_when_the_demo_sets_only_an_accent(self):
+        brand = load_brand(looks.brand_config(self.look, {"accent": "#2563EB"}))
+        self.assertEqual(brand.sweep[0], "#2563EB")
+        self.assertTrue(self.hue_is_blue(brand.sweep[1]), brand.sweep)
+        template_fields = [f.upper() for f in self.look["brand"]["background"]["fields"]]
+        changed = [i for i, (a, b) in enumerate(zip(brand.fields, template_fields)) if a != b]
+        self.assertEqual(len(changed), 1, brand.fields)
+        self.assertTrue(self.hue_is_blue(brand.fields[changed[0]]), brand.fields)
+
+    def test_a_demo_that_sets_its_own_sweep_and_background_keeps_them(self):
+        own = {"accent": "#2563EB", "sweep": ["#111111", "#222222"],
+               "background": {"fields": ["#101010", "#202020", "#303030", "#404040", "#505050"]}}
+        brand = load_brand(looks.brand_config(self.look, own))
+        self.assertEqual(brand.sweep, ("#111111", "#222222"))
+        self.assertEqual(brand.fields[2], "#303030")
+
+    def test_a_demo_with_no_template_gets_the_house_glow_tinted_too(self):
+        brand = load_brand(looks.brand_config(None, {"accent": "#2563EB"}))
+        self.assertTrue(any(self.hue_is_blue(f) for f in brand.fields), brand.fields)
+
+    def test_without_an_accent_the_look_keeps_its_own_colours(self):
+        brand = load_brand(looks.brand_config(self.look, {}))
+        self.assertEqual(list(brand.sweep), [c.upper() for c in self.look["brand"]["sweep"]])
 
 
 if __name__ == "__main__":

@@ -447,10 +447,10 @@ def background_targets(plan: dict) -> tuple[dict, str]:
     house = looks.defaults()["brand"]["background"]
     drawn = (plan.get("look_samples") or {}).get("background")
     background = ((plan.get("look") or {}).get("brand") or {}).get("background", house)
-    if not plan.get("template") or background == house or not drawn:
+    if background == house or not drawn:
         return BG_SAMPLES, "the reference"
     targets = {tuple(int(v) for v in key.split(",")): value for key, value in drawn.items()}
-    return targets, f"template {plan['template']}"
+    return targets, f"template {plan['template']}" if plan.get("template") else "what the build drew"
 
 
 def check_background(r: Report, cut: Path, plan: dict) -> None:

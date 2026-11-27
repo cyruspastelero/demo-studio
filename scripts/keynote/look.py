@@ -71,8 +71,40 @@ def effective(template_look: dict | None) -> dict:
 
 
 def brand_config(template_look: dict | None, demo_brand: dict | None) -> dict:
-    """The brand dict load_brand() gets: the template's brand under demo.json's own brand (demo wins)."""
-    return deep_merge((template_look or {}).get("brand", {}), demo_brand or {})
+    """The brand dict load_brand() gets: the template's brand under demo.json's own brand (demo wins).
+    When the demo names its product colour (accent) but not its own sweep or background, the look's
+    sweep and its most colourful glow are recoloured from that accent, so no look forces its own hue."""
+    demo = demo_brand or {}
+    merged = deep_merge((template_look or {}).get("brand", {}), demo)
+    accent = demo.get("accent")
+    if not isinstance(accent, str) or len(accent) < 7:
+        return merged
+    accent = accent[:7].upper()
+    if "sweep" not in demo:
+        merged["sweep"] = [accent, _mix(accent, "#FFFFFF", 0.4)]
+    if "background" not in merged:  # no template: tint the house background
+        merged["background"] = copy.deepcopy(defaults()["brand"]["background"])
+    fields = merged["background"].get("fields")
+    if "background" not in demo and fields:
+        glow = max(range(len(fields)), key=lambda i: _saturation(fields[i]))
+        tinted = list(fields)
+        tinted[glow] = _mix(fields[glow][:7], accent, 0.45) + fields[glow][7:]
+        merged["background"] = {**merged["background"], "fields": tinted}
+    return merged
+
+
+def _rgb(value: str) -> tuple[int, int, int]:
+    return int(value[1:3], 16), int(value[3:5], 16), int(value[5:7], 16)
+
+
+def _mix(a: str, b: str, k: float) -> str:
+    """a moved k of the way to b, as #RRGGBB."""
+    return "#" + "".join(f"{round(x + (y - x) * k):02X}" for x, y in zip(_rgb(a), _rgb(b)))
+
+
+def _saturation(value: str) -> int:
+    r, g, b = _rgb(value)
+    return max(r, g, b) - min(r, g, b)
 
 
 def _scaled(kind: str, size: float, tracking: float) -> dict:

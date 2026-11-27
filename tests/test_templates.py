@@ -300,7 +300,9 @@ class HouseIsTheDefault(TemplateCase):
         cfg = {"template": "slow-zoom-abcdef", "brand": {"accent": "#2255FF"}}
         template_id, look, brand = build.resolve_look(cfg, demo_dir)
         self.assertEqual((template_id, look["zoom"]["dur"], spec.ZOOM_MOVE_SECONDS), ("slow-zoom-abcdef", 1.6, 1.6))
-        self.assertEqual(brand, {"ink": "#101010", "accent": "#2255FF"})
+        self.assertEqual({k: brand[k] for k in ("ink", "accent", "sweep")},
+                         {"ink": "#101010", "accent": "#2255FF", "sweep": ["#2255FF", "#7A99FF"]})  # sweep follows the accent
+        self.assertIn("background", brand)  # the house glow, tinted to the accent
         with self.assertRaises(SystemExit) as caught:
             build.resolve_look({"template": "missing-000000"}, demo_dir)
         self.assertIn("templates.py list", str(caught.exception))
@@ -321,6 +323,15 @@ class CheckerReadsTheLook(TemplateCase):
         targets, against = check.background_targets(plan)
         self.assertEqual(targets, {(40, 40): "#202020", (960, 40): "#212121"})
         self.assertIn("dark-abcdef", against)
+
+    def test_a_house_cut_with_a_product_tinted_glow_is_checked_against_what_the_build_drew(self):
+        check = load_script("check-cut.py")
+        look = looks.defaults()
+        tinted = looks.brand_config(look, {"accent": "#2563EB"})["background"]
+        plan = {"look": {**look, "brand": {**look["brand"], "background": tinted}},
+                "look_samples": {"background": {"1880,1040": "#969DCD"}}}
+        targets, _ = check.background_targets(plan)
+        self.assertEqual(targets, {(1880, 1040): "#969DCD"})
 
 
 class CopierHelpers(TemplateCase):
