@@ -5,7 +5,7 @@
 <h1 align="center">demo-studio</h1>
 
 <p align="center">
-  <b>Tell Claude the goal. Get a finished demo video of your real app.</b>
+  <b>Tell your coding agent the goal. Get a finished demo video of your real app.</b>
 </p>
 
 <p align="center">
@@ -22,13 +22,14 @@
   <a href="#docs"><b>Docs</b></a>
 </p>
 
-A Claude Code plugin that turns your real product into a finished demo video.
+Skills for your coding agent that turn your real product into a finished demo video. They work with
+Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot and other agents that read skills or `AGENTS.md`.
 
 **How it works**
 
-1. Tell Claude what the video should show.
+1. Tell your agent what the video should show.
 2. Log in to a test account in the Playwright browser, or hand over demo credentials.
-3. Claude writes the plan and shows it to you. Nothing is recorded until you say go.
+3. The agent writes the plan and shows it to you. Nothing is recorded until you say go.
 4. It tests the flow, records the product, then cuts and narrates the video.
 
 After you approve the plan, it only stops to ask for a login code, or before a step that would cost
@@ -59,6 +60,21 @@ Real apps, finished by the plugin. Click a preview to watch it in 1080p with sou
 
 ## Quick start
 
+**The fast way: paste this into your coding agent** (Claude Code, Codex, Cursor, Gemini CLI, Copilot
+or any other) and it sets everything up:
+
+```text
+Set up demo-studio for me so I can make product demo videos.
+1. Clone https://github.com/cyruspastelero/demo-studio.git and work inside that folder.
+2. Check for Node.js 20+, Python 3.10+, ffmpeg and Google Chrome. Ask me before installing anything that is missing.
+3. Run npm install, then bash scripts/doctor.sh, and fix what it reports.
+4. Add the Playwright MCP server to your MCP settings. Command: npx -y @playwright/mcp@0.0.84 --browser chrome
+5. Run bash scripts/new-workspace.sh ./demos
+6. Tell me if I need to restart you to load the browser tool, then how to start my first demo.
+```
+
+**Or step by step:**
+
 **1. Install the tools** (macOS; for Linux and Windows see [getting started](docs/getting-started.md)):
 
 ```bash
@@ -66,11 +82,15 @@ brew install node ffmpeg python
 brew install --cask google-chrome
 ```
 
-**2. Give Claude a browser it can drive:**
+**2. Give your agent a browser it can drive:** add the Playwright MCP server. Its command is the same
+for every agent:
 
 ```bash
-claude mcp add playwright --scope user -- npx -y @playwright/mcp@0.0.84 --browser chrome
+npx -y @playwright/mcp@0.0.84 --browser chrome
 ```
+
+Add it in your agent's MCP settings (in Claude Code: `claude mcp add playwright --scope user -- <the
+command above>`). Per-agent steps: [set up your agent](docs/getting-started.md#set-up-your-agent).
 
 **3. Get demo-studio and check your setup:**
 
@@ -83,12 +103,14 @@ bash scripts/doctor.sh
 
 `doctor.sh` lists anything missing, with the command that fixes it.
 
-**4. Make a folder for your demos and start Claude:**
+**4. Make a folder for your demos, then open your agent in this folder:**
 
 ```bash
 bash scripts/new-workspace.sh ./demos
-claude
 ```
+
+The skills are already wired up for each agent (`.agents/skills/`, `.claude/skills/`, `.cursor/skills/`,
+`.gemini/skills/`).
 
 Your demos live in `demos/`, which git ignores.
 
@@ -97,17 +119,17 @@ Your demos live in `demos/`, which git ignores.
 > Make a demo of app.example.com. Goal: a new user creates a project and invites a teammate.
 > I'm logged in to the sandbox in the Playwright browser.
 
-Rather not log in yourself? Give Claude a demo account and it logs in off camera. The password stays
+Rather not log in yourself? Give the agent a demo account and it logs in off camera. The password stays
 in your macOS Keychain, never in a file:
 
 > The sandbox login is demo@example.com, the password is in Keychain as demo-acme.
 
-More in [Do I have to give Claude my password?](docs/faq.md#do-i-have-to-give-claude-my-password)
+More in the [FAQ on passwords](docs/faq.md#do-i-have-to-give-claude-my-password)
 
-**Just want to see it work?** Say **"try it"**. Claude records the [todo sample](examples/todo-sample)
+**Just want to see it work?** Say **"try it"**. The agent records the [todo sample](examples/todo-sample)
 end to end, no login needed ([10-minute walkthrough](docs/getting-started.md#first-demo-in-10-minutes)).
 
-**Prefer the plugin in any folder?** Inside Claude Code, run
+**Using Claude Code?** You can also install it as a plugin for any folder:
 `/plugin marketplace add cyruspastelero/demo-studio`, then `/plugin install demo-studio@demo-studio`
 ([details](docs/getting-started.md#install)).
 
@@ -148,13 +170,13 @@ More in [How it works](docs/how-it-works.md).
 - The studio only listens on your own machine.
 - Paid voice services see your voiceover text only if you choose them.
 
-Claude Code itself still talks to Anthropic. Limits and reporting: [SECURITY.md](SECURITY.md).
+Your coding agent still talks to its own AI provider. Limits and reporting: [SECURITY.md](SECURITY.md).
 
 ## Look templates
 
 - **Demo video looks:** `house` (the default), `midnight`, `paper` and `mono`. Name one in demo.json
-  (`"template": "paper"`), or Claude picks one that suits the product and tells you which.
-- **Copy a look you like:** say "copy the look of launch.mp4" and Claude saves it as a new template.
+  (`"template": "paper"`), or the agent picks one that suits the product and tells you which.
+- **Copy a look you like:** say "copy the look of launch.mp4" and the agent saves it as a new template.
 - **Launch-ad styles:** `airy`, `daylight`, `nocturne` and `showroom` make short, music-driven ads from
   the demo's real footage, in 16:9, 4:5 and 9:16.
 
@@ -167,15 +189,14 @@ All free, all on your machine. `bash scripts/doctor.sh` checks each one and prin
 
 | You need | For |
 | --- | --- |
-| Claude Code (or another agent with MCP) | Running the skills that plan, record and edit |
+| A coding agent with MCP (Claude Code, Codex, Cursor, Gemini CLI, Copilot ...) | Running the skills that plan, record and edit |
 | Playwright MCP | Clicking and typing in your logged-in browser |
 | Google Chrome | The recorded browser, and drawing titles and text |
 | Node.js 20+ | Recording, overlays and the studio app |
 | Python 3.10+ | Cutting, narration and checks (no pip packages) |
 | ffmpeg | Video, sound and loudness |
 
-Other agents (Codex, Cursor, Gemini CLI) can follow `skills/demo-studio/SKILL.md`. Versions and
-licences: [docs/dependencies.md](docs/dependencies.md).
+Versions and licences: [docs/dependencies.md](docs/dependencies.md).
 
 ## Docs
 
