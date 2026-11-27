@@ -72,30 +72,57 @@ zoom into a close-up take.
 
 ## Quick start
 
-Clone the repo and work inside it. Your demos live in `demos/` in the clone, which git ignores.
+**1. Install the tools** (macOS; for Linux and Windows see [getting started](docs/getting-started.md)):
 
 ```bash
-brew install node ffmpeg python && brew install --cask google-chrome   # other systems: docs/getting-started.md
+brew install node ffmpeg python
+brew install --cask google-chrome
+```
+
+**2. Give Claude a browser it can drive:**
+
+```bash
 claude mcp add playwright --scope user -- npx -y @playwright/mcp@0.0.84 --browser chrome
-git clone https://github.com/cyruspastelero/demo-studio.git && cd demo-studio
-npm install && bash scripts/doctor.sh && bash scripts/new-workspace.sh ./demos
+```
+
+**3. Get demo-studio and check your setup:**
+
+```bash
+git clone https://github.com/cyruspastelero/demo-studio.git
+cd demo-studio
+npm install
+bash scripts/doctor.sh
+```
+
+`doctor.sh` lists anything missing, with the command that fixes it.
+
+**4. Make a folder for your demos and start Claude:**
+
+```bash
+bash scripts/new-workspace.sh ./demos
 claude
 ```
 
-Prefer it as a plugin in any folder? `/plugin marketplace add cyruspastelero/demo-studio`, then
-`/plugin install demo-studio@demo-studio` ([details](docs/getting-started.md#install)).
+Your demos live in `demos/`, which git ignores.
 
-Then ask:
+**5. Ask for a demo.** Log in to a test account in the Playwright browser, then say:
 
 > Make a demo of app.example.com. Goal: a new user creates a project and invites a teammate.
 > I'm logged in to the sandbox in the Playwright browser.
 
-Or hand over a demo account instead, and Claude logs in itself (off camera, password kept in your
-macOS Keychain, never in a file): "The sandbox login is demo@example.com, the password is in
-Keychain as demo-acme." See [Do I have to give Claude my password?](docs/faq.md#do-i-have-to-give-claude-my-password)
+Rather not log in yourself? Give Claude a demo account and it logs in off camera. The password stays
+in your macOS Keychain, never in a file:
 
-New here? Say **"try it"** and Claude records the [todo sample](examples/todo-sample) end to end,
-no login needed ([10 minute walkthrough](docs/getting-started.md#first-demo-in-10-minutes)).
+> The sandbox login is demo@example.com, the password is in Keychain as demo-acme.
+
+More in [Do I have to give Claude my password?](docs/faq.md#do-i-have-to-give-claude-my-password)
+
+**Just want to see it work?** Say **"try it"**. Claude records the [todo sample](examples/todo-sample)
+end to end, no login needed ([10-minute walkthrough](docs/getting-started.md#first-demo-in-10-minutes)).
+
+**Prefer the plugin in any folder?** Inside Claude Code, run
+`/plugin marketplace add cyruspastelero/demo-studio`, then `/plugin install demo-studio@demo-studio`
+([details](docs/getting-started.md#install)).
 
 ## What you get
 
