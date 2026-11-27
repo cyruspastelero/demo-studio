@@ -237,6 +237,12 @@ export function Editor({ session, onClose }: {
 
   return (
     <div className={`editor${banner ? ' has-banner' : ''}`}>
+      {/* Shown instead of the editor on a phone-sized window (styles.css): it needs room for a timeline. */}
+      <div className="editor-narrow" role="note" data-testid="editor-narrow">
+        <p className="editor-narrow-title">The editor needs a wider window</p>
+        <p>Make the window at least 768 px wide, or open it on a laptop or desktop. Your changes are saved.</p>
+        <button className="btn" onClick={onClose}>Back to all demos</button>
+      </div>
       <TopBar
         name={session.name} fileTabs={fileTabs} fileKind={fileKind}
         onFileKind={switchFile}
