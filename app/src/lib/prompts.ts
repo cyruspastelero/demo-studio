@@ -61,6 +61,10 @@ export function templatePrompt(id: string): string {
   return `Make a demo of [[app.example.com]] using template ${named}.`;
 }
 
+export function adStylePrompt(id: string): string {
+  return `Make a launch ad for [[app.example.com]] in the \`${id}\` style, from the demo's real footage.`;
+}
+
 export const PROMPT_GROUPS: PromptGroup[] = [
   {
     id: 'start',

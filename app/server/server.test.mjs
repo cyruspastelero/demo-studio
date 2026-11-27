@@ -11,6 +11,9 @@ import { insideAny, PathError, resolveInside } from './paths.mjs';
 import { renderCommand } from './render.mjs';
 import { createStudio } from './server.mjs';
 import { freeName } from './try-example.mjs';
+import { spawnSync } from 'node:child_process';
+
+const HAS_FFMPEG = spawnSync('ffmpeg', ['-version']).status === 0;
 
 const REPO = fileURLToPath(new URL('../../', import.meta.url));
 const EXAMPLE = join(REPO, 'examples', 'acme-invoice-bot');
@@ -308,11 +311,24 @@ describe('http server', () => {
     }
   });
 
-  it('makes a card picture from a still image too (a preview.jpg)', async () => {
+  // Needs ffmpeg, which the app-only CI job does not install (the pipeline jobs do).
+  it.skipIf(!HAS_FFMPEG)('makes a card picture from a still image too (a preview.jpg)', async () => {
     cpSync(join(REPO, 'examples', 'acme-invoice-bot', 'preview.jpg'), join(demo, 'preview.jpg'));
     const res = await get(`/api/demo-thumb?demo=${encodeURIComponent(demo)}&path=preview.jpg&t=1&w=160`);
     expect(res.status).toBe(200);
     expect(res.body.length).toBeGreaterThan(500);
+  });
+
+  it('lists the launch-ad styles with their frames and serves only those frames', async () => {
+    const styles = JSON.parse((await get('/api/ad-styles')).body);
+    expect(styles.map((s) => s.id)).toEqual(['airy', 'daylight', 'nocturne', 'showroom']);
+    const daylight = styles.find((s) => s.id === 'daylight');
+    expect(daylight.sample.label).toMatch(/Switchyard/);
+    expect(daylight.previews[0]).toBe('/api/ad-style-preview/daylight/01.jpg');
+    expect((await get(daylight.previews[0])).status).toBe(200);
+    for (const bad of ['/api/ad-style-preview/daylight/style.json', '/api/ad-style-preview/..%2Fscripts/01.jpg', '/api/ad-style-preview/daylight/11.jpg']) {
+      expect((await get(bad)).status).toBe(404);
+    }
   });
 
   it('copies only listed examples into the demos folder, under a free name', async () => {

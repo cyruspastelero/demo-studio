@@ -55,3 +55,35 @@ export function sourceLine(template: LookTemplate): string | null {
 export function originLabel(origin: TemplateOrigin): string {
   return origin === 'built-in' ? 'Built-in' : 'Yours';
 }
+
+// A launch-ad style (motion-templates/<id>/): the ads made with render-motion.mjs.
+export interface AdStyle {
+  id: string;
+  name: string;
+  description: string;
+  bestFor: string[];
+  tone: 'light' | 'dark';
+  previews: string[];
+  sample: { label: string; url: string } | null;
+}
+
+export function parseAdStyles(data: unknown): AdStyle[] {
+  if (!Array.isArray(data)) return [];
+  return data.filter((s): s is AdStyle => !!s && typeof s === 'object' && typeof s.id === 'string' && typeof s.name === 'string'
+    && Array.isArray(s.previews))
+    .map((s) => ({
+      ...s,
+      description: typeof s.description === 'string' ? s.description : '',
+      bestFor: Array.isArray(s.bestFor) ? s.bestFor.filter((t: unknown) => typeof t === 'string') : [],
+      previews: s.previews.filter((p: unknown) => typeof p === 'string' && p.startsWith('/api/ad-style-preview/')),
+      // Only the samples release, never another address from a file.
+      sample: s.sample && typeof s.sample.url === 'string' && s.sample.url.startsWith('https://github.com/cyruspastelero/demo-studio/releases/download/samples/')
+        ? { label: String(s.sample.label), url: s.sample.url } : null,
+    }));
+}
+
+export async function fetchAdStyles(fetcher: typeof fetch = fetch): Promise<AdStyle[]> {
+  const res = await fetcher(serverUrl('/api/ad-styles'), { headers: { 'x-studio': '1' } });
+  if (!res.ok) throw new Error(`could not list the launch-ad styles (${res.status})`);
+  return parseAdStyles(await res.json());
+}

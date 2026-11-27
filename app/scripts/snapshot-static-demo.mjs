@@ -48,7 +48,8 @@ async function record(page, workspace) {
     const url = new URL(res.url());
     const method = res.request().method();
     if (!url.pathname.startsWith('/api/') || url.pathname === '/api/events' || !res.ok()) return;
-    if (url.pathname.startsWith('/api/template-preview/')) return; // copied from look-templates
+    // Copied from look-templates and motion-templates below, as files (JPEG and PNG must not be scrubbed as text).
+    if (url.pathname.startsWith('/api/template-preview/') || url.pathname.startsWith('/api/ad-style-preview/')) return;
     // "Try a copy" opens the copied example; the static app replays it as its /api/open answer.
     const isOpen = method === 'POST' && (url.pathname === '/api/open' || url.pathname === '/api/try-example');
     if (method !== 'GET' && !isOpen) return;
@@ -105,6 +106,9 @@ async function main() {
   for (const font of BUNDLED) cpSync(fontFile(REPO, font.id), join(DATA, 'fonts', font.id));
   for (const id of readdirSync(join(REPO, 'look-templates'))) {
     cpSync(join(REPO, 'look-templates', id, 'preview'), join(DATA, 'api', 'template-preview', 'built-in', id), { recursive: true });
+  }
+  for (const id of readdirSync(join(REPO, 'motion-templates'))) {
+    cpSync(join(REPO, 'motion-templates', id, 'preview'), join(DATA, 'api', 'ad-style-preview', id), { recursive: true });
   }
   const keys = readdirSync(join(DATA, 'api'), { recursive: true });
   console.log(`snapshot-static-demo: recorded ${keys.length} files into ${DATA}`);

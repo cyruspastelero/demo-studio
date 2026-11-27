@@ -7,6 +7,7 @@ import { timecode } from '../lib/timeline';
 import type { FontInfo } from '../api';
 import { textVariant, type Point } from '../lib/text-layout';
 import type { Aspect, Brand, FileKind, SocialSpec, Timeline, TimelineShot } from '../lib/types';
+import { EditableLine } from './editable-line';
 import { TextLayer } from './text-layer';
 
 const FULL = { W: 1920, H: 1080 };
@@ -51,22 +52,33 @@ function useFit(ref: React.RefObject<HTMLDivElement | null>, w: number, h: numbe
   return box;
 }
 
-function CardView({ shot, brand }: { shot: TimelineShot; brand: Brand | undefined }) {
-  if (shot.cardPng) return <img src={mediaUrl(shot.cardPng)} alt={shot.cardTitle ?? shot.card} />;
+// The card's words can be edited right on it. A card with a rendered picture shows its live text
+// once it has been edited here, so the change is visible before the cards are rendered again.
+function CardView({ shot, brand, onCardText, edited }: {
+  shot: TimelineShot; brand: Brand | undefined; onCardText: (patch: { title?: string; subtitle?: string }) => void; edited: boolean;
+}) {
+  const [live, setLive] = useState(false);
+  if (shot.cardPng && !edited && !live) {
+    return <img src={mediaUrl(shot.cardPng)} alt={shot.cardTitle ?? shot.card} title="Double-click to edit the words"
+      onDoubleClick={() => setLive(true)} />;
+  }
   return (
     <div style={{
       width: '100%', height: '100%', display: 'grid', placeItems: 'center', background: brand?.background ?? '#F6F6F8',
       fontFamily: brand?.font ?? "'SF Pro Display', system-ui, -apple-system, sans-serif",
     }} data-testid="html-card">
       <div>
-        <div className="card-title" style={{ color: brand?.title_color ?? '#1D1D1F' }}>{shot.cardTitle ?? shot.card}</div>
-        {shot.cardSubtitle && <div className="card-subtitle" style={{ color: brand?.subtitle_color ?? '#6E6E73' }}>{shot.cardSubtitle}</div>}
+        <EditableLine className="card-title" style={{ color: brand?.title_color ?? '#1D1D1F' }} value={shot.cardTitle ?? ''}
+          placeholder={shot.card ?? 'Title'} label="Card title" onCommit={(title) => title && onCardText({ title })} testId="card-title-line"
+          startEditing={live} />
+        <EditableLine className="card-subtitle" style={{ color: brand?.subtitle_color ?? '#6E6E73' }} value={shot.cardSubtitle ?? ''}
+          placeholder="Add a subtitle" label="Card subtitle" onCommit={(subtitle) => onCardText({ subtitle })} testId="card-subtitle-line" />
       </div>
     </div>
   );
 }
 
-export function Preview({ kind, timeline, aspect, social, brand, missing, loop, onToggleLoop, onPlayer, overlay, selectedShotId, onSelectShot, onTextPatch, fonts, defaultFont, onRefreshFonts }: {
+export function Preview({ kind, timeline, aspect, social, brand, missing, loop, onToggleLoop, onPlayer, overlay, selectedShotId, onSelectShot, onTextPatch, fonts, defaultFont, onRefreshFonts, onCardText }: {
   kind: FileKind;
   timeline: Timeline;
   aspect: Aspect;
@@ -83,6 +95,7 @@ export function Preview({ kind, timeline, aspect, social, brand, missing, loop, 
   fonts: FontInfo[];
   defaultFont: string; // the font text uses until one is picked
   onRefreshFonts: () => void;
+  onCardText: (card: string, patch: { title?: string; subtitle?: string }) => void;
 }) {
   const wrap = useRef<HTMLDivElement>(null);
   const videoA = useRef<HTMLVideoElement>(null);
@@ -93,6 +106,7 @@ export function Preview({ kind, timeline, aspect, social, brand, missing, loop, 
   // The text box being worked on (by shot id), and a new one started by double-clicking the frame.
   const [activeText, setActiveText] = useState<string | null>(null);
   const [newText, setNewText] = useState<{ shotId: string; pos: Point } | null>(null);
+  const [editedCards, setEditedCards] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!videoA.current || !videoB.current) return undefined;
@@ -201,7 +215,8 @@ export function Preview({ kind, timeline, aspect, social, brand, missing, loop, 
             <video ref={videoB} style={videoStyle} data-testid="video-b" muted playsInline />
             {shot?.kind === 'card' && (
               <div className="card-view" style={videoStyle}>
-                <CardView shot={shot} brand={brand} />
+                <CardView shot={shot} brand={brand} edited={editedCards.has(shot.card ?? '')}
+                  onCardText={(patch) => { if (shot.card) { setEditedCards((c) => new Set(c).add(shot.card!)); onCardText(shot.card, patch); } }} />
               </div>
             )}
             {isMissing && <div className="missing-media">Missing take: {shot.file}</div>}

@@ -256,6 +256,7 @@ export function Editor({ session, onClose }: {
         onSelectShot={(s) => setSelection({ type: 'shot', scene: s.sceneIndex, shot: s.shotIndex })}
         onTextPatch={(s, patch) => onShotPatch(s.sceneIndex, s.shotIndex, patch)}
         fonts={fonts} onRefreshFonts={refreshFonts}
+        onCardText={(name, patch) => runEdit({ op: 'card', name, patch })}
         defaultFont={fileKind === 'demo' ? ((doc as DemoDoc | undefined)?.brand as { font?: string } | undefined)?.font ?? DEFAULT_FONT : DEFAULT_FONT}
         overlay={source && (
           <SourceViewer take={source.take} markable={Boolean(markShot)} onMark={mark} onClose={closeSource}

@@ -5,6 +5,7 @@ describe('staticKey', () => {
   it('keeps media and template previews at their own path', () => {
     expect(staticKey('/media/recordings/raw/01-add-todos-t1.mp4')).toBe('media/recordings/raw/01-add-todos-t1.mp4');
     expect(staticKey('/api/template-preview/built-in/house/01.png')).toBe('api/template-preview/built-in/house/01.png');
+    expect(staticKey('/api/ad-style-preview/daylight/01.jpg')).toBe('api/ad-style-preview/daylight/01.jpg');
   });
   it('gives API reads a .json file and thumbnails a .jpg, with the query folded into the name', () => {
     expect(staticKey('/api/session')).toBe('api/session.json');

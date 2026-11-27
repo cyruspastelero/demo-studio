@@ -1,8 +1,8 @@
-import { Check, Copy, ImageOff, LayoutTemplate } from 'lucide-react';
+import { Check, Copy, ExternalLink, ImageOff, LayoutTemplate } from 'lucide-react';
 import { serverUrl } from '../lib/static-demo';
 import { useState } from 'react';
-import { plainText, TEMPLATE_COPIER, templatePrompt } from '../lib/prompts';
-import { originLabel, sourceLine, type LookTemplate } from '../lib/templates';
+import { adStylePrompt, plainText, TEMPLATE_COPIER, templatePrompt } from '../lib/prompts';
+import { originLabel, sourceLine, type AdStyle, type LookTemplate } from '../lib/templates';
 import { CopyPrompt, PromptText, type Copier } from './library';
 
 const STEPS = [
@@ -32,13 +32,16 @@ function NewTemplate({ copy }: { copy: Copier }) {
   );
 }
 
-function PreviewStrip({ template }: { template: LookTemplate }) {
+// The frames of any template: a look's six or an ad style's ten.
+interface Framed { name: string; previews: string[]; colours?: { background: string | null } }
+
+function PreviewStrip({ template }: { template: Framed }) {
   const [shown, setShown] = useState(0);
   const [failed, setFailed] = useState<Set<number>>(() => new Set());
   const { previews, name } = template;
   if (previews.length === 0 || failed.has(shown)) {
     return (
-      <div className="tpl-preview tpl-preview-empty" style={{ background: template.colours.background ?? undefined }}>
+      <div className="tpl-preview tpl-preview-empty" style={{ background: template.colours?.background ?? undefined }}>
         <span><ImageOff size={18} aria-hidden />No preview yet</span>
       </div>
     );
@@ -122,8 +125,38 @@ function TemplateCard({ template, copy }: { template: LookTemplate; copy: Copier
   );
 }
 
-export function TemplatesView({ templates, error, copy }: {
-  templates: LookTemplate[] | null; error: string | null; copy: Copier;
+function AdStyleCard({ style, copy }: { style: AdStyle; copy: Copier }) {
+  return (
+    <article className="tpl-card" data-testid="ad-style-card" data-style={style.id}>
+      <PreviewStrip template={style} />
+      <div className="tpl-body">
+        <header className="demo-head">
+          <h3>{style.name}</h3>
+          <span className="demo-status tpl-origin built-in">Launch ad</span>
+        </header>
+        <div className="tpl-id">
+          <code className="mono">{style.id}</code>
+          <CopyId id={style.id} copy={copy} />
+        </div>
+        {style.description && <p className="tpl-desc">{style.description}</p>}
+        {style.bestFor.length > 0 && (
+          <ul className="tpl-tags" aria-label="Suits">{style.bestFor.map((t) => <li key={t}>{t}</li>)}</ul>
+        )}
+        <footer className="demo-actions">
+          <CopyPrompt text={adStylePrompt(style.id)} copy={copy} primary testId="use-ad-style"
+            label={`Copy a prompt that makes a launch ad in the ${style.id} style`}>Use</CopyPrompt>
+          {style.sample && (
+            <a className="btn" href={style.sample.url} target="_blank" rel="noreferrer" data-testid="ad-style-sample"
+              title={`Watch the ${style.sample.label}, made with this style`}><ExternalLink size={14} />Watch the sample</a>
+          )}
+        </footer>
+      </div>
+    </article>
+  );
+}
+
+export function TemplatesView({ templates, adStyles, error, copy }: {
+  templates: LookTemplate[] | null; adStyles: AdStyle[] | null; error: string | null; copy: Copier;
 }) {
   const mine = templates?.filter((t) => t.origin === 'workspace').length ?? 0;
   return (
@@ -141,11 +174,22 @@ export function TemplatesView({ templates, error, copy }: {
       {templates && templates.length > 0 && (
         <>
           <div className="section-bar tpl-list-bar">
-            <h2>All templates</h2>
+            <h2>Demo video looks</h2>
             <p className="section-note">{mine} yours, {templates.length - mine} built in. Click a picture to see the next frame.</p>
           </div>
           <div className="demo-grid">
             {templates.map((t) => <TemplateCard key={`${t.origin}:${t.id}`} template={t} copy={copy} />)}
+          </div>
+        </>
+      )}
+      {adStyles && adStyles.length > 0 && (
+        <>
+          <div className="section-bar tpl-list-bar" id="ad-styles">
+            <h2>Launch-ad styles</h2>
+            <p className="section-note">Short music-driven ads cut from a demo's real footage, like the Switchyard launch ad. Click a picture for the next frame.</p>
+          </div>
+          <div className="demo-grid">
+            {adStyles.map((s) => <AdStyleCard key={s.id} style={s} copy={copy} />)}
           </div>
         </>
       )}

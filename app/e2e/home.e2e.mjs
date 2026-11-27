@@ -87,6 +87,18 @@ try {
     await page.locator('[data-testid="copy-toast"]').getByText('Copied').waitFor();
   });
 
+  await step('Templates also shows the launch-ad styles, with frames, a sample and a Use prompt', async () => {
+    await page.click('.side [data-testid="nav-templates"]');
+    await page.waitForSelector('[data-testid="ad-style-card"]');
+    assert.equal(await page.locator('[data-testid="ad-style-card"]').count(), 4);
+    const daylight = page.locator('[data-testid="ad-style-card"][data-style="daylight"]');
+    assert.equal(await daylight.locator('.tpl-thumb').count(), 10);
+    assert.ok(await daylight.locator('.tpl-preview img').evaluate((img) => img.complete && img.naturalWidth > 0), 'the frame loads');
+    assert.match(await daylight.locator('[data-testid="ad-style-sample"]').getAttribute('href'), /sample-daylight-ad\.mp4$/);
+    await daylight.locator('[data-testid="use-ad-style"]').click();
+    assert.match(await copied(), /launch ad .* `daylight` style/);
+  });
+
   await step('opens Templates: new-template prompt, the fixture card, copy id and use', async () => {
     await page.click('.side [data-testid="nav-templates"]');
     await page.waitForSelector('[data-testid="templates-view"]');
@@ -123,6 +135,20 @@ try {
     await page.waitForSelector('[data-testid="shot"]');
     await page.click('[data-testid="close-demo"]');
     await page.waitForSelector('[data-testid="demo-card"]');
+  });
+
+  await step('a refresh lands where the address says: the home screen, or #edit in the open demo', async () => {
+    await card.locator('[data-testid="demo-item"]').click();
+    await page.waitForSelector('[data-testid="shot"]');
+    assert.ok(page.url().endsWith('#edit'), `editor address: ${page.url()}`);
+    await page.reload();
+    await page.waitForSelector('[data-testid="shot"]');
+    await page.click('[data-testid="close-demo"]');
+    await page.waitForSelector('[data-testid="demo-card"]');
+    assert.ok(!page.url().includes('#'), `home address: ${page.url()}`);
+    await page.reload();
+    await page.waitForSelector('[data-testid="demo-card"]'); // the server still has a demo open, the page stays home
+    assert.equal(await page.locator('[data-testid="shot"]').count(), 0);
   });
 
   await step('tries a copy of an example: sample footage for every shot, the example left alone', async () => {

@@ -306,6 +306,18 @@ try {
     assert.notEqual(await page.textContent('[data-testid="timecode"]'), before, 'dragging the head moves the playhead');
   });
 
+  await step('edits a title card\'s words right on the preview', async () => {
+    await page.click('[data-testid="video-tab-HOW-TO"]');
+    await page.locator('[data-shot-id="1:1:0"]').click();
+    await page.locator('[data-testid="card-title-line"]').dblclick();
+    await page.waitForSelector('[data-testid="card-title-line-edit"]');
+    await page.keyboard.type('Set it up in a minute');
+    await page.keyboard.press('Enter');
+    await waitFor(() => readHandoff(folder).cards['card-setup'].title === 'Set it up in a minute', 'the card title to be saved');
+    assert.equal(await page.locator('[data-testid="card-title-line"]').innerText(), 'Set it up in a minute');
+    await page.click('[data-testid="video-tab-PROMO"]');
+  });
+
   await step('frames 9:16 like social-cut.py', async () => {
     await page.click('[data-testid="aspect-9x16"]');
     const stage = await page.locator('[data-testid="stage"]').evaluate((el) => ({ w: el.style.width, h: el.style.height }));

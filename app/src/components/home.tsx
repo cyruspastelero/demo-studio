@@ -1,7 +1,7 @@
 import { Check, Copy, ExternalLink, FileText, Film, FolderOpen, Loader2, PencilRuler, Play, RefreshCw, Search } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { api, demoThumbUrl, type DemoEntry, type HomeSession } from '../api';
-import { fetchTemplates, type LookTemplate } from '../lib/templates';
+import { fetchAdStyles, fetchTemplates, type AdStyle, type LookTemplate } from '../lib/templates';
 import { useCopyToast } from './library';
 import { PROMPT_COUNT, PromptsView } from './prompts-view';
 import { TemplatesView } from './templates-view';
@@ -313,6 +313,7 @@ export function Home({ session, onOpen, onTry, onRefresh }: {
   const [active, setActive] = useState<Section>('overview');
   const [templates, setTemplates] = useState<LookTemplate[] | null>(null);
   const [templatesError, setTemplatesError] = useState<string | null>(null);
+  const [adStyles, setAdStyles] = useState<AdStyle[] | null>(null);
   const { copy, toast } = useCopyToast();
   const inner = useRef<HTMLDivElement>(null);
   const { demos, workspace } = session;
@@ -320,6 +321,8 @@ export function Home({ session, onOpen, onTry, onRefresh }: {
   useEffect(() => {
     let live = true;
     fetchTemplates().then((list) => { if (live) { setTemplates(list); setTemplatesError(null); } })
+      .catch((e: Error) => { if (live) setTemplatesError(e.message); });
+    fetchAdStyles().then((list) => { if (live) setAdStyles(list); })
       .catch((e: Error) => { if (live) setTemplatesError(e.message); });
     return () => { live = false; };
   }, [session]);
@@ -336,7 +339,7 @@ export function Home({ session, onOpen, onTry, onRefresh }: {
   ];
   const library: NavItem[] = [
     { id: 'prompts', label: 'Prompts', count: PROMPT_COUNT },
-    { id: 'templates', label: 'Templates', count: templates?.length },
+    { id: 'templates', label: 'Templates', count: templates || adStyles ? (templates?.length ?? 0) + (adStyles?.length ?? 0) : undefined },
   ];
   const view = VIEWS.includes(active) ? active : null;
   const go = (id: Section) => {
@@ -374,7 +377,7 @@ export function Home({ session, onOpen, onTry, onRefresh }: {
         <div className="home-inner" ref={inner}>
           {error && <p className="note bad" role="alert">{error}</p>}
           {view === 'prompts' && <PromptsView copy={copy} onTemplates={() => go('templates')} />}
-          {view === 'templates' && <TemplatesView templates={templates} error={templatesError} copy={copy} />}
+          {view === 'templates' && <TemplatesView templates={templates} adStyles={adStyles} error={templatesError} copy={copy} />}
           {!view && (
             <>
             <section id="overview" className="home-section">

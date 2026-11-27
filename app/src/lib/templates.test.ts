@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { copyText } from './clipboard';
-import { fetchTemplates, formatDuration, originLabel, parseTemplates, sourceLine, type LookTemplate } from './templates';
+import { fetchTemplates, formatDuration, originLabel, parseAdStyles, parseTemplates, sourceLine, type LookTemplate } from './templates';
 
 const HOUSE: LookTemplate = {
   id: 'house', name: 'House', description: 'The default look.', created: '2026-11-18', origin: 'built-in',
@@ -56,5 +56,21 @@ describe('copyText', () => {
     expect(area.value).toBe('hello');
     expect(area.remove).toHaveBeenCalled();
     vi.unstubAllGlobals();
+  });
+});
+
+describe('launch-ad styles', () => {
+  it('keeps well-formed styles, their own frames, and sample links only to the samples release', () => {
+    const [style, ...rest] = parseAdStyles([
+      { id: 'daylight', name: 'Daylight', description: 'Bright.', bestFor: ['light ui'], tone: 'light',
+        previews: ['/api/ad-style-preview/daylight/01.jpg', 'https://elsewhere.example/x.jpg'],
+        sample: { label: 'Switchyard launch ad', url: 'https://github.com/cyruspastelero/demo-studio/releases/download/samples/sample-daylight-ad.mp4' } },
+      { id: 'odd', name: 'Odd', previews: [], sample: { label: 'x', url: 'https://evil.example/ad.mp4' } },
+      { name: 'no id' },
+    ]);
+    expect(style.previews).toEqual(['/api/ad-style-preview/daylight/01.jpg']);
+    expect(style.sample?.label).toBe('Switchyard launch ad');
+    expect(rest).toHaveLength(1);
+    expect(rest[0].sample).toBeNull();
   });
 });

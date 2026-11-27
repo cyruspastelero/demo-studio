@@ -79,7 +79,9 @@ try {
   console.error(`demo-studio: ${error.message}`);
   process.exit(1);
 }
-const url = await studio.listen(options.port);
+const base = await studio.listen(options.port);
+// The bare address is the home screen; #edit opens the demo the server has open (the folder given).
+const url = folder ? `${base}#edit` : base;
 console.log(`demo-studio: editor running at ${url}${folder ? ` for ${folder}` : ''}`);
 console.log('demo-studio: press Ctrl+C to stop');
 if (options.open) openBrowser(url);

@@ -35,7 +35,7 @@ export function startServer(folder, port = 4517, env = {}) {
     }, SERVER_START_MS);
     const onData = (chunk) => {
       log += chunk;
-      const match = /running at (http:\/\/127\.0\.0\.1:\d+\/)/.exec(log);
+      const match = /running at (http:\/\/127\.0\.0\.1:\d+\/(?:#edit)?)/.exec(log); // #edit: started on a folder
       if (match) {
         clearTimeout(timer);
         resolve({ url: match[1], log: () => log, stop: () => child.kill('SIGTERM') });

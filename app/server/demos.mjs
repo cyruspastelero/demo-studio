@@ -71,6 +71,8 @@ export function demoRoot(cwd, env = process.env) {
   const nested = resolve(cwd, 'demos');
   if (existsSync(nested)) return nested;
   const here = resolve(cwd);
+  // Run from the plugin's own clone: its templates/ holds a handoff.json but is the starter, not a demo.
+  if (existsSync(join(here, '.claude-plugin', 'plugin.json'))) return nested;
   const hasDemos = existsSync(here) && readdirSync(here).some((name) => !name.startsWith('.')
     && statSync(join(here, name)).isDirectory() && isDemoFolder(join(here, name)));
   return isWorkspace(here) || hasDemos ? here : nested;

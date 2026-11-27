@@ -10,6 +10,7 @@ import { insideAny, PathError, resolveInside } from './paths.mjs';
 import { RenderRunner } from './render.mjs';
 import { listTemplates, previewFile } from './templates.mjs';
 import { tryExample } from './try-example.mjs';
+import { adStylePreview, listAdStyles } from './ad-styles.mjs';
 import { FontError, fontFile, fontFormat, listFonts } from '../../scripts/fonts.mjs';
 
 const APP_DIR = fileURLToPath(new URL('..', import.meta.url));
@@ -160,6 +161,13 @@ export function createStudio({ repo, cwd, folder: initialFolder, dev = false, op
       // Only a template's preview PNGs, never another file from its folder; sandboxed like /media/.
       const file = previewFile({ cwd, repo }, ...preview.slice(1));
       if (!file) throw new HttpError(404, 'no such template preview');
+      return sendFile(req, res, file, { untrusted: true });
+    }
+    if (route === 'GET /api/ad-styles') return json(res, 200, listAdStyles(repo));
+    const adFrame = /^GET \/api\/ad-style-preview\/([^/]+)\/([^/]+)$/.exec(route);
+    if (adFrame) {
+      const file = adStylePreview(repo, ...adFrame.slice(1));
+      if (!file) throw new HttpError(404, 'no such ad style preview');
       return sendFile(req, res, file, { untrusted: true });
     }
     if (route === 'GET /api/demo-thumb') {
