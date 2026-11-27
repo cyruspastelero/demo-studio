@@ -13,7 +13,7 @@ import { createRequire } from 'node:module';
 import { validateStoryboard, validateStyle } from './lib/validate.mjs';
 import { resolveScenes, totalDuration } from './lib/timing.mjs';
 import { planZoomSources, prepareMedia } from './lib/assets.mjs';
-import { startServer } from './lib/server.mjs';
+import { startServer, fileUrl } from './lib/server.mjs';
 import { renderMix, loudnessReport } from './lib/mix.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -56,7 +56,11 @@ export function loadProject(storyboardPath, styleOverride) {
   if (timing.beatsFrom) {
     const beats = readJson(resolve(base, timing.beatsFrom), 'beats');
     timing.bpm ??= beats.bpm;
-    timing.offset ??= beats.offset;
+    if (timing.offset == null && beats.offset != null) {
+      // The beats file times the music file; the mix starts it at musicStart, so shift the grid.
+      const beat = 60 / timing.bpm, musicStart = board.audio?.musicStart || 0;
+      timing.offset = (((beats.offset - musicStart) % beat) + beat) % beat;
+    }
   }
   const fps = board.fps || 30;
   const timeline = resolveScenes(board.scenes, timing, fps);
@@ -69,29 +73,48 @@ async function openRuntime(project, size, cacheDir) {
   planZoomSources(board, project.storyboardPath, size[0]);
   const { assets, files } = prepareMedia(board, project.storyboardPath, cacheDir, fps);
   const boardForPage = structuredClone(board);
-  for (const f of Object.values(boardForPage.brand.fonts || {})) { const abs = resolve(base, f.src); files.add(abs); f.url = `/file${abs}`; }
+  for (const f of Object.values(boardForPage.brand.fonts || {})) { const abs = resolve(base, f.src); files.add(abs); f.url = fileUrl(abs); }
   const { server, port } = await startServer(HERE, files, FONT_DIRS);
-  const { chromium } = createRequire(import.meta.url)(process.env.MOTION_PLAYWRIGHT || 'playwright-core');
-  const browser = await chromium.launch({ channel: 'chrome', args: ['--font-render-hinting=none', '--disable-lcd-text', '--force-color-profile=srgb', '--disable-gpu', '--disable-gpu-rasterization', '--disable-partial-raster', '--num-raster-threads=1', '--disable-skia-runtime-opts'] });
-  const page = await browser.newPage({ viewport: { width: size[0], height: size[1] }, deviceScaleFactor: 1 });
-  const logs = [];
-  page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') logs.push(m.text()); });
-  page.on('pageerror', (e) => logs.push(`page error: ${e.message}`));
-  await page.goto(`http://127.0.0.1:${port}/engine/index.html`);
-  await page.waitForFunction(() => window.motionReady === true, null, { timeout: 15000 }).catch(() => { throw new Error(`runtime did not start: ${logs.join(' | ')}`); });
-  const beat = timing.bpm ? 60 / timing.bpm : 1;
-  const result = await page.evaluate((cfg) => window.motion.load(cfg).catch((e) => ({ error: e.message })), { board: boardForPage, style, assets, timeline, beat, size: { w: size[0], h: size[1] } });
-  if (result.error) throw new Error(`runtime load failed: ${result.error}`);
-  const close = async () => { await browser.close(); server.close(); };
-  return { page, result, logs, close };
+  let browser = null;
+  const close = async () => { try { if (browser) await browser.close(); } finally { server.close(); } };
+  try {
+    const { chromium } = createRequire(import.meta.url)(process.env.MOTION_PLAYWRIGHT || 'playwright-core');
+    browser = await chromium.launch({ channel: 'chrome', args: ['--font-render-hinting=none', '--disable-lcd-text', '--force-color-profile=srgb', '--disable-gpu', '--disable-gpu-rasterization', '--disable-partial-raster', '--num-raster-threads=1', '--disable-skia-runtime-opts'] });
+    const page = await browser.newPage({ viewport: { width: size[0], height: size[1] }, deviceScaleFactor: 1 });
+    const logs = [];
+    page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') logs.push(m.text()); });
+    page.on('pageerror', (e) => logs.push(`page error: ${e.message}`));
+    await page.goto(`http://127.0.0.1:${port}/engine/index.html`);
+    await page.waitForFunction(() => window.motionReady === true, null, { timeout: 15000 }).catch(() => { throw new Error(`runtime did not start: ${logs.join(' | ')}`); });
+    const beat = timing.bpm ? 60 / timing.bpm : 1;
+    const result = await page.evaluate((cfg) => window.motion.load(cfg).catch((e) => ({ error: e.message })), { board: boardForPage, style, assets, timeline, beat, size: { w: size[0], h: size[1] } });
+    if (result.error) throw new Error(`runtime load failed: ${result.error}`);
+    return { page, result, logs, close };
+  } catch (error) {
+    await close().catch((closeError) => process.stderr.write(`closing the runtime failed: ${closeError.message}\n`));
+    throw error;
+  }
 }
 
 function encoder(out, fps, { stillsDir } = {}) {
   if (stillsDir) return null;
   const ff = spawn('ffmpeg', ['-hide_banner', '-v', 'error', '-y', '-f', 'image2pipe', '-framerate', String(fps), '-c:v', 'png', '-i', '-', '-c:v', 'libx264', '-preset', 'medium', '-crf', '16', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', out], { stdio: ['pipe', 'inherit', 'inherit'] });
-  const done = new Promise((ok, fail) => ff.on('close', (code) => (code === 0 ? ok() : fail(new Error(`ffmpeg encode exited ${code}`)))));
-  const write = (buf) => new Promise((ok) => (ff.stdin.write(buf) ? ok() : ff.stdin.once('drain', ok)));
-  return { write, end: async () => { ff.stdin.end(); await done; } };
+  let failure = null;
+  const done = new Promise((ok, fail) => {
+    ff.on('error', (error) => fail(new Error(`ffmpeg encode could not start: ${error.message}`)));
+    ff.on('close', (code) => (code === 0 ? ok() : fail(new Error(`ffmpeg encode exited ${code}`))));
+  });
+  done.catch((error) => { failure = error; });
+  ff.stdin.on('error', (error) => { failure ??= new Error(`ffmpeg encode input failed: ${error.message}`); });
+  const write = (buf) => {
+    if (failure) return Promise.reject(failure);
+    return new Promise((ok, fail) => {
+      if (ff.stdin.write(buf)) return ok();
+      ff.stdin.once('drain', ok);
+      done.catch(fail);
+    });
+  };
+  return { write, end: async () => { if (failure) throw failure; ff.stdin.end(); await done; } };
 }
 
 /** The synthesised SFX kit in motion/sfx (made by make-sfx.mjs on first use). */
@@ -103,18 +126,36 @@ function builtinSfx() {
   return Object.fromEntries(SFX_NAMES.map((n) => [n, join(SFX_DIR, `${n}.wav`)]));
 }
 
+/** A warning when the music runs out before the ad ends (the mix pads it with silence). */
+function musicLengthWarnings(project) {
+  const audio = project.board.audio || {};
+  if (!audio.music) return [];
+  const file = resolve(project.base, audio.music);
+  const r = spawnSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', file], { encoding: 'utf8' });
+  const length = Number(r.stdout?.trim());
+  if (r.status !== 0 || !Number.isFinite(length)) throw new Error(`cannot read the length of ${audio.music}: ${(r.stderr || r.error?.message || '').trim()}`);
+  const needed = (audio.musicStart || 0) + project.duration;
+  if (length >= needed) return [];
+  return [`audio.music ${audio.music} is ${length.toFixed(2)} s long but musicStart + the ad need ${needed.toFixed(2)} s; the last ${(needed - length).toFixed(2)} s will have no music`];
+}
+
 export async function render(storyboardPath, opts) {
+  if (!opts.check && !opts.stills && !String(opts.out).endsWith('.mp4')) {
+    throw new Error(`--out must end in .mp4 (got ${opts.out}); the timeline and audio files are named after it`);
+  }
   const project = loadProject(storyboardPath, opts.style);
   project.storyboardPath = storyboardPath;
   if (opts.check) {
-    const warnings = planZoomSources(structuredClone(project.board), storyboardPath, 1920);
+    const warnings = [...planZoomSources(structuredClone(project.board), storyboardPath, 1920), ...musicLengthWarnings(project)];
     return { project, warnings };
   }
   const size = SIZES[opts.size || '16x9'];
   if (!size) throw new Error(`--size must be one of ${Object.keys(SIZES).join(', ')}`);
   const cacheDir = process.env.MOTION_CACHE || join(dirname(resolve(storyboardPath)), '.motion-cache');
   mkdirSync(cacheDir, { recursive: true });
+  if (!opts.stills && !opts['no-audio']) for (const w of musicLengthWarnings(project)) process.stderr.write(`warning: ${w}\n`);
   const { page, result, logs, close } = await openRuntime(project, size, cacheDir);
+  const temps = [];
   try {
     if (result.warnings.length) throw new Error(`storyboard problems:\n  - ${result.warnings.join('\n  - ')}`);
     const fps = project.fps;
@@ -134,6 +175,7 @@ export async function render(storyboardPath, opts) {
     const out = resolve(opts.out);
     mkdirSync(dirname(out), { recursive: true });
     const videoOnly = opts['no-audio'] ? out : out.replace(/\.mp4$/, '.video.mp4');
+    if (videoOnly !== out) temps.push(videoOnly);
     const enc = encoder(videoOnly, fps);
     const first = Math.round(from * fps), last = Math.round(to * fps);
     const t0 = Date.now();
@@ -151,13 +193,14 @@ export async function render(storyboardPath, opts) {
     const base = project.base;
     const sfx = { ...builtinSfx(), ...Object.fromEntries(Object.entries(audio.sfx || {}).map(([k, v]) => [k, resolve(base, v)])) };
     const raw = out.replace(/\.mp4$/, '.raw.wav'), norm = out.replace(/\.mp4$/, '.mix.wav');
+    temps.push(raw, norm);
     const mix = renderMix({ music: audio.music ? resolve(base, audio.music) : null, musicStart: audio.musicStart || 0, musicGainDb: audio.musicGainDb || 0, duration: project.duration, fadeOut: audio.fadeOut ?? 1.5, cues, sfx, sfxGainDb: audio.sfxGainDb ?? -10, window: [from, to] }, raw, norm, { loudness: audio.loudness ?? -14, truePeak: audio.truePeak ?? -1.5 });
     if (mix.missing.length) process.stderr.write(`no SFX file for cue(s): ${mix.missing.join(', ')} (skipped)\n`);
     const mux = spawn('ffmpeg', ['-hide_banner', '-v', 'error', '-y', '-i', videoOnly, '-i', norm, '-map', '0:v', '-map', '1:a', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k', '-shortest', '-movflags', '+faststart', out], { stdio: 'inherit' });
     await new Promise((ok, fail) => mux.on('close', (c) => (c === 0 ? ok() : fail(new Error(`mux exited ${c}`)))));
-    for (const f of [videoOnly, raw, norm]) rmSync(f, { force: true });
     return { project, out, loudness: loudnessReport(out) };
   } finally {
+    for (const f of temps) rmSync(f, { force: true });
     await close();
   }
 }

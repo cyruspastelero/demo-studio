@@ -34,7 +34,7 @@ function frameStats(f) {
   return { luma: round(l / (W * H), 1), diff: round(d / (W * H), 2), edge: round(e / ((W - 2) * (H - 2)), 2) };
 }
 await new Promise((resolve, reject) => {
-  const p = spawn('bash', [HEAVY_LOCK, 'ffmpeg', ...args], { stdio: ['ignore', 'pipe', 'pipe'] });
+  const p = HEAVY_LOCK ? spawn('bash', [HEAVY_LOCK, 'ffmpeg', ...args], { stdio: ['ignore', 'pipe', 'pipe'] }) : spawn('ffmpeg', args, { stdio: ['ignore', 'pipe', 'pipe'] });
   p.stdout.on('data', (b) => {
     pending = pending.length ? Buffer.concat([pending, b]) : b;
     while (pending.length >= SIZE) { stats.push(frameStats(pending.subarray(0, SIZE))); pending = pending.subarray(SIZE); }

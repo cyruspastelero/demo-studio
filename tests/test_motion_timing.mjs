@@ -54,3 +54,40 @@ test('cubic-bezier matches its endpoints and CSS ease-out shape', () => {
   assert.ok(Math.abs(lin(0.37) - 0.37) < 1e-4);
   assert.throws(() => ease('wobble'), /unknown easing/);
 });
+
+test('at 25 fps scene starts equal the time of their first frame exactly', () => {
+  const t = resolveScenes(Array.from({ length: 60 }, () => ({ duration: 0.37 })), { start: 0 }, 25);
+  for (const s of t) {
+    const f = Math.round(s.start * 25);
+    assert.ok(f / 25 - s.start >= 0, `scene ${s.index} starts at ${s.start}, its first frame is at ${f / 25}`);
+  }
+});
+
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
+import { loadProject, render } from '../motion/render-motion.mjs';
+
+function tempBoard(extra = {}) {
+  const dir = mkdtempSync(join(tmpdir(), 'motion-timing-'));
+  writeFileSync(join(dir, 'm.wav'), 'x');
+  writeFileSync(join(dir, 'beats.json'), JSON.stringify({ bpm: 120, offset: 0.1 }));
+  const board = { version: 1, brand: { name: 'Acme', accent: '#2255ff' }, scenes: [{ type: 'kineticText', beats: 2, phrases: ['Hello'] }], ...extra };
+  const path = join(dir, 'board.json');
+  writeFileSync(path, JSON.stringify(board));
+  return path;
+}
+
+test('the beat grid from beatsFrom is shifted by musicStart so scenes land on the beat', () => {
+  const p = loadProject(tempBoard({ timing: { beatsFrom: 'beats.json' }, audio: { music: 'm.wav', musicStart: 1.3 } }));
+  assert.ok(Math.abs(p.timing.offset - 0.3) < 1e-9, String(p.timing.offset));
+  assert.ok(Math.abs(p.timeline[0].start - 0.3) <= 1 / 60, String(p.timeline[0].start));
+});
+
+test('an --out that does not end in .mp4 is refused before any work', async () => {
+  const path = tempBoard({ timing: { bpm: 120 } });
+  // An invalid --size too, so a missing check fails on the size instead of starting a render.
+  for (const out of ['ad.mov', 'ad.MP4']) {
+    await assert.rejects(render(path, { out, size: 'none' }), /--out must end in \.mp4/);
+  }
+});

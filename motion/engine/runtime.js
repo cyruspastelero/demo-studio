@@ -8,7 +8,7 @@ const stage = document.getElementById('stage');
 const state = { scenes: [], cues: [], warnings: [], pendingImages: new Set(), ctx: null, bgLight: null, bgDark: null };
 
 function fontFace(name, url) {
-  const face = new FontFace(name, `url(${url})`, { weight: '100 900' });
+  const face = new FontFace(name, `url("${url}")`, { weight: '100 900' });
   document.fonts.add(face);
   return face.load();
 }

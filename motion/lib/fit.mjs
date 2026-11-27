@@ -76,7 +76,7 @@ export function fitText(words, measure, { baseSize, minSize, maxWidth, maxHeight
     if (next < minSize) {
       const minLines = wrap(words, measure, minSize, maxWidth);
       const minWidest = Math.max(...minLines.map((l) => measure(l.join(' '), minSize)));
-      const overflow = minWidest > maxWidth || minLines.length * minSize * lineHeight > maxHeight;
+      const overflow = minWidest > maxWidth || minLines.length > maxLines || minLines.length * minSize * lineHeight > maxHeight;
       return { size: minSize, lines: minLines, overflow };
     }
     size = next;

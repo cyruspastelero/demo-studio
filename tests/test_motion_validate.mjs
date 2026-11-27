@@ -86,3 +86,40 @@ test('the shipped example storyboards are valid and all their files exist', () =
     assert.deepEqual(validateStoryboard(board, schema, path), [], rel);
   }
 });
+
+test('$defs.common is a real schema (properties), not a bare property map', () => {
+  const common = schema.$defs.common;
+  assert.equal(typeof common.properties, 'object');
+  for (const key of ['type', 'beats', 'duration', 'exit', 'tone', 'sfx', 'id', 'note']) assert.ok(key in common.properties, key);
+  assert.ok(!('beats' in common));
+  const b = base();
+  Object.assign(b.scenes[0], { id: 'intro', note: 'n', exit: 'cut', tone: 'dark', sfx: false });
+  assert.deepEqual(validateStoryboard(b, schema, boardPath), []);
+});
+
+import { request } from 'node:http';
+import { mkdirSync } from 'node:fs';
+import { startServer, fileUrl } from '../motion/lib/server.mjs';
+
+const get = (port, path, host = `127.0.0.1:${port}`) => new Promise((ok, fail) => {
+  const req = request({ host: '127.0.0.1', port, path, headers: { host } }, (res) => { res.resume(); res.on('end', () => ok(res.statusCode)); });
+  req.on('error', fail);
+  req.end();
+});
+
+test('media in folders with spaces, #, ? or % are served; bad escapes get 400; foreign hosts get 403', async () => {
+  const folder = join(dir, 'my takes #1 ?50%');
+  mkdirSync(folder, { recursive: true });
+  const file = join(folder, 'shot 1.png');
+  writeFileSync(file, 'x');
+  assert.ok(!/[ #?]/.test(fileUrl(file)), fileUrl(file));
+  const { server, port } = await startServer(join(here, '../motion'), new Set([folder]));
+  try {
+    assert.equal(await get(port, fileUrl(file)), 200);
+    assert.equal(await get(port, fileUrl(file), `localhost:${port}`), 200);
+    assert.equal(await get(port, '/file/%E0%A4%A'), 400);
+    assert.equal(await get(port, fileUrl(file), `evil.example:${port}`), 403);
+  } finally {
+    server.close();
+  }
+});

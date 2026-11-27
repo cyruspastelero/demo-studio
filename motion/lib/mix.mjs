@@ -1,5 +1,6 @@
 // Audio: music bed + SFX cues -> one track, then two-pass EBU R128 loudnorm.
 import { spawnSync } from 'node:child_process';
+import { copyFileSync } from 'node:fs';
 
 /**
  * Builds the filter graph. cues: [{t, name, gain}]; sfx: {name: path}. Returns {inputs, filter}.
@@ -15,7 +16,9 @@ export function buildMixGraph({ music, musicStart = 0, musicGainDb = 0, duration
   if (music) {
     inputs.push('-i', music);
     const fadeStart = Math.max(0, Math.min(len, duration - from) - fadeOut);
-    parts.push(`[0:a]atrim=start=${(musicStart + from).toFixed(3)}:duration=${len.toFixed(3)},asetpts=PTS-STARTPTS,aformat=sample_rates=48000:channel_layouts=stereo,volume=${musicGainDb}dB,afade=t=out:st=${fadeStart.toFixed(3)}:d=${fadeOut}[m]`);
+    // apad: a track shorter than musicStart + the window would otherwise end the mix (and, through
+    // -shortest, the video) early.
+    parts.push(`[0:a]atrim=start=${(musicStart + from).toFixed(3)}:duration=${len.toFixed(3)},asetpts=PTS-STARTPTS,apad=whole_dur=${len.toFixed(3)},aformat=sample_rates=48000:channel_layouts=stereo,volume=${musicGainDb}dB,afade=t=out:st=${fadeStart.toFixed(3)}:d=${fadeOut}[m]`);
     labels.push('[m]');
   } else {
     // No music: a silent bed of the full length comes first, so amix (duration=first) and
@@ -57,6 +60,8 @@ export function renderMix(opts, rawFile, outFile, { loudness = -14, truePeak = -
   ff(['-y', ...inputs, '-filter_complex', filter, '-map', '[mix]', '-ac', '2', '-ar', '48000', '-c:a', 'pcm_s24le', rawFile], 'audio mix');
   const target = `I=${loudness}:TP=${truePeak}:LRA=11`;
   const m = lastJson(ff(['-i', rawFile, '-af', `loudnorm=${target}:print_format=json`, '-f', 'null', '-'], 'loudnorm pass 1'));
+  // A silent mix measures -inf LUFS and pass 2 would fail: there is nothing to normalise, keep it as is.
+  if (!Number.isFinite(Number(m.input_i))) { copyFileSync(rawFile, outFile); return { missing, firstPass: m }; }
   ff(['-y', '-i', rawFile, '-af', `loudnorm=${target}:measured_I=${m.input_i}:measured_TP=${m.input_tp}:measured_LRA=${m.input_lra}:measured_thresh=${m.input_thresh}:offset=${m.target_offset}:linear=true`, '-ar', '48000', '-c:a', 'pcm_s24le', outFile], 'loudnorm pass 2');
   return { missing, firstPass: m };
 }

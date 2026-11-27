@@ -555,16 +555,18 @@
       ]
     },
     "common": {
-      "type": {
-        "type": "string"
-      },
-      "beats": {},
-      "duration": {},
-      "exit": {},
-      "tone": {},
-      "sfx": {},
-      "id": {},
-      "note": {}
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "beats": {},
+        "duration": {},
+        "exit": {},
+        "tone": {},
+        "sfx": {},
+        "id": {},
+        "note": {}
+      }
     },
     "kineticText": {
       "required": [

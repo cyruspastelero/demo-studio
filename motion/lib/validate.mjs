@@ -63,7 +63,7 @@ export function validateSchema(rootSchema, value, { onFormat } = {}) {
       const props = schema.properties || {};
       for (const [key, sub] of Object.entries(props)) if (key in v) visit(sub, v[key], [...path, key]);
       const extraAllowed = new Set(Object.keys(props));
-      for (const name of schema.additionalPropertiesFrom || []) Object.keys(rootSchema.$defs[name]).forEach((k) => extraAllowed.add(k));
+      for (const name of schema.additionalPropertiesFrom || []) Object.keys(rootSchema.$defs[name].properties || {}).forEach((k) => extraAllowed.add(k));
       const closed = schema.additionalProperties === false || schema.additionalPropertiesFrom;
       for (const key of Object.keys(v)) {
         if (extraAllowed.has(key)) continue;

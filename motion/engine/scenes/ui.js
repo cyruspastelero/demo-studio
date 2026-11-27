@@ -67,14 +67,17 @@ export const uiFocus = {
     const focusCx = (fx + fw / 2 - 0.5) * w, focusCy = (fy + fh / 2 - 0.5) * h;
     const ring = el('div', { position: 'absolute', left: px(fx * w), top: px(fy * h), width: px(fw * w), height: px(fh * h), borderRadius: px(ctx.u * 0.8 / scale), boxShadow: `0 0 0 ${px(ctx.u * 0.35 / scale)} ${ctx.accent}, 0 0 ${px(ctx.u * 3 / scale)} ${rgba(ctx.accent, 0.5)}`, opacity: '0' }, pan.body);
     const dim = el('div', { position: 'absolute', left: px(fx * w), top: px(fy * h), width: px(fw * w), height: px(fh * h), borderRadius: px(ctx.u * 0.8 / scale), boxShadow: `0 0 0 ${px(Math.max(w, h) * 2)} ${ctx.pal.bg}`, opacity: '0', pointerEvents: 'none' }, pan.body);
-    const steps = p.click ? [{ t: (p.clickAt != null ? ctx.sec(p.clickAt) : zoomAt + 0.9) - 0.7, x: (p.click[0] + 0.12) * w, y: (p.click[1] + 0.14) * h }, { t: p.clickAt != null ? ctx.sec(p.clickAt) : zoomAt + 0.9, x: p.click[0] * w, y: p.click[1] * h, click: true }] : [];
+    // A time past the scene end is never drawn; its cue would sound over the next scene.
+    const late = (t, what) => t >= dur && (ctx.warn(`${what} is at ${t.toFixed(2)} s, at or past the end of the ${dur.toFixed(2)} s scene, so it never shows; make the scene longer or move it earlier (at counts beats when the storyboard has a tempo)`), true);
+    const clickT = p.clickAt != null ? ctx.sec(p.clickAt) : zoomAt + 0.9;
+    const steps = p.click ? [{ t: clickT - 0.7, x: (p.click[0] + 0.12) * w, y: (p.click[1] + 0.14) * h }, { t: clickT, x: p.click[0] * w, y: p.click[1] * h, click: !late(clickT, 'the click (clickAt)') }] : [];
     const cur = steps.length ? cursor(ctx, pan.body, steps) : null;
     if (cur) cur.node.style.width = px(parseFloat(cur.node.style.width) / scale), cur.node.style.height = px(parseFloat(cur.node.style.height) / scale);
     const headAt = p.headlineAt != null ? ctx.sec(p.headlineAt) : zoomAt + 0.3;
     const head = p.headline ? headlineBlock(ctx, root, p.headline, { y: ctx.H * (ctx.portrait ? 0.86 : 0.88), size: 'title' }) : null;
 
     ctx.cue(0, 'whoosh');
-    ctx.cue(zoomAt, 'swish', -3);
+    if (!late(zoomAt, 'the zoom (zoomAt)')) ctx.cue(zoomAt, 'swish', -3);
     return {
       update(t) {
         const pe = prog(t, 0, ctx.style.motion.enterMs / 1000, ctx.style.motion.enterEase);

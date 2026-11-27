@@ -90,11 +90,11 @@ Top level:
 | `brand.logo` | path | Logo mark (svg/png) for `logoLockup`. |
 | `brand.url` | string | Shown under the lock-up. |
 | `brand.fonts.display` / `.body` | `{family, src, weight}` | Optional. Your own font files; otherwise the style's fonts. |
-| `timing.beatsFrom` | path | `beats.json` from `analyze-beats.mjs`; fills `bpm` and `offset`. |
+| `timing.beatsFrom` | path | `beats.json` from `analyze-beats.mjs`; fills `bpm` and `offset` (the offset is shifted by `audio.musicStart`, so scenes stay on the beat). |
 | `timing.bpm`, `timing.offset` | number | Tempo and first-beat second, if you know them. |
 | `timing.start` | number | Second at which scene 1 starts (default: the first beat). |
 | `timing.tail` | number | Seconds held after the last scene. |
-| `audio.music` | path | Music bed. `musicStart` (s) skips into it; `musicGainDb`; `fadeOut` (s). |
+| `audio.music` | path | Music bed. `musicStart` (s) skips into it; `musicGainDb`; `fadeOut` (s). A track shorter than `musicStart` plus the ad is padded with silence, with a warning. |
 | `audio.sfx` | `{cue: path}` | Optional: your own files for the cue names scenes emit (see below). Without it the built-in synthesised kit is used. |
 | `audio.sfxGainDb` | number | SFX level relative to music, default -10. |
 | `audio.loudness`, `audio.truePeak` | number | Loudnorm target, default -14 LUFS and -1.5 dBTP. |

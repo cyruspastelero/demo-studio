@@ -54,3 +54,9 @@ test('asterisks mark accent words, including across words and before punctuation
   const parsed = parseAccent('Every *demo video* took *me*.');
   assert.deepEqual(parsed.map((w) => [w.text, w.accent]), [['Every', false], ['demo', true], ['video', true], ['took', false], ['me.', true]]);
 });
+
+test('more lines than maxLines at the minimum size reports overflow', () => {
+  const r = fitText(words('Acme Super Long Brand Name Here'), measure, { baseSize: 100, minSize: 40, maxWidth: 400, maxLines: 1 });
+  assert.ok(r.lines.length > 1);
+  assert.equal(r.overflow, true);
+});

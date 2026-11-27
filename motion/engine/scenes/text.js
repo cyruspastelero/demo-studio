@@ -40,12 +40,14 @@ export const kineticText = {
         }
       });
     }
-    items.forEach((it) => ctx.cue(it.t, 'swish', -6));
+    // A time past the scene end is never drawn; its cue would sound over the next scene.
+    const late = (t, what) => t >= dur && (ctx.warn(`${what} is at ${t.toFixed(2)} s, at or past the end of the ${dur.toFixed(2)} s scene, so it never shows; make the scene longer or move it earlier (at counts beats when the storyboard has a tempo)`), true);
+    items.forEach((it) => { if (!late(it.t, `phrase "${it.text}"`)) ctx.cue(it.t, 'swish', -6); });
     let mark = null;
     if (p.mark) {
       mark = el('img', { position: 'absolute', width: px(markSize), height: px(markSize), left: px(ctx.W / 2 - markSize / 2), opacity: '0' }, root);
       mark.src = ctx.asset(p.mark).url;
-      ctx.cue(markT, 'pop');
+      if (!late(markT, 'the mark (markAt)')) ctx.cue(markT, 'pop');
     }
     return {
       update(t) {

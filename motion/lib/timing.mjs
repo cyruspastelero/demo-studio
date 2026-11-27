@@ -22,8 +22,9 @@ export function resolveScenes(scenes, timing = {}, fps = 30) {
   const bpm = timing.bpm;
   const beat = bpm ? beatSeconds(bpm) : null;
   let cursor = timing.start ?? (bpm ? (timing.offset ?? 0) : 0);
-  const frame = 1 / fps;
-  const snap = (t) => Math.round(t / frame) * frame;
+  // k / fps, not k * (1 / fps): the renderer seeks frame k at k / fps, and the two can differ by a
+  // float ulp (at 25 fps a scene would then start one frame late).
+  const snap = (t) => Math.round(t * fps) / fps;
   return scenes.map((scene, index) => {
     let duration;
     if (scene.beats != null) {

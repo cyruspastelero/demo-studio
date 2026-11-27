@@ -1,10 +1,11 @@
 // Shared helpers for the reference-ad analysis scripts. Plain Node, no deps.
 // Pixels come from ffmpeg as raw rgb24; audio as mono f32le.
 import { spawn, execFileSync } from 'node:child_process';
-import os from 'node:os';
-import path from 'node:path';
+import { existsSync } from 'node:fs';
 
-export const HEAVY_LOCK = path.join(os.homedir(), 'side-project/.heavy-lock.sh');
+// Optional: DEMO_STUDIO_HEAVY_LOCK names a script run as `bash <lock> <cmd> <args...>` that serialises
+// heavy jobs (ffmpeg decodes). Unset or missing, heavy commands run directly.
+export const HEAVY_LOCK = process.env.DEMO_STUDIO_HEAVY_LOCK && existsSync(process.env.DEMO_STUDIO_HEAVY_LOCK) ? process.env.DEMO_STUDIO_HEAVY_LOCK : null;
 
 export function probe(video) {
   const out = execFileSync('ffprobe', ['-v', 'error', '-select_streams', 'v:0',
@@ -17,7 +18,7 @@ export function probe(video) {
 
 // Run a command, collecting stdout as Buffer chunks via onChunk, stderr as text. heavy=true wraps it in the lock.
 export function run(cmd, args, { heavy = false, onStdout, collectStdout = false } = {}) {
-  const [c, a] = heavy ? ['bash', [HEAVY_LOCK, cmd, ...args]] : [cmd, args];
+  const [c, a] = heavy && HEAVY_LOCK ? ['bash', [HEAVY_LOCK, cmd, ...args]] : [cmd, args];
   return new Promise((resolve, reject) => {
     const p = spawn(c, a, { stdio: ['ignore', 'pipe', 'pipe'] });
     const chunks = []; let err = '';

@@ -2,8 +2,9 @@
 // stills are served as-is (cropped ones are re-encoded), clips and GIFs become JPEG frame folders.
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync } from 'node:fs';
 import { resolve, dirname, join } from 'node:path';
+import { fileUrl } from './server.mjs';
 
 const MEDIA_KEYS = new Set(['media', 'medias', 'images', 'logo', 'mark', 'icon']);
 const VIDEO = /\.(mp4|mov|webm|m4v|gif)$/i;
@@ -63,15 +64,18 @@ export function prepareMedia(board, storyboardPath, cacheDir, fps, { maxWidth = 
     const isClip = VIDEO.test(abs);
     if (!isClip && !s.crop && s.maxWidth == null) {
       const size = abs.endsWith('.svg') ? svgSize(abs) : probe(abs);
-      assets[key] = { kind: 'image', url: `/file${abs}`, ...size };
+      assets[key] = { kind: 'image', url: fileUrl(abs), ...size };
       files.add(abs);
       continue;
     }
     const width = s.maxWidth ?? maxWidth;
-    const hash = createHash('sha1').update(JSON.stringify({ abs, from: s.from, to: s.to, crop: s.crop, fps, maxWidth: width, v: 2 })).digest('hex').slice(0, 16);
+    // mtime and size: a clip re-recorded at the same path gets fresh frames.
+    const { mtimeMs, size: bytes } = statSync(abs);
+    const hash = createHash('sha1').update(JSON.stringify({ abs, mtimeMs, bytes, from: s.from, to: s.to, crop: s.crop, fps, maxWidth: width, v: 2 })).digest('hex').slice(0, 16);
     const dir = join(cacheDir, hash);
     if (!existsSync(join(dir, 'done'))) {
       const tmp = `${dir}.tmp`;
+      rmSync(tmp, { recursive: true, force: true }); // left over from an interrupted extraction
       mkdirSync(tmp, { recursive: true });
       const vf = `${cropFilter(s.crop)}scale='min(${width},iw)':-2:flags=lanczos`;
       if (isClip) {
@@ -89,8 +93,8 @@ export function prepareMedia(board, storyboardPath, cacheDir, fps, { maxWidth = 
     const size = probe(join(dir, frames[0]));
     files.add(dir);
     assets[key] = isClip
-      ? { kind: 'clip', dir: `/file${dir}`, count: frames.length, fps, rate: s.rate ?? 1, ...size }
-      : { kind: 'image', url: `/file${join(dir, frames[0])}`, ...size };
+      ? { kind: 'clip', dir: fileUrl(dir), count: frames.length, fps, rate: s.rate ?? 1, ...size }
+      : { kind: 'image', url: fileUrl(join(dir, frames[0])), ...size };
   }
   return { assets, files };
 }

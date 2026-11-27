@@ -49,3 +49,8 @@ test('with music, SFX inputs are numbered after it and cues outside the window a
   assert.match(g.filter, /\[1:a\].*adelay=1000\|1000/);
   assert.deepEqual(g.missing, ['nope']);
 });
+
+test('with music, the bed is padded to the whole window so a short track cannot cut the video short', () => {
+  const g = buildMixGraph({ music: 'm.mp3', musicStart: 3, duration: 10, window: [2, 6] });
+  assert.match(g.filter, /^\[0:a\]atrim=start=5\.000:duration=4\.000,asetpts=PTS-STARTPTS,apad=whole_dur=4\.000,/);
+});
