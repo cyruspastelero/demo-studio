@@ -33,6 +33,8 @@ def load(name: str, file: str):
 
 
 lib = load("demolib", "demolib.py")
+sys.path.insert(0, str(HERE))  # the keynote package sits next to this file
+from keynote.model import PlanError, confine_take  # noqa: E402
 
 
 def handoff_segments(cfg: dict, cfg_path: Path, key: str) -> list[dict]:
@@ -67,6 +69,11 @@ def demo_segments(cfg: dict, root: Path) -> list[dict]:
                              "length": item.get("duration", KEYNOTE_CARD)})
             continue
         src = rec / "raw" / f"{item['stem']}-t{item.get('take', 1)}.mp4"
+        if src.exists():  # a missing take is reported when its segment renders
+            try:
+                src = confine_take(src, rec / "raw", f"scene {item['scene']}")
+            except PlanError as error:
+                sys.exit(f"quick-preview: {error}")
         start, end = item.get("trim") or [None, None]
         segments.append({"source": src, "in": start or 0, "out": end, "speed": item.get("speed", 1)})
     return segments
@@ -101,6 +108,18 @@ def segment_seconds(seg: dict) -> float:
     return (end - seg["in"]) / seg["speed"]
 
 
+def refuse_linked_recordings(root: Path) -> None:
+    """recordings/ and recordings/exports/ must be real folders with no symlinks under them, as
+    build-keynote.py asks, so a shared demo folder cannot send the preview outside it."""
+    rec = root / "recordings"
+    try:
+        if rec.is_symlink():
+            raise lib.UnsafePath(f"recordings: {rec} is a symlink; refusing to write through it")
+        lib.refuse_symlinks_under(rec / "exports", "recordings/exports")
+    except lib.UnsafePath as error:
+        sys.exit(f"quick-preview: {error}")
+
+
 def main() -> None:
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     out_arg = None
@@ -117,12 +136,15 @@ def main() -> None:
         if cfg_path.name != "demo.json":
             sys.exit("quick-preview: for handoff.json, name the video key too, for example PROMO")
         cfg = lib.load_config(cfg_path, "demo", "quick-preview")
+        refuse_linked_recordings(root)  # cards are read from, and the preview written to, recordings/exports
         key, segments = "KEYNOTE", demo_segments(cfg, root)
     else:
         cfg = lib.load_config(cfg_path, "handoff", "quick-preview")
         key = args[1]
         segments = handoff_segments(cfg, cfg_path, key)
     slate = (cfg.get("brand", {}).get("background") or f"#{SLATE}")[1:]
+    if not out_arg:
+        refuse_linked_recordings(root)
     out = Path(out_arg).resolve() if out_arg else root / "recordings" / "exports" / f"{key}-quick-preview.mp4"
     out.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory() as tmp:

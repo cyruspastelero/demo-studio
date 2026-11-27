@@ -40,6 +40,9 @@ check_cut = load("check_cut", "check-cut.py")
 build_keynote = load("build_keynote", "build-keynote.py")
 copier = load("template_from_video", "template-from-video.py")
 validator = load("template_validate", "template-validate.py")
+handoff = load("build_handoff", "build-handoff.py")
+social_cut = load("social_cut", "social-cut.py")
+keynote_handoff = load("keynote_handoff", "keynote-handoff.py")
 core = sys.modules["narration.core"]
 mix = sys.modules["narration.mix"]
 
@@ -232,6 +235,14 @@ class ProtocolWhitelist(unittest.TestCase):
         self.assertEqual(lib.ffmpeg_cmd(cmd), cmd)  # idempotent
         self.assertEqual(lib.ffmpeg_cmd(["ffprobe", "-v", "error", Path("x.mp4")])[:5],
                          ["ffprobe", "-protocol_whitelist", "file,pipe", *safe])
+
+    def test_a_concat_input_still_limits_the_formats_of_the_files_it_lists(self):
+        cmd = lib.ffmpeg_cmd(["ffmpeg", "-f", "concat", "-safe", "0", "-i", "list.txt",
+                              "-f", "lavfi", "-i", "color=c=red", "out.mp4"])
+        self.assertEqual(cmd, ["ffmpeg", "-f", "concat", "-safe", "0", "-protocol_whitelist", "file,pipe",
+                               "-format_whitelist", "concat," + lib.SAFE_FORMATS, "-i", "list.txt",
+                               "-f", "lavfi", "-protocol_whitelist", "file,pipe", "-i", "color=c=red", "out.mp4"])
+        self.assertEqual(lib.ffmpeg_cmd(cmd), cmd)  # idempotent
 
     @unittest.skipUnless(shutil.which("ffprobe"), "needs ffprobe")
     def test_a_concat_list_disguised_as_mp4_is_refused(self):
@@ -431,6 +442,62 @@ class PaidVoiceOptIn(unittest.TestCase):
         self.assertEqual(self.choose(["--voice", "elevenlabs"], provider="say")[0][0], "elevenlabs")
         self.assertEqual(self.choose([], provider="elevenlabs",
                                      env={"DEMO_STUDIO_ALLOW_CONFIG_VOICE": "1"})[0][0], "elevenlabs")
+
+
+
+# ---------------------------------------------------------------- say, progress and caption text
+
+class SayAndCaptionText(unittest.TestCase):
+    def test_a_handoff_voiceover_line_starting_with_a_dash_reaches_say_through_a_file(self):
+        text = "--output-file=/tmp/x.aiff -f/etc/hosts"
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(handoff.lib, "run") as run, \
+                mock.patch.object(handoff.lib, "duration", return_value=1.5):
+            seconds, audio = handoff.spoken_length(text, Path(tmp), "vo0", {"say_voice": "Samantha"}, True)
+            argv = [str(a) for a in run.call_args.args[0]]
+            self.assertEqual(argv[0], "say")
+            self.assertNotIn(text, argv)
+            self.assertEqual(Path(argv[argv.index("-f") + 1]).read_text(), text)
+            self.assertEqual(argv[argv.index("-o") + 1], str(audio))
+        self.assertEqual(seconds, 1.5)
+
+    def test_progress_run_survives_a_child_that_floods_stderr(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            child = Path(tmp) / "child"
+            child.write_text(f"#!{sys.executable}\nimport sys\nsys.stderr.write('e' * 1_000_000 + 'LAST')\n"
+                             "print('frame=1', flush=True)\nsys.exit(3)\n")
+            child.chmod(0o755)
+            caught: list[BaseException] = []
+
+            def go():
+                try:
+                    with contextlib.redirect_stdout(io.StringIO()):
+                        lib.run_progress([str(child)], "test", 1, "child")
+                except BaseException as error:  # noqa: BLE001  (the thread hands it to the test)
+                    caught.append(error)
+
+            import threading
+            worker = threading.Thread(target=go, daemon=True)
+            worker.start()
+            worker.join(20)
+            self.assertFalse(worker.is_alive(), "run_progress deadlocked on a full stderr pipe")
+        self.assertIsInstance(caught[0], SystemExit)
+        self.assertIn("child failed", str(caught[0]))
+        self.assertTrue(str(caught[0]).endswith("LAST"))
+
+    def test_social_caption_text_is_drawn_without_percent_expansion(self):
+        entry = {"captions": [{"text": "50% faster %{pts}", "start": 0, "end": 2}]}
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(social_cut.lib, "has_filter", return_value=True):
+            _, steps = social_cut.caption_inputs(entry, {"band": 200}, Path(tmp), Path(tmp))
+            self.assertEqual((Path(tmp) / "caption-0.txt").read_text(), "50% faster %{pts}")
+        self.assertIn(":expansion=none:", steps[0][1])
+
+    def test_editor_voiceover_times_use_the_narration_lead_in(self):
+        seq = [{"card": "a", "voiceover": "One two."}, {"scene": "01", "voiceover": "Three four."}]
+        keys = ["card-a", "01"]
+        windows = keynote_handoff.voiceover_windows(seq, keys, [0.0, 3.0], 10.0, core.DEFAULT_LEAD_IN)
+        self.assertEqual(windows["01"][0], 3.0 + core.DEFAULT_LEAD_IN)
+        self.assertEqual(keynote_handoff.voice_lead_in({"voice": {"lead_in": 0.8}}), 0.8)
+        self.assertEqual(keynote_handoff.voice_lead_in({}), core.DEFAULT_LEAD_IN)
 
 
 if __name__ == "__main__":

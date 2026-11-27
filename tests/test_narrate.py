@@ -52,7 +52,16 @@ class Timing(unittest.TestCase):
     def test_derived_timing_matches_build_keynote_arithmetic(self):
         timings = narrate.derive_timing(SEQUENCE, Path("/nowhere"), probe=lambda _: 99.0)
         self.assertEqual([(t.key, t.start, t.duration) for t in timings],
-                         [("card-intro", 0.0, 3.0), ("01", 3.0, 3.0), ("02", 6.0, 6.0), ("card-outro", 12.0, 2.0)])
+                         [("card-intro", 0.0, 3.0), ("01", 3.0, 3.0), ("02", 6.0, 6.0), ("card-outro", 12.0, 7.0)])
+
+    def test_derived_timing_uses_the_build_card_lengths_and_the_end_card_outro(self):
+        sequence = [{"card": "a", "title": "A", "subtitle": "s"}, {"card": "b", "title": "B"},
+                    {"card": "c", "title": "C", "kind": "hero"}, {"card": "z", "title": "Z"}]
+        timings = narrate.derive_timing(sequence, Path("/nowhere"), probe=lambda _: 99.0)
+        self.assertEqual([round(t.duration, 3) for t in timings], [3.0, 2.4, 3.0, 12.9])
+        self.assertEqual(narrate.derive_outro(sequence), 5.0)
+        self.assertEqual(narrate.derive_outro([{"card": "z", "title": "Z", "outro": 0}]), 0.0)
+        self.assertEqual(narrate.derive_outro(SEQUENCE[:3]), 0.0)
 
     def test_open_ended_trim_probes_the_raw_take(self):
         with tempfile.TemporaryDirectory() as tmp:

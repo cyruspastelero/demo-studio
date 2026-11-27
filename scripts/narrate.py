@@ -43,7 +43,7 @@ from narration.providers import (check_voice_files, find_api_key, has_voice_file
 from narration.report import *  # noqa: E402,F401,F403
 from narration.report import format_table, lines_manifest, overrun_advice, write_exports  # noqa: E402
 from narration.timing import *  # noqa: E402,F401,F403
-from narration.timing import derive_timing, load_timing, plan_lines, timing_outro  # noqa: E402
+from narration.timing import derive_outro, derive_timing, load_timing, plan_lines, timing_outro  # noqa: E402
 
 
 def export_lines(manifest: dict, demo_dir: Path, args: argparse.Namespace) -> int:
@@ -218,7 +218,8 @@ def narrate(args: argparse.Namespace) -> int:
         raise NarrateError(f"the keynote cut {cut} does not exist yet. Build it first, then narrate:",
                            (REBUILD, "{cmd}"))
     timings, total = timeline(cfg, cut, rec / "raw", keynote_command(args))
-    outro = timing_outro(cut.with_suffix(".timing.json"))
+    timing_file = cut.with_suffix(".timing.json")
+    outro = timing_outro(timing_file) if timing_file.exists() else derive_outro(cfg["sequence"])
     lines = plan_lines(cfg["sequence"], timings, total - outro, voice.lead_in)
     if not lines:
         raise NarrateError(f"{cfg_path.name} has no voiceover lines, so there is nothing to narrate",

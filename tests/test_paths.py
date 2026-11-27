@@ -3,6 +3,7 @@ scripts that must refuse paths leaving the demo folder. Run: python3 -I tests/te
 
 import importlib.util
 import json
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -136,6 +137,36 @@ class Scripts(Folder):
                                 capture_output=True, text=True)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("social[0].input", result.stderr)
+
+    def quick_preview(self, *args: str) -> subprocess.CompletedProcess:
+        cfg = {"title": "T", "sequence": [{"scene": "01", "stem": "01-a"}]}
+        (self.root / "demo.json").write_text(json.dumps(cfg))
+        return subprocess.run([sys.executable, "-I", str(SCRIPTS / "quick-preview.py"), str(self.root / "demo.json"),
+                               *args], capture_output=True, text=True)
+
+    @unittest.skipUnless(shutil.which("ffmpeg") and shutil.which("ffprobe"), "needs ffmpeg")
+    def test_quick_preview_refuses_a_take_that_links_out_of_the_demo(self) -> None:
+        (self.root / "recordings" / "raw").mkdir(parents=True)
+        (self.outside / "take.mp4").write_bytes(b"x")
+        (self.root / "recordings" / "raw" / "01-a-t1.mp4").symlink_to(self.outside / "take.mp4")
+        result = self.quick_preview()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("outside the demo folder", result.stderr)
+        self.assertFalse((self.root / "recordings" / "exports").exists(), "no work should start")
+
+    @unittest.skipUnless(shutil.which("ffmpeg") and shutil.which("ffprobe"), "needs ffmpeg")
+    def test_quick_preview_refuses_linked_recordings_or_exports_folders(self) -> None:
+        for linked in ("recordings", "recordings/exports"):
+            with self.subTest(linked=linked):
+                (self.root / linked).parent.mkdir(parents=True, exist_ok=True)
+                (self.root / linked).symlink_to(self.outside, target_is_directory=True)
+                try:
+                    result = self.quick_preview()
+                finally:
+                    (self.root / linked).unlink()
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("symlink", result.stderr)
+                self.assertEqual(list(self.outside.iterdir()), [self.outside / "secret.txt"])
 
     def test_narrate_confines_voice_music_but_not_the_music_flag(self) -> None:
         with self.assertRaises(narrate.NarrateError) as caught:

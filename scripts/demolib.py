@@ -323,7 +323,8 @@ def require(*tools: str) -> None:
 PROTOCOL_WHITELIST = ("-protocol_whitelist", "file,pipe")
 # ffmpeg picks a demuxer from a file's content, not its name, so a ".mp4" that is really a concat
 # list or playlist could pull in other files. Untrusted inputs may only use plain media demuxers.
-# An input with an explicit -f (our own concat lists, lavfi generators) keeps the format we chose.
+# An input with an explicit -f (our own concat lists, lavfi generators) keeps the format we chose; a
+# concat list passes its whitelist on to the files it names, so it gets concat plus the safe formats.
 SAFE_FORMATS = "mov,mp4,m4a,3gp,3g2,mj2,matroska,webm,wav,mp3,aac,flac,ogg,aiff,image2,png_pipe,jpeg_pipe,mjpeg"
 FORMAT_WHITELIST = ("-format_whitelist", SAFE_FORMATS)
 
@@ -346,8 +347,9 @@ def ffmpeg_cmd(cmd: list) -> list[str]:
         if arg == "-i":
             if "-protocol_whitelist" not in since_input:
                 out += PROTOCOL_WHITELIST
-            if "-f" not in since_input and "-format_whitelist" not in since_input:
-                out += FORMAT_WHITELIST
+            forced = since_input[since_input.index("-f") + 1] if "-f" in since_input[:-1] else None
+            if "-format_whitelist" not in since_input and forced in (None, "concat"):
+                out += ["-format_whitelist", f"{forced},{SAFE_FORMATS}"] if forced else FORMAT_WHITELIST
             out.append(arg)
             since_input = []
             continue
@@ -368,18 +370,22 @@ def run_progress(cmd: list, stage: str, total_frames: int, tool: str = "ffmpeg")
     """Runs ffmpeg with -progress on stdout and turns it into PROGRESS lines (about every 5%)."""
     cmd = ffmpeg_cmd(cmd)
     cmd = [cmd[0], "-progress", "pipe:1", "-nostats", *cmd[1:]]
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     total = max(1, total_frames)
     last = -1
-    for line in proc.stdout:
-        if line.startswith("frame="):
-            done = min(total, int(line.split("=", 1)[1] or 0))
-            step = done * 20 // total
-            if step != last:
-                last = step
-                progress(stage, done, total)
-    stderr = proc.stderr.read()
-    if proc.wait():
+    # stderr goes to a file, not a pipe: a child that fills a stderr pipe nobody reads would block.
+    with tempfile.TemporaryFile() as errors:
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=errors, text=True)
+        for line in proc.stdout:
+            if line.startswith("frame="):
+                done = min(total, int(line.split("=", 1)[1] or 0))
+                step = done * 20 // total
+                if step != last:
+                    last = step
+                    progress(stage, done, total)
+        code = proc.wait()
+        errors.seek(max(0, errors.seek(0, os.SEEK_END) - 6000))
+        stderr = errors.read().decode(errors="replace")
+    if code:
         sys.exit(f"{tool} failed: {' '.join(cmd[:8])}...\n{stderr[-1500:]}")
     if last != 20:
         progress(stage, total, total)

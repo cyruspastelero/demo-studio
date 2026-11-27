@@ -26,9 +26,15 @@ def load_demolib():
 
 
 lib = load_demolib()
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # the narration package sits next to this file
+from narration.core import DEFAULT_LEAD_IN  # noqa: E402
 
 WPS = 2.5  # typical AI narrator pace, words per second
-VO_LEAD = 0.5  # a voiceover line starts this far into its segment
+
+
+def voice_lead_in(cfg):
+    """How far into its item a line starts: voice.lead_in, as narrate.py places it."""
+    return cfg.get("voice", {}).get("lead_in", DEFAULT_LEAD_IN)
 
 
 def duration(path):
@@ -41,13 +47,13 @@ def tc(s):
     return f"{int(s // 60)}:{s % 60:05.2f}"
 
 
-def voiceover_windows(seq, keys, starts, total):
+def voiceover_windows(seq, keys, starts, total, lead_in):
     """key -> (start, seconds available, words). A line runs until the next line starts."""
     narrated = [i for i, item in enumerate(seq) if item.get("voiceover")]
     windows, too_long = {}, []
     for j, i in enumerate(narrated):
         end = starts[narrated[j + 1]] if j + 1 < len(narrated) else total
-        start = starts[i] + VO_LEAD
+        start = starts[i] + lead_in
         words = len(seq[i]["voiceover"].split())
         windows[keys[i]] = (start, end - start, words)
         if words / WPS > end - start:
@@ -160,7 +166,7 @@ def main():
         sys.exit("handoff: demo.json changed since the cut was built; run build-keynote.py again")
     durs = [float(i["duration"]) for i in timing["items"]]
     starts = [float(i["start"]) for i in timing["items"]]
-    vo = voiceover_windows(seq, keys, starts, sum(durs) - float(timing.get("outro", 0)))
+    vo = voiceover_windows(seq, keys, starts, sum(durs) - float(timing.get("outro", 0)), voice_lead_in(cfg))
 
     lines, captions, t, n = [], [], 0.0, 0
     for i, item in enumerate(seq):

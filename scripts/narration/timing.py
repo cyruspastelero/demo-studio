@@ -4,7 +4,10 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Callable
 
-from .core import DEFAULT_CARD, FPS, REBUILD, ItemTiming, Line, NarrateError, lib
+from keynote import spec as keynote_spec
+from keynote.model import card_kind
+
+from .core import FPS, REBUILD, ItemTiming, Line, NarrateError, lib
 
 def item_key(item: dict) -> str:
     return f"card-{item['card']}" if "card" in item else item["scene"]
@@ -28,10 +31,23 @@ def load_timing(path: Path, sequence: list[dict]) -> tuple[list[ItemTiming], flo
     return items, total
 
 
-def item_length(item: dict, raw_dir: Path, probe: Callable[[Path], float]) -> float:
-    """Same arithmetic as build-keynote.py: card duration, or trimmed take length / speed."""
+def card_outro(item: dict, is_last: bool) -> float:
+    """Seconds of outro build-keynote.py adds after an end card (0 for other cards)."""
+    return float(item.get("outro", keynote_spec.OUTRO_SECONDS)) if card_kind(item, is_last) == "end" else 0.0
+
+
+def derive_outro(sequence: list[dict]) -> float:
+    """The outro of the cut, as build-keynote.py makes it, when there is no timing file to read it from."""
+    last = sequence[-1] if sequence else {}
+    return card_outro(last, True) if "card" in last else 0.0
+
+
+def item_length(item: dict, raw_dir: Path, probe: Callable[[Path], float], is_last: bool = False) -> float:
+    """Same arithmetic as build-keynote.py: card duration (plus the outro after an end card), or
+    trimmed take length / speed."""
     if "card" in item:
-        seconds = item.get("duration", DEFAULT_CARD)
+        kind = card_kind(item, is_last)
+        seconds = float(item.get("duration", keynote_spec.CARD_SECONDS[kind])) + card_outro(item, is_last)
     else:
         start, end = item.get("trim") or [None, None]
         if end is None:
@@ -45,7 +61,7 @@ def item_length(item: dict, raw_dir: Path, probe: Callable[[Path], float]) -> fl
 
 
 def derive_timing(sequence: list[dict], raw_dir: Path, probe: Callable[[Path], float]) -> list[ItemTiming]:
-    lengths = [item_length(item, raw_dir, probe) for item in sequence]
+    lengths = [item_length(item, raw_dir, probe, i == len(sequence) - 1) for i, item in enumerate(sequence)]
     starts = [sum(lengths[:i]) for i in range(len(lengths))]
     return [ItemTiming(item_key(item), start, length) for item, start, length in zip(sequence, starts, lengths)]
 

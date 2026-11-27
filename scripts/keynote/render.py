@@ -9,6 +9,7 @@ import json
 import os
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 import demolib as lib
@@ -145,17 +146,21 @@ class Renderer:
         job_path = self.work / "render-job.json"
         job_path.write_text(json.dumps(self.job("keynote", font_probe)))
         print(f"render: {len(self.pending)} new image(s) with headless Chrome", flush=True)
-        proc = subprocess.Popen(["node", str(SCRIPTS / "keynote-render.mjs"), str(job_path)],
-                                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         fonts: list[str] = []
-        for line in proc.stdout:
-            line = line.strip()
-            if line.startswith("PROGRESS"):
-                print(line, flush=True)
-            elif line.startswith("FONTS "):
-                fonts = sorted({str(f) for f in json.loads(line[6:])})
-        stderr = proc.stderr.read()
-        if proc.wait():
+        # stderr goes to a file, not a pipe: a child that fills a stderr pipe nobody reads would block.
+        with tempfile.TemporaryFile() as errors:
+            proc = subprocess.Popen(["node", str(SCRIPTS / "keynote-render.mjs"), str(job_path)],
+                                    stdout=subprocess.PIPE, stderr=errors, text=True)
+            for line in proc.stdout:
+                line = line.strip()
+                if line.startswith("PROGRESS"):
+                    print(line, flush=True)
+                elif line.startswith("FONTS "):
+                    fonts = sorted({str(f) for f in json.loads(line[6:])})
+            code = proc.wait()
+            errors.seek(max(0, errors.seek(0, os.SEEK_END) - 6000))
+            stderr = errors.read().decode(errors="replace")
+        if code:
             raise RenderError(f"keynote-render.mjs failed:\n{stderr[-1500:]}\nCheck Chrome with: bash "
                               f"{SCRIPTS / 'doctor.sh'}")
         job_path.unlink(missing_ok=True)

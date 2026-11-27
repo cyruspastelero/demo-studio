@@ -216,10 +216,14 @@ def spoken_length(text: str, workdir: Path, name: str, voice: dict, use_say: boo
     if not use_say:
         return len(text.split()) / rate * 60, None
     audio = workdir / f"{name}.aiff"
-    cmd = ["say", "-r", str(rate), "-o", str(audio)]
+    # The text goes in through a file (-f), never as an argument, so a line that starts with "-"
+    # cannot be read as an option.
+    text_file = workdir / f"{name}.txt"
+    text_file.write_text(text)
+    cmd = ["say", "-r", str(rate), "-o", str(audio), "-f", str(text_file)]
     if voice.get("say_voice"):
         cmd += ["-v", voice["say_voice"]]
-    lib.run([*cmd, text], "say")
+    lib.run(cmd, "say")
     return lib.duration(audio), audio
 
 
@@ -270,12 +274,13 @@ def build(video: Video, paths: Paths, voice: dict, use_say: bool) -> tuple[list[
             lib.progress(f"voiceover-{video.key}", index + 1, len(narrated))
 
         if audio:
-            # Timing preview: the rough assembly with a placeholder voice at each line's start.
+            # Timing preview: the rough assembly with a placeholder voice at each line's start. The
+            # voice is padded with silence, so -shortest ends the preview with the video, not the last line.
             preview = paths.reference / f"{video.key}-VOICEOVER-TIMING-PREVIEW.mp4"
             inputs = [arg for _, file in audio for arg in ("-i", str(file))]
             delays = "".join(f"[{i + 1}:a]adelay={int(start * 1000)}|{int(start * 1000)}[a{i}];"
                              for i, (start, _) in enumerate(audio))
-            mix = "".join(f"[a{i}]" for i in range(len(audio))) + f"amix=inputs={len(audio)}:normalize=0[out]"
+            mix = "".join(f"[a{i}]" for i in range(len(audio))) + f"amix=inputs={len(audio)}:normalize=0,apad[out]"
             lib.run(["ffmpeg", "-y", "-loglevel", "error", "-i", rough, *inputs, "-filter_complex", delays + mix,
                      "-map", "0:v", "-map", "[out]", "-c:v", "copy", "-c:a", "aac", "-shortest", preview])
             lib.output(preview)

@@ -99,7 +99,7 @@ def caption_inputs(entry: dict, geo: dict, work: Path, base: Path) -> tuple[list
                      "  node \"$CLAUDE_PLUGIN_ROOT/scripts/title-cards.mjs\" handoff.json --social")
         text_file = work / f"caption-{i}.txt"
         text_file.write_text(cap["text"])
-        steps.append(("text", f"drawtext=textfile='{text_file}':fontsize=60:fontcolor=0x1D1D1F:"
+        steps.append(("text", f"drawtext=textfile='{text_file}':expansion=none:fontsize=60:fontcolor=0x1D1D1F:"
                               f"x=(w-text_w)/2:y=({geo['band']}-text_h)/2:{enable}"))
     return inputs, steps
 
