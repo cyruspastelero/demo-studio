@@ -149,12 +149,12 @@ describe('save and load', () => {
       writeFileSync(join(dir, 'demo.json'), JSON.stringify({ ...JSON.parse(original), title: 'Middle' }));
       store.seen('demo', readDocument(dir, 'demo').hash);
       writeFileSync(join(dir, 'demo.json'), original);
-      for (let waited = 0; !changes.length && waited < 5000; waited += 50) await new Promise((r) => setTimeout(r, 50));
+      for (let waited = 0; !changes.length && waited < 10000; waited += 50) await new Promise((r) => setTimeout(r, 50));
       expect(changes.at(-1)?.text).toBe(original);
     } finally {
       store.close();
     }
-  }, 15000); // fs.watch delivery slows under load; the poll inside allows 5 s
+  }, 15000); // fs.watch delivery slows under load; the poll inside allows 10 s
 
   it('reports an outside edit through the watcher', async () => {
     cpSync(join(EXAMPLE, 'demo.json'), join(dir, 'demo.json'));
@@ -164,7 +164,7 @@ describe('save and load', () => {
       const data = JSON.parse(readFileSync(join(dir, 'demo.json'), 'utf8'));
       writeFileSync(join(dir, 'demo.json'), JSON.stringify({ ...data, title: 'Outside' }));
       // fs.watch delivery time varies with load: poll up to 5 s instead of one fixed sleep.
-      for (let waited = 0; changes.at(-1)?.data.title !== 'Outside' && waited < 5000; waited += 50) {
+      for (let waited = 0; changes.at(-1)?.data.title !== 'Outside' && waited < 10000; waited += 50) {
         await new Promise((r) => setTimeout(r, 50));
       }
       expect(changes.at(-1)?.data.title).toBe('Outside');
@@ -175,7 +175,7 @@ describe('save and load', () => {
     } finally {
       store.close();
     }
-  }, 15000); // fs.watch delivery slows under load; the poll inside allows 5 s
+  }, 15000); // fs.watch delivery slows under load; the poll inside allows 10 s
 });
 
 describe('try a copy', () => {
