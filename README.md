@@ -22,22 +22,27 @@
   <a href="#docs"><b>Docs</b></a>
 </p>
 
-A Claude Code plugin for product demo videos. Tell Claude the goal, then either log in to your
-site in the Playwright browser or hand over your demo credentials. The agent does the rest: it plans
-the story, tests the flow, records the real product, cuts and narrates the video, and packages a
-handoff for an editor. It asks nothing more unless it needs a login code, or a step would cost money
-or create something that cannot be deleted.
+A Claude Code plugin that turns your real product into a finished demo video.
 
-- **Real footage.** Every frame is your product running. Nothing on screen is AI-generated.
-- **Local and free.** Everything runs on your machine: no account, no cloud service, no telemetry.
-  The tools are free (Playwright, Chrome, ffmpeg, Python, Node), and so is narration with macOS
-  `say` or your own voice. Paid services such as ElevenLabs or Higgsfield for voice and music are
-  used only if you choose them. Claude Code itself talks to Anthropic as usual.
-- **Safe by design.** Sandbox or test accounts only, logged in before recording starts. Secrets are
-  masked in the page before a frame is captured, and credentials are never written to the repo.
-  The editor listens on 127.0.0.1 only, and demo folders from other people are treated as
-  untrusted (paths stay inside the demo folder, title cards render sandboxed). See [SECURITY.md](SECURITY.md).
-- **Looks professional by default.** Every cut is built to a [measured quality bar](docs/quality-bar.md): a cropped floating window on a soft pastel background, whole-window zooms, highlight boxes, callout pills, word-by-word titles in bundled Inter, an end card and logo outro, and a mix at -14 LUFS. `check-cut.py` proves it.
+**How it works**
+
+1. Tell Claude what the video should show.
+2. Log in to a test account in the Playwright browser, or hand over demo credentials.
+3. Claude writes the plan and shows it to you. Nothing is recorded until you say go.
+4. It tests the flow, records the product, then cuts and narrates the video. It also packages a
+   handoff for a video editor.
+
+After you approve the plan, it only stops to ask for a login code, or before a step that would cost
+money or create something it can't delete.
+
+- **Real footage.** Every frame is your product running. Nothing is AI-generated.
+- **Local and free.** It runs on your machine with free tools, and there's no account or telemetry
+  (Claude Code itself still talks to Anthropic). Paid voices and music (ElevenLabs, Higgsfield) are
+  optional.
+- **Safe.** It uses test accounts only, masks secrets before a frame is captured, and never writes
+  credentials to the repo. See [SECURITY.md](SECURITY.md).
+- **Polished by default.** Every cut meets a [measured quality bar](docs/quality-bar.md), and
+  `check-cut.py` checks it.
 
 ## Sample videos
 
