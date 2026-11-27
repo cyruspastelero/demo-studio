@@ -8,4 +8,5 @@
 - [ ] `python3 -I tests/test_check.py` pass
 - [ ] `npm run test:app` passes (if `app/` changed)
 - [ ] New config fields are in `schemas/`, the template and the example
-- [ ] No product names, account ids, emails or secrets in skills, scripts or docs
+- [ ] `python3 -I scripts/check-release.py` passes (secrets, personal paths, emails)
+- [ ] No product names or account ids in skills, scripts or docs (no scanner knows these; read the diff)

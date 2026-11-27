@@ -191,11 +191,11 @@ that the footage cannot prove. If the user asked for review gates ("check with m
 
 | Step | Stage | Skill | Done when |
 | --- | --- | --- | --- |
-| 4 | Plan | `demo-plan` Steps 1 to 8 | BRIEF, SHOT-LIST, RUN-SHEET, VOICEOVER, PREP and demo.json filled; every claim maps to a scene |
+| 4 | Plan | `demo-plan` Steps 1 to 8 | BRIEF, SHOT-LIST, RUN-SHEET, VOICEOVER, PREP and demo.json filled; `plan-lint.py` run and every LOOK fixed or explained; every claim maps to a scene |
 | 4b | Plan approval | this skill, Step 4b | README.md has the "Plan approved" line |
 | 5 | Prep and test sweep | `demo-plan` Steps 7 and 9 | Every PREP.md box ticked; the test sweep table in README.md has `pass` on every row |
 | 6 | Record and QA | `demo-record` | One `keep` row per scene in `recordings/takes.csv`, none `new`; THROWAWAYS.md lists everything created |
-| 7 | Review reel and cuts | `demo-edit` Steps 1 to 3 and 2b (4 and 5 if asked) | `review-reel.mp4` and every cut asked for exist in `recordings/exports/`, and `check-cut.py` reports **0 FAIL** on the narrated keynote cut with every LOOK frame read. **Stop here if the user asked only for raw footage** |
+| 7 | Review reel and cuts | `demo-edit` Steps 1 to 3 and 2b (4 and 5 if asked) | `review-reel.mp4` and every cut asked for exist in `recordings/exports/`, `check-cut.py` reports **0 FAIL** on the narrated keynote cut with every LOOK frame read, and `video-gate.py` shows no FAIL on every other cut. Then the cold read (`quality-gates.md` section 4c). **Stop here if the user asked only for raw footage** |
 | 8 | Handoff and wrap-up | `demo-handoff` | Its wrap-up checklist is ticked, except boxes that need the user's go-ahead |
 
 Build the review reel first and check it yourself on a contact sheet. Do not wait for the user to
@@ -209,6 +209,11 @@ reports 0 FAIL and you have read every frame it saved (skill `demo-edit` Step 2b
 the take was recorded with another cursor), name the item, the measured value and the bar in the
 final report, and offer the fix (usually a re-shoot). The bar is `$P/docs/quality-bar.md`.
 
+### The cold read (after the checkers pass, before the user sees the result)
+
+The checkers measure looks. A reviewer who did not build the cut now checks it for facts: follow
+`$P/references/quality-gates.md` section 4c, and put each finding and its fix in the final report.
+
 ### Step 8b: the final report (one message)
 
 1. Open the main video for the user: `open <demo>/recordings/exports/*-keynote-cut-narrated.mp4`
@@ -219,7 +224,8 @@ final report, and offer the fix (usually a re-shoot). The bar is `$P/docs/qualit
    - the look line (`Look: <name> (<id>), ...`) and, for an ad, the `Ad style: ...` line
    - the decisions you made on your own (from README.md "Decisions")
    - the checklist summary line from `check-cut.py` (`N pass, 0 fail, M to look at`) and any item
-     accepted below the bar, with its measured value
+     accepted below the bar, with its measured value; the `video-gate.py` result for each other cut
+   - the cold read findings, each fixed or kept with its reason
    - anything that failed or was cut, and why
    - what is still open, with the exact words to say: "Say clean up and I will delete the N
      throwaways in THROWAWAYS.md and the frames in `recordings/frames/` (about X GB)."
@@ -266,7 +272,7 @@ It only reads files. Stop it when the session ends. If it fails with a missing m
 | Review reel | shown in the final report, not a gate, unless the user asked for review gates |
 | Things created on camera | created for real, listed in THROWAWAYS.md, deleted when the user says clean up |
 | Footage | real screen recordings only, no AI-generated clips or imagery |
-| Finishing | free path (`build-keynote.py`, `narrate.py`), then `check-cut.py` until 0 FAIL |
+| Finishing | free path (`build-keynote.py`, `narrate.py`), then `check-cut.py` until 0 FAIL, `video-gate.py` on the other cuts, then the cold read |
 
 ## Where things are
 
@@ -277,7 +283,7 @@ It only reads files. Stop it when the session ends. If it fails with a missing m
 | Scene recipes and a sample plan | `$P/samples/README.md` |
 | Gotchas from real shoots | `$P/references/learnings.md` |
 | Gates between stages | `$P/references/quality-gates.md` |
-| The bar every finished cut must pass | `$P/docs/quality-bar.md` (checklist in section 4, run by `scripts/check-cut.py`) |
+| The bar every finished cut must pass | `$P/docs/quality-bar.md` (checklist in section 4, run by `scripts/check-cut.py`; G items for any mp4 by `scripts/video-gate.py`; N items on the plan by `scripts/plan-lint.py`) |
 | More scene code | `$P/references/scene-patterns.md` |
 | Voiceover rules | `$P/references/voiceover.md` |
 | Secrets | `$P/references/secrets.md` |

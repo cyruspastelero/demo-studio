@@ -45,7 +45,7 @@ engine bakes in every look value; your job is the per-scene fields below, then S
    | `trim: [in, out]` | Cut the still head and tail to about 0.8 s and any wait | P4: keep 0.6 s of still UI after each result |
    | `speed` | 1.25 to 1.5 for typing and setup; never on the hero moment | |
    | `crop: [x, y, w, h]` | Source px (the 1920x1080 take) around the UI that matters; widened to 1.95:1 | W2: body text cap >= 18 px, no empty panel over 15% of the window |
-   | `zooms: [{at, focus: [x, y], dur}]` | `at` = seconds into the scene when the zoom-in starts, `focus` = source px of what it points at, `dur` = hold | Z5: hold 2.4 to 4.5; Z6: about one every 11 s, only on a point the narration makes |
+   | `zooms: [{at, focus: [x, y], dur}]` | `at` = seconds into the scene when the zoom-in starts (on `zooms`, `callouts` and `highlights`, `at` may instead be `{"word": "invite", "nth": 1, "offset": -0.2}`: a word of this scene's `voiceover`, placed by an estimate, see `references/voiceover.md`), `focus` = source px of what it points at, `dur` = hold | Z5: hold 2.4 to 4.5; Z6: about one every 11 s, only on a point the narration makes |
    | `highlights: [{rect: [x, y, w, h]}]` | The scout rect of the element the narration names; leave `at` out and it shows 0.17 s after the next zoom **of that same scene** lands (zooms in other scenes never count), and stays until the zoom has eased back. The rect is fixed in source px, so the page must hold still under it the whole time it shows: check the scroll times in the take log | H7: at most 2 on screen; H8: still, non-empty UI under the box |
    | `callouts: [{at, dur, kind, text}]` | `statement` (at most 6 words) or `person` (`text` name, `role`, `avatar` image path) | C8: 3 to 5 s, one at a time; Z7: never during a zoom |
    | cards: `kind`, `accent` | `hero` (title + subtitle), `section` (one question title), `end` (last item: logo, title, tagline, sweep, outro) ; `accent` = the one key word | T9: exactly one accent word |
@@ -240,6 +240,23 @@ Or list entries under `social` in handoff.json and build-handoff.py makes them. 
 If doctor.sh said there is no `drawtext`, run `title-cards.mjs handoff.json --social` first.
 Check each with `bash "$P/scripts/sheet.sh" <file> /tmp/s.png 8` for cut-off content.
 
+## Step 5b: gate the other cuts
+
+`check-cut.py` covers the keynote cut. Every other output gets `video-gate.py`, which needs no plan:
+
+| Output | Check |
+| --- | --- |
+| Keynote cut (silent and narrated) | `check-cut.py` (Step 2b) |
+| Promo, how-to, 4:5 and 9:16 social cuts, launch ad | `video-gate.py` |
+
+```bash
+python3 -I "$P/scripts/video-gate.py" <cut>.mp4
+```
+
+`FAIL` (a blank stretch of 1 s or more, or a file that does not decode to the end): fix the cause and
+re-render. `LOOK` (a long frozen or quiet stretch, a short blank beat, no audio): watch that stretch
+and keep it only if it is meant.
+
 ## Step 6: let a person tweak it (optional)
 
 When the user wants to adjust in and out points, reorder shots or reword text themselves:
@@ -285,4 +302,5 @@ font. What they set is saved on the shot and every export draws it on the same p
 - [ ] `check-cut.py` on the narrated cut reports 0 FAIL, and you read every frame it saved and
       every LOOK item holds; tell the user the summary line and anything accepted below the bar
 - [ ] If an editor is involved: `build-handoff.py` printed `voiceover fits`
+- [ ] Each promo, how-to and social cut passed `video-gate.py` with no FAIL, and every LOOK was watched
 - [ ] Each social version's contact sheet shows nothing cut off

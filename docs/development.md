@@ -9,6 +9,8 @@
 skills/           demo-studio (orchestrator), demo-plan, demo-record, demo-edit, demo-handoff, demo-organize,
                   demo-template, demo-motion
 scripts/          every tool (recorder, QA, encode, edit, narrate, handoff, social, scaffold, doctor)
+                  QA: check-cut (keynote cut), video-gate (any finished mp4), plan-lint (demo.json before recording),
+                  check-release (secrets, personal paths, emails; allowlist in .release-allow)
 references/       style guide, learnings, quality gates, scene patterns, voiceover, handoff spec,
                   secrets
 samples/          scene recipes to copy and a sample plan
@@ -34,10 +36,11 @@ Chrome page in `scripts/keynote-page.mjs` + `keynote-render.mjs`. Every look val
 
 ```bash
 npm install && bash tests/smoke.sh   # pipeline on synthetic footage, ending in the quality-bar checklist
-python3 -I tests/test_check.py && python3 -I tests/test_narrate.py && python3 -I tests/test_keynote.py && python3 -I tests/test_text_overlays.py && python3 -I tests/test_motion.py && python3 -I tests/test_templates.py && python3 -I tests/test_security.py
+python3 -I tests/test_check.py && python3 -I tests/test_narrate.py && python3 -I tests/test_keynote.py && python3 -I tests/test_text_overlays.py && python3 -I tests/test_motion.py && python3 -I tests/test_templates.py && python3 -I tests/test_security.py && python3 -I tests/test_video_gate.py && python3 -I tests/test_plan_lint.py && python3 -I tests/test_check_release.py
 bash tests/smoke-templates.sh        # todo sample with and without "template": "house" (heavy: two builds)
 node tests/test_lib.mjs && node tests/test_card_safety.mjs && node tests/test_fonts.mjs && node tests/test_frame_receiver.mjs && node tests/test_security.mjs
 npm run test:motion                  # launch-ad engine: validator, beat maths, text fitting (no browser)
+python3 -I scripts/check-release.py # release scan of tracked files; add --range BASE..HEAD for the commits of a change (CI does)
 npm run test:app                     # editor unit tests (vitest)
 npm run test:e2e                     # editor end to end, headless Chrome on a temp copy of the example
 npm run screenshots -w app           # refresh docs/img/

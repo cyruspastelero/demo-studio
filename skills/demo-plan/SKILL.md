@@ -182,6 +182,17 @@ python3 -I -c 'import importlib.util,json,sys; s=importlib.util.spec_from_file_l
 
 Expected: `ok`. Otherwise each line names a field (`sequence[3].callouts[0]: missing required field 'at'`); fix it.
 
+## Step 7b: lint the plan
+
+Once the voiceover lines and the on-screen text are written, and before the plan goes to the user:
+
+```bash
+python3 -I "$P/scripts/plan-lint.py" <demo>
+```
+
+Expected: one `PASS` or `LOOK` line per item. For each `LOOK`, either fix the plan (say the number in
+the voiceover, vary the zooms and pill positions) or write one line in the plan saying why it stands.
+
 ## Step 8: claims check
 
 Every row of the claims list in BRIEF.md names a scene in SHOT-LIST.md. If not, cut the claim.
@@ -228,6 +239,7 @@ then go straight on to skill `demo-record` in the same turn. **Do not wait for a
 - [ ] VOICEOVER.md has every line with a word count
 - [ ] demo.json validates (`ok`) with crop, callouts, zooms, highlights, accents, voice and music;
       `_project.js` has the masks, clutter and `cursor: 'hand'`
+- [ ] `plan-lint.py` ran: every LOOK is fixed or explained in the plan
 - [ ] The user approved the plan, and README.md has the "Plan approved" line (Step 8b)
 - [ ] Every PREP.md box is ticked
 - [ ] The test sweep table has `pass` on every row
