@@ -32,6 +32,7 @@ How to use one:
 | [`settings-toggle.body.js`](scenes/settings-toggle.body.js) | A switch whose effect the viewer must see: before, flip, after |
 | [`table-search-filter.body.js`](scenes/table-search-filter.body.js) | Finding one record in a list with search and a filter |
 | [`two-person-handoff-a.body.js`](scenes/two-person-handoff-a.body.js) and [`-b`](scenes/two-person-handoff-b.body.js) | Two people in two windows: one asks, the other approves (`rec.mjs`) |
+| [`desktop-app.scene.sh`](scenes/desktop-app.scene.sh) | A native app outside the browser (macOS), recorded with `deskcap`. See [docs/desktop.md](../docs/desktop.md) |
 
 Every recipe follows the house look in [`references/style-guide.md`](../references/style-guide.md):
 `prep` then `placeCursor` before `record`, a 1 to 1.5s head, glides and pauses before clicks,

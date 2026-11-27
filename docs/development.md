@@ -8,7 +8,8 @@
 .claude-plugin/   plugin.json, marketplace.json
 skills/           demo-studio (orchestrator), demo-plan, demo-record, demo-edit, demo-handoff, demo-organize,
                   demo-template, demo-motion
-scripts/          every tool (recorder, QA, encode, edit, narrate, handoff, social, scaffold, doctor)
+scripts/          every tool (recorder, QA, encode, edit, narrate, handoff, social, scaffold, doctor);
+                  scripts/desktop/ is deskcap, the recorder for desktop apps (docs/desktop.md)
 references/       style guide, learnings, quality gates, scene patterns, voiceover, handoff spec,
                   secrets
 samples/          scene recipes to copy and a sample plan
@@ -35,6 +36,8 @@ Chrome page in `scripts/keynote-page.mjs` + `keynote-render.mjs`. Every look val
 ```bash
 npm install && bash tests/smoke.sh   # pipeline on synthetic footage, ending in the quality-bar checklist
 python3 -I tests/test_check.py && python3 -I tests/test_narrate.py && python3 -I tests/test_keynote.py && python3 -I tests/test_motion.py && python3 -I tests/test_templates.py && python3 -I tests/test_security.py
+bash tests/test_deskcap.sh           # desktop recorder: build, take format, blur (macOS, no permissions)
+bash tests/live_deskcap.sh           # desktop recorder on a real TextEdit window (needs Screen Recording + Accessibility)
 bash tests/smoke-templates.sh        # todo sample with and without "template": "house" (heavy: two builds)
 node tests/test_lib.mjs && node tests/test_card_safety.mjs && node tests/test_frame_receiver.mjs && node tests/test_security.mjs
 npm run test:motion                  # launch-ad engine: validator, beat maths, text fitting (no browser)

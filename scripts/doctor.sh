@@ -77,6 +77,11 @@ else bad "only ${free_gb} GB free at $target (10 GB+ needed; frames take several
 if command -v say >/dev/null 2>&1; then ok "macOS say (free narration with narrate.py, voiceover timing previews)"
 else warn "macOS say not available" "Optional. Voiceover fit is estimated from words per minute and no timing preview is made. For narration use ELEVENLABS_API_KEY or your own voiceover/NN.wav files."; fi
 
+if [ "$is_mac" = 1 ]; then
+  if command -v swiftc >/dev/null 2>&1; then ok "swiftc (deskcap, desktop app recording: docs/desktop.md)"
+  else printf '  info  swiftc not found (optional, only for desktop app recording; fix: xcode-select --install)\n'; fi
+fi
+
 # Never print the key itself, only whether it is set.
 if [ -n "${ELEVENLABS_API_KEY:-}" ]; then ok "ELEVENLABS_API_KEY is set (narrate.py can use ElevenLabs)"
 else printf '  info  ELEVENLABS_API_KEY not set (optional; narrate.py then uses say or your own recordings)\n'; fi

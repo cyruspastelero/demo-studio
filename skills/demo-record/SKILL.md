@@ -1,6 +1,6 @@
 ---
 name: demo-record
-description: Record demo footage scene by scene. Sets up the 2x Playwright recording rig and frame receiver, copies and adapts a scene recipe, drives the logged-in browser (or several demo windows) with human-looking pointer and typing, masks secrets in the page, QAs frames on contact sheets, encodes 1080p 30fps takes, keeps the take log and handles re-shoots. Use when recording, re-shooting or QA-ing demo takes.
+description: Record demo footage scene by scene. Sets up the 2x Playwright recording rig and frame receiver, copies and adapts a scene recipe, drives the logged-in browser (or several demo windows, or a native macOS app window with deskcap) with human-looking pointer and typing, masks secrets in the page, QAs frames on contact sheets, encodes 1080p 30fps takes, keeps the take log and handles re-shoots. Use when recording, re-shooting or QA-ing demo takes.
 ---
 
 # Demo record
@@ -194,6 +194,60 @@ and list them under `windows` in `<demo>/demo.json`. Record with `rec.mjs` (Step
 
 Scene done when: one `keep` row, the recipe's verify list passed, THROWAWAYS.md updated, and
 `recordings/scout/<NN-name>.json` holds every crop region and highlight target in its Edit plan row.
+
+## Desktop apps (outside the browser)
+
+For a native app (macOS only), record with `deskcap` instead of the browser rig. Step 2's items 4 to 7
+(QA the frames, encode, log, throwaways) stay the same; item 8 (scout) is replaced by step 6 below.
+Each command block starts with the `P=` line from the top of this skill, then:
+
+```bash
+D="$(bash "$P/scripts/desktop/build.sh")"
+```
+
+1. **Permissions.** Run `"$D" setup --no-open`. If it says `"ready": true`, go to step 2.
+   Otherwise help the user turn them on. This is a stop case: only the user can click the switches.
+   1. Tell the user what you are about to do and why, in one line: the terminal (`app`) needs
+      Screen Recording to film the window and Accessibility to move the pointer and type.
+   2. Run `"$D" setup`. It adds `app` to each missing list, opens those System Settings pages, and
+      macOS may show its own prompt. Expected: `"opened"` lists the missing permissions.
+   3. Give the user the `steps` from that output as a numbered list, word for word, naming `app`.
+      Then say it is safe to turn them off again after filming, in the same place.
+   4. Stop and wait. Restarting `app` ends this session, so the user comes back with `claude --continue`.
+   5. When they are back, run `"$D" setup --no-open` again. `"ready": true` means go on. If something is
+      still missing, see the table below.
+2. **Prep:** `"$D" prep --app "<App>"`. It sizes the window to 1440x810. If `warnings` mentions the
+   size, go on: the take is letterboxed and blur boxes and scout rects still line up.
+3. **Scout:** from `<demo>/recordings`:
+   `mkdir -p scout && "$D" shot --app "<App>" scout/<NN-name>.png`, then read the PNG. For each control
+   the scene uses, run `"$D" find --app "<App>" "<visible label>"`. You need exactly one match per
+   control; if there are more, use a longer label or `--role AXButton`.
+4. **Copy the recipe:** `command cp "$P/samples/scenes/desktop-app.scene.sh" scenes/<NN-name>.scene.sh`
+   and change every `# CHANGE:` line (app, scene name, take number, controls, steps, text, scout entries).
+5. **Run it** from `<demo>/recordings`, in one command: `P="$P" bash scenes/<NN-name>.scene.sh`.
+   Expected: the take JSON with `"frames"` above 0 and `"warnings": []`, then `scout/<NN-name>.json written`.
+   Then do Step 2 items 4 to 7 on `frames/_tmpNN`.
+6. **Scout file:** the recipe writes `scout/<NN-name>.json` from `find`: `rect` and `focus` are already
+   in source px of the 1080p take, and `t` is seconds since the first frame. Use it exactly like a
+   browser scout file (Step 2 item 8's table). The rules there about targets holding still apply too.
+
+The pointer in desktop takes is the house hand, drawn into every frame (`record --cursor arrow` for
+developer tools), so desktop and browser scenes match.
+
+| If it says | Do this |
+| --- | --- |
+| `Screen Recording permission is missing` / `Accessibility permission is missing` | Step 1 (help the user turn it on) |
+| `setup` still shows a permission missing after the user turned it on | They must quit `app` fully (Cmd-Q, not just close the window) and reopen it. If it is still missing: in that Settings list, select `app`, click -, then run `"$D" setup` again and turn it on fresh |
+| the `app` in `setup` is not the terminal the user sees (for example Visual Studio Code, Cursor) | Grant it to that app: Claude Code runs inside it, so macOS asks that app |
+| `no on-screen window for app` | Use the exact app name from `"$D" windows`; open a window first |
+| `N controls match` / `no control ... has a label containing` | Use a longer label or `--role`; else take a `shot` and use coordinates (PNG px / 2) |
+| `is not the frontmost app` | Run `"$D" prep --app "<App>"` again; something took focus |
+| `is outside the ... window` | Coordinates are window points from the window's top-left corner |
+| `the window moved or resized during the take` | Re-shoot; keep the window still |
+| `frames dropped` | Quit heavy apps and re-shoot |
+| a menu, popover or right-click menu is missing from the take | They are separate windows and are not filmed; show the result instead, or use the browser rig if there is a web version |
+
+Full reference: `$P/docs/desktop.md`.
 
 ## Step 3: re-shoot
 

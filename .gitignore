@@ -11,6 +11,8 @@ frames/
 *.zip
 .DS_Store
 __pycache__/
+scripts/desktop/deskcap
+scripts/desktop/deskcap.tmp.*
 app/out/
 
 # The todo sample ships its three small raw takes so the editor can play it.

@@ -1,6 +1,6 @@
 ---
 name: demo-studio
-description: Make a product demo video end to end, hands off. The user logs in or hands over demo credentials once, then it runs without further questions. Turns a goal or a client brief into a plan (story arc, run sheet, shot list, voiceover draft, prep checklist), records crisp 1080p browser takes with Playwright MCP and masked secrets, builds a review reel, a keynote-style cut with free narration, a promo cut and a how-to cut, optional 4:5 and 9:16 social versions, and an editor handoff zip. Use when someone asks to "make a demo of X", record or film a product walkthrough, produce demo footage, hand demo videos to an editor, or just wants to try demo-studio.
+description: Make a product demo video end to end, hands off. The user logs in or hands over demo credentials once, then it runs without further questions. Turns a goal or a client brief into a plan (story arc, run sheet, shot list, voiceover draft, prep checklist), records crisp 1080p browser takes with Playwright MCP (or a native macOS app window with deskcap) and masked secrets, builds a review reel, a keynote-style cut with free narration, a promo cut and a how-to cut, optional 4:5 and 9:16 social versions, and an editor handoff zip. Use when someone asks to "make a demo of X", record or film a product walkthrough, produce demo footage, hand demo videos to an editor, or just wants to try demo-studio.
 ---
 
 # Demo studio
@@ -42,6 +42,8 @@ Expected last line: `All required checks passed.`
 | --- | --- |
 | "try it", "show me", "test the plugin", no product named | **Try-it route** below (todo sample, no login) |
 | "make a demo of X" with a goal | **Full route**, Step 3 onwards |
+| "set up desktop recording", "enable screen recording" | Open skill `demo-record`, section "Desktop apps", step 1 |
+| "make a demo of" a desktop app (not a website) | **Full route**, but record with skill `demo-record`, section "Desktop apps" (macOS) |
 | "record scene NN again" or "re-shoot" | Open skill `demo-record`, section "Re-shoot" |
 | "cut it", "add voiceover", "make a vertical version" | Open skill `demo-edit` |
 | "send it to the editor", "wrap up" | Open skill `demo-handoff` |
