@@ -1,17 +1,20 @@
 """check-cut.py reads the look a cut was built with, so its checks hold in every look (house, paper,
-midnight, mono) and still catch a broken cut in each. Uses small synthetic frames painted in memory.
+midnight, mono) and still catch a broken cut in each; and W10 flags crop edges that slice through
+text. Uses small synthetic frames painted in memory, plus one tiny ffmpeg clip for W10's fallback.
 Run: python3 -I tests/test_check_cut.py"""
 
 import importlib.util
 import json
+import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO / "scripts"))
 
-from keynote import look as looks, measure as m, spec  # noqa: E402
+from keynote import crop_edges, look as looks, measure as m, spec  # noqa: E402
 from keynote.spec import Rect  # noqa: E402
 from keynote.storyboard_page import push_marks  # noqa: E402
 from keynote.model import Shot  # noqa: E402
@@ -77,6 +80,11 @@ class Canvas:
 
     def frame(self) -> m.Frame:
         return m.Frame(b"".join(self.rows), self.w, self.h)
+
+    def gray(self) -> crop_edges.Gray:
+        rgb_bytes = b"".join(self.rows)
+        return crop_edges.Gray(bytes(round(0.299 * rgb_bytes[i] + 0.587 * rgb_bytes[i + 1] + 0.114 * rgb_bytes[i + 2])
+                                     for i in range(0, len(rgb_bytes), 3)), self.w, self.h)
 
 
 def window_canvas(look: dict, field: str | None = None, shadow: bool = True, top: int | None = None) -> Canvas:
@@ -272,6 +280,101 @@ class TakeSizes(unittest.TestCase):
         rest = spec.WINDOW_REST
         self.assertAlmostEqual(mark.x, rest.x + rest.w / 4, places=3)
         self.assertAlmostEqual(mark.w, rest.w / 2, places=3)
+
+
+def text_take(size=(1920, 1080)) -> Canvas:
+    """A light page with a line of text at y 400 to 440 running from x 200 to 1700."""
+    return Canvas((246, 246, 248), size).text(200, 400, 1500, 40, (30, 30, 30))
+
+
+class CropEdges(unittest.TestCase):
+    def test_a_side_edge_through_a_line_of_text_is_flagged(self):
+        frame = text_take().gray()
+        self.assertEqual(set(crop_edges.cut_edges(frame, Rect(100, 300, 900, 461.54))), {"right"})
+
+    def test_a_crop_around_the_text_is_clean(self):
+        frame = text_take().gray()
+        self.assertEqual(crop_edges.cut_edges(frame, Rect(150, 300, 1600, 820.51)), {})
+
+    def test_a_top_edge_through_the_text_is_flagged(self):
+        frame = text_take().gray()
+        self.assertIn("top", crop_edges.cut_edges(frame, Rect(150, 420, 1600, 600)))
+
+    def test_an_edge_on_the_takes_own_edge_is_not_scanned(self):
+        frame = Canvas((246, 246, 248)).text(0, 400, 1920, 40, (30, 30, 30)).gray()
+        self.assertEqual(crop_edges.cut_edges(frame, Rect(0, 100, 1920, 984.62)), {})
+
+    def test_the_scan_reads_the_crop_as_the_engine_widens_it(self):
+        frame = Canvas((246, 246, 248)).text(640, 500, 120, 40, (30, 30, 30)).gray()
+        asked = Rect(800, 400, 300, 300)  # its own edges sit clear of the text at x 640 to 760
+        self.assertEqual(crop_edges.cut_edges(frame, asked), {})
+        shown = crop_edges.window_crop(asked, (1920, 1080), 1.95)
+        self.assertEqual((round(shown.x), round(shown.w)), (658, 585))
+        self.assertEqual(set(crop_edges.cut_edges(frame, shown)), {"left"})
+
+    def test_takes_of_any_size_are_scanned(self):
+        frame = text_take((2880, 1620)).gray()
+        self.assertEqual(set(crop_edges.cut_edges(frame, Rect(100, 300, 900, 461.54))), {"right"})
+
+
+class CheckCutCropEdges(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.demo = Path(self.tmp.name) / "acme"
+        (self.demo / "recordings" / "raw").mkdir(parents=True)
+        (self.demo / "recordings" / "exports").mkdir()
+        self.exports = self.demo / "recordings" / "exports"
+
+    def plan(self, crop):
+        (self.demo / "recordings" / "raw" / "01-home-t1.mp4").write_bytes(b"not read: the grab is a stand-in")
+        shot = {"scene": "01", "start": 2.0, "end": 6.0, "tight": False, "opens": "crop", "continues": False,
+                "take": "../raw/01-home-t1.mp4", "take_size": [1920, 1080], "crop": crop, "trim_in": 1.0, "speed": 1}
+        return {"shots": [shot], "look": LOOKS["house"]}
+
+    def rows(self, plan, grab):
+        report = check_cut.Report()
+        check_cut.check_crop_edges(report, plan, self.exports, self.demo, grab)
+        return report.rows
+
+    def test_a_crop_edge_through_text_is_a_warning_naming_scene_edge_and_time(self):
+        frame = text_take().gray()
+        rows = self.rows(self.plan([100, 300, 900, 461.54]), lambda take, t, size: frame)
+        self.assertEqual([(r["status"], r["item"]) for r in rows], [("WARN", "W10")])
+        self.assertRegex(rows[0]["text"], r"^scene 01 at \d+\.\d\ds: the right edge of crop \[100, 300, 900, 462\]")
+
+    def test_clean_crops_pass(self):
+        frame = text_take().gray()
+        rows = self.rows(self.plan([150, 300, 1600, 820.51]), lambda take, t, size: frame)
+        self.assertEqual([(r["status"], r["item"]) for r in rows], [("PASS", "W10")])
+
+    def test_cut_time_maps_onto_the_take_through_trim_and_speed(self):
+        seen = []
+        self.rows(self.plan([150, 300, 1600, 820.51]), lambda take, t, size: seen.append(t) or text_take().gray())
+        self.assertAlmostEqual(seen[0], 1.0)
+        self.assertAlmostEqual(seen[-1], 1.0 + 4.0 - 1 / 30)
+
+    def test_a_take_outside_the_demo_folder_fails(self):
+        plan = self.plan([150, 300, 1600, 820.51])
+        plan["shots"][0]["take"] = "../../../../elsewhere.mp4"
+        rows = self.rows(plan, lambda take, t, size: text_take().gray())
+        self.assertEqual((rows[0]["status"], rows[0]["item"]), ("FAIL", "W10"))
+
+    def test_an_older_plan_reads_crops_from_demo_json_widened_by_the_engine(self):
+        take = self.demo / "recordings" / "raw" / "01-home-t1.mp4"
+        subprocess.run(["ffmpeg", "-y", "-v", "error", "-f", "lavfi", "-i", "color=c=0xF6F6F8:s=640x360:r=30:d=3",
+                        "-vf", "drawbox=x=100:y=150:w=400:h=24:c=0x1E1E1E:t=fill,"
+                        "drawgrid=x=100:y=150:w=6:h=6:t=2:c=0xF6F6F8",
+                        "-c:v", "libx264", "-preset", "ultrafast", "-crf", "18", "-pix_fmt", "yuv420p", str(take)],
+                       check=True)
+        (self.demo / "demo.json").write_text(json.dumps({
+            "title": "Acme", "sequence": [{"scene": "01", "stem": "01-home", "crop": [20, 60, 283, 145.13],
+                                           "trim": [0.2, 2.5]}]}))
+        plan = {"shots": [{"scene": "01", "start": 0.0, "end": 2.3, "tight": False, "opens": "crop",
+                           "continues": False}], "look": LOOKS["house"]}
+        rows = self.rows(plan, crop_edges.grab_gray)
+        self.assertEqual([(r["status"], r["item"]) for r in rows], [("WARN", "W10")])
+        self.assertIn("right edge", rows[0]["text"])
 
 
 if __name__ == "__main__":

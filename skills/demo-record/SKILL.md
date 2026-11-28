@@ -171,6 +171,9 @@ and list them under `windows` in `<demo>/demo.json`. Record with `rec.mjs` (Step
    **Open on the whole page** (quality bar W9): each scene that lands on a new page holds it still,
    with the pointer off the content, for about 3 s before the first action, so the cut can show the
    whole page and then push in. A part that continues the same page needs no hold.
+   **Crop between lines, not through them** (quality bar W10): pick each crop so its edges sit in
+   the gaps between lines and columns. The window widens a crop to its own shape, so leave room.
+   `check-cut.py` warns when an edge cuts through text, with the scene, edge and time.
    **Highlight targets must hold still** (quality bar H8): the box is a fixed rectangle in source
    px, so if the page scrolls or reflows while it shows, it lands on the wrong element. In the scene
    body, scroll first, wait for the page to settle, measure, then keep the page still for the whole

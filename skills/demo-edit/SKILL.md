@@ -117,6 +117,7 @@ the picture, and again after Step 3 on the narrated cut for the sound.
    | `C4` pill text not in the product colour | Set `brand.accent` from the product and rebuild |
    | `H8` the UI under the box moves / the box frames an empty area | The take scrolls or reflows under the box (it samples the raw take at the box's start, middle and end). Re-time `at`/`dur` to a still moment or re-measure `rect`; if the page must scroll there, re-record that scene with the target still while it is shown |
    | `P2` shot over 8 s | Add a zoom or cut the scene with `trim` |
+   | `W10` crop edge cuts through text | Move that edge of `crop` into a gap between lines or columns. The window widens a crop to its shape, so check the widened edges too |
    | `W9` scene opens straight on a tight crop | Start its first zoom later or lengthen `trim`, so the whole page shows first; `"wide": false` only for a part that continues the scene before it |
    | `K1-K2` no cursor, a dot or a click circle in the footage | The take was recorded with another cursor; re-record with `PROJECT.cursor = 'hand'` (or `'arrow'` for developer tools) |
    | `X2` / `X3` | The last item must be a card (`kind: end`, `outro` > 0) |

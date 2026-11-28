@@ -171,14 +171,17 @@ def resolve_look(cfg: dict, demo_dir: Path) -> tuple[str | None, dict, dict]:
     return template_id, look, looks.brand_config(template_look, cfg.get("brand"))
 
 
-def shot_sidecar(plan) -> list[dict]:
+def shot_sidecar(plan, folder: Path) -> list[dict]:
     """How each scene opens (check-cut.py W9): on the whole page, or straight on its crop, and whether
-    it says it continues the scene before it in the same window (`"wide": false`)."""
+    it says it continues the scene before it in the same window (`"wide": false`). Also the take and
+    the crop the window shows, widened to its shape, so check-cut.py W10 can scan the crop's edges."""
     out = []
     for shot in plan.shots:
         entry = {"scene": shot.key, "start": round(shot.start / spec.FPS, 3),
                  "end": round((shot.start + shot.frames) / spec.FPS, 3), "tight": is_tight(shot.crop, shot.source_size),
-                 "opens": "wide" if shot.wide else "crop", "continues": shot.continues}
+                 "opens": "wide" if shot.wide else "crop", "continues": shot.continues,
+                 "take": os.path.relpath(shot.source, folder), "take_size": list(shot.source_size),
+                 "crop": [round(v, 2) for v in shot.crop], "trim_in": shot.trim_in, "speed": shot.speed}
         if shot.wide:
             entry["settled"] = round(shot.start / spec.FPS + shot.settled, 3)
         out.append(entry)
@@ -203,7 +206,7 @@ def write_sidecars(final: Path, cfg: dict, plan, fonts: list[str], brand, look_i
                                 "out": round(base + z.out_start, 3), "end": round(base + z.end, 3),
                                 "scale": z.scale} for z in run.zooms],
                      "cuts": [round(plan.shots[s].start / spec.FPS, 3) for s in run.shots[1:]]})
-    sidecar = {"video": final.name, "total": round(plan.seconds, 3), "runs": runs, "shots": shot_sidecar(plan),
+    sidecar = {"video": final.name, "total": round(plan.seconds, 3), "runs": runs, "shots": shot_sidecar(plan, final.parent),
                "cards": [{"key": c.key, "kind": c.kind, "start": round(c.start / spec.FPS, 3),
                           "end": round((c.start + c.frames) / spec.FPS, 3), "accent": c.accent,
                           "outro": round(c.outro_frames / spec.FPS, 3)} for c in plan.cards],

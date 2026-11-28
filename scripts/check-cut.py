@@ -9,7 +9,8 @@ Usage: check-cut.py CUT.mp4 [--plan PLAN.json] [--frames DIR] [--json OUT.json]
 The bar's numbers come from the look the cut was built with (plan.json `look`): the house look, or
 a look template's measured values, so a copied look passes its own checklist. Window, pill, shadow,
 entrance, title-ink and zoom checks read that look's rect, pill band, shadow, entry time, ink and
-field colours and zoom margin, so they hold on light and dark looks alike.
+field colours and zoom margin, so they hold on light and dark looks alike. W10 reads each scene's raw
+take and warns when a crop edge slices through text.
 Exit code 0 when nothing FAILs. Needs ffmpeg and ffprobe. Heavy-ish: decodes ~60 frames and the audio.
 """
 from __future__ import annotations
@@ -27,7 +28,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import demolib as lib  # noqa: E402
 from keynote import measure as m  # noqa: E402
 from keynote import look as looks  # noqa: E402
-from keynote import motion, spec  # noqa: E402
+from keynote import crop_edges, motion, spec  # noqa: E402
+from keynote.model import PlanError, confine_take  # noqa: E402
+from keynote.spec import Rect  # noqa: E402
 from keynote.easing import cubic_bezier  # noqa: E402
 
 BG_SAMPLES = {(40, 40): "#EFEFEF", (960, 40): "#E4E4E4", (1880, 40): "#C2CAD6", (40, 1040): "#E0DBDA",
@@ -555,6 +558,80 @@ def check_highlight_motion(r: Report, plan: dict, plan_dir: Path, demo_dir: Path
         r.check(ok, "H8", f"highlight {k} at {h['start']:.2f}s: {text}")
 
 
+CROP_FIELDS = ("take", "take_size", "crop", "trim_in", "speed")
+
+
+def crop_sources(plan: dict, plan_dir: Path, demo_dir: Path) -> tuple[list[dict], str]:
+    """Per scene: its take, the take's size, the crop the window shows and how cut time maps onto the
+    take. From plan.json when the build wrote them; for an older plan, from the demo's demo.json, with
+    the crop widened by the engine's own fit_crop to the look's window shape. Raises lib.UnsafePath
+    or PlanError for a take outside the demo folder."""
+    shots = plan.get("shots") or []
+    if shots and all(all(f in s for f in CROP_FIELDS) for s in shots):
+        out = []
+        for s in shots:
+            take = highlight_take({"take": s["take"]}, plan_dir, demo_dir)
+            out.append({**s, "take": take, "crop": Rect(*s["crop"])})
+        return out, "plan.json"
+    config = demo_dir / "demo.json"
+    if not shots or not config.is_file():
+        return [], ""
+    items = {i["scene"]: i for i in lib.load_config(config, "demo", "check-cut")["sequence"] if "scene" in i}
+    x, y, w, h = plan_look(plan)["window"]["rect"]
+    out = []
+    for s in shots:
+        item = items.get(s["scene"])
+        if not item:
+            continue
+        raw = demo_dir / "recordings" / "raw"
+        take = confine_take(raw / f"{item['stem']}-t{item.get('take', 1)}.mp4", raw, f"scene {s['scene']}")
+        size = lib.probe_size(take)
+        crop = Rect(*item["crop"]) if "crop" in item else Rect(0, 0, size[0], size[0] * h / w)
+        out.append({**s, "take": take, "take_size": size, "crop": crop_edges.window_crop(crop, size, w / h),
+                    "trim_in": float((item.get("trim") or [0])[0] or 0), "speed": float(item.get("speed", 1))})
+    return out, "demo.json (the plan predates crops in plan.json)"
+
+
+def sample_times(shot: dict) -> list[float]:
+    """Cut times to read: from when the window shows the scene's crop (after a push in from the whole
+    page) to its last frame, about every 0.5 s, 3 to 12 of them."""
+    a, b = shot.get("settled", shot["start"]), shot["end"] - 1 / 30
+    if b <= a:
+        return [a]
+    n = min(12, max(3, math.ceil((b - a) / 0.5) + 1))
+    return [a + (b - a) * i / (n - 1) for i in range(n)]
+
+
+def check_crop_edges(r: Report, plan: dict, plan_dir: Path, demo_dir: Path, grab=crop_edges.grab_gray) -> None:
+    """W10: no crop edge slices through text, at any sampled moment of each scene."""
+    try:
+        shots, source = crop_sources(plan, plan_dir, demo_dir)
+    except (lib.UnsafePath, PlanError) as error:
+        r.check(False, "W10", f"crop edges not scanned: {error}")
+        return
+    if not shots:
+        r.add("LOOK", "W10", "plan.json has no crops and no demo.json sits beside it; rebuild to scan crop edges")
+        return
+    clean = 0
+    for shot in shots:
+        try:
+            frames = [(t, grab(shot["take"], shot["trim_in"] + (t - shot["start"]) * shot["speed"],
+                               tuple(shot["take_size"]))) for t in sample_times(shot)]
+        except (OSError, ValueError, subprocess.CalledProcessError) as error:
+            r.add("LOOK", "W10", f"scene {shot['scene']}: could not read its take ({error}); check its crop edges by eye")
+            continue
+        cuts = crop_edges.scan(frames, shot["crop"])
+        crop = [round(v) for v in shot["crop"]]
+        for edge, (t, count) in cuts.items():
+            limit = crop_edges.ACROSS_MIN if edge in ("top", "bottom") else crop_edges.SIDE_MIN
+            r.add("WARN", "W10", f"scene {shot['scene']} at {t:.2f}s: the {edge} edge of crop {crop} cuts through "
+                  f"text ({count} ink changes along it; bar: under {limit}). Move that edge into a gap between "
+                  "lines or columns")
+        clean += not cuts
+    if clean == len(shots):
+        r.add("PASS", "W10", f"no crop edge cuts through text in {clean} scene(s) (crops from {source})")
+
+
 def check_ending(r: Report, cut: Path, plan: dict, save) -> None:
     end = plan["cards"][-1] if plan["cards"] and plan["cards"][-1]["kind"] == "end" else None
     kind = plan_look(plan)["end"]["kind"]
@@ -637,6 +714,7 @@ def main() -> int:
     check_opening_shots(r, plan)
     check_overlays(r, cut, plan, save)
     check_highlight_motion(r, plan, plan_path.parent, demo_folder(plan_path))
+    check_crop_edges(r, plan, plan_path.parent, demo_folder(plan_path))
     check_ending(r, cut, plan, save)
     own = [f for f in (plan.get("brand", {}).get(k) for k in ("font", "title_font")) if f and f.startswith("fonts/")]
     if own:  # the product's own font file; build-keynote.py already refused a system fallback
@@ -654,8 +732,9 @@ def main() -> int:
     if args.json:
         Path(args.json).write_text(json.dumps(r.rows, indent=2) + "\n")
     passed = sum(1 for row in r.rows if row["status"] == "PASS")
+    warned = sum(1 for x in r.rows if x["status"] == "WARN")
     print(f"\n{passed} pass, {r.failed} fail, {sum(1 for x in r.rows if x['status'] == 'LOOK')} to look at"
-          + (f"; frames in {frames_dir}" if frames_dir else ""))
+          + (f", {warned} warning(s)" if warned else "") + (f"; frames in {frames_dir}" if frames_dir else ""))
     return 1 if r.failed else 0
 
 
