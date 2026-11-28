@@ -90,7 +90,7 @@ try {
   await step('Templates also shows the launch-ad styles, with frames, a sample and a Use prompt', async () => {
     await page.click('.side [data-testid="nav-templates"]');
     await page.waitForSelector('[data-testid="ad-style-card"]');
-    assert.equal(await page.locator('[data-testid="ad-style-card"]').count(), 4);
+    assert.equal(await page.locator('[data-testid="ad-style-card"]').count(), 5);
     const daylight = page.locator('[data-testid="ad-style-card"][data-style="daylight"]');
     assert.equal(await daylight.locator('.tpl-thumb').count(), 10);
     // The image loads after the card appears, so wait for it instead of reading it once.

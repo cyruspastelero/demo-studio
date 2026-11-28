@@ -1,0 +1,141 @@
+{
+  "name": "midnight-ad",
+  "description": "Midnight look for demo-studio ads: neutral near-black stage, DM Sans, one-colour type, neutral panels; the ember accent only on highlights and the done ring.",
+  "best_for": [
+    "dark ui",
+    "developer tool",
+    "open source",
+    "monochrome",
+    "minimal"
+  ],
+  "source": "README.md (nocturne with a neutral near-black palette, DM Sans, no accent glow or tint, no light flips; made for the demo-studio launch ad)",
+  "tone": "dark",
+  "palette": {
+    "light": {
+      "bg": "#f6f6f6",
+      "bg2": "#ececec",
+      "ink": "#111111",
+      "muted": "#6b6b6b",
+      "panel": "#ffffff",
+      "line": "#e2e2e2",
+      "shadowTint": "#000000",
+      "glow": "#ffffff"
+    },
+    "dark": {
+      "bg": "#0a0a0a",
+      "bg2": "#141414",
+      "ink": "#f2f2f2",
+      "muted": "#9c9c9c",
+      "panel": "#f6f6f6",
+      "panelInk": "#111111",
+      "panelMuted": "#6b6b6b",
+      "line": "#2a2a2a",
+      "shadowTint": "#000000",
+      "glow": "#1e1e1e"
+    },
+    "confetti": [
+      "accent",
+      "#ffffff",
+      "#9c9c9c"
+    ]
+  },
+  "fonts": {
+    "display": {
+      "family": "DM Sans",
+      "file": "dm-sans.woff2",
+      "weight": 500,
+      "accentWeight": 500
+    },
+    "body": {
+      "family": "DM Sans",
+      "file": "dm-sans.woff2",
+      "weight": 450
+    },
+    "accent": "color"
+  },
+  "type": {
+    "hero": 13.7,
+    "title": 9.6,
+    "body": 5.4,
+    "small": 4.3,
+    "minPx": 44,
+    "tracking": -0.01,
+    "lineHeight": 1.1
+  },
+  "text": {
+    "reveal": "type",
+    "charMs": 68,
+    "caret": true,
+    "wordMs": 430,
+    "staggerMs": 120,
+    "ease": [
+      0.25,
+      0.16,
+      0.06,
+      0.83
+    ],
+    "blurPx": 10,
+    "rise": 0,
+    "scaleFrom": 1,
+    "exitMs": 267
+  },
+  "motion": {
+    "enterMs": 500,
+    "enterEase": [
+      0.25,
+      0.16,
+      0.06,
+      0.83
+    ],
+    "exitMs": 267,
+    "exitEase": [
+      0.52,
+      0.1,
+      0.83,
+      0.55
+    ],
+    "exitScale": 0.6,
+    "transition": "zoomThrough",
+    "transitionMix": {
+      "blurZoom": 5,
+      "morph": 5,
+      "slide": 3,
+      "whip": 2,
+      "blurDissolve": 2,
+      "sparkle": 2,
+      "toneFlip": 2,
+      "scaleDown": 1,
+      "cut": 1
+    },
+    "drift": -0.017,
+    "popMs": 430,
+    "popEase": [
+      0.25,
+      0.16,
+      0.06,
+      0.83
+    ],
+    "clickMs": 220
+  },
+  "panel": {
+    "radius": 0.032,
+    "tilt": [
+      18.8,
+      23.3,
+      -6.1
+    ],
+    "perspective": 2000,
+    "shadow": "0 3U 8U #00000080",
+    "border": "1px solid LINE",
+    "glow": "0 0 0 1px #ffffff1f, 0 30px 80px -10px #000000cc",
+    "chromeBar": true
+  },
+  "background": {
+    "kind": "radialBottom",
+    "glowAccent": false,
+    "tint": 0
+  },
+  "cursor": "hand",
+  "doneVariant": "ring",
+  "deviceTone": "dark"
+}

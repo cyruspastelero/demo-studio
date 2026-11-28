@@ -24,7 +24,8 @@ Expected: `{"ok":true,"style":"daylight","duration":36,"bpm":119.999,"scenes":13
 - `windows-pile.mp4`, `menu-sort.mp4`, `switch-keys.mp4`: stylised illustrations of the desktop
   (neutral window shapes, no real app icons), made before the desktop was screen recorded.
 - `logo.svg`: Switchyard's mark.
-- Music and beats: shared with `examples/launch-ad/media/` (instrumental, made with ElevenLabs Music).
+- `music.mp3` and `music.beats.json`: the instrumental made for demo-studio's first launch ad, and its
+  beat map (from `motion/analyze-beats.mjs`: 120 BPM).
 
 On screen, in order: "Where's my *payments* terminal?", "Every window, *one desktop.*", "Meet
 *Switchyard.*", "One *click.*" [Sort now > Sorted], "Every window *goes home.*", "One *key* per

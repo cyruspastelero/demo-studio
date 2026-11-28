@@ -11,12 +11,12 @@
     "url": "github.com/cyruspastelero/switchyard"
   },
   "timing": {
-    "beatsFrom": "../launch-ad/media/music.beats.json",
+    "beatsFrom": "media/music.beats.json",
     "start": 0,
     "tail": 0
   },
   "audio": {
-    "music": "../launch-ad/media/music.mp3",
+    "music": "media/music.mp3",
     "musicGainDb": 0,
     "fadeOut": 1.2,
     "sfxGainDb": -14,

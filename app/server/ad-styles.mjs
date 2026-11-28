@@ -10,8 +10,8 @@ const JSON_LIMIT = 256 * 1024;
 const SAMPLES_URL = 'https://github.com/cyruspastelero/demo-studio/releases/download/samples';
 // A finished ad made with the style, published on the samples release (the README links them too).
 const SAMPLES = {
-  airy: { label: 'demo-studio launch ad', url: `${SAMPLES_URL}/sample-launch-ad.mp4` },
   daylight: { label: 'Switchyard launch ad', url: `${SAMPLES_URL}/sample-daylight-ad.mp4` },
+  'midnight-ad': { label: 'demo-studio launch ad', url: `${SAMPLES_URL}/sample-launch-ad.mp4` },
 };
 
 const stat = (path) => {

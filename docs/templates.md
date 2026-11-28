@@ -156,7 +156,7 @@ plugin, put it in `look-templates/<id>/` with its previews and add a row to the 
 ## Motion templates for launch ads
 
 Look templates style the walkthrough cuts. Launch ads made by skill `demo-motion` use their own
-motion templates in `motion-templates/` (`airy`, `daylight`, `nocturne`, `showroom`). They carry
+motion templates in `motion-templates/` (`airy`, `daylight`, `midnight-ad`, `nocturne`, `showroom`). They carry
 `best_for` tags too, and `templates.py suggest --kind motion` picks one the same way (`airy` when
 nothing matches). See [motion.md](motion.md#styles).
 

@@ -341,7 +341,7 @@ describe('http server', () => {
 
   it('lists the launch-ad styles with their frames and serves only those frames', async () => {
     const styles = JSON.parse((await get('/api/ad-styles')).body);
-    expect(styles.map((s) => s.id)).toEqual(['airy', 'daylight', 'nocturne', 'showroom']);
+    expect(styles.map((s) => s.id)).toEqual(['airy', 'daylight', 'midnight-ad', 'nocturne', 'showroom']);
     const daylight = styles.find((s) => s.id === 'daylight');
     expect(daylight.sample.label).toMatch(/Switchyard/);
     expect(daylight.previews[0]).toBe('/api/ad-style-preview/daylight/01.jpg');

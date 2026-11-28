@@ -59,7 +59,7 @@ Real apps, finished by the plugin. Click a preview to watch it in 1080p with sou
 | demo-studio launch ad (0:36) | demo-studio walkthrough (1:30) | Switchyard launch ad (0:36) |
 | --- | --- | --- |
 | [![demo-studio launch ad](docs/img/sample-launch-ad.gif)](https://github.com/cyruspastelero/demo-studio/releases/download/samples/sample-launch-ad.mp4) | [![demo-studio walkthrough](docs/img/sample-launch-poster.jpg)](https://github.com/cyruspastelero/demo-studio/releases/download/samples/sample-launch.mp4) | [![Switchyard launch ad](docs/img/sample-daylight-ad.gif)](https://github.com/cyruspastelero/demo-studio/releases/download/samples/sample-daylight-ad.mp4) |
-| Made with `demo-motion`. [An example storyboard](examples/launch-ad) | Narrated. [Files](examples/demo-studio-launch) | `daylight` style, for [Switchyard](https://github.com/cyruspastelero/switchyard). [Files](examples/switchyard-launch) |
+| `midnight-ad` style, made with `demo-motion`. [Its storyboard](examples/launch-ad) | Narrated. [Files](examples/demo-studio-launch) | `daylight` style, for [Switchyard](https://github.com/cyruspastelero/switchyard). [Files](examples/switchyard-launch) |
 
 ## Quick start
 
@@ -192,7 +192,7 @@ Your coding agent still talks to its own AI provider. Limits and reporting: [SEC
   (`"template": "paper"`), or the agent picks one that suits the product and tells you which.
 - **Copy a look you like:** say "copy the look of launch.mp4" (a file or a YouTube link) and the agent
   saves it as a new template. Only copy looks from videos you're allowed to use.
-- **Launch-ad styles:** `airy`, `daylight`, `nocturne` and `showroom` make short, music-driven ads from
+- **Launch-ad styles:** `airy`, `daylight`, `midnight-ad`, `nocturne` and `showroom` make short, music-driven ads from
   the demo's real footage, in 16:9, 4:5 and 9:16.
 
 Your brand colours and logo always win. The studio's Templates page shows every look and style with

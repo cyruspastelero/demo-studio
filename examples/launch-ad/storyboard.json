@@ -2,33 +2,33 @@
   "$schema": "../../motion/schema/storyboard.schema.json",
   "version": 1,
   "title": "demo-studio launch ad",
-  "style": "airy",
+  "style": "midnight-ad",
   "fps": 30,
   "brand": {
     "name": "demo-studio",
-    "accent": "#d2430e",
+    "accent": "#ff7a2e",
     "logo": "../../assets/logo/mark.svg",
     "url": "github.com/cyruspastelero/demo-studio",
     "fonts": {
       "display": {
-        "family": "Bricolage Grotesque",
-        "src": "../../site/fonts/bricolage-grotesque.woff2",
-        "weight": 440
+        "family": "DM Sans",
+        "src": "../../site/fonts/dm-sans.woff2",
+        "weight": 500
       },
       "body": {
-        "family": "Schibsted Grotesk",
-        "src": "../../site/fonts/schibsted-grotesk.woff2",
-        "weight": 500
+        "family": "DM Sans",
+        "src": "../../site/fonts/dm-sans.woff2",
+        "weight": 450
       }
     }
   },
   "timing": {
-    "beatsFrom": "media/music.beats.json",
+    "beatsFrom": "../../motion/music/ad-french-house-120.beats.json",
     "start": 0,
     "tail": 0
   },
   "audio": {
-    "music": "media/music.mp3",
+    "music": "../../motion/music/ad-french-house-120.mp3",
     "musicGainDb": 0,
     "fadeOut": 1.2,
     "sfxGainDb": -14,
@@ -50,7 +50,7 @@
           "at": 2
         },
         {
-          "text": "*an afternoon.*",
+          "text": "an afternoon.",
           "at": 4
         }
       ]
@@ -65,7 +65,7 @@
           "at": 0.2
         },
         {
-          "text": "*my own apps*",
+          "text": "my own apps",
           "at": 1.4
         },
         {
@@ -87,11 +87,11 @@
       "beats": 7,
       "phrases": [
         {
-          "text": "So I taught *Claude*",
+          "text": "So I taught Claude",
           "at": 0.2
         },
         {
-          "text": "everything I *learned.*",
+          "text": "everything I learned.",
           "at": 2.5
         }
       ],
@@ -100,19 +100,13 @@
     },
     {
       "type": "promptType",
-      "beats": 7,
+      "beats": 9,
       "note": "The one sentence",
       "text": "Make a demo of app.example.com. Goal: a new user creates a project and invites a teammate.",
       "placeholder": "Describe the demo you want",
       "typeFrom": 0.6,
       "typeTo": 4.8,
       "clickAt": 6
-    },
-    {
-      "type": "sparkle",
-      "beats": 2,
-      "exit": "fade",
-      "note": "Lands in the music's one-bar break"
     },
     {
       "type": "tiles",
@@ -131,7 +125,7 @@
     {
       "type": "doneBurst",
       "beats": 3,
-      "label": "*Done*"
+      "label": "Done"
     },
     {
       "type": "tiltedPanel",
@@ -145,19 +139,19 @@
     {
       "type": "uiFocus",
       "beats": 6,
-      "note": "Real editor take: select scene 2, rewrite its voiceover line",
+      "note": "Real editor take: rewrite a voiceover line until it fits",
       "media": {
         "src": "media/editor.mp4",
-        "rate": 1.6
+        "rate": 1.4
       },
       "focus": [
-        0.775,
-        0.085,
-        0.222,
-        0.33
+        0.42,
+        0.14,
+        0.58,
+        0.42
       ],
       "zoomAt": 1.6,
-      "headline": "*Fix* anything.",
+      "headline": "Fix anything.",
       "headlineAt": 2.2
     },
     {
@@ -195,18 +189,19 @@
           "at": 1.5
         },
         {
-          "text": "Your *app.*",
+          "text": "Your app.",
           "at": 2.7
         }
       ],
       "images": [
-        "../../look-templates/house/preview/01.png",
-        "../../look-templates/house/preview/02.png",
-        "../../look-templates/house/preview/03.png",
-        "../../look-templates/house/preview/04.png",
-        "../../look-templates/house/preview/05.png",
-        "../../look-templates/house/preview/06.png"
-      ]
+        "media/look-1.jpg",
+        "media/look-2.jpg",
+        "media/look-3.jpg",
+        "media/look-4.jpg",
+        "media/look-5.jpg",
+        "media/look-6.jpg"
+      ],
+      "note": "Real look previews: Midnight, House, Paper, Mono and the Showcase look copied from our own video"
     },
     {
       "type": "kineticText",
@@ -223,7 +218,7 @@
           "at": 1.25
         },
         {
-          "text": "*Open source.*",
+          "text": "Open source.",
           "at": 2
         }
       ]

@@ -1,6 +1,6 @@
 ---
 name: demo-motion
-description: Make a short, beat-synced motion-graphics launch ad from a demo's real footage. Writes a storyboard.json (kinetic type, tilted UI panels, a typed prompt, progress tiles, a Done burst, aspect-ratio morphs, a logo lock-up) from the demo's plan or a short brief, picks a motion template (airy, daylight, nocturne, showroom), gets music, renders 16:9, 4:5 and 9:16 at -14 LUFS and checks a contact sheet. Use when the user says "make a launch ad", "motion graphics", "make an ad", "a promo with music and no voice", or wants a teaser of a demo.
+description: Make a short, beat-synced motion-graphics launch ad from a demo's real footage. Writes a storyboard.json (kinetic type, tilted UI panels, a typed prompt, progress tiles, a Done burst, aspect-ratio morphs, a logo lock-up) from the demo's plan or a short brief, picks a motion template (airy, daylight, midnight-ad, nocturne, showroom), gets music, renders 16:9, 4:5 and 9:16 at -14 LUFS and checks a contact sheet. Use when the user says "make a launch ad", "motion graphics", "make an ad", "a promo with music and no voice", or wants a teaser of a demo.
 ---
 
 # Demo motion (launch ads)
@@ -147,7 +147,8 @@ Expected: `{"ok":true,"style":"airy","duration":36,...}`.
 ## Step 6: pick a style and check stills
 
 The styles are `airy` (light and friendly, the default), `daylight` (clean white, typed headlines,
-shape sweeps; everyday productivity tools), `nocturne` (dark and premium) and `showroom` (grey and
+shape sweeps; everyday productivity tools), `midnight-ad` (neutral near-black, one-colour type;
+developer tools), `nocturne` (dark and premium) and `showroom` (grey and
 deep blue, devices, hard cuts). Each one's `$P/motion-templates/<name>/README.md` shows it.
 
 1. The user named a style ("use style nocturne", "make it dark like nocturne")? Use it and skip to 3.

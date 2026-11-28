@@ -63,7 +63,7 @@ node motion/contact-sheet.mjs my-ad/out/ad-16x9.mp4 --fps 4                    #
 ```
 
 A render prints progress on stderr, then one JSON line such as
-`{"ok":true,"style":"airy","duration":36,"bpm":119.999,"scenes":13,"out":".../ad-16x9.mp4","loudness":{"integrated":-14,"truePeak":-1.4}}`.
+`{"ok":true,"style":"midnight-ad","duration":36,"bpm":120.02,"scenes":12,"out":".../ad-16x9.mp4","loudness":{"integrated":-14,"truePeak":-2}}`.
 Try it on the sample: `node motion/render-motion.mjs examples/launch-ad/storyboard.json --size 9x16 --out /tmp/launch-ad-9x16.mp4`.
 
 `--stills` renders just those times to PNG, which is the fast way to iterate on layout.
@@ -186,10 +186,11 @@ product. The background picks up a little of the brand accent (`background.tint`
 | `airy` (default) | Near-white with a faint brand tint, accent-coloured glow under floating UI, accent border on cards, gradient accent words. | Words blur-zoom in from 2x (433 ms), one every 300 ms; the line stays centred as it grows | Scale down to 0.48 + blur (333 ms) | Confetti |
 | `nocturne` | Near-black with the accent glowing up from the bottom edge; warm-white cards with an accent glow; big light type; flips to light for the in-app section and the lock-up. | Typewriter, 68 ms per character, caret | Zoom through with blur | Glowing ring |
 | `daylight` | Clean white with a soft accent glow in the middle, rounded friendly sans (Figtree), plain accent words, white floating UI with a thin line border and soft shadow, gentle tilt. Use `shapeSweep` between sections. | Typewriter, 55 ms per character, tall caret | Scale down + blur, some morphs | Confetti |
+| `midnight-ad` | Neutral near-black with no accent glow or tint and no light flips; DM Sans in one colour; light cards with a neutral rim; the accent only on the caret, buttons, tiles, progress bar and done ring. The demo-studio launch ad. | Typewriter, 68 ms per character, caret | Zoom through with blur | Ring |
 | `showroom` | Gallery grey with a floor gradient, and a deep-blue lit stage for product moments; slanted light accent word; devices start on the screen and pull back. | Typewriter, 100 ms per character, caret | Hard cut | Ring |
 
 Preview stills of the scene types in each style (from `examples/motion-gallery/storyboard.json`) are in
-`motion-templates/<name>/preview/01.jpg` to `10.jpg`:
+`motion-templates/<name>/preview/01.jpg` to `10.jpg` (`midnight-ad`'s are frames of the launch ad itself):
 
 ![airy](../motion-templates/airy/preview/05.jpg)
 ![nocturne](../motion-templates/nocturne/preview/05.jpg)
@@ -320,7 +321,7 @@ motion/lib/                  validate, timing, easing, fit, beats, assets, serve
 motion/schema/               storyboard.schema.json, style.schema.json
 motion/analysis/             scripts that measure a reference ad; side-by-side.sh
 motion-templates/<name>/     style.json, README.md, ANALYSIS.md, measurements.json, preview/
-examples/launch-ad/          the demo-studio launch ad: storyboard.json + media/
+examples/launch-ad/          the demo-studio launch ad (style midnight-ad): storyboard.json + media/
 examples/motion-gallery/     every scene type once (the preview set) and a long-headline test
 tests/test_motion_*.mjs      node:test suites
 ```
