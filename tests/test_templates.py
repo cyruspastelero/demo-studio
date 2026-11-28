@@ -6,6 +6,7 @@ Run: python3 -I tests/test_templates.py"""
 import importlib.util
 import json
 import os
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -339,6 +340,76 @@ class CopierHelpers(TemplateCase):
         copier = load_script("template-from-video.py")
         self.assertEqual(copier.template_id("My Cool Launch Video.mp4", "ab12cd" + "0" * 58), "my-cool-launch-video-ab12cd")
         self.assertTrue(templates.ID.match(copier.template_id("!!!.mp4", "ffffff" + "0" * 58)))
+
+    def test_a_link_is_told_apart_from_a_file_path(self):
+        copier = load_script("template-from-video.py")
+        for text in ("https://www.youtube.com/watch?v=abc", "HTTP://example.com/a.mp4", "ftp://example.com/a.mp4"):
+            self.assertTrue(copier.is_link(text), text)
+        for text in ("clip.mp4", "/Videos/https-launch.mp4", "./https://x.mp4", "C:/v.mp4", ""):
+            self.assertFalse(copier.is_link(text), text)
+
+    def test_only_http_and_https_links_with_a_host_are_accepted(self):
+        copier = load_script("template-from-video.py")
+        self.assertEqual(copier.check_link("https://youtu.be/abc?t=3"), "https://youtu.be/abc?t=3")
+        self.assertEqual(copier.check_link("http://example.com/v"), "http://example.com/v")
+        for bad in ("ftp://example.com/a.mp4", "file:///etc/passwd", "https://", "https:///path",
+                    "https://exa mple.com/v", "https://example.com/v\n--exec", "javascript://x"):
+            with self.assertRaises(ValueError, msg=bad):
+                copier.check_link(bad)
+
+    def test_yt_dlp_is_asked_for_one_mp4_up_to_1080p_with_sound_into_scratch(self):
+        copier = load_script("template-from-video.py")
+        work = Path("/scratch/look")
+        args = copier.yt_dlp_args("/opt/bin/yt-dlp", "https://youtu.be/abc", work)
+        self.assertEqual(args[0], "/opt/bin/yt-dlp")
+        self.assertEqual(args[-2:], ["--", "https://youtu.be/abc"])  # the link can never read as an option
+        self.assertIn("--no-playlist", args)
+        self.assertIn("--ignore-config", args)
+        fmt = args[args.index("-f") + 1]
+        self.assertTrue(fmt.startswith("bv*[height<=1080][ext=mp4]+ba"), fmt)  # picture and sound (loudness)
+        self.assertNotIn("height>", fmt)
+        self.assertEqual(args[args.index("--merge-output-format") + 1], "mp4")
+        output = args[args.index("-o") + 1]
+        self.assertTrue(output.startswith(str(work) + os.sep), output)
+        self.assertTrue(all(isinstance(a, str) for a in args))
+
+    def test_yt_dlp_report_gives_title_and_downloaded_file(self):
+        copier = load_script("template-from-video.py")
+        text = 'noise\n{"title": "Sintel | Trailer", "filepath": "/scratch/look/reference.mp4"}\n'
+        self.assertEqual(copier.parse_download_report(text), ("Sintel | Trailer", Path("/scratch/look/reference.mp4")))
+        with self.assertRaises(ValueError):
+            copier.parse_download_report("no json here\n")
+
+    def test_a_link_template_id_comes_from_the_title(self):
+        copier = load_script("template-from-video.py")
+        sha = "ab12cd" + "0" * 58
+        self.assertEqual(copier.title_template_id("Sintel v1.0 | Official Trailer", sha),
+                         "sintel-v1-0-official-trailer-ab12cd")
+        self.assertEqual(copier.title_template_id("", sha), "look-ab12cd")
+        self.assertTrue(templates.ID.match(copier.title_template_id("\u2603" * 90, sha)))
+        self.assertTrue(templates.ID.match(copier.title_template_id("x" * 200, sha)))
+
+    def test_a_link_source_may_record_its_url_and_title_but_nothing_else(self):
+        cli = load_script("templates.py")
+        folder = write_template(self.root, "sintel-trailer-ab12cd")
+        source = {"file": "Sintel Trailer", "url": "https://youtu.be/abc", "title": "Sintel Trailer", "sha256": "ab"}
+        (folder / "source.json").write_text(json.dumps(source))
+        self.assertFalse([p for p in cli.folder_problems(folder) if "source.json" in p])
+        (folder / "source.json").write_text(json.dumps({**source, "uploader": "Someone"}))
+        self.assertIn("source.json has fields beyond provenance: uploader", cli.folder_problems(folder))
+
+    def test_a_frame_time_past_the_last_picture_is_skipped_so_the_sheets_still_build(self):
+        # A container can run longer than its video (sound past the last picture): ffmpeg then writes
+        # nothing for the last time, and the numbered sequence the contact sheets read had a hole.
+        copier = load_script("template-from-video.py")
+        video = self.root / "short.mp4"
+        subprocess.run(["ffmpeg", "-v", "error", "-f", "lavfi", "-i", "testsrc=size=320x180:rate=10:duration=1",
+                        "-pix_fmt", "yuv420p", video], check=True)
+        stills = copier.extract_stills(video, [0.2, 0.5, 3.0], self.root / "frames")
+        self.assertEqual([s["file"] for s in stills], ["f0001.png", "f0002.png"])
+        self.assertEqual(sorted(p.name for p in (self.root / "frames").iterdir()), ["f0001.png", "f0002.png"])
+        sheets = copier.contact_sheets(stills, self.root / "frames", self.root / "sheets")
+        self.assertEqual(len(sheets[0]["tiles"]), 2)
 
     def test_scene_times_parse_from_showinfo(self):
         copier = load_script("template-from-video.py")

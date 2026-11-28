@@ -61,7 +61,8 @@ def folder_problems(folder: Path) -> list[str]:
     if source.is_file():
         try:
             data = json.loads(source.read_text())
-            allowed = {"file", "duration", "sha256", "created", "width", "height", "fps", "tool", "_comment"}
+            allowed = {"file", "url", "title", "duration", "sha256", "created", "width", "height", "fps", "tool",
+                       "_comment"}
             extra = sorted(set(data) - allowed)
             if extra:
                 out.append(f"source.json has fields beyond provenance: {', '.join(extra)}")

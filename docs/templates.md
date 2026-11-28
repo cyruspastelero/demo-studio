@@ -91,8 +91,11 @@ python3 -I scripts/templates.py validate <id>   # schema, README, source.json, s
 Ask Claude "copy the look of <video>" (skill `demo-template`). It runs three steps, the same way
 [the quality bar](quality-bar.md) was made:
 
-1. **Measure.** `scripts/template-from-video.py <video> --out <demos>/_templates --work <scratch>`
-   probes the file, finds scene changes, pulls frames into the scratch folder (every 0.5 s for the
+1. **Measure.** `scripts/template-from-video.py <video or link> --out <demos>/_templates --work <scratch>`
+   takes a file or an http(s) link. A link (YouTube, or any site yt-dlp supports) is downloaded with
+   `yt-dlp` into the scratch folder first: one video, best mp4 up to 1080p, with its sound. The
+   template id and name then come from the title, and `source.json` records the link and title
+   (`--anonymous` writes "reference video" instead). Then it probes the video, finds scene changes, pulls frames into the scratch folder (every 0.5 s for the
    first 20 s, every scene change, and frames either side of each) with 4x4 contact sheets, and
    measures what a machine can: the encode, loudness (EBU R128) and the silent tail, background
    colours at the corners and edges, the most common accent colours, the window's rest rectangle and
@@ -162,4 +165,5 @@ nothing matches). See [motion.md](motion.md#styles).
 A template captures **measurements of a style** (sizes, timings, colours, loudness), not content. It
 never holds the reference video, its frames, logos, words, voice or music, and its previews show the
 todo sample. Even so, only copy looks you are allowed to reference: your own videos, your company's,
-or ones whose owner lets you. Do not use a copied look to pass your video off as someone else's.
+or ones whose owner lets you. A link is no different: being able to watch a video online does not
+mean you may copy its look. Do not use a copied look to pass your video off as someone else's.

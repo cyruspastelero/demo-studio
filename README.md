@@ -190,7 +190,8 @@ Your coding agent still talks to its own AI provider. Limits and reporting: [SEC
 
 - **Demo video looks:** `house` (the default), `midnight`, `paper` and `mono`. Name one in demo.json
   (`"template": "paper"`), or the agent picks one that suits the product and tells you which.
-- **Copy a look you like:** say "copy the look of launch.mp4" and the agent saves it as a new template.
+- **Copy a look you like:** say "copy the look of launch.mp4" (a file or a YouTube link) and the agent
+  saves it as a new template. Only copy looks from videos you're allowed to use.
 - **Launch-ad styles:** `airy`, `daylight`, `nocturne` and `showroom` make short, music-driven ads from
   the demo's real footage, in 16:9, 4:5 and 9:16.
 

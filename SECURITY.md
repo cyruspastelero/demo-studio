@@ -64,7 +64,10 @@ Two assumptions shape everything below:
 - **Media pulling in other inputs.** Every ffmpeg and ffprobe call on media from a demo folder (the
   studio's thumbnails and durations, and the Python scripts' probes, renders and checks) runs with
   `-protocol_whitelist file,pipe`, so a crafted playlist or reference cannot make ffmpeg fetch a URL
-  or open another kind of input. `doctor.sh` warns when ffmpeg is older than 6.0.
+  or open another kind of input. `doctor.sh` warns when ffmpeg is older than 6.0. The one place a
+  link is fetched is `template-from-video.py` given an http(s) link: it calls `yt-dlp` with an
+  argument list (no shell), the link after `--`, `--ignore-config` and `--no-playlist`, saves into
+  the scratch folder only, and refuses any other scheme.
 - **A shared demo spending your credits.** `narrate.py` sends text to ElevenLabs only when you pass
   `--voice elevenlabs`, or set `DEMO_STUDIO_ALLOW_CONFIG_VOICE=1` to let demo.json's
   `voice.provider` choose. Without that, a demo.json that asks for ElevenLabs, or a key in your

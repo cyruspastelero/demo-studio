@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """Template copier, step 1: measure an existing video's look into a draft look template.
 
+VIDEO is a file or an http(s) link. A link (YouTube or any site yt-dlp supports) is downloaded with
+yt-dlp into the scratch folder first: one video, no playlist, best mp4 up to 1080p with its sound
+(loudness needs the sound). The download stays in scratch, like the frames.
+
 Probes the video (ffprobe), finds its scene changes, pulls frames into a scratch folder (every 0.5 s
 for the first 20 s, at every scene change, and densely around each one), and measures what a
 machine can: the encode, loudness (EBU R128), background colours at the corners and edges, the most
@@ -9,7 +13,8 @@ duration and easing (from per-frame window width), the window's rise-in time, th
 shot lengths and the ending. It writes:
 
   <out>/<id>/template.json   draft look (measured values only; the rest falls back to the house look)
-  <out>/<id>/source.json     provenance: file name, duration, sha256, size, date. Never the video.
+  <out>/<id>/source.json     provenance: file name (or link and title), duration, sha256, size, date.
+                             Never the video.
   <out>/<id>/README.md       draft notes for the agent to finish
   <work>/measurements.json   every number, its confidence, which frames it came from, what to fill by eye
   <work>/frames/, <work>/sheets/sheet-NN.png   frames and 4x4 contact sheets to review frame by frame
@@ -18,9 +23,11 @@ The reference's frames, logos, words and music stay in <work> (scratch); nothing
 template folder. Finish the template with skill demo-template (fonts, pill and box styles by eye),
 then check it with template-validate.py.
 
-Usage: template-from-video.py VIDEO [--name NAME] [--out DIR] [--work DIR] [--force] [--anonymous]
-  --anonymous  write "reference video" instead of the video's file name into source.json, README.md,
-               the template id and the default name (the file name can say whose video it was)
+Usage: template-from-video.py VIDEO|LINK [--name NAME] [--out DIR] [--work DIR] [--force] [--anonymous]
+  LINK         http(s) only; needs yt-dlp on PATH (brew install yt-dlp, or pipx install yt-dlp). The
+               template id and default name come from the video's title.
+  --anonymous  write "reference video" instead of the video's file name (or link and title) into
+               source.json, README.md, the template id and the default name (they can say whose video it was)
   --out    templates folder (default <demos root>/_templates: $DEMO_ROOT/_templates, else ./demos/_templates)
   --work   scratch folder (default a new temp folder; printed)
 Prints PROGRESS lines and `OUTPUT <template folder>`. Heavy-ish: decodes the video twice at low rate.
@@ -36,7 +43,9 @@ import re
 import statistics
 import subprocess
 import sys
+import shutil
 import tempfile
+import urllib.parse
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -66,12 +75,64 @@ def fail(message: str) -> None:
 
 # ---------------------------------------------------------------- small pure helpers (unit-tested)
 
-def template_id(name: str, sha256: str) -> str:
-    """<slug>-<first 6 hex of the file's sha256>, inside the template id pattern."""
-    slug = re.sub(r"[^a-z0-9]+", "-", Path(name).stem.lower()).strip("-")[:56].strip("-") or "look"
+def slug_id(text: str, sha256: str) -> str:
+    """<slug of text>-<first 6 hex of the file's sha256>, inside the template id pattern."""
+    slug = re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")[:56].strip("-") or "look"
     if not slug[0].isalnum():
         slug = "look-" + slug
     return f"{slug}-{sha256[:6]}"
+
+
+def template_id(name: str, sha256: str) -> str:
+    """Id from a file name: its stem, slugged, plus 6 hex of the hash."""
+    return slug_id(Path(name).stem, sha256)
+
+
+def title_template_id(title: str, sha256: str) -> str:
+    """Id from a video title (a link has no file name). The whole title counts: "v1.0" is no suffix."""
+    return slug_id(title, sha256)
+
+
+def is_link(text: str) -> bool:
+    """A scheme and "://" at the very start: a link (checked by check_link), not a file path."""
+    return re.match(r"[A-Za-z][A-Za-z0-9+.-]*://", text) is not None
+
+
+def check_link(url: str) -> str:
+    """Only http(s) links with a host, and no spaces or control characters. Returns the link."""
+    if re.search(r"[\x00-\x20\x7f]", url):
+        raise ValueError("the link has spaces or control characters in it")
+    parts = urllib.parse.urlsplit(url)
+    if parts.scheme.lower() not in ("http", "https"):
+        raise ValueError(f"only http and https links work, not {parts.scheme or 'no scheme'}://")
+    if not parts.hostname:
+        raise ValueError("the link has no host")
+    return url
+
+
+DOWNLOAD_FORMAT = ("bv*[height<=1080][ext=mp4]+ba[ext=m4a]/bv*[height<=1080]+ba/"
+                   "b[height<=1080][ext=mp4]/b[height<=1080]")
+
+
+def yt_dlp_args(yt_dlp: str, url: str, work: Path) -> list[str]:
+    """One video (no playlist), best mp4 up to 1080p with its sound (loudness needs it), saved as
+    <work>/reference.<ext>; prints {"title", "filepath"} as JSON when done. Ignores the user's
+    yt-dlp config so it cannot add hooks or change where the file goes."""
+    return [yt_dlp, "--ignore-config", "--no-playlist", "--no-progress", "--no-warnings",
+            "-f", DOWNLOAD_FORMAT, "--merge-output-format", "mp4",
+            "-o", str(work / "reference.%(ext)s"), "--no-simulate",
+            "--print", "after_move:%(.{title,filepath})j", "--", url]
+
+
+def parse_download_report(stdout: str) -> tuple[str, Path]:
+    """The title and downloaded file from the JSON line yt-dlp prints after the download."""
+    for line in reversed(stdout.splitlines()):
+        line = line.strip()
+        if line.startswith("{"):
+            data = json.loads(line)
+            if data.get("filepath"):
+                return str(data.get("title") or ""), Path(data["filepath"])
+    raise ValueError("yt-dlp did not say where it saved the video")
 
 
 def parse_scene_times(showinfo: str) -> list[float]:
@@ -183,10 +244,14 @@ def extract_stills(video: Path, times: list[float], folder: Path) -> list[dict]:
     folder.mkdir(parents=True, exist_ok=True)
     out = []
     for i, t in enumerate(times, 1):
-        path = folder / f"f{i:04d}.png"
+        # Numbered by frames written: a time past the last picture (sound can run longer) writes
+        # nothing, and the contact sheets read an unbroken f%04d sequence.
+        path = folder / f"f{len(out) + 1:04d}.png"
+        path.unlink(missing_ok=True)
         lib.run(["ffmpeg", "-y", "-v", "error", "-ss", f"{t:.3f}", "-i", video, "-frames:v", "1",
                  "-vf", "scale=1280:720:flags=bicubic", path])
-        out.append({"file": path.name, "t": t})
+        if path.is_file():
+            out.append({"file": path.name, "t": t})
         if i % 20 == 0 or i == len(times):
             lib.progress("frames", i, len(times))
     return out
@@ -481,9 +546,11 @@ def draft_look(meas: dict) -> tuple[dict, list[str]]:
     return look, todo
 
 
-def write_readme(folder: Path, template_id: str, name: str, meas: dict, todo: list[str]) -> None:
+def write_readme(folder: Path, template_id: str, name: str, meas: dict, todo: list[str],
+                 url: str | None = None) -> None:
     lines = [f"# {name}", "", f"Look template `{template_id}`, measured with `template-from-video.py` on "
              f"{datetime.date.today().isoformat()}. Draft: finish it with skill `demo-template`.", "",
+             *([f"Measured from <{url}> ({meas['video']}).", ""] if url else []),
              "A template holds measurements of a style (geometry, timing, colours, loudness). It holds no",
              "footage, logos, words or music from the video it was measured on.", "", "## Use it", "",
              f'Set `"template": "{template_id}"` in a demo\'s demo.json, then build as usual.', "",
@@ -519,6 +586,33 @@ def prepare_target(folder: Path, force: bool) -> None:
         fail(f"{error}. Delete the folder and run again")
 
 
+def scratch_folder(work: str | None, tag: str) -> Path:
+    """--work, made if missing, else a new temp folder."""
+    folder = Path(work).expanduser().resolve() if work else Path(tempfile.mkdtemp(prefix=f"demo-template-{tag}-"))
+    folder.mkdir(parents=True, exist_ok=True)
+    return folder
+
+
+def download(url: str, work: Path) -> tuple[str, Path]:
+    """Fetch the link's video into the scratch folder with yt-dlp. Returns (title, file)."""
+    yt_dlp = shutil.which("yt-dlp")
+    if not yt_dlp:
+        fail("a link needs yt-dlp to download the video. Install it (brew install yt-dlp, or pipx install "
+             "yt-dlp), or download the video yourself and pass the file")
+    print(f"{TOOL}: downloading {url} into {work} (up to 1080p, with sound)", flush=True)
+    result = subprocess.run(yt_dlp_args(yt_dlp, url, work), capture_output=True, text=True)
+    if result.returncode != 0:
+        fail(f"yt-dlp could not download {url}:\n  " + "\n  ".join(result.stderr.strip().splitlines()[-5:]))
+    try:
+        title, video = parse_download_report(result.stdout)
+    except (ValueError, json.JSONDecodeError) as error:
+        fail(f"reading yt-dlp's report failed: {error}")
+    video = video.resolve()
+    if work not in video.parents or not video.is_file():
+        fail(f"yt-dlp saved the video outside the scratch folder or not at all: {video}")
+    return title.strip(), video
+
+
 def default_out() -> Path:
     root = Path(os.environ["DEMO_ROOT"]) if os.environ.get("DEMO_ROOT") else Path.cwd() / "demos"
     return root / "_templates"
@@ -526,7 +620,7 @@ def default_out() -> Path:
 
 def main() -> None:
     parser = argparse.ArgumentParser(prog="template-from-video.py", description=__doc__.split("\n\n")[0])
-    parser.add_argument("video")
+    parser.add_argument("video", help="a video file, or an http(s) link yt-dlp can download (YouTube and others)")
     parser.add_argument("--name", help="human name for the template (default: from the file name)")
     parser.add_argument("--out", help="templates folder (default <demos root>/_templates)")
     parser.add_argument("--work", help="scratch folder for frames, sheets and measurements.json")
@@ -536,25 +630,43 @@ def main() -> None:
                         help='record "reference video" instead of the file name (source.json, README, id, name)')
     args = parser.parse_args()
     lib.require("ffmpeg", "ffprobe")
-    video = Path(args.video).expanduser().resolve()
-    if not video.is_file():
-        fail(f"video not found: {video}")
+    url = None
+    if is_link(args.video):
+        try:
+            url = check_link(args.video)
+        except ValueError as error:
+            fail(f"{error}: {args.video!r}")
+        work = scratch_folder(args.work, "link")
+        title, video = download(url, work)
+        label = ANONYMOUS_LABEL if args.anonymous else (title or ANONYMOUS_LABEL)
+    else:
+        video = Path(args.video).expanduser().resolve()
+        if not video.is_file():
+            fail(f"video not found: {video}")
+        label = reference_label(video, args.anonymous)
+        work = None
     info = probe(video)
     digest = sha256(video)
-    label = reference_label(video, args.anonymous)
     if not args.anonymous:
-        print(f"{TOOL}: note: the file name {video.name!r} goes into source.json, README.md and the template id"
+        what = f"the link and title {label!r} go" if url else f"the file name {video.name!r} goes"
+        print(f"{TOOL}: note: {what} into source.json, README.md and the template id"
               f"{'' if args.name else ' and name'}; if it says whose video this is, run again with --anonymous "
               f"(records {ANONYMOUS_LABEL!r} instead)", file=sys.stderr, flush=True)
-    name = args.name or Path(label).stem.replace("_", " ").replace("-", " ").strip() or "Copied look"
-    tid = template_id(args.name or label, digest)
+    if url:
+        name = args.name or label
+        tid = title_template_id(args.name or label, digest)
+    else:
+        name = args.name or Path(label).stem.replace("_", " ").replace("-", " ").strip() or "Copied look"
+        tid = template_id(args.name or label, digest)
     out_root = Path(args.out).expanduser().resolve() if args.out else default_out().resolve()
     folder = out_root / tid
+    if work and (work == folder or folder in work.parents):
+        video.unlink(missing_ok=True)
+        fail("--work must be outside the template folder (the reference never goes into a template)")
     prepare_target(folder, args.force)
-    work = Path(args.work).expanduser().resolve() if args.work else Path(tempfile.mkdtemp(prefix=f"demo-template-{tid}-"))
+    work = work or scratch_folder(args.work, tid)
     if work == folder or folder in work.parents:
         fail("--work must be outside the template folder (frames of the reference never go into a template)")
-    work.mkdir(parents=True, exist_ok=True)
     print(f"{TOOL}: {label}: {info['width']}x{info['height']} at {info['fps']} fps, {info['duration']:.1f}s; "
           f"id {tid}; scratch {work}", flush=True)
 
@@ -607,11 +719,12 @@ def main() -> None:
     if errors:
         fail("draft template does not match the schema (a measuring bug):\n  " + "\n  ".join(errors))
     (folder / "template.json").write_text(json.dumps(template, indent=2) + "\n")
+    link = {"url": url, "title": label} if url and not args.anonymous else {}
     (folder / "source.json").write_text(json.dumps({
-        "file": label, "duration": round(info["duration"], 3), "sha256": digest,
+        "file": label, **link, "duration": round(info["duration"], 3), "sha256": digest,
         "created": datetime.date.today().isoformat(), "width": info["width"], "height": info["height"],
         "fps": info["fps"], "tool": TOOL}, indent=2) + "\n")
-    write_readme(folder, tid, name, meas, todo)
+    write_readme(folder, tid, name, meas, todo, None if args.anonymous else url)
     (work / "measurements.json").write_text(json.dumps(meas, indent=2, default=list) + "\n")
     effective = looks.effective(look)
     print(f"measured: window {effective['window']['rect']}, zooms {len(zooms)} at {effective['zoom']['scale']}x "

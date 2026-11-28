@@ -1,6 +1,6 @@
 ---
 name: demo-template
-description: Make, check and use look templates. Copies the look of an existing video into a reusable template (measures it frame by frame, fills the rest by eye, renders the todo sample in it and compares side by side until it matches), lists the templates there are, and sets a template on a demo. Use when the user says "copy the look of <video>", "make a template from <video>", "use template <id>", or asks which looks exist.
+description: Make, check and use look templates. Copies the look of an existing video (a file or a link, such as YouTube) into a reusable template (measures it frame by frame, fills the rest by eye, renders the todo sample in it and compares side by side until it matches), lists the templates there are, and sets a template on a demo. Use when the user says "copy the look of <video or link>", "make a template from <video or link>", "use template <id>", or asks which looks exist.
 ---
 
 # Demo template
@@ -13,7 +13,12 @@ demo.json. Full reference: `$P/docs/templates.md`.
 Do not ask the user anything here. Decide, and write each decision in the template's README.md.
 Stop only for the stops in skill `demo-studio`, plus one: **only copy a look the user may use as a
 reference** (their own video, their company's, or one they say they have the right to reference).
-If they did not say, ask once: "Is this a video you're allowed to take the look from?"
+If they did not say, ask once: "Is this a video you're allowed to take the look from?" This holds
+for a link too: being able to watch a video online does not mean you may copy it.
+
+The copier measures the look and nothing else. It never keeps the video's frames, logos, words or
+music. A video from a link is downloaded into the scratch folder, measured there like a file, and
+never goes into the template.
 
 Start every shell command with this line (it finds the plugin folder):
 
@@ -72,6 +77,12 @@ Templates in `_templates/` are only found inside a real workspace (it has `check
 
 ### Step 1: check the video
 
+The video can be a file or an http(s) link (YouTube, or any site yt-dlp can download). For a link,
+skip the ffprobe below: Step 2 downloads it first (one video, best mp4 up to 1080p, with its sound)
+and needs `yt-dlp` on PATH. Missing? `brew install yt-dlp` or `pipx install yt-dlp`. The template
+id and name come from the video's title; pass `--anonymous` if the title or link says whose video
+it is.
+
 ```bash
 ffprobe -v error -show_entries format=duration:stream=codec_type,width,height,r_frame_rate -of compact "<video>"
 ```
@@ -81,13 +92,14 @@ Expected: a video stream (any size; it is measured at 1920x1080) and usually an 
 ### Step 2: measure it
 
 ```bash
-python3 -I "$P/scripts/template-from-video.py" "<video>" --name "<short name>" --out ./demos/_templates --work "${TMPDIR:-/tmp}/tpl-work"
+python3 -I "$P/scripts/template-from-video.py" "<video file or link>" --name "<short name>" --out ./demos/_templates --work "${TMPDIR:-/tmp}/tpl-work"
 ```
 
 Expected (a 90 s video takes about a minute):
 
 ```
-template-from-video: <file>: 1920x1080 at 30.0 fps, 95.9s; id <slug>-<6 hex>; scratch ...
+template-from-video: downloading <link> into ... (up to 1080p, with sound)    (links only)
+template-from-video: <file or title>: 1920x1080 at 30.0 fps, 95.9s; id <slug>-<6 hex>; scratch ...
 scenes: N change(s)
 measured: window [x, y, w, h], zooms N at 1.15x over 1.1s, pill y 962, loudness -14 LUFS, end sweep-logo
 review: K contact sheet(s) in .../sheets; measurements .../measurements.json
