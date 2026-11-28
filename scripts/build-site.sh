@@ -24,7 +24,7 @@ mkdir -p "$OUT/logo" "$OUT/fonts" "$OUT/img" "$OUT/media"
 /bin/cp -f "$ROOT"/docs/img/sample-*-poster.jpg "$ROOT/docs/img/studio-1440.png" "$ROOT/docs/img/editor.gif" "$OUT/img/"
 mkdir -p "$OUT/img/house" && /bin/cp -f "$ROOT"/look-templates/house/preview/*.png "$OUT/img/house/"
 mkdir -p "$OUT/img/looks" && for l in house midnight paper mono; do /bin/cp -f "$ROOT/look-templates/$l/preview/01.png" "$OUT/img/looks/$l.png"; /bin/cp -f "$ROOT/look-templates/$l/preview/02.png" "$OUT/img/looks/$l-stage.png"; done
-/bin/cp -f "$ROOT/site/og-image.png" "$OUT/"
+/bin/cp -f "$ROOT/site/og-image.png" "$ROOT/site/robots.txt" "$ROOT/site/sitemap.xml" "$OUT/"
 mkdir -p "$OUT/img/motion" && for s in airy daylight nocturne showroom; do /bin/cp -f "$ROOT/motion-templates/$s/preview/02.jpg" "$OUT/img/motion/$s.jpg"; done
 if [ -f "$ROOT/app/out-static/index.html" ]; then
   rm -rf "$OUT/editor" && /bin/cp -R "$ROOT/app/out-static" "$OUT/editor"

@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
-<title>demo-studio: demo videos of your real app, made by your coding agent</title>
-<meta name="description" content="Open-source skills for coding agents (Claude Code, Codex, Cursor, Gemini CLI, Copilot) that plan, record, cut and narrate a demo video of your real product. Free and local.">
+<title>demo-studio: product demo videos made by your coding agent</title>
+<meta name="description" content="Open-source skills that let Claude Code, Codex, Cursor or Gemini CLI plan, record, cut and narrate a demo video of your real app. Free and local.">
 <link rel="canonical" href="https://demo-studio.pastelero.ph/">
 <meta name="theme-color" content="#0c0c0c">
 <link rel="icon" href="logo/mark.svg" type="image/svg+xml">
@@ -26,6 +26,10 @@
 <meta name="twitter:description" content="Your coding agent plans it, records it, cuts and narrates it. Free, local, open source.">
 <meta name="twitter:image" content="https://demo-studio.pastelero.ph/og-image.png">
 <meta name="twitter:image:alt" content="demo-studio: a finished demo video of your real app, with a frame from a sample video">
+<script type="application/ld+json">
+{"@context": "https://schema.org", "@type": "SoftwareApplication", "name": "demo-studio", "url": "https://demo-studio.pastelero.ph/", "description": "Open-source skills that let Claude Code, Codex, Cursor or Gemini CLI plan, record, cut and narrate a demo video of your real app. Free and local.", "applicationCategory": "DeveloperApplication", "operatingSystem": "macOS, Linux, Windows", "license": "https://opensource.org/licenses/MIT", "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"}, "image": "https://demo-studio.pastelero.ph/og-image.png", "sameAs": ["https://github.com/cyruspastelero/demo-studio"], "author": {"@type": "Person", "name": "Cyrus David Pastelero", "url": "https://github.com/cyruspastelero"}}
+</script>
+<link rel="preload" href="fonts/dm-sans.woff2" as="font" type="font/woff2" crossorigin>
 <style>
 @font-face { font-family: "DM Sans"; src: url(fonts/dm-sans.woff2) format("woff2"); font-weight: 100 1000; font-display: swap; }
 @font-face { font-family: "Geist"; src: url(fonts/GeistVariable.woff2) format("woff2"); font-weight: 100 900; font-display: swap; }
@@ -374,7 +378,7 @@ footer { position: relative; overflow: hidden; container-type: inline-size; marg
 </div>
 
 <nav class="dock" aria-label="Page">
-  <a class="brand" href="#record"><img src="logo/mark.svg" alt="">demo-studio</a>
+  <a class="brand" href="#record"><img src="logo/mark.svg" alt="" width="20" height="20">demo-studio</a>
   <a class="wide" href="#editor">Editor</a>
   <a class="wide" href="#looks">Looks</a>
   <a class="wide" href="#ads">Launch ads</a>
