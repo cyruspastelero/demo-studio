@@ -370,7 +370,8 @@ try {
     await page.click('[data-testid="render-keynote"]');
     await page.waitForSelector('[data-testid="render-drawer"][data-status="running"]'); // not the quick preview's "done"
     // The job stays running while video-gate.py and check-cut.py run, so "done" means the checks finished.
-    await page.waitForSelector('[data-testid="render-drawer"][data-status="done"]', { timeout: 150000 });
+    // 300 s: since the W9 whole-page openings the export plus its checks took 132 s on CI.
+    await page.waitForSelector('[data-testid="render-drawer"][data-status="done"]', { timeout: 300000 });
     const checks = page.locator('[data-testid="render-output"] [data-testid="render-checks"]');
     assert.equal(await checks.count(), 1, 'the keynote cut has one checks block');
     // The example's synthetic footage may fail some rows: only that the checks ran and rendered counts.
