@@ -230,6 +230,13 @@ class Comments(unittest.TestCase):
         self.assertEqual(self.request("/secret.txt")[0], 404)
         self.assertEqual(self.request("/frames/../secret.txt")[0], 404)
 
+    def test_a_head_request_gets_the_page_headers_without_a_body(self):
+        request = urllib.request.Request(self.base + "/", method="HEAD")
+        with urllib.request.urlopen(request, timeout=5) as response:
+            self.assertEqual(response.status, 200)
+            self.assertEqual(response.headers["Content-Length"], str(len(b"<p>board</p>")))
+            self.assertEqual(response.read(), b"")
+
 
 class Schema(unittest.TestCase):
     def test_the_sample_plan_still_validates(self):

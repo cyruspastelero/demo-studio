@@ -79,7 +79,8 @@ def handler_for(folder: Path):
             self.send_header("Content-Length", str(len(body)))
             self.send_header("Cache-Control", "no-store")
             self.end_headers()
-            self.wfile.write(body)
+            if self.command != "HEAD":
+                self.wfile.write(body)
 
         def error(self, status: int, message: str) -> None:
             self.send(status, json.dumps({"error": message}).encode())
@@ -102,6 +103,9 @@ def handler_for(folder: Path):
             if file is None or file.is_symlink() or not file.is_file():
                 return self.error(404, "not found")
             self.send(200, file.read_bytes(), TYPES[file.suffix])
+
+        def do_HEAD(self) -> None:  # noqa: N802
+            self.do_GET()
 
         def do_POST(self) -> None:  # noqa: N802
             if not self.own_host():
