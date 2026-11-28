@@ -183,12 +183,20 @@ Do this after the test sweep (Step 5) and before recording (Step 6). Skipped: go
 2. From the demo folder, build it in the background, never next to another render or test run:
    `python3 -I "$P/scripts/storyboard.py" demo.json`. Expected: `storyboard: N scene(s), ...` and
    `OUTPUT <demo>/storyboard/index.html`. It uses the real engine, so the frames are the final look.
-3. Open it for the user (`open <demo>/storyboard/index.html`) and post: "Here is the storyboard: each
-   scene opens on the whole page, then pushes in. Reply "approved" or tell me what to change."
-   Give the contact sheet path too: `<demo>/storyboard/storyboard.png`.
-4. Wait for the reply. A change request: edit demo.json (crop, zooms, pills, brand, cards), rebuild
-   and show it again.
-5. Write `Storyboard approved <YYYY-MM-DD>: "<their words>"` under "Decisions". Then Step 6.
+3. Serve it in the background (keep it running until approval):
+   `python3 -I "$P/scripts/storyboard.py" --serve demo.json`. Expected: `OUTPUT http://127.0.0.1:<port>/`.
+   Open that URL (`open <url>`) and post: "Here is the storyboard: each scene opens on the whole
+   page, then pushes in. Type a comment under any scene. When you are done, say "work on the
+   storyboard comments", or "approved" to go on." Give the contact sheet path too:
+   `<demo>/storyboard/storyboard.png`.
+4. Wait for the reply. "Work on the comments" (or any change request): read
+   `<demo>/storyboard/comments.json` (`{item key: text, "overall": text, "updated": iso}`; a key is
+   a scene id or `card-<id>`; comments pasted in chat count too). Apply each one to demo.json (crop,
+   zooms, pills, brand, cards), then move the file to `<demo>/storyboard/comments-done/<YYYY-MM-DD-HHMM>.json`
+   so the next round starts empty. Rebuild (step 2; the server keeps running and serves the new
+   page), tell the user to reload it, and list what you changed per comment.
+5. "Continue" or "approved": write `Storyboard approved <YYYY-MM-DD>: "<their words>"` under
+   "Decisions", stop the server, then Step 6.
 
 ### Steps 5 to 8: run every stage without stopping
 
