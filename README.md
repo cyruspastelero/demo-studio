@@ -49,7 +49,7 @@ money or create something it can't delete.
 
 Real apps, finished by the plugin. Click a preview to watch it in 1080p with sound.
 
-| Study app showcase (1:18) | Todo app sample (0:37) |
+| Study app showcase (1:27) | Todo app sample (0:37) |
 | --- | --- |
 | [![Study app showcase](docs/img/sample-showcase.gif)](https://github.com/cyruspastelero/demo-studio/releases/download/samples/sample-showcase.mp4) | [![Todo app sample](docs/img/sample-todo.gif)](https://github.com/cyruspastelero/demo-studio/releases/download/samples/sample-todo.mp4) |
 | A live study app with a seeded demo learner. | [TodoMVC](https://todomvc.com), three scenes, no login. [Rebuild it yourself](examples/todo-sample). |
