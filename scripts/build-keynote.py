@@ -34,7 +34,7 @@ from keynote import look as looks  # noqa: E402
 from keynote import spec  # noqa: E402
 from keynote import measure  # noqa: E402
 from keynote.templates import TemplateError, find as find_template  # noqa: E402
-from keynote.brand import background_keyframes, load_brand  # noqa: E402
+from keynote.brand import background_keyframes, check_font_files, load_brand  # noqa: E402
 from keynote.compose import composite, encode  # noqa: E402
 from keynote.model import Card, PlanError, is_tight  # noqa: E402
 from keynote.motion import highlight_warnings  # noqa: E402
@@ -111,7 +111,7 @@ def render_graphics(plan, brand, cfg, demo_dir: Path, work: Path) -> tuple[Path,
         fonts = renderer.run(font_probe(plan))
     except RenderError as error:
         fail(str(error))
-    check_fonts(fonts, brand)
+    check_fonts(fonts, brand, renderer.custom)
     bg_dir = renderer.link_sequence("seq-bg", bg_keys, "k%04d.png")
     under_dir = renderer.link_sequence("seq-under", under_keys, "f%05d.png")
     over_dir = renderer.link_sequence("seq-over", over_keys, "f%05d.png")
@@ -213,7 +213,7 @@ def write_sidecars(final: Path, cfg: dict, plan, fonts: list[str], brand, look_i
                "highlights": highlight_sidecar(plan, final.parent),
                "word_cues": list(plan.word_cues),
                "brand": {"accent": brand.accent, "sweep": list(brand.sweep), "highlight": brand.highlight,
-                         "pill": brand.pill_text},
+                         "pill": brand.pill_text, "font": brand.font, **({"title_font": brand.title_font} if brand.title_font else {})},
                "fonts": fonts, "warnings": list(plan.warnings), **look_info}
     final.with_suffix(".plan.json").write_text(json.dumps(sidecar, indent=2) + "\n")
     return timing
@@ -242,6 +242,7 @@ def main() -> None:
     template_id, look, brand_cfg = resolve_look(cfg, demo_dir)
     try:
         brand = load_brand(brand_cfg)
+        check_font_files(brand, demo_dir)
         plan = build_plan(cfg, rec / "raw", probe, lambda text, number: measure_line(demo_dir, cfg, text, number))
     except (PlanError, lib.UnsafePath) as error:
         fail(f"{error}\nFix {cfg_path.name}, then run: python3 -I {Path(__file__).resolve()} {args.config}")

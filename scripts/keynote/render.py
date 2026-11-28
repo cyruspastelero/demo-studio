@@ -15,7 +15,7 @@ from pathlib import Path
 import demolib as lib
 
 from . import spec
-from .brand import Brand
+from .brand import Brand, is_demo_font
 from .window import canvas_size
 
 SCRIPTS = Path(__file__).resolve().parent.parent
@@ -64,8 +64,32 @@ def page_look() -> dict:
 
 
 def title_family(brand: Brand) -> str:
-    """The font key title cards use: the look's title.font, else brand.font."""
+    """The font key title cards use: brand.title_font; else the product's own font file when brand.font
+    is one (it wins over a look's title font); else the look's title.font, else brand.font."""
+    if brand.title_font:
+        return brand.title_font
+    if is_demo_font(brand.font):
+        return brand.font
     return spec.TITLE_FONT or brand.font
+
+
+def font_job(brand: Brand) -> dict:
+    """Which files the page loads as 'DS Text' (pills, captions) and 'DS Display' (titles, end card):
+    bundled names from assets/fonts, or `*_demo` ids of the demo's own font files (fonts.mjs checks them)."""
+    text, title = brand.font, title_family(brand)
+    job = {"text_demo": text} if is_demo_font(text) else {"text": spec.FONTS[text]["text"]}
+    if is_demo_font(title):
+        return {**job, "display_demo": title, "display": {}}
+    # Display faces exist only for some weights; any other weight uses the variable text face.
+    display = {str(k): v for k, v in spec.FONTS[title]["display"].items()}
+    if str(spec.TITLE_WEIGHT) not in display:
+        display = {}
+    return {**job, "display": display, "display_text": spec.FONTS[title]["text"]}
+
+
+def demo_fonts(brand: Brand, text_fonts: tuple[str, ...]) -> list[str]:
+    """Every font file from the demo's fonts/ folder this render loads."""
+    return sorted({f for f in (*text_fonts, brand.font, title_family(brand)) if is_demo_font(f)})
 
 
 def state_key(state: dict, salt: str) -> str:
@@ -101,15 +125,16 @@ class Renderer:
         code = "".join((SCRIPTS / name).read_text() for name in ("keynote-page.mjs", "keynote-render.mjs"))
         fonts = "".join(sorted(f"{f.name}:{f.stat().st_size}"
                                for f in (SCRIPTS.parent / "assets" / "fonts").glob("*.woff2")))
-        # A demo font picked for a pill: its bytes, so replacing the file redraws those pills.
+        # A demo font (the brand's, or one picked for a pill): its bytes, so replacing the file redraws.
         fonts += "".join(f"{fid}:{hashlib.sha1((demo_dir / fid).read_bytes()).hexdigest()}"
-                         for fid in text_fonts if demo_dir and fid.startswith("fonts/") and (demo_dir / fid).is_file())
+                         for fid in demo_fonts(brand, text_fonts) if demo_dir and (demo_dir / fid).is_file())
         self.look = page_look()
         salt = json.dumps([brand.__dict__, sorted(images.items()), self.styles, code, fonts, self.look,
                            title_family(brand)],
                           sort_keys=True, default=str)
         self.salt = hashlib.sha1(salt.encode()).hexdigest()
         self.pending: dict[str, dict] = {}
+        self.custom: list[str] = []  # painted families that came from a loaded font file, not the system
 
     def add(self, state: dict, size: tuple[int, int] = (spec.FRAME_W, spec.FRAME_H)) -> str:
         key = state_key({"s": state, "z": list(size)}, self.salt)
@@ -119,12 +144,6 @@ class Renderer:
 
     def job(self, kind: str, font_probe: dict | None) -> dict:
         b = self.brand
-        font = spec.FONTS[b.font]
-        title = spec.FONTS[title_family(b)]
-        # Display faces exist only for some weights; any other weight uses the variable text face.
-        display = {str(k): v for k, v in title["display"].items()}
-        if str(spec.TITLE_WEIGHT) not in display:
-            display = {}
         groups = {"backgrounds": [], "static": [], "frames": []}
         for entry in self.pending.values():
             target = "backgrounds" if "background" in entry["state"] else (
@@ -132,7 +151,7 @@ class Renderer:
             groups[target].append(entry)
         return {"out_dir": str(self.work), "kind": kind,
                 "demo_dir": str(self.demo_dir or ""), "text_fonts": list(self.text_fonts),
-                "font": {"text": font["text"], "display": display, "display_text": title["text"]},
+                "font": font_job(b),
                 "look": self.look,
                 "colors": {"ink": b.ink, "secondary": b.secondary, "accent": b.accent, "role": ROLE_GREY,
                            "pill": b.pill_text, "highlight": b.highlight,
@@ -157,6 +176,8 @@ class Renderer:
                     print(line, flush=True)
                 elif line.startswith("FONTS "):
                     fonts = sorted({str(f) for f in json.loads(line[6:])})
+                elif line.startswith("CUSTOM "):
+                    self.custom = sorted({str(f) for f in json.loads(line[7:])})
             code = proc.wait()
             errors.seek(max(0, errors.seek(0, os.SEEK_END) - 6000))
             stderr = errors.read().decode(errors="replace")
@@ -187,7 +208,16 @@ class Renderer:
                 path.unlink()
 
 
-def check_fonts(painted: list[str], brand: Brand) -> None:
+def check_fonts(painted: list[str], brand: Brand, custom: list[str] | None = None) -> None:
+    own = demo_fonts(brand, ())
+    if own:  # the product's own font: every painted family must come from a loaded file, none from the system
+        stray = [name for name in painted if name not in (custom or [])]
+        if painted and stray:
+            sys.exit(f"build-keynote: Chrome painted {stray} from the system, not {', '.join(own)}. Check the "
+                     "file is a real font (open it in Font Book) and run again.")
+        if painted:
+            print(f"fonts: painted {', '.join(painted)} (the product's own {', '.join(own)})", flush=True)
+        return
     families = {spec.FONTS[brand.font]["family"], spec.FONTS[title_family(brand)]["family"]}
     family = " and ".join(sorted(families))
     if painted and not all(any(f in name for f in families) for name in painted):

@@ -75,9 +75,12 @@ export function fontFormat(id) {
 }
 
 // @font-face from a data: URI, for pages that may not load files (the render pages block requests).
-export function fontFaceCss(demoDir, id) {
+// `family` defaults to the id's own name; keynote-render.mjs passes 'DS Text' or 'DS Display' when the
+// demo's font is the brand font.
+export function fontFaceCss(demoDir, id, family = fontFamily(id)) {
+  if (!/^[A-Za-z0-9 -]{1,200}$/.test(family)) throw new FontError(`font family ${JSON.stringify(family)} is not allowed`);
   const [mime, format] = fontFormat(id);
   const data = readFileSync(fontFile(demoDir, id)).toString('base64');
-  return `@font-face { font-family: '${fontFamily(id)}'; src: url(data:${mime};base64,${data}) format('${format}');`
+  return `@font-face { font-family: '${family}'; src: url(data:${mime};base64,${data}) format('${format}');`
     + ' font-weight: 100 900; font-style: normal; font-display: block; }\n';
 }

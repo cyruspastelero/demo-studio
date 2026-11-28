@@ -174,10 +174,14 @@ Then fill:
   sweep and the look's coloured glow follow `brand.accent`, so never copy a look's own ember or pink.
   A product with no colour of its own (a grey or black UI): pick one that suits what it does and
   who it is for, and write the reason under "Decisions".
-- **Font and logo from the product.** Read the product's font (`getComputedStyle(document.body).fontFamily`).
-  Set `brand.font` to the bundled one closest to it (`geist` for Geist and similar geometric sans,
-  else `inter`). For a launch ad, use the product's own font files in `brand.fonts` when its licence
-  allows it (Google Fonts are OFL). Save the product's own logo: the header's inline `<svg>` or its
+- **Font and logo from the product.** Get the product's real font: `getComputedStyle(document.body).fontFamily`
+  for body text and `getComputedStyle(document.querySelector('h1')).fontFamily` for headings. If it is
+  an open-licence font (Google Fonts are OFL), download its `.woff2` into the demo's `fonts/` folder
+  with its licence file (`fonts/OFL.txt`) and set `brand.font: "fonts/<file>.woff2"`, plus
+  `brand.title_font` when headings use another face. Titles, pills, captions and the end card then
+  use it. Only when the licence does not allow it, set `brand.font` to the closest bundled font
+  (`geist` for geometric sans, else `inter`) and write why under "Decisions". For a launch ad, put
+  the same files in `brand.fonts`. Save the product's own logo: the header's inline `<svg>` or its
   image file, else the largest `apple-touch-icon` or favicon. Put it in `assets/` and point
   `logo` at it, plus `logo_on_dark` when the product ships a light version. Never redraw a logo.
 - `recordings/scenes/_project.js`: start from `$P/samples/scenes/_project.js`:

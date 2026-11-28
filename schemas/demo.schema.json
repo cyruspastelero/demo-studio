@@ -430,11 +430,12 @@
       "description": "Look of the cut. Every field is optional; defaults are the quality bar's.",
       "properties": {
         "font": {
-          "enum": [
-            "inter",
-            "geist"
-          ],
-          "description": "Bundled family for every rendered word (assets/fonts). Default inter (titles in Inter Display)."
+          "$ref": "#/$defs/brandFont",
+          "description": "The family for every rendered word: a bundled one (inter, geist; assets/fonts) or the product's own font file in the demo's fonts/ folder (fonts/Outfit.woff2, with its licence file next to it). Default inter (titles in Inter Display)."
+        },
+        "title_font": {
+          "$ref": "#/$defs/brandFont",
+          "description": "Titles and the end card in another family than brand.font, e.g. the product's display face (fonts/Outfit-SemiBold.woff2). Default brand.font."
         },
         "accent": {
           "$ref": "#/$defs/color",
@@ -532,6 +533,12 @@
           "description": "Seconds held at full zoom before easing back. Default 3.0; the bar wants 2.4 to 4.5."
         }
       }
+    },
+    "brandFont": {
+      "type": "string",
+      "pattern": "^(inter|geist|fonts/[A-Za-z0-9 ._()-]{1,120}\\.(woff2|woff|ttf|otf))$",
+      "not": { "pattern": "\\.\\." },
+      "description": "A bundled font (inter, geist) or a font file in the demo's fonts/ folder, as fonts/<file>."
     },
     "fontId": {
       "type": "string",

@@ -4,6 +4,7 @@ Every expected number comes from docs/quality-bar.md. Run: python3 -I tests/test
 
 import json
 import re
+import shutil
 import sys
 import tempfile
 import unittest
@@ -746,6 +747,48 @@ class Fonts(unittest.TestCase):
         self.assertIn("SIL OPEN FONT LICENSE", (fonts / "OFL.txt").read_text().upper())
         self.assertIn("SIL OPEN FONT LICENSE", (fonts / "OFL-Geist.txt").read_text().upper())
         self.assertIn("assets/fonts", (REPO / "NOTICE").read_text())
+
+    def test_a_demo_font_file_is_accepted_as_the_brand_font(self):
+        from keynote.render import font_job, title_family
+        brand = load_brand({"font": "fonts/Outfit.woff2"})
+        self.assertEqual(title_family(brand), "fonts/Outfit.woff2")
+        self.assertEqual(font_job(brand), {"text_demo": "fonts/Outfit.woff2", "display_demo": "fonts/Outfit.woff2",
+                                           "display": {}})
+        both = load_brand({"font": "inter", "title_font": "fonts/Outfit-SemiBold.woff2"})
+        self.assertEqual(font_job(both)["text"], "InterVariable.woff2")
+        self.assertEqual(font_job(both)["display_demo"], "fonts/Outfit-SemiBold.woff2")
+        self.assertEqual(font_job(load_brand({"font": "geist"}))["text"], "GeistVariable.woff2")
+
+    def test_a_missing_demo_font_file_is_a_clear_plan_error(self):
+        from keynote.brand import check_font_files
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaises(PlanError) as caught:
+                check_font_files(load_brand({"title_font": "fonts/Outfit.woff2"}), Path(tmp))
+        self.assertIn("brand.title_font: fonts/Outfit.woff2 was not found in the demo's fonts/ folder",
+                      str(caught.exception))
+        for bad in ("fonts/../x.woff2", "Outfit.woff2", "fonts/x.exe"):
+            with self.assertRaises(PlanError):
+                load_brand({"font": bad})
+
+    @unittest.skipUnless(shutil.which("node") and (REPO / "node_modules" / "playwright-core").exists(),
+                         "needs node with playwright-core and Chrome")
+    def test_titles_and_pills_are_painted_in_the_demo_font_file(self):
+        from keynote.brand import check_font_files
+        from keynote.render import Renderer
+        card = Card(0, "card-intro", "hero", "Hello there", "", "", "", False, 0, 90, 0, "")
+        probe = {"card": title_card_state(card, 5.0, 99.0, 0.4),
+                 "pill": pill_state(Callout(0, 3, "statement", "Probe text"), 1.0)}
+        with tempfile.TemporaryDirectory() as tmp:
+            demo = Path(tmp) / "demo"
+            (demo / "fonts").mkdir(parents=True)
+            shutil.copy(REPO / "assets" / "fonts" / "FigtreeVariable.woff2", demo / "fonts" / "Figtree.woff2")
+            brand = load_brand({"font": "fonts/Figtree.woff2"})
+            check_font_files(brand, demo)
+            renderer = Renderer(Path(tmp) / "work", brand, {}, False, demo_dir=demo)
+            painted = renderer.run(probe)
+        self.assertTrue(painted)
+        self.assertTrue(all("Figtree" in name for name in painted), painted)
+        self.assertEqual(sorted(renderer.custom), painted)
 
     def test_no_system_font_in_the_page(self):
         page = (REPO / "scripts" / "keynote-page.mjs").read_text()

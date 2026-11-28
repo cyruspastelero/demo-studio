@@ -4,11 +4,14 @@ from __future__ import annotations
 import math
 import re
 from dataclasses import dataclass
+from pathlib import Path
 
 from . import spec
 from .model import PlanError
 
 HEX = re.compile(r"^#(?:[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$")
+# A font file the demo keeps in its own fonts/ folder: the same rule as DEMO_FONT in scripts/fonts.mjs.
+DEMO_FONT = re.compile(r"^fonts/[A-Za-z0-9 ._()-]{1,120}\.(woff2|woff|ttf|otf)$")
 
 
 @dataclass(frozen=True)
@@ -23,6 +26,7 @@ class Brand:
     dark: str
     highlight: str = spec.HIGHLIGHT_NEUTRAL   # H1 stroke: the product's accent, or neutral ink
     pill_text: str = spec.PILL_TEXT_NEUTRAL   # C4 statement text: the accent, darkened to read on white
+    title_font: str | None = None             # titles' own font (bundled id or fonts/<file>); None = brand.font
 
 
 def rgb(value: str) -> tuple[int, int, int]:
@@ -60,11 +64,35 @@ def colour(value: object, field: str) -> str:
     return value.upper()
 
 
+def is_demo_font(font_id: str | None) -> bool:
+    """A font file in the demo's fonts/ folder (the product's own font), not a bundled id."""
+    return isinstance(font_id, str) and bool(DEMO_FONT.match(font_id)) and ".." not in font_id
+
+
+def font_choice(value: object, field: str) -> str:
+    if isinstance(value, str) and (value in spec.FONTS or is_demo_font(value)):
+        return value
+    raise PlanError(f"brand.{field}: {value!r} is not a bundled font ({', '.join(sorted(spec.FONTS))}) or a font "
+                    "file in the demo's fonts/ folder (fonts/<name>.woff2, .woff, .ttf or .otf)")
+
+
+def check_font_files(brand: Brand, demo_dir: Path) -> None:
+    """Every demo font the brand names is a regular file inside <demo>/fonts (symlinks resolved)."""
+    root = (demo_dir / "fonts").resolve()
+    for field, font_id in (("font", brand.font), ("title_font", brand.title_font)):
+        if not is_demo_font(font_id):
+            continue
+        real = (demo_dir / font_id).resolve()
+        if not real.is_relative_to(root) or not real.is_file():
+            raise PlanError(f"brand.{field}: {font_id} was not found in the demo's fonts/ folder ({demo_dir / 'fonts'}). "
+                            "Download the product's font file there (with its licence), or use a bundled font: "
+                            f"{', '.join(sorted(spec.FONTS))}")
+
+
 def load_brand(raw: dict | None) -> Brand:
     raw = raw or {}
-    font = raw.get("font", "inter")
-    if font not in spec.FONTS:
-        raise PlanError(f"brand.font: {font!r} is not bundled; use one of {sorted(spec.FONTS)}")
+    font = font_choice(raw.get("font", "inter"), "font")
+    title_font = font_choice(raw["title_font"], "title_font") if raw.get("title_font") else None
     background = raw.get("background", {})
     fields = background.get("fields", [f[0] for f in spec.BG_FIELDS])
     if len(fields) != len(spec.BG_FIELDS):
@@ -75,7 +103,7 @@ def load_brand(raw: dict | None) -> Brand:
         raise PlanError("brand.sweep: give two colours, [from, to]")
     accent = colour(raw.get("accent", spec.ACCENT), "accent")
     product = accent[:7] if "accent" in raw else None  # the product's own colour, when the demo names it
-    return Brand(font=font, ink=colour(raw.get("ink", spec.INK), "ink"),
+    return Brand(font=font, title_font=title_font, ink=colour(raw.get("ink", spec.INK), "ink"),
                  secondary=colour(raw.get("secondary", spec.SECONDARY), "secondary"),
                  accent=accent,
                  highlight=(colour(raw["highlight"], "highlight")[:7] if raw.get("highlight")

@@ -181,7 +181,9 @@
             "accent": { "$ref": "#/$defs/color" },
             "sweep": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "$ref": "#/$defs/color" } },
             "highlight": { "$ref": "#/$defs/color" },
-            "pill": { "anyOf": [{ "$ref": "#/$defs/color" }, { "type": "null" }] }
+            "pill": { "anyOf": [{ "$ref": "#/$defs/color" }, { "type": "null" }] },
+            "font": { "type": "string", "pattern": "^(inter|geist|fonts/[A-Za-z0-9 ._()-]{1,120}\\.(woff2|woff|ttf|otf))$" },
+            "title_font": { "type": "string", "pattern": "^(inter|geist|fonts/[A-Za-z0-9 ._()-]{1,120}\\.(woff2|woff|ttf|otf))$" }
           }
         },
         "fonts": { "type": "array", "maxItems": 20, "items": { "$ref": "#/$defs/line" } },

@@ -93,7 +93,7 @@ A finished cut opens directly on a title, with no black frame. It sits on a soft
 
 | # | Role | Font / weight / size / tracking | Measured |
 |---|---|---|---|
-| T1 | Family | **Inter** everywhere (glyph cap height is exactly 0.727 em at every measured size, which matches Inter and not SF Pro's 0.705) | |
+| T1 | Family | **Inter** everywhere (glyph cap height is exactly 0.727 em at every measured size, which matches Inter and not SF Pro's 0.705). A demo of a product with its own open-licence font uses that font file instead (`brand.font: "fonts/<file>"`), so the titles match the product | |
 | T2 | Hero / section title | 500, **132 px**, −4 px | "W" cap 96 px |
 | T3 | Hero after settle | Same title scaled to 0.52 (≈ 69 px), moved up 70 px | "T" cap 50 px |
 | T4 | Card heading | 500, 72 px, −2 px | "M" cap 53 px |

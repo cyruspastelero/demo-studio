@@ -512,8 +512,12 @@ def main() -> int:
     check_overlays(r, cut, plan, save)
     check_highlight_motion(r, plan, plan_path.parent, demo_folder(plan_path))
     check_ending(r, cut, plan, save)
-    r.check(bool(plan.get("fonts")) and all("Inter" in f or "Geist" in f for f in plan.get("fonts", [])), "T1",
-            f"painted fonts {plan.get('fonts')} (bar: bundled Inter, or Geist when brand.font is geist)")
+    own = [f for f in (plan.get("brand", {}).get(k) for k in ("font", "title_font")) if f and f.startswith("fonts/")]
+    if own:  # the product's own font file; build-keynote.py already refused a system fallback
+        r.check(bool(plan.get("fonts")), "T1", f"painted fonts {plan.get('fonts')} (bar: the product's own {', '.join(own)})")
+    else:
+        r.check(bool(plan.get("fonts")) and all("Inter" in f or "Geist" in f for f in plan.get("fonts", [])), "T1",
+                f"painted fonts {plan.get('fonts')} (bar: bundled Inter, or Geist when brand.font is geist)")
     r.add("LOOK", "W2", "app body text cap height >= 18 px and no empty panel over 15% of the window: open the "
           "10-run*-rest frames")
     r.add("LOOK", "K1-K2", "cursor is the pointing hand (default) or the arrow (developer tools), present and never "

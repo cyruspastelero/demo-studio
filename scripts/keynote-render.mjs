@@ -57,20 +57,27 @@ function fontFace(family, file, weight) {
     + ` font-weight: ${weight}; font-style: normal; font-display: block; }\n`;
 }
 
-const font = job.font;
-let faces = fontFace('DS Text', font.text, '100 900');
-// Fonts picked for single pills in the editor: bundled or the demo's fonts/ folder, checked by fonts.mjs.
-for (const id of job.text_fonts || []) {
+// A font file from the demo's fonts/ folder (checked by fonts.mjs), under the given CSS family.
+function demoFace(id, family) {
   try {
-    faces += fontFaceCss(job.demo_dir, id);
+    return fontFaceCss(job.demo_dir, id, family);
   } catch (error) {
     if (error instanceof FontError) fail(error.message);
     throw error;
   }
 }
+
+const font = job.font;
+// The brand font: a bundled file, or the product's own file in the demo's fonts/ folder.
+let faces = font.text_demo ? demoFace(font.text_demo, 'DS Text') : fontFace('DS Text', font.text, '100 900');
+// Fonts picked for single pills in the editor: bundled or the demo's fonts/ folder, checked by fonts.mjs.
+for (const id of job.text_fonts || []) faces += demoFace(id);
 const display = Object.entries(font.display || {});
-faces += display.length ? display.map(([w, file]) => fontFace('DS Display', file, w)).join('')
-  : fontFace('DS Display', font.display_text || font.text, '100 900');
+if (font.display_demo) faces += demoFace(font.display_demo, 'DS Display');
+else {
+  faces += display.length ? display.map(([w, file]) => fontFace('DS Display', file, w)).join('')
+    : fontFace('DS Display', font.display_text || font.text, '100 900');
+}
 
 const colors = job.colors;
 for (const [key, value] of Object.entries(colors)) {
@@ -97,6 +104,7 @@ for (const entry of [...(job.static || []), ...(job.frames || [])]) {
 const { chromium } = await loadPlaywright();
 const browser = await launchChrome(chromium);
 let painted = [];
+let custom = []; // painted families that came from a loaded font file (bundled or the demo's), not the system
 try {
   // One fixed viewport, tall enough for the window card; every shot is a clip of it. Resizing the
   // viewport between shots sometimes captured a stale layout (a mask with square bottom corners).
@@ -141,14 +149,16 @@ try {
     await cdp.send('CSS.enable');
     for (let attempt = 0; attempt < 20; attempt += 1) {
       const found = [];
+      const loaded = [];
       const { root } = await cdp.send('DOM.getDocument');
       for (const selector of ['#title .w', '#pilltext .w']) {
         const { nodeId } = await cdp.send('DOM.querySelector', { nodeId: root.nodeId, selector });
         if (!nodeId) continue;
         const { fonts } = await cdp.send('CSS.getPlatformFontsForNode', { nodeId });
         found.push(...fonts.map((f) => f.familyName));
+        loaded.push(...fonts.filter((f) => f.isCustomFont).map((f) => f.familyName));
       }
-      if (found.length) { painted = found; break; }
+      if (found.length) { painted = found; custom = loaded; break; }
       await page.waitForTimeout(150);
     }
   }
@@ -156,3 +166,4 @@ try {
   await browser.close().catch(() => {});
 }
 console.log(`FONTS ${JSON.stringify([...new Set(painted)])}`);
+console.log(`CUSTOM ${JSON.stringify([...new Set(custom)])}`);
