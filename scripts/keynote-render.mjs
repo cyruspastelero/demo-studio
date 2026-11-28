@@ -105,6 +105,7 @@ const { chromium } = await loadPlaywright();
 const browser = await launchChrome(chromium);
 let painted = [];
 let custom = []; // painted families that came from a loaded font file (bundled or the demo's), not the system
+let titleCap = null; // the title font's cap height as a share of its size (check-cut.py T2)
 try {
   // One fixed viewport, tall enough for the window card; every shot is a clip of it. Resizing the
   // viewport between shots sometimes captured a stale layout (a mask with square bottom corners).
@@ -161,9 +162,22 @@ try {
       if (found.length) { painted = found; custom = loaded; break; }
       await page.waitForTimeout(150);
     }
+    // The ink height of a capital H in the title's own font, size and weight, so the checker
+    // knows what a title word's cap height should be in any font, not only Inter's 0.727.
+    titleCap = await page.evaluate(() => {
+      const word = document.querySelector('#title .w');
+      if (!word) return null;
+      const style = getComputedStyle(word);
+      const size = parseFloat(style.fontSize);
+      const context = document.createElement('canvas').getContext('2d');
+      context.font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+      const cap = context.measureText('H').actualBoundingBoxAscent / size;
+      return Number.isFinite(cap) && cap > 0.3 && cap < 1 ? Math.round(cap * 10000) / 10000 : null;
+    });
   }
 } finally {
   await browser.close().catch(() => {});
 }
 console.log(`FONTS ${JSON.stringify([...new Set(painted)])}`);
 console.log(`CUSTOM ${JSON.stringify([...new Set(custom)])}`);
+console.log(`CAP ${JSON.stringify(titleCap)}`);

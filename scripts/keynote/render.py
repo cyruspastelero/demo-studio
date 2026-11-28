@@ -135,6 +135,7 @@ class Renderer:
         self.salt = hashlib.sha1(salt.encode()).hexdigest()
         self.pending: dict[str, dict] = {}
         self.custom: list[str] = []  # painted families that came from a loaded font file, not the system
+        self.title_cap: float | None = None  # the title font's cap height / size, measured in Chrome (T2)
 
     def add(self, state: dict, size: tuple[int, int] = (spec.FRAME_W, spec.FRAME_H)) -> str:
         key = state_key({"s": state, "z": list(size)}, self.salt)
@@ -178,6 +179,9 @@ class Renderer:
                     fonts = sorted({str(f) for f in json.loads(line[6:])})
                 elif line.startswith("CUSTOM "):
                     self.custom = sorted({str(f) for f in json.loads(line[7:])})
+                elif line.startswith("CAP "):
+                    cap = json.loads(line[4:])
+                    self.title_cap = float(cap) if isinstance(cap, (int, float)) and 0.3 < cap < 1 else None
             code = proc.wait()
             errors.seek(max(0, errors.seek(0, os.SEEK_END) - 6000))
             stderr = errors.read().decode(errors="replace")

@@ -118,7 +118,7 @@ def render_graphics(plan, brand, cfg, demo_dir: Path, work: Path) -> tuple[Path,
     static_dir = renderer.link_sequence("png-static", list(statics.values()), "static-%d.png")
     for i, name in enumerate(statics):
         (static_dir / f"static-{i}.png").rename(static_dir / name)
-    samples = background_samples(renderer.png, bg_keys, plan)
+    samples = {"background": background_samples(renderer.png, bg_keys, plan), "title_cap": renderer.title_cap}
     renderer.prune(set(bg_keys) | set(under_keys) | set(over_keys) | set(statics.values()))
     return bg_dir, (under_dir, over_dir), windows, fonts, samples
 
@@ -277,7 +277,10 @@ def main() -> None:
             lib.safe_rmtree(work, work / folder, f".keynote/{folder}")
     # The background as drawn: brand_config may have tinted the look's glow to the product accent.
     drawn_look = {**look, "brand": {**look.get("brand", {}), "background": brand_cfg.get("background", {})}}
-    look_info = {"look": drawn_look if brand_cfg.get("background") else look, "look_samples": {"background": samples}}
+    look_info = {"look": drawn_look if brand_cfg.get("background") else look,
+                 "look_samples": {"background": samples["background"]}}
+    if samples["title_cap"]:
+        look_info["title_cap"] = samples["title_cap"]
     if template_id:
         look_info["template"] = template_id
     timing = write_sidecars(final, cfg, plan, fonts, brand, look_info)

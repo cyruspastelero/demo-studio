@@ -64,6 +64,7 @@
         "total": { "$ref": "#/$defs/seconds" },
         "template": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$" },
         "look": { "type": "object" },
+        "title_cap": { "type": "number", "minimum": 0.3, "maximum": 1, "description": "The title font's cap height as a share of its size, measured in Chrome (check-cut.py T2)." },
         "look_samples": {
           "type": "object", "additionalProperties": false,
           "properties": {

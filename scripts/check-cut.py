@@ -7,7 +7,9 @@ Usage: check-cut.py CUT.mp4 [--plan PLAN.json] [--frames DIR] [--json OUT.json]
   --plan     build-keynote.py's sidecar; found next to the cut by default (<slug>-keynote-cut.plan.json)
   --frames   also save the checklist's sample frames there as PNGs, to Read one by one
 The bar's numbers come from the look the cut was built with (plan.json `look`): the house look, or
-a look template's measured values, so a copied look passes its own checklist.
+a look template's measured values, so a copied look passes its own checklist. Window, pill, shadow,
+entrance, title-ink and zoom checks read that look's rect, pill band, shadow, entry time, ink and
+field colours and zoom margin, so they hold on light and dark looks alike.
 Exit code 0 when nothing FAILs. Needs ffmpeg and ffprobe. Heavy-ish: decodes ~60 frames and the audio.
 """
 from __future__ import annotations
@@ -205,33 +207,91 @@ def check_audio(r: Report, cut: Path, plan: dict, voice: dict | None, has_audio:
                 f"{max(tail, default=-120):.1f} LUFS (bar: music faded out, silent)")
 
 
-def ink_present(frame: m.Frame, band: tuple[int, int], darker_than: float = 150) -> int:
-    return sum(1 for y in range(band[0], band[1], 3) for x in range(100, 1820, 3) if frame.luma(x, y) < darker_than)
+INTER_CAP = 96 / 132  # Inter's cap height as a share of the font size (T2 reference)
+INK_FULL, INK_FAINT, INK_WORD = 0.383, 0.06, 0.532  # share of the way from field to ink (house: 150, 215, 120)
+
+
+def hex_luma(value: str) -> float:
+    r, g, b = m.hex_rgb(value[:7])
+    return 0.299 * r + 0.587 * g + 0.114 * b
+
+
+def ink_levels(look: dict) -> tuple[float, float]:
+    """(field luma, ink luma) of the look's title cards: dark ink on a light field, or light on dark."""
+    return hex_luma(look["brand"]["background"]["base"]), hex_luma(look["brand"]["ink"])
+
+
+def ink_threshold(look: dict, share: float) -> tuple[float, bool]:
+    """(luma threshold, light ink?) a `share` of the way from the look's field to its ink."""
+    field, ink = ink_levels(look)
+    return field + (ink - field) * share, ink > field
+
+
+def ink_present(frame: m.Frame, band: tuple[int, int], look: dict | None = None, share: float = INK_FULL) -> int:
+    """Title-ink pixels in a band, in the look's ink direction. Each 96x30 px block is measured against
+    its own field (a low or high percentile of the block), so a glow in a dark look's background
+    is not taken for ink."""
+    field, ink = ink_levels(look or looks.defaults())
+    light, step = ink > field, share * abs(ink - field)
+    count = 0
+    for y0 in range(band[0], band[1], 30):
+        for x0 in range(100, 1820, 96):
+            values = [frame.luma(x, y) for y in range(y0, min(band[1], y0 + 30), 3) for x in range(x0, min(1820, x0 + 96), 3)]
+            ordered = sorted(values)
+            local = ordered[int(len(ordered) * (0.2 if light else 0.8))]
+            count += sum(1 for v in values if (v > local + step if light else v < local - step))
+    return count
+
+
+def reveal_grows(counts: list[int]) -> bool:
+    """T10: ink grows word by word. A word settling out of its blur may shed a few pixels (up to 3% of
+    the most seen), but the title must end with clearly more ink than it started with."""
+    peak = max(counts, default=0)
+    steady = all(b >= a - 0.03 * peak for a, b in zip(counts, counts[1:]))
+    return steady and counts[-1] > counts[0] + 0.1 * peak
+
+
+def title_cap(plan: dict) -> float | None:
+    """The title font's cap height as a share of its size: measured by the build (plan title_cap), or
+    Inter's when the titles are in Inter. None when neither is known (an older plan, another font)."""
+    if plan.get("title_cap"):
+        return plan["title_cap"]
+    look, brand = plan_look(plan), plan.get("brand") or {}
+    font = look["title"].get("font") or brand.get("title_font") or brand.get("font") or look["brand"]["font"]
+    return INTER_CAP if font == "inter" else None
 
 
 def check_opening(r: Report, cut: Path, plan: dict, save) -> None:
+    look = plan_look(plan)
     f0 = m.grab(cut, 0.0)
     save("00-frame0", 0.0)
-    r.check(ink_present(f0, (380, 700), 215) > 40, "O1", "frame 0 shows title glyphs already blurring in (not blank)")
+    r.check(ink_present(f0, (380, 700), look, INK_FAINT) > 40, "O1", "frame 0 shows title glyphs already blurring in (not blank)")
     f05 = m.grab(cut, 0.5)
-    r.check(ink_present(f05, (380, 700)) > 200, "O1", "title glyphs visible by 0.5 s")
-    title_look = plan_look(plan)["title"]
+    r.check(ink_present(f05, (380, 700), look) > 200, "O1", "title glyphs visible by 0.5 s")
+    title_look = look["title"]
     if title_look["reveal"] == "none":
         r.add("PASS", "T10", "the look shows titles whole (title.reveal none); no word-by-word reveal to measure")
     else:
-        counts = [ink_present(m.grab(cut, t / 10), (380, 700)) for t in range(0, 10, 2)]
-        r.check(counts == sorted(counts) and counts[-1] > counts[0], "T10",
-                f"title ink grows word by word over 0 to 0.8 s: {counts}")
+        counts = [ink_present(m.grab(cut, t / 10), (380, 700), look) for t in range(0, 10, 2)]
+        r.check(reveal_grows(counts), "T10",
+                f"title ink grows word by word over 0 to 0.8 s ({title_look['reveal']}): {counts}")
     first = plan["cards"][0] if plan["cards"] and plan["cards"][0]["start"] == 0 else None
     if first:
         hold = m.grab(cut, 0.95)
         save("01-title-full", 0.95)
-        word = m.first_word_box(hold, (400, 680))
-        cap = title_look["size"] * 96 / 132  # Inter cap height is 0.727 of the size
-        if word:
-            r.check(abs(word[3] - cap) <= 3 or first["kind"] != "hero", "T2",
-                    f"first title word ink height {word[3]} px (bar: {title_look['size']:g} px hero -> {cap:.0f} px "
-                    "cap +-3; a word with descenders reads taller)")
+        threshold, light = ink_threshold(look, INK_WORD)
+        word = m.first_word_box(hold, (400, 680), threshold, light)
+        ratio = title_cap(plan)
+        if first["kind"] != "hero":
+            r.add("PASS", "T2", f"first card is a {first['kind']} card; the bar's cap height is for the hero title")
+        elif ratio is None:
+            r.add("LOOK", "T2", "the plan has no measured cap height for the title font (built by an older "
+                  "build-keynote.py); rebuild, or check the first title word's cap height by eye")
+        elif word:
+            cap = title_look["size"] * ratio
+            r.check(abs(word[3] - cap) <= 3, "T2",
+                    f"first title word ink height {word[3]} px (bar: {title_look['size']:g} px hero x cap {ratio:.3f} "
+                    f"-> {cap:.0f} px +-3; a word with descenders reads taller)")
         colour = brand_colours(plan)[0]
         if not title_look["accent_word"]:
             r.add("PASS", "T9", "the look has no accent word (title.accent_word false)")
@@ -242,6 +302,69 @@ def check_opening(r: Report, cut: Path, plan: dict, save) -> None:
     runs = plan["runs"]
     if runs:
         r.check(runs[0]["start"] <= 6.0, "O4", f"first product UI at {runs[0]['start']:.2f}s (bar: <= 6.0)")
+
+
+SHADOW_COLOUR = re.compile(r"rgba?\(([^)]*)\)|#([0-9A-Fa-f]{3,8})")
+
+
+def shadow_layers(css: str) -> list[tuple[float, float, float, float, float]]:
+    """(y offset, blur, spread, colour luma, alpha) per outer layer of a CSS box-shadow (the schema's
+    window.shadow: px lengths, rgb/rgba or #hex colours, `none`); inset layers are left out."""
+    layers = []
+    for layer in re.split(r",(?![^(]*\))", css):
+        if "inset" in layer or layer.strip() in ("", "none"):
+            continue
+        found = SHADOW_COLOUR.search(layer)
+        if found and found[1]:
+            parts = [float(v) for v in found[1].split(",")]
+            r, g, b, a = (parts + [1.0])[:4]
+        elif found:
+            digits = found[2] if len(found[2]) > 4 else "".join(c * 2 for c in found[2])
+            r, g, b = (int(digits[i:i + 2], 16) for i in (0, 2, 4))
+            a = int(digits[6:8], 16) / 255 if len(digits) == 8 else 1.0
+        else:
+            r = g = b = 0.0
+            a = 1.0
+        lengths = [float(v) for v in re.findall(r"-?[\d.]+(?=px|\s|$)", SHADOW_COLOUR.sub(" ", layer))]
+        dy, blur, spread = (lengths + [0.0, 0.0, 0.0, 0.0])[1:4]
+        layers.append((dy, blur, spread, 0.299 * r + 0.587 * g + 0.114 * b, a))
+    return layers
+
+
+def shadow_darkening(css: str, field: float, below: float) -> float:
+    """Levels a look's window.shadow takes off a field of luma `field`, `below` px under the window's
+    bottom edge. Each layer is the window's bottom edge moved down by its y offset and spread,
+    softened by a Gaussian of half its blur."""
+    total = 0.0
+    for dy, blur, spread, colour, alpha in shadow_layers(css):
+        reach = dy + spread - below
+        cover = (1.0 if reach > 0 else 0.0) if blur <= 0 else 0.5 * (1 + math.erf(reach / (blur / 2) / math.sqrt(2)))
+        total += alpha * cover * (field - colour)
+    return total
+
+
+def check_shadow(r: Report, frame: m.Frame, box: tuple[int, int, int, int], look: dict) -> None:
+    """W5: the shadow darkens the field just under the bottom edge by at least 60% of what the look's
+    own shadow does there (house: about 30 levels, so 20 is the bar), measured against 120 px lower."""
+    x, _, w, _ = box
+    bottom = box[1] + box[3]
+    far = min(120, frame.h - 2 - bottom)
+    if far < 40:
+        r.add("LOOK", "W5", f"window bottom at {bottom}: too near the frame edge to measure its shadow; check by eye")
+        return
+    xs = [round(x + w * k) + d for k in (0.141, 0.859) for d in (-16, 0, 16)]
+    near_l = sum(frame.luma(v, bottom + 6) for v in xs) / len(xs)
+    far_l = sum(frame.luma(v, bottom + far) for v in xs) / len(xs)
+    css = look["window"]["shadow"]
+    expected = shadow_darkening(css, far_l, 6) - shadow_darkening(css, far_l, far)
+    shade = near_l - far_l
+    if expected < 3:
+        r.add("LOOK", "W5", f"the look's shadow ({css}) changes this field by {expected:.1f} levels, too little to "
+              "measure; check the window edge by eye")
+        return
+    bar = 0.6 * expected
+    r.check(-shade >= bar, "W5", f"shadow darkens the background {-shade:.0f} levels under the bottom edge "
+            f"(bar: >= {bar:.0f}, 60% of the {expected:.0f} the look's shadow gives on this field)")
 
 
 def check_windows(r: Report, cut: Path, plan: dict, save) -> None:
@@ -260,31 +383,33 @@ def check_windows(r: Report, cut: Path, plan: dict, save) -> None:
             rest_t += 0.5
         frame = m.grab(cut, rest_t)
         save(f"10-run{n}-rest", rest_t)
-        box = m.window_box(frame)
+        edge_step = m.edge_threshold(frame, rest_box)
+        box = m.window_box(frame, edge_step, rest_box)
         ok = box is not None and all(abs(a - b) <= 4 for a, b in zip(box, rest_box))
         r.check(ok, "W1", f"run {n} rest window {box} at {rest_t:.2f}s (bar: {rest_box} +-4)")
         if box:
             radius = min(m.corner_radius(frame, box), m.corner_radius(frame, box, bottom=True))
-            shade = frame.luma(400, box[1] + box[3] + 6) - frame.luma(400, min(1079, box[1] + box[3] + 120))
             r.check(radius_bar - 4 <= radius <= radius_bar + 4, "W3",
                     f"corner radius about {radius} px, top and bottom corners (bar: {radius_bar:g} +-4)")
-            r.check(shade <= -20, "W5", f"shadow darkens the background {shade:.0f} levels under the bottom edge (bar: >= 20)")
+            check_shadow(r, frame, box, look)
         steps = round(entry / 0.1)
         tops = []
         for i in range(0, steps + 2):
-            edge = m.top_edge(m.grab(cut, run["start"] + i * 0.1))
+            edge = m.rising_top(m.grab(cut, run["start"] + i * 0.1), rest_box, edge_step)
             tops.append(1080 if edge is None else edge)
         landed = abs(tops[steps] - rest_y) <= 6
         if steps:
+            low = rest_y + (spec.ENTRY_FROM_TOP - rest_y) * 760 / 900  # house: 760 of its 900 px rise
             early = tops[round(steps * 3 / 7)] - rest_y <= 0.3 * (tops[0] - rest_y) if tops[0] > rest_y else False
-            r.check(tops[0] >= rest_y + 760 and landed and early, "W6",
-                    f"run {n} top edge every 0.1 s: {tops} (bar: >= {rest_y + 760:g} -> {rest_y:g} in {entry:g} s, "
+            r.check(tops[0] >= low and landed and early, "W6",
+                    f"run {n} top edge every 0.1 s: {tops} (bar: >= {low:.0f} -> {rest_y:g} in {entry:g} s, "
                     "mostly early)")
         else:
             r.check(landed, "W6", f"run {n} top edge {tops[0]} on the first frame (bar: the look has no rise, "
                     f"window in place at {rest_y:g})")
         for cut_t in run["cuts"]:
-            boxes = [m.window_box(m.grab(cut, cut_t + d)) for d in (-1 / 30, 0, 1 / 30)]
+            sides = [m.grab(cut, cut_t + d) for d in (-1 / 30, 0, 1 / 30)]
+            boxes = [m.window_box(f, m.edge_threshold(f, rest_box), rest_box) for f in sides]
             r.check(all(boxes), "W7", f"window present on both sides of the cut at {cut_t:.2f}s")
         marks = sorted([run["start"], run["end"], *run["cuts"], *[z["start"] for z in run["zooms"]],
                         *[z["end"] for z in run["zooms"]]])
@@ -293,15 +418,16 @@ def check_windows(r: Report, cut: Path, plan: dict, save) -> None:
                 f"run {n} longest uninterrupted window shot {longest:.1f}s (bar: <= {shot_max:g})")
         for k, z in enumerate(run["zooms"]):
             peak_t = (z["landed"] + z["out"]) / 2
-            peak = m.window_box(m.grab(cut, peak_t))
+            peak = m.window_box(m.grab(cut, peak_t), edge_step, rest_box)
             save(f"20-run{n}-zoom{k}-peak", peak_t)
-            edge = spec.ZOOM_EDGE - 2  # 2 px measuring tolerance
+            clear = zoom_look.get("edge", spec.ZOOM_EDGE)  # the look's own margin (house 40)
+            edge = clear - 2  # 2 px measuring tolerance
             peak_w = rest_w * z["scale"]
             ok = peak is not None and abs(peak[2] - peak_w) <= 10 and peak[0] >= edge and peak[1] >= edge \
                 and peak[0] + peak[2] <= 1920 - edge and peak[1] + peak[3] <= 1080 - edge
-            r.check(ok, "Z2-Z3", f"zoom {k} peak window {peak} (bar: width {peak_w:.0f} +-10, >= {spec.ZOOM_EDGE} px clear)")
+            r.check(ok, "Z2-Z3", f"zoom {k} peak window {peak} (bar: width {peak_w:.0f} +-10, >= {clear:g} px clear)")
             dur = zoom_look["dur"]
-            mid = m.window_box(m.grab(cut, z["start"] + dur / 2))
+            mid = m.window_box(m.grab(cut, z["start"] + dur / 2), edge_step, rest_box)
             mid_w = rest_w + (peak_w - rest_w) * ease(0.5)
             move = z["landed"] - z["start"]
             r.check(mid is not None and abs(mid[2] - mid_w) <= 10 and abs(move - dur) <= 0.1, "Z4",
@@ -355,7 +481,7 @@ def check_overlays(r: Report, cut: Path, plan: dict, save) -> None:
             r.add("LOOK", "C1-C2", f"pill {k} {c['text']!r} was moved to {c['pos']}; the bar puts pills "
                   f"centred under the window, so its place is not measured")
         else:
-            box = m.pill_box(frame, pill_y)
+            box = m.pill_box(frame, pill_y, m.pill_bright(frame, pill_y), pill_h)
             centre = box[1] + box[3] / 2 if box else None
             r.check(box is not None and abs(centre - pill_y) <= 3 and abs(box[3] - pill_h) <= 2, "C1-C2",
                     f"pill {k} {c['text']!r} box {box} (bar: centred at y {pill_y:g} +-3, {pill_h:g} +-2 tall)")

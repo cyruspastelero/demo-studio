@@ -52,7 +52,10 @@ The `look` groups:
 | `audio` | `lufs`, `true_peak`, `music_gap_db`, `outro_silence` | narrate.py's mix targets and check-cut.py's A2, A3, A6, X3 |
 
 `check-cut.py` reads the look the cut was built with (it is written into `plan.json`), so a copied
-look is checked against its own numbers, not the house ones.
+look is checked against its own numbers, not the house ones. The window is looked for at the look's
+`rect`, pills in its pill band and against its own field, the shadow against what `window.shadow`
+draws on that field, title ink in the `ink` colour against the background (light on dark works too),
+and the rise against `window_in`. The title's cap height (T2) is measured in Chrome at build time.
 
 ## Built-in templates
 
