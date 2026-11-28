@@ -11,9 +11,10 @@ records each scene, builds the cut, adds narration and music, and checks the res
 | Deliverable | What it is |
 | --- | --- |
 | Plan | BRIEF, RUN-SHEET (beats and exact on-camera text), SHOT-LIST, VOICEOVER draft, PREP checklist |
+| Storyboard (optional) | Every scene drawn by the real engine before recording: the whole page, then the part it zooms into, titles in the product's font, with a comment box per scene |
 | Raw takes | One clean clip per scene: 1920x1080, 30fps, H.264, crisp 2x capture, secrets blurred in the page, logged in `takes.csv` |
 | Review reel | The keeper takes joined uncut in story order, for the first review |
-| Keynote cut | Built to the [quality bar](quality-bar.md): footage cropped into a floating window on soft warm greys, whole-window zooms, highlight boxes, callout pills, word-by-word Inter titles, end card and logo outro |
+| Keynote cut | Built to the [quality bar](quality-bar.md): footage in a floating window in the product's colours, each scene opening on the whole page before it zooms in, highlight boxes, callout pills, word-by-word titles in the product's own font, end card and logo outro |
 | Narrated cut | The keynote cut with the voiceover recorded and placed over a music bed 13 dB under it, -14 LUFS, true peak under -1 dBTP |
 | Promo cut | About 1:30, the story, as numbered clips plus a rough assembly |
 | How-to cut | About 3:00, the story plus setup steps and an edge case |
@@ -28,6 +29,7 @@ records each scene, builds the cut, adds narration and music, and checks the res
       |
   [plan]      demo-plan     BRIEF, RUN-SHEET, SHOT-LIST, VOICEOVER, PREP, demo.json
   [approve]   you           the agent shows the plan; nothing is recorded until you say go
+  [storyboard] demo-studio  optional: each scene drawn in the final look, with a comment box each
   [prep]      demo-plan     sandbox accounts, seeded demo user, reset scripts, test sweep
   [record]    demo-record   2x screencast per scene, secrets masked, contact-sheet QA, takes.csv
   [review]    demo-edit     review reel of the kept takes, checked by the agent

@@ -30,6 +30,8 @@ Claude Code, Codex, Cursor, Gemini CLI, GitHub Copilot and other agents that rea
 1. Tell your agent what the video should show.
 2. Log in to a test account in the Playwright browser, or hand over demo credentials.
 3. The agent writes the plan and shows it to you. Nothing is recorded until you say go.
+   If you want, it first draws a storyboard: every scene in the final look, in your product's font
+   and colours, with a box on each one for your notes.
 4. It tests the flow, records the product, then cuts and narrates the video.
 
 After you approve the plan, it only stops to ask for a login code, or before a step that would cost

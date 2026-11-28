@@ -114,7 +114,10 @@ Use a sandbox or test account, and pick one of two ways:
 
 1. The agent writes the plan and shows it to you: the scenes, what each one shows, the voiceover, the
    look, and anything it will create in the app.
-2. Nothing is recorded until you reply "go" (or tell it what to change).
+2. Nothing is recorded until you reply "go" (or tell it what to change). Reply "go with storyboard"
+   to see every scene drawn in the final look first: the framing, zooms, titles, your product's
+   font and colours. Type notes under any scene, then tell the agent to work on the comments, or
+   say "approved".
 3. Then it runs every stage to the end without asking, and shows you the results: the plan, a clean
    1080p take per scene, a review reel, the finished video and a narrated version. Promo and how-to
    cuts, 4:5 and 9:16 versions and a package for a video editor come when you ask.

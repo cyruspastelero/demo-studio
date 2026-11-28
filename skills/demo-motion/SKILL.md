@@ -125,7 +125,8 @@ the media paths and the text with this demo's. Keep:
   The SFX kit is built in.
 - For on-screen actions a scene doesn't sound itself, add `"cues": [{ "at": 2, "name": "scroll" }]`
   (also `toggle`, `select`, `open`, `close`, `success`, `error`, `notify`, `drop`). One per action.
-- `brand.accent` (hex), `brand.logo`, `brand.url`, and `brand.fonts` only if the product has its own.
+- `brand.accent` (hex), `brand.logo`, `brand.url`, and `brand.fonts` with the product's own font files
+  when their licence allows it (Google Fonts are OFL; skill `demo-plan` saves them in the demo's `fonts/`).
 
 Check it:
 

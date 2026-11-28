@@ -168,6 +168,9 @@ and list them under `windows` in `<demo>/demo.json`. Record with `rec.mjs` (Step
    1080p take** (CSS px x 4/3, because the 1440 px wide page at DPR 2 is encoded 1920 wide) and `t`,
    the seconds since `record()` started. Target the element's **text** (`getByText`, a label), not
    its padded container: the cut pads the box by 15 and 9 px itself.
+   **Open on the whole page** (quality bar W9): each scene that lands on a new page holds it still,
+   with the pointer off the content, for about 3 s before the first action, so the cut can show the
+   whole page and then push in. A part that continues the same page needs no hold.
    **Highlight targets must hold still** (quality bar H8): the box is a fixed rectangle in source
    px, so if the page scrolls or reflows while it shows, it lands on the wrong element. In the scene
    body, scroll first, wait for the page to settle, measure, then keep the page still for the whole
