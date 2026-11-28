@@ -160,15 +160,35 @@ it only if the user said in this conversation to skip the plan review.
    The plan files are in <demo>/ (BRIEF.md, SHOT-LIST.md, RUN-SHEET.md, VOICEOVER.md) and on the
    studio home screen under the demo's Docs menu.
 
-   Reply "go" to record, or tell me what to change.
+   Storyboard: before I record, I can draw every scene in the final look (your font and colours,
+   the framing, zooms and pills) from screenshots of the app, for you to approve. Or skip it.
+
+   Reply "go" to record, "go with storyboard" to see the storyboard first, or tell me what to change.
    ```
 2. Wait for the reply. It is a go only when it clearly says so ("go", "yes", "approved", "looks
    good, record it").
 3. A change request: update the plan files and demo.json, then post only the changed scenes and the
    last line again. Repeat until the go.
-4. Write `Plan approved <YYYY-MM-DD>: "<their words>"` under "Decisions" in the demo's README.md.
+4. Write `Plan approved <YYYY-MM-DD>: "<their words>"` under "Decisions" in the demo's README.md,
+   and `Storyboard: yes` or `Storyboard: skipped` on the next line.
 
-Done when: the README has the "Plan approved" line. Then go on to Step 5.
+Done when: the README has the "Plan approved" and "Storyboard" lines. Then go on to Step 5.
+
+### Step 5b: the storyboard (only when the user asked for it)
+
+Do this after the test sweep (Step 5) and before recording (Step 6). Skipped: go straight on to Step 6.
+
+1. In the Playwright browser, at the recording size, open the page each scene starts on and save a
+   screenshot as `<demo>/recordings/scout/<stem>.png` (`browser_take_screenshot`).
+2. From the demo folder, build it in the background, never next to another render or test run:
+   `python3 -I "$P/scripts/storyboard.py" demo.json`. Expected: `storyboard: N scene(s), ...` and
+   `OUTPUT <demo>/storyboard/index.html`. It uses the real engine, so the frames are the final look.
+3. Open it for the user (`open <demo>/storyboard/index.html`) and post: "Here is the storyboard: each
+   scene opens on the whole page, then pushes in. Reply "approved" or tell me what to change."
+   Give the contact sheet path too: `<demo>/storyboard/storyboard.png`.
+4. Wait for the reply. A change request: edit demo.json (crop, zooms, pills, brand, cards), rebuild
+   and show it again.
+5. Write `Storyboard approved <YYYY-MM-DD>: "<their words>"` under "Decisions". Then Step 6.
 
 ### Steps 5 to 8: run every stage without stopping
 
@@ -192,8 +212,9 @@ that the footage cannot prove. If the user asked for review gates ("check with m
 | Step | Stage | Skill | Done when |
 | --- | --- | --- | --- |
 | 4 | Plan | `demo-plan` Steps 1 to 8 | BRIEF, SHOT-LIST, RUN-SHEET, VOICEOVER, PREP and demo.json filled; `plan-lint.py` run and every LOOK fixed or explained; every claim maps to a scene |
-| 4b | Plan approval | this skill, Step 4b | README.md has the "Plan approved" line |
+| 4b | Plan approval | this skill, Step 4b | README.md has the "Plan approved" and "Storyboard" lines |
 | 5 | Prep and test sweep | `demo-plan` Steps 7 and 9 | Every PREP.md box ticked; the test sweep table in README.md has `pass` on every row |
+| 5b | Storyboard (if chosen) | this skill, Step 5b | README.md has the "Storyboard approved" line |
 | 6 | Record and QA | `demo-record` | One `keep` row per scene in `recordings/takes.csv`, none `new`; THROWAWAYS.md lists everything created |
 | 7 | Review reel and cuts | `demo-edit` Steps 1 to 3 and 2b (4 and 5 if asked) | `review-reel.mp4` and every cut asked for exist in `recordings/exports/`, `check-cut.py` reports **0 FAIL** on the narrated keynote cut with every LOOK frame read, and `video-gate.py` shows no FAIL on every other cut. Then the cold read (`quality-gates.md` section 4c). **Stop here if the user asked only for raw footage** |
 | 8 | Handoff and wrap-up | `demo-handoff` | Its wrap-up checklist is ticked, except boxes that need the user's go-ahead |
@@ -268,7 +289,7 @@ It only reads files. Stop it when the session ends. If it fails with a missing m
 | Demo folder | `$DEMO_ROOT/<name>`, default `./demos/<name>` |
 | Accounts | sandbox or test only, a dedicated seeded demo user |
 | Login | way A (user logs in) unless they hand over credentials; always before recording, never on camera |
-| Questions | none after Stage 0, except the plan approval (Step 4b) and the four stop cases in Steps 5 to 8 |
+| Questions | none after Stage 0, except the plan approval (Step 4b), the storyboard approval when chosen (Step 5b) and the four stop cases in Steps 5 to 8 |
 | Review reel | shown in the final report, not a gate, unless the user asked for review gates |
 | Things created on camera | created for real, listed in THROWAWAYS.md, deleted when the user says clean up |
 | Footage | real screen recordings only, no AI-generated clips or imagery |

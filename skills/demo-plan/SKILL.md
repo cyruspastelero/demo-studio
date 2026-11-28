@@ -221,7 +221,8 @@ Every row of the claims list in BRIEF.md names a scene in SHOT-LIST.md. If not, 
 The test sweep and everything after it touch the app, so the user approves the plan first. Follow
 skill `demo-studio`, Step 4b: post the plan message, wait for a clear go, apply any changes, and
 write the "Plan approved" line under "Decisions" in the demo's README.md. Do not start Step 9 before
-that line is there.
+that line is there. The same message asks one question: build a storyboard to approve the look
+first, or skip it. Write the answer under "Decisions" (`Storyboard: yes` or `Storyboard: skipped`).
 
 ## Step 9: test sweep
 
@@ -245,7 +246,9 @@ Fix each failure, or cut the scene and its claim.
 ## Step 10: post a progress note and keep going
 
 The plan was approved in Step 8b. Post a short note that the sweep passed (and anything it changed),
-then go straight on to skill `demo-record` in the same turn. **Do not wait for a reply here.**
+then go straight on to skill `demo-record` in the same turn. **Do not wait for a reply here.** If the
+user chose a storyboard, build and show it first (skill `demo-studio`, Step 5b) and wait for its
+approval before recording.
 
 ## Done when
 
@@ -261,7 +264,7 @@ then go straight on to skill `demo-record` in the same turn. **Do not wait for a
 - [ ] demo.json validates (`ok`) with crop, callouts, zooms, highlights, accents, voice and music;
       `_project.js` has the masks, clutter and `cursor: 'hand'`
 - [ ] `plan-lint.py` ran: every LOOK is fixed or explained in the plan
-- [ ] The user approved the plan, and README.md has the "Plan approved" line (Step 8b)
+- [ ] The user approved the plan, and README.md has the "Plan approved" and "Storyboard" lines (Step 8b)
 - [ ] Every PREP.md box is ticked
 - [ ] The test sweep table has `pass` on every row
 - [ ] The sweep note was posted (not a question)
