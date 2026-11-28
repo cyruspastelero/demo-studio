@@ -1,5 +1,6 @@
 """Behaviour of scripts/storyboard.py: where each scene's picture comes from before anything is recorded,
-which composed frames it keeps (the whole page, then the zoom or the crop), and the page it writes.
+which composed frames it keeps (the whole page, then the zoom or the crop), the page it writes, and
+the --serve server that saves the user's comments to storyboard/comments.json.
 The full render runs in tests/smoke.sh. Run: python3 -I tests/test_storyboard.py"""
 
 import importlib.util
@@ -8,7 +9,10 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import threading
 import unittest
+import urllib.error
+import urllib.request
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
@@ -16,6 +20,7 @@ sys.path.insert(0, str(REPO / "scripts"))
 
 import demolib as lib  # noqa: E402
 from keynote import spec  # noqa: E402
+from keynote.storyboard_comments import make_server  # noqa: E402
 from keynote.storyboard_page import Frame, page  # noqa: E402
 from keynote.timeline import build_plan  # noqa: E402
 
@@ -93,15 +98,39 @@ class Frames(unittest.TestCase):
         self.assertTrue(pill.start < t < pill.end)
 
 
+def page_for(sheet=False):
+    plan = plan_for(SEQUENCE)
+    frames = [Frame(item, kind, caption, t, Path(f"frames/{n}.png"), marks)
+              for n, (item, kind, caption, t, marks) in enumerate(storyboard.wanted_frames(plan))]
+    look = {"template": "house", "font": "fonts/Outfit.woff2", "title_font": "fonts/Outfit.woff2", "painted": ["Outfit"],
+            "accent": "#0A6FA8", "seconds": plan.seconds, "title": "Acme <b>", "built": "2026-11-28T00:00:00+00:00"}
+    return page({"title": "Acme", "sequence": SEQUENCE}, plan, frames, {"01": "the raw take"}, look,
+                lambda png: str(png), sheet=sheet)
+
+
 class Page(unittest.TestCase):
+    def test_every_scene_and_card_has_a_comment_box_plus_one_for_the_whole_video(self):
+        html = page_for()
+        for key in ("overall", "card-intro", "01", "02", "card-end"):
+            self.assertEqual(html.count(f'data-comment="{key}"'), 1, key)
+        self.assertEqual(html.count("<textarea"), 5)
+        self.assertIn("Comment on this scene (Scene 01)", html)
+        self.assertIn("Copy comments", html)
+
+    def test_the_page_ends_with_what_to_tell_the_agent(self):
+        html = page_for()
+        self.assertGreater(html.index("When you are done"), html.index("End card: Acme"))
+        self.assertIn("<q>Work on the storyboard comments</q>", html)
+        self.assertIn("<q>Approved</q>", html)
+
+    def test_the_contact_sheet_has_no_comment_boxes_or_script(self):
+        html = page_for(sheet=True)
+        self.assertNotIn("<textarea", html)
+        self.assertNotIn("<script", html)
+        self.assertNotIn("When you are done", html)
+
     def test_the_page_lists_every_item_in_order_and_escapes_text(self):
-        plan = plan_for(SEQUENCE)
-        frames = [Frame(item, kind, caption, t, Path(f"frames/{n}.png"), marks)
-                  for n, (item, kind, caption, t, marks) in enumerate(storyboard.wanted_frames(plan))]
-        look = {"template": "house", "font": "fonts/Outfit.woff2", "title_font": "fonts/Outfit.woff2", "painted": ["Outfit"],
-                "accent": "#0A6FA8", "seconds": plan.seconds, "title": "Acme <b>"}
-        html = page({"title": "Acme", "sequence": SEQUENCE}, plan, frames, {"01": "the raw take"}, look,
-                    lambda png: str(png))
+        html = page_for()
         self.assertNotIn("<fast>", html)
         self.assertIn("Invoices &lt;fast&gt;", html)
         self.assertIn("Acme &lt;b&gt;: storyboard", html)
@@ -141,6 +170,65 @@ class Pictures(unittest.TestCase):
             found, sources = storyboard.prepare_takes({"title": "Acme", "sequence": SEQUENCE}, demo, demo / "w")
             self.assertEqual(found, raw)
             self.assertEqual(set(sources.values()), {"the raw take"})
+
+
+class Comments(unittest.TestCase):
+    def setUp(self):
+        self.folder = Path(tempfile.mkdtemp())
+        (self.folder / "index.html").write_text("<p>board</p>")
+        self.server = make_server(self.folder)
+        self.base = f"http://127.0.0.1:{self.server.server_address[1]}"
+        threading.Thread(target=self.server.serve_forever, daemon=True).start()
+
+    def tearDown(self):
+        self.server.shutdown()
+        self.server.server_close()
+        shutil.rmtree(self.folder)
+
+    def request(self, path, body=None, kind="application/json", host=None):
+        request = urllib.request.Request(self.base + path, data=body, method="POST" if body is not None else "GET")
+        if body is not None:
+            request.add_header("Content-Type", kind)
+        if host:
+            request.add_header("Host", host)
+        try:
+            with urllib.request.urlopen(request, timeout=5) as response:
+                return response.status, response.read()
+        except urllib.error.HTTPError as error:
+            with error:
+                return error.code, error.read()
+
+    def saved(self):
+        return json.loads((self.folder / "comments.json").read_text())
+
+    def test_posted_comments_are_written_to_comments_json_without_empty_boxes(self):
+        body = json.dumps({"01": "Zoom on the total", "overall": "Shorter intro", "02": "  ", "updated": "x"}).encode()
+        status, _ = self.request("/comments", body)
+        self.assertEqual(status, 200)
+        saved = self.saved()
+        self.assertEqual({k: v for k, v in saved.items() if k != "updated"}, {"01": "Zoom on the total", "overall": "Shorter intro"})
+        self.assertRegex(saved["updated"], r"^\d{4}-\d\d-\d\dT")
+        self.assertEqual(json.loads(self.request("/comments")[1])["01"], "Zoom on the total")
+
+    def test_bad_comments_are_refused_and_nothing_is_written(self):
+        for body, kind in ((b"not json", "application/json"), (b"[1, 2]", "application/json"),
+                           (b'{"01": 3}', "application/json"), (b'{"../x": "hi"}', "application/json"),
+                           (json.dumps({"01": "x" * 9000}).encode(), "application/json"),
+                           (b'{"01": "hi"}', "text/plain")):
+            status, _ = self.request("/comments", body, kind)
+            self.assertIn(status, (400, 413, 415), body[:40])
+        self.assertFalse((self.folder / "comments.json").exists())
+
+    def test_a_request_for_another_host_is_refused(self):
+        status, _ = self.request("/comments", b'{"01": "hi"}', host="evil.example:80")
+        self.assertEqual(status, 403)
+        self.assertFalse((self.folder / "comments.json").exists())
+
+    def test_it_serves_the_page_but_nothing_else_in_the_folder(self):
+        (self.folder / "secret.txt").write_text("no")
+        self.assertEqual(self.request("/"), (200, b"<p>board</p>"))
+        self.assertEqual(self.request("/secret.txt")[0], 404)
+        self.assertEqual(self.request("/frames/../secret.txt")[0], 404)
 
 
 class Schema(unittest.TestCase):

@@ -11,7 +11,11 @@ voiceover when it has no trim yet.
 
 Usage (from the demo dir): storyboard.py [demo.json]
 Output: storyboard/index.html (one page, scenes in order), storyboard/storyboard.png (contact
-sheet), storyboard/frames/*.png. Open index.html for the user and wait for approval or changes.
+sheet), storyboard/frames/*.png.
+Then: storyboard.py --serve [demo.json] serves that page on 127.0.0.1 (a free port, printed as
+OUTPUT http://...) until stopped. Each scene and card has a comment box; what the user types is
+saved as it is typed to storyboard/comments.json ({item key: text, "overall": text, "updated": iso}).
+Open the URL for the user and wait for approval or changes.
 Needs ffmpeg and node with playwright-core and Chrome. Prints PROGRESS and OUTPUT lines.
 """
 from __future__ import annotations
@@ -21,6 +25,7 @@ import base64
 import importlib.util
 import subprocess
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -32,6 +37,7 @@ from keynote.brand import check_font_files, load_brand  # noqa: E402
 from keynote.compose import composite  # noqa: E402
 from keynote.model import Card, PlanError, Shot, is_tight  # noqa: E402
 from keynote.render import title_family  # noqa: E402
+from keynote.storyboard_comments import make_server  # noqa: E402
 from keynote.storyboard_page import Frame, page, push_marks  # noqa: E402
 from keynote.timeline import build_plan  # noqa: E402
 from keynote.voice_sync import measure_line  # noqa: E402
@@ -218,10 +224,35 @@ def contact_sheet(html: str, out: Path, work: Path) -> None:
         fail(f"storyboard-sheet.mjs failed:\n{result.stderr[-1500:]}\nCheck Chrome with: bash {HERE / 'doctor.sh'}")
 
 
+def serve(out_dir: Path) -> None:
+    """Serves the built storyboard on 127.0.0.1 and saves the user's comments until stopped."""
+    if not (out_dir / "index.html").is_file():
+        fail(f"no storyboard yet in {out_dir}; build it first: python3 -I {Path(__file__).resolve()}")
+    try:
+        lib.refuse_symlinks_under(out_dir, "storyboard")
+    except lib.UnsafePath as error:
+        fail(str(error))
+    server = make_server(out_dir)
+    url = f"http://127.0.0.1:{server.server_address[1]}/"
+    print(f"storyboard: serving {out_dir} at {url}\nComments save to {out_dir / 'comments.json'}. "
+          f"Stop with Ctrl-C.", flush=True)
+    lib.output(url)
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        server.server_close()
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(prog="storyboard.py", description=__doc__.split("\n\n")[0])
     parser.add_argument("config", nargs="?", default="demo.json")
+    parser.add_argument("--serve", action="store_true",
+                        help="serve the built storyboard on 127.0.0.1 and save comments to storyboard/comments.json")
     args = parser.parse_args()
+    if args.serve:
+        return serve(Path(args.config).resolve().parent / "storyboard")
     lib.require("ffmpeg", "ffprobe", "node")
     cfg_path = Path(args.config).resolve()
     cfg = lib.load_config(cfg_path, "demo", TOOL)
@@ -259,14 +290,16 @@ def main() -> None:
     video.unlink()
     frames = [Frame(item, kind, caption, t, png, marks) for (item, kind, caption, t, marks), png in zip(wanted, pngs)]
     look = {"template": template_id or "house", "font": brand.font, "title_font": title_family(brand),
-            "painted": fonts, "accent": brand.accent, "seconds": plan.seconds, "title": cfg["title"]}
+            "painted": fonts, "accent": brand.accent, "seconds": plan.seconds, "title": cfg["title"],
+            "built": datetime.now(timezone.utc).isoformat(timespec="seconds")}
     index = out_dir / "index.html"
     index.write_text(page(cfg, plan, frames, sources, look, lambda png: f"frames/{png.name}"))
     sheet = out_dir / "storyboard.png"
     contact_sheet(page(cfg, plan, frames, sources, look, lambda png: thumbnail_uri(png, work), sheet=True), sheet, work)
     lib.safe_rmtree(demo_dir, work, "storyboard/.work")
     print(f"storyboard: {len([i for i in plan.items if isinstance(i, Shot)])} scene(s), {plan.seconds:.1f}s, "
-          f"{len(frames)} frame(s)\n{index}\n{sheet}\nShow it: open {index}")
+          f"{len(frames)} frame(s)\n{index}\n{sheet}\n"
+          f"Show it with comments: python3 -I {Path(__file__).resolve()} --serve {args.config}")
     lib.output(index)
 
 

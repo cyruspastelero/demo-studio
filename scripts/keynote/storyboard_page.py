@@ -1,6 +1,7 @@
 """The storyboard page (scripts/storyboard.py): every scene and card in cut order, with the composed
-frames the real engine drew, the scene's length, narration line and on-screen text. The same page,
-with small inline pictures, is screenshotted into the contact sheet. All text is escaped."""
+frames the real engine drew, the scene's length, narration line and on-screen text, a comment box for
+each and one for the whole video, and what to tell the agent when done. The same page, with small
+inline pictures and no comment boxes, is screenshotted into the contact sheet. All text is escaped."""
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -67,6 +68,16 @@ figure { margin: 0; } figcaption { font-size: 14px; color: var(--muted); margin-
 .mark { position: absolute; border: 2px dashed var(--mark); border-radius: 4px; }
 .mark.target { border-style: solid; border-radius: 50%; background: rgba(232, 98, 42, 0.25); }
 body.sheet main { max-width: 1600px; padding: 24px; }
+.comment { margin-top: 14px; } .comment label { display: block; font-size: 14px; color: var(--muted); margin-bottom: 4px; }
+textarea { width: 100%; min-height: 64px; padding: 8px 10px; font: inherit; font-size: 15px; color: var(--ink);
+  background: var(--bg); border: 1px solid var(--line); border-radius: 8px; resize: vertical; }
+textarea:focus { outline: 2px solid var(--mark); outline-offset: 1px; }
+.overall textarea { min-height: 88px; }
+.status { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin-top: 10px; font-size: 14px; }
+button { font: inherit; font-size: 14px; padding: 6px 14px; color: var(--ink); background: var(--card);
+  border: 1px solid var(--line); border-radius: 8px; cursor: pointer; }
+.next ol { margin: 8px 0 0; padding-left: 22px; } .next li + li { margin-top: 6px; }
+.next q { font-weight: 600; quotes: "\\201C" "\\201D"; }
 body.sheet section { display: grid; grid-template-columns: 300px 1fr; gap: 16px; padding: 12px; margin-top: 10px; }
 body.sheet dl { gap: 2px 8px; margin: 6px 0 0; font-size: 13px; }
 body.sheet .frames { grid-template-columns: repeat(2, 1fr); }
@@ -96,7 +107,14 @@ def figure(frame: Frame, src: Callable[[Path], str]) -> str:
             f"<figcaption>{escape(frame.caption)} ({frame.t:.1f} s into the cut)</figcaption></figure>")
 
 
-def item_section(item, entry: dict, frames: list[Frame], source: str, src: Callable[[Path], str]) -> str:
+def comment_box(key: str, label: str) -> str:
+    return (f'<div class="comment"><label for="c-{escape(key)}">{escape(label)}</label>'
+            f'<textarea id="c-{escape(key)}" data-comment="{escape(key)}" data-label="{escape(label)}" '
+            f'placeholder="What should change here? Leave empty if it looks right."></textarea></div>')
+
+
+def item_section(item, entry: dict, frames: list[Frame], source: str, src: Callable[[Path], str],
+                 sheet: bool = False) -> str:
     rows = [("Length", f"{seconds_of(item):.1f} s")]
     if isinstance(item, Card):
         name = {"hero": "Title card", "section": "Section card", "end": "End card"}[item.kind]
@@ -114,8 +132,71 @@ def item_section(item, entry: dict, frames: list[Frame], source: str, src: Calla
     rows.insert(1, ("Narration", entry.get("voiceover", "").strip() or "none"))
     details = "".join(f"<dt>{escape(k)}</dt><dd>{escape(v)}</dd>" for k, v in rows)
     pictures = "".join(figure(f, src) for f in frames)
-    return (f'<section><div><div class="head"><h2>{escape(heading)}</h2></div><dl>{details}</dl></div>'
-            f'<div class="frames">{pictures}</div></section>')
+    comment = "" if sheet else comment_box(item.key, f"Comment on this {'card' if isinstance(item, Card) else 'scene'} ({heading})")
+    return (f'<section data-item="{escape(item.key)}"><div><div class="head"><h2>{escape(heading)}</h2></div>'
+            f'<dl>{details}</dl></div><div class="frames">{pictures}</div>{comment}</section>')
+
+
+OVERALL = ('<section class="overall"><h2>Your comments</h2><p class="muted">Type a comment under any scene or '
+           "card, or here about the whole video. They save as you type.</p>"
+           + comment_box("overall", "Comment on the whole video")
+           + '<div class="status"><span id="comment-status" role="status">Not saved yet</span>'
+           '<button type="button" id="copy-comments">Copy comments</button></div></section>')
+
+NEXT = ('<section class="next"><h2>When you are done</h2><p>Go back to the agent and say one of these:</p><ol>'
+        "<li><q>Work on the storyboard comments</q>: it reads your comments, changes the plan and rebuilds this "
+        "storyboard. Reload the page to see the new version.</li>"
+        "<li><q>Continue</q> or <q>Approved</q>: it records the scenes and cuts the video as shown here.</li></ol>"
+        '<p class="muted">Opened as a file instead of from the link the agent gave you? Your comments stay in '
+        "this browser only: press Copy comments and paste them to the agent.</p></section>")
+
+# Saves the comment boxes: to the --serve server (POST /comments) when the page came from it, and to
+# this browser's localStorage either way (keyed by build, so a rebuilt storyboard starts empty).
+SCRIPT = r"""
+(() => {
+  const boxes = [...document.querySelectorAll('textarea[data-comment]')];
+  const status = document.getElementById('comment-status');
+  const served = location.protocol === 'http:';
+  const key = 'storyboard-comments:' + document.body.dataset.build;
+  const collect = () => Object.fromEntries(boxes.map((b) => [b.dataset.comment, b.value]));
+  const fill = (saved) => boxes.forEach((b) => { if (typeof saved[b.dataset.comment] === 'string') b.value = saved[b.dataset.comment]; });
+  const say = (text) => { status.textContent = text; };
+  const keep = () => { try { localStorage.setItem(key, JSON.stringify(collect())); return true; } catch { return false; } };
+  const local = () => { try { return JSON.parse(localStorage.getItem(key) || '{}'); } catch { return {}; } };
+  let timer = null;
+  async function save() {
+    const kept = keep();
+    if (!served) return say(kept ? 'Saved in this browser only: use Copy comments to send them' : 'Not saved: use Copy comments');
+    try {
+      const response = await fetch('/comments', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(collect()) });
+      const answer = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(answer.error || response.statusText);
+      say('Saved for the agent at ' + new Date().toLocaleTimeString());
+    } catch (error) {
+      say('Not saved for the agent (' + error.message + '): use Copy comments');
+    }
+  }
+  boxes.forEach((b) => b.addEventListener('input', () => {
+    say('Unsaved changes...');
+    clearTimeout(timer);
+    timer = setTimeout(save, 700);
+  }));
+  document.getElementById('copy-comments').addEventListener('click', async () => {
+    const text = boxes.filter((b) => b.value.trim()).map((b) => b.dataset.label + ':\n' + b.value.trim()).join('\n\n');
+    try {
+      await navigator.clipboard.writeText('Storyboard comments\n\n' + (text || 'No comments.'));
+      say('Copied: paste them to the agent');
+    } catch {
+      say('Could not copy: select the text and copy it by hand');
+    }
+  });
+  if (!served) { fill(local()); return say('Opened as a file: comments save in this browser only'); }
+  fetch('/comments').then((r) => (r.ok ? r.json() : Promise.reject(new Error(r.statusText))))
+    .then((saved) => { fill(Object.keys(saved).length ? saved : local()); say('Comments save for the agent as you type'); })
+    .catch(() => { fill(local()); say('Could not reach the storyboard server: use Copy comments'); });
+})();
+"""
 
 
 def page(cfg: dict, plan: Plan, frames: list[Frame], sources: dict[str, str], look: dict,
@@ -135,11 +216,17 @@ def page(cfg: dict, plan: Plan, frames: list[Frame], sources: dict[str, str], lo
             "the crop a scene pushes into. Dot: its zoom target. Neither is in the video.</p>"]
     if warnings and not sheet:
         body.append(f'<div class="warn"><strong>Plan warnings</strong><ul>{warnings}</ul></div>')
+    if not sheet:
+        body.append(OVERALL)
     for item in plan.items:
         own = [f for f in frames if f.item is item]
         entry = cfg["sequence"][item.index]
-        body.append(item_section(item, entry, own, sources.get(item.key, ""), src))
+        body.append(item_section(item, entry, own, sources.get(item.key, ""), src, sheet))
+    if not sheet:
+        body.append(NEXT)
+    script = "" if sheet else f"<script>{SCRIPT}</script>"
     return (f'<!doctype html><html lang="en"><head><meta charset="utf-8">'
             f'<meta name="viewport" content="width=device-width, initial-scale=1">'
             f"<title>{escape(look['title'])} storyboard</title><style>{CSS}</style></head>"
-            f'<body class="{"sheet" if sheet else ""}"><main>{"".join(body)}</main></body></html>\n')
+            f'<body class="{"sheet" if sheet else ""}" data-build="{escape(look.get("built", ""))}">'
+            f'<main>{"".join(body)}</main>{script}</body></html>\n')
