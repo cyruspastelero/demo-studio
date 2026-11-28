@@ -50,6 +50,7 @@ jobs:
           python3 -I tests/test_security.py
           python3 -I tests/test_video_gate.py
           python3 -I tests/test_plan_lint.py
+          python3 -I tests/test_storyboard.py
           python3 -I tests/test_check_release.py
       - name: Node unit tests (title card inputs, fonts, frame receiver, scene helpers)
         run: |

@@ -189,6 +189,10 @@ python3 -I -c 'import sys; d=float(sys.argv[1]); assert abs(d-18.9)<0.1, d' \
 (cd "$D" && python3 -I "$S/keynote-handoff.py" demo-short.json >/dev/null)
 exists "$D/editor-handoff/SCRIPT.txt"; exists "$D/editor-handoff/VOICEOVER.txt"; exists "$D/acme-invoice-bot-editor-handoff.zip"
 exists "$D/editor-handoff/03-edited-segments/02-05.mp4"
+(cd "$D" && python3 -I "$S/storyboard.py" demo-short.json > "$TMP/storyboard.log" 2>&1) || { cat "$TMP/storyboard.log"; die "storyboard failed"; }
+exists "$D/storyboard/index.html"; exists "$D/storyboard/storyboard.png"; exists "$D/storyboard/frames/02-01-wide.png"
+grep -q 'Opens on the whole page' "$D/storyboard/index.html" || die "storyboard does not show the wide opening"
+[ -e "$D/storyboard/.work" ] && die "storyboard left its work folder behind"; ok "storyboard renders the plan and cleans up"
 
 step "narrate (own voice files, so it runs without say or an API key)"
 tone() {  # out seconds frequency: a speech-like test line (tone + soft pink noise, 4 syllables a second)
