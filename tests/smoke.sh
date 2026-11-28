@@ -165,7 +165,7 @@ cat > "$D/demo-short.json" <<'EOF2'
     "voiceover": "Invoices from the thread." },
   { "scene": "01", "stem": "01-the-thread", "take": 1, "trim": [1.0, 5.0], "crop": [160, 150, 1400, 718],
     "callouts": [{ "at": 0.76, "dur": 3.0, "kind": "statement", "text": "The deal is agreed." }] },
-  { "scene": "05", "stem": "05-approve", "take": 1, "trim": [0.5, 6.5], "crop": [160, 150, 1400, 718],
+  { "scene": "05", "stem": "05-approve", "take": 1, "trim": [0.5, 6.5], "crop": [160, 150, 1400, 718], "wide": false,
     "zooms": [{ "at": 0.5, "focus": [700, 420], "dur": 2.5 }],
     "highlights": [{ "rect": [1050, 670, 240, 40] }], "voiceover": "Approve it." },
   { "card": "outro", "kind": "end", "title": "Acme Invoice Bot", "accent": "Invoice", "subtitle": "acme.example.com", "duration": 3.0, "outro": 3.5,
@@ -243,6 +243,7 @@ bar O1 "frame 0 shows the title, not a blank"
 bar W1 "rest window 1560x800 at (180, 100)"
 bar W6 "window rises in over 0.7 s"
 bar W7 "no background-only frame at the cut"
+bar W9 "tight scenes open on the whole page first"
 bar Z2-Z3 "zoom peaks at 1.15x inside the frame"
 bar Z4 "zoom eases over 1.1 s"
 bar H1-H5 "highlight box 0.17 s after the zoom lands"

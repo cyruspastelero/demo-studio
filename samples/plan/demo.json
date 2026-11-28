@@ -28,7 +28,7 @@
       "voiceover": "Or just ask. The answer comes from your own numbers, so you can check it." },
     { "scene": "05", "stem": "05-hide-test-traffic", "take": 1, "trim": [0.8, 8.6],
       "crop": [880, 180, 1000, 513],
-      "zooms": [{ "at": 1.0, "focus": [1320, 420], "dur": 2.6 }],
+      "zooms": [{ "at": 2.4, "focus": [1320, 420], "dur": 2.6 }],
       "highlights": [{ "rect": [1268, 404, 104, 32] }],
       "voiceover": "One switch hides your own test traffic." },
     { "scene": "06", "stem": "06-invite-viewer", "take": 1, "trim": [0.8, 8.0], "speed": 1.25,

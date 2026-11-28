@@ -484,6 +484,81 @@ class Plans(unittest.TestCase):
             self.plan(bad)
 
 
+class OpensWide(unittest.TestCase):
+    """W9: a tightly cropped scene shows the whole page first, then eases into its crop."""
+    TIGHT = [500, 100, 900, 460]
+
+    def plan(self, *scenes, after_card=True):
+        sequence = ([{"card": "intro", "title": "Hello there"}] if after_card else []) + list(scenes)
+        with tempfile.TemporaryDirectory() as tmp:
+            cfg, raw = make_demo(Path(tmp), sequence)
+            self.assertEqual(lib.validate(cfg, "demo"), [])
+            return build_plan(cfg, raw, PROBE)
+
+    def test_first_scene_of_a_window_holds_the_whole_page_after_the_rise_then_pushes_in(self):
+        shot = self.plan({"scene": "01", "stem": "01-a", "trim": [0, 6], "crop": self.TIGHT}).shots[0]
+        self.assertEqual(shot.wide, Rect(0.0, 0.0, 1920, 984.62))
+        self.assertAlmostEqual(shot.push_at, spec.ENTRY_SECONDS + spec.WIDE_HOLD)
+        self.assertEqual(shot.crop_at(0.0), shot.wide)
+        self.assertEqual(shot.crop_at(shot.push_at), shot.wide)
+        middle = shot.crop_at(shot.push_at + spec.WIDE_MOVE_SECONDS / 2)
+        self.assertTrue(shot.crop.w < middle.w < shot.wide.w)
+        for a, b in zip(shot.crop_at(shot.settled), shot.crop):
+            self.assertAlmostEqual(a, b, places=6)
+
+    def test_a_scene_cut_inside_the_window_holds_the_page_from_its_first_frame(self):
+        plan = self.plan({"scene": "01", "stem": "01-a", "trim": [0, 4], "crop": [0, 0, 1900, 974]},
+                         {"scene": "02", "stem": "02-b", "trim": [0, 5], "crop": self.TIGHT})
+        self.assertIsNone(plan.shots[0].wide)  # close to the whole page: nothing to establish
+        self.assertAlmostEqual(plan.shots[1].push_at, spec.WIDE_HOLD)
+
+    def test_wide_false_continues_the_scene_before_and_opens_on_the_crop(self):
+        plan = self.plan({"scene": "01", "stem": "01-a", "trim": [0, 6], "crop": self.TIGHT},
+                         {"scene": "02", "stem": "01-a", "trim": [6, 9], "crop": self.TIGHT, "wide": False})
+        self.assertIsNotNone(plan.shots[0].wide)
+        self.assertIsNone(plan.shots[1].wide)
+        self.assertTrue(plan.shots[1].continues)
+        self.assertFalse(any("W9" in w for w in plan.warnings))
+
+    def test_a_number_sets_the_hold(self):
+        shot = self.plan({"scene": "01", "stem": "01-a", "trim": [0, 6], "crop": self.TIGHT, "wide": 1.5}).shots[0]
+        self.assertAlmostEqual(shot.push_at, spec.ENTRY_SECONDS + 1.5)
+
+    def test_the_push_lands_before_the_first_zoom_or_the_scene_opens_on_its_crop_with_a_warning(self):
+        late = self.plan({"scene": "01", "stem": "01-a", "trim": [0, 9], "crop": self.TIGHT,
+                          "zooms": [{"at": 3.0, "focus": [900, 300], "dur": 2.5}]}).shots[0]
+        self.assertLessEqual(late.settled, 3.0)
+        early = self.plan({"scene": "01", "stem": "01-a", "trim": [0, 9], "crop": self.TIGHT,
+                           "zooms": [{"at": 0.8, "focus": [900, 300], "dur": 2.5}]})
+        self.assertIsNone(early.shots[0].wide)
+        self.assertTrue(any("(W9)" in w and "opens straight on its tight crop" in w for w in early.warnings))
+
+    def test_a_scene_too_short_to_open_wide_says_so(self):
+        plan = self.plan({"scene": "01", "stem": "01-a", "trim": [0, 2.5], "crop": self.TIGHT})
+        self.assertIsNone(plan.shots[0].wide)
+        self.assertTrue(any("the scene is only 2.5s" in w for w in plan.warnings))
+
+    def test_the_composited_take_fills_the_window_with_each_frames_rect(self):
+        from keynote.compose import wide_frames
+        shot = self.plan({"scene": "01", "stem": "01-a", "trim": [0, 6], "crop": self.TIGHT}).shots[0]
+        frames = wide_frames(shot)
+        self.assertEqual(frames[0], (1560, 878, 0, 0))  # the whole 1920 px take in the 1560 px window
+        last = frames[-1]
+        self.assertEqual(last[0], round(1920 * 1560 / shot.crop.w))
+        self.assertEqual(last[2], -round(shot.crop.x * last[0] / 1920))
+
+    def test_a_box_with_a_fixed_time_waits_for_the_push_and_sits_on_the_settled_crop(self):
+        from keynote.overlay import box_state
+        plan = self.plan({"scene": "01", "stem": "01-a", "trim": [0, 9], "crop": self.TIGHT,
+                          "highlights": [{"rect": [800, 280, 200, 30], "at": 3.5, "dur": 3}]})
+        shot, frame = plan.shots[0], quantize(spec.WINDOW_REST)
+        self.assertIsNotNone(shot.wide)
+        self.assertLessEqual(shot.settled, 3.5)
+        state = box_state(plan.highlights[0], shot, shot.start / FPS + 4.0, frame)
+        settled = box_geometry(Rect(800, 280, 200, 30), shot.crop, frame)
+        self.assertAlmostEqual(state[0], round(settled.x, 1), places=1)
+
+
 class WordCues(unittest.TestCase):
     """`at` may name a spoken word of the scene's own voiceover; it is resolved to seconds at build time."""
     LINE = "Please invite your team today."

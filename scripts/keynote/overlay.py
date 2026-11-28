@@ -162,7 +162,7 @@ def box_state(h: Highlight, shot: Shot, t: float, frame: WindowFrame | None) -> 
         return None
     p = EASE_OUT_CUBIC(progress(t, h.start, spec.HIGHLIGHT_IN))
     fade = 1 - linear(progress(t, h.end, spec.HIGHLIGHT_OUT))
-    box = box_geometry(h.rect, shot.crop, frame)
+    box = box_geometry(h.rect, shot.crop_at(t - shot.start / spec.FPS), frame)  # W9: glued while it pushes in
     return [r(box.x, 1), r(box.y, 1), r(box.w, 1), r(box.h, 1), r(p * fade),
             r(spec.HIGHLIGHT_IN_SCALE - (spec.HIGHLIGHT_IN_SCALE - 1) * p)]
 

@@ -44,6 +44,13 @@ EXIT_FRAMES = 4                                  # W8, fade before a title card
 CANVAS_PAD_SIDE, CANVAS_PAD_TOP, CANVAS_PAD_BOTTOM = 150, 120, 220
 MIN_CAP_HEIGHT = 18                              # W2, app body text cap height at rest
 
+# 2.3 Establishing shot (W9): a scene opens on the whole page as recorded, then eases into its crop.
+WIDE_HOLD = 1.2                                  # W9, seconds on the whole page once the window is at rest
+WIDE_MOVE_SECONDS = 1.10                         # W9, the push into the crop (eased like a zoom, Z4)
+WIDE_MIN_HOLD = 0.6                              # W9, a shorter wide hold is not worth showing
+WIDE_AFTER = 1.0                                 # W9, seconds the scene keeps on its crop after the push
+WIDE_TIGHT = 0.85                                # W9, a crop narrower than this share of the take is tight
+
 # 2.4 Zoom
 ZOOM_MAX = 1.15                                  # Z2
 ZOOM_MOVE_SECONDS = 1.10                         # Z4, ease-in-out sine both ways

@@ -311,6 +311,21 @@ def check_windows(r: Report, cut: Path, plan: dict, save) -> None:
             r.check(2.4 <= hold <= 4.5, "Z5", f"zoom {k} holds {hold:.1f}s (bar: 2.4 to 4.5)")
 
 
+def check_opening_shots(r: Report, plan: dict) -> None:
+    """W9: a scene with a tight crop opens on the whole page first, unless it says it continues the
+    scene before it in the same window (`"wide": false`), which already showed that page."""
+    if "shots" not in plan:
+        r.add("LOOK", "W9", "plan.json has no `shots` (built by an older engine); rebuild to check how scenes open")
+        return
+    bad = [s for s in plan["shots"] if s["tight"] and s["opens"] == "crop" and not s["continues"]]
+    for shot in bad:
+        r.add("FAIL", "W9", f"scene {shot['scene']} at {shot['start']:.2f}s opens straight on a tight crop; show the "
+              "whole page first (leave `wide` out, start its first zoom later, or lengthen `trim`)")
+    if not bad:
+        wide = sum(1 for s in plan["shots"] if s["opens"] == "wide")
+        r.add("PASS", "W9", f"every scene opens on the whole page or continues the one before it ({wide} push in from wide)")
+
+
 def check_overlays(r: Report, cut: Path, plan: dict, save) -> None:
     landings = [z["landed"] for run in plan["runs"] for z in run["zooms"]]
     zooms = [(z["start"], z["end"]) for run in plan["runs"] for z in run["zooms"]]
@@ -493,6 +508,7 @@ def main() -> int:
     check_opening(r, cut, plan, save)
     check_background(r, cut, plan)
     check_windows(r, cut, plan, save)
+    check_opening_shots(r, plan)
     check_overlays(r, cut, plan, save)
     check_highlight_motion(r, plan, plan_path.parent, demo_folder(plan_path))
     check_ending(r, cut, plan, save)

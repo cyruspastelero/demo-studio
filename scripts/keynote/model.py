@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Callable, Union
 
 from . import spec
+from .easing import cubic_bezier, progress
 from .spec import Rect
 
 
@@ -71,11 +72,28 @@ class Shot:
     frames: int
     crop: Rect                     # source px, aspect 1.95
     source_size: tuple[int, int]
+    wide: Rect | None = None       # W9: the whole page it opens on, None when it opens on its crop
+    push_at: float = 0.0           # W9: shot seconds when the push from `wide` into `crop` starts
+    continues: bool = False        # W9: `"wide": false` right after another scene in the same window
 
     @property
     def scale(self) -> float:
-        """Window px per source px at rest."""
+        """Window px per source px at rest, once the shot is on its crop."""
         return spec.WINDOW_REST.w / self.crop.w
+
+    @property
+    def settled(self) -> float:
+        """Shot seconds from which the window shows `crop`."""
+        return self.push_at + spec.WIDE_MOVE_SECONDS if self.wide else 0.0
+
+    def crop_at(self, t: float) -> Rect:
+        """The source rect the window shows t seconds into the shot: the whole page, then eased into
+        the crop over WIDE_MOVE_SECONDS (W9). compose.py and the highlight boxes both use this."""
+        if self.wide is None:
+            return self.crop
+        p = cubic_bezier(*spec.ZOOM_EASE)(progress(t, self.push_at, spec.WIDE_MOVE_SECONDS))
+        a, b = self.wide, self.crop
+        return Rect(*(u + (v - u) * p for u, v in zip(a, b)))
 
 
 @dataclass(frozen=True)
@@ -150,6 +168,17 @@ def fit_crop(crop: Rect, size: tuple[int, int]) -> Rect:
     x = min(max(cx - w / 2, 0), sw - w)
     y = min(max(cy - h / 2, 0), sh - h)
     return Rect(round(x, 2), round(y, 2), round(w, 2), round(h, 2))
+
+
+def wide_rect(size: tuple[int, int]) -> Rect:
+    """The whole page as recorded, in the window's 1.95:1 shape: full width, top aligned (W9)."""
+    whole = fit_crop(Rect(0, 0, size[0], size[1]), size)
+    return Rect(whole.x, 0.0, whole.w, whole.h)
+
+
+def is_tight(crop: Rect, size: tuple[int, int]) -> bool:
+    """A crop that leaves out enough of the page that a viewer needs to see the page first (W9)."""
+    return crop.w < spec.WIDE_TIGHT * wide_rect(size).w
 
 
 def source_to_rest(point: tuple[float, float], shot: Shot) -> tuple[float, float]:

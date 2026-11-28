@@ -1,5 +1,5 @@
-"""Behaviour of scripts/plan-lint.py: numbers on screen against the voiceover (N1) and monotony (N2),
-read from demo.json alone. Run: python3 -I tests/test_plan_lint.py"""
+"""Behaviour of scripts/plan-lint.py: numbers on screen against the voiceover (N1), monotony (N2) and
+scenes that open straight on a tight crop (W9), read from demo.json alone. Run: python3 -I tests/test_plan_lint.py"""
 
 import importlib.util
 import json
@@ -160,6 +160,32 @@ class MonotonyTests(unittest.TestCase):
 
     def test_default_position_pills_are_not_flagged(self):
         self.assertEqual(self.runs(scene("01", "A"), scene("02", "B"), scene("03", "C")), [])
+
+
+class OpeningTests(unittest.TestCase):
+    TIGHT = [500, 100, 900, 460]
+
+    def opening(self, *sequence: dict) -> list:
+        return items(plan_lint.lint(demo(*sequence)), "W9")
+
+    def test_a_tight_scene_with_room_to_open_wide_passes(self):
+        self.assertEqual(self.opening(card("Hi"), scene("01", crop=self.TIGHT)), [])
+
+    def test_wide_false_right_after_a_card_is_flagged(self):
+        found = self.opening(card("Hi"), scene("01", crop=self.TIGHT, wide=False))
+        self.assertEqual(len(found), 1)
+        self.assertIn("opens straight on a tight crop", found[0][1])
+
+    def test_wide_false_continuing_a_scene_in_the_same_window_passes(self):
+        self.assertEqual(self.opening(scene("01", crop=self.TIGHT), scene("02", crop=self.TIGHT, wide=False)), [])
+
+    def test_a_zoom_too_early_to_show_the_page_first_is_flagged(self):
+        found = self.opening(card("Hi"), scene("01", crop=self.TIGHT, zooms=[{"at": 0.5, "focus": [900, 300]}]))
+        self.assertEqual(len(found), 1)
+        self.assertIn("first zoom starts at 0.5s", found[0][1])
+
+    def test_a_crop_close_to_the_whole_page_is_not_tight(self):
+        self.assertEqual(self.opening(card("Hi"), scene("01", crop=[0, 0, 1800, 923], wide=False)), [])
 
 
 class CommandLineTests(unittest.TestCase):

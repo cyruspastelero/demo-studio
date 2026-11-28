@@ -32,11 +32,42 @@ def piecewise(values: Sequence[int], start_frame: int) -> str:
 
 
 def shot_chain(label_in: str, shot, out: str) -> str:
+    if shot.wide is not None:
+        return wide_shot_chain(label_in, shot, out)
     crop = shot.crop
     w, h, x, y = (int(round(v)) for v in (crop.w, crop.h, crop.x, crop.y))
     return (f"[{label_in}]setpts=(PTS-STARTPTS)/{shot.speed},fps={spec.FPS},crop={w}:{h}:{x}:{y},"
             f"scale={int(spec.WINDOW_REST.w)}:{int(spec.WINDOW_REST.h)}:flags=lanczos,setsar=1,format=rgb24,"
             f"tpad=stop_mode=clone:stop={spec.FPS * 2},trim=end_frame={shot.frames},setpts=PTS-STARTPTS[{out}]")
+
+
+def wide_frames(shot) -> list[tuple[int, int, int, int]]:
+    """(scaled width, scaled height, x, y) per frame: the whole take scaled so that this frame's
+    crop_at() rect fills the rest window, and where it sits (negative, top left) inside it (W9)."""
+    sw, sh = shot.source_size
+    out = []
+    for i in range(shot.frames):
+        rect = shot.crop_at(i / spec.FPS)
+        k = spec.WINDOW_REST.w / rect.w
+        w, h = round(sw * k), round(sh * k)
+        out.append((w, h, -round(rect.x * w / sw), -round(rect.y * h / sh)))
+    return out
+
+
+def wide_shot_chain(label_in: str, shot, out: str) -> str:
+    """A shot that opens on the whole page and pushes into its crop: the take is scaled per frame and
+    placed on a fixed rest-window canvas, so the window itself never moves (W7, W9)."""
+    frames = wide_frames(shot)
+    w, h, x, y = (piecewise([f[i] for f in frames], 0) for i in range(4))
+    rest_w, rest_h = int(spec.WINDOW_REST.w), int(spec.WINDOW_REST.h)
+    return (f"[{label_in}]setpts=(PTS-STARTPTS)/{shot.speed},fps={spec.FPS},"
+            f"tpad=stop_mode=clone:stop={spec.FPS * 2},trim=end_frame={shot.frames},setpts=PTS-STARTPTS,"
+            f"scale=w='{w}':h='{h}':eval=frame:flags=lanczos,setsar=1[{out}w];"
+            f"color=c=white:s={rest_w}x{rest_h}:r={spec.FPS},trim=end_frame={shot.frames}[{out}c];"
+            # No format filter between the scale and the overlay: one negotiated once would keep the
+            # first frame's size. The scale converts straight to the overlay's 4:4:4.
+            f"[{out}c][{out}w]overlay=x='{x}':y='{y}':eval=frame:shortest=1:format=yuv444,format=rgb24,"
+            f"setpts=PTS-STARTPTS[{out}]")
 
 
 def render_run_content(n: int, run: Run, plan: Plan, out: Path) -> None:

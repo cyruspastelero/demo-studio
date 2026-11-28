@@ -165,6 +165,7 @@
     {
       "scene": "02b",
       "stem": "02-six-stages",
+      "wide": false,
       "take": 1,
       "trim": [
         4.2,
@@ -215,6 +216,7 @@
     {
       "scene": "03b",
       "stem": "03-editor",
+      "wide": false,
       "take": 1,
       "trim": [
         12.4,
@@ -367,6 +369,7 @@
     {
       "scene": "11b",
       "stem": "11-github",
+      "wide": false,
       "take": 1,
       "trim": [
         3.4,

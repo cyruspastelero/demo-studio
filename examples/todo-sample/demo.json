@@ -13,7 +13,7 @@
     { "scene": "01", "stem": "01-add-todos", "take": 1, "trim": [0.8, 10.2], "speed": 1.5,
       "crop": [540, 150, 840, 430],
       "callouts": [{ "at": 0.76, "dur": 3.5, "kind": "statement", "text": "Type it. Press Enter." }] },
-    { "scene": "02", "stem": "02-complete-and-filter", "take": 1, "trim": [0.8, 12.8], "speed": 1.25,
+    { "scene": "02", "stem": "02-complete-and-filter", "take": 1, "trim": [0.8, 12.8], "speed": 1.25, "wide": false,
       "crop": [540, 150, 840, 430],
       "zooms": [
         { "at": 0.3, "focus": [800, 380], "dur": 2.4 },
@@ -24,7 +24,7 @@
         { "rect": [1164, 515, 143, 26], "dur": 1.5 }
       ],
       "voiceover": "Tick things off as you finish them. The filters show what is still active, and what is already done." },
-    { "scene": "03", "stem": "03-clear-completed", "take": 1, "trim": [0.0, 5.4], "speed": 1,
+    { "scene": "03", "stem": "03-clear-completed", "take": 1, "trim": [0.0, 5.4], "speed": 1, "wide": false,
       "crop": [540, 150, 840, 430],
       "callouts": [{ "at": 1.7, "dur": 3.2, "kind": "statement", "text": "Done ones, gone." }],
       "voiceover": "Then clear the finished ones in one click, and the list is clean again." },

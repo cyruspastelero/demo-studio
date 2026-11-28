@@ -95,6 +95,21 @@
             }
           }
         },
+        "shots": {
+          "type": "array", "maxItems": 500,
+          "items": {
+            "type": "object", "required": ["scene", "start", "end", "tight", "opens", "continues"], "additionalProperties": false,
+            "properties": {
+              "scene": { "$ref": "#/$defs/key" },
+              "start": { "$ref": "#/$defs/seconds" },
+              "end": { "$ref": "#/$defs/seconds" },
+              "tight": { "type": "boolean" },
+              "opens": { "enum": ["wide", "crop"] },
+              "continues": { "type": "boolean" },
+              "settled": { "$ref": "#/$defs/seconds" }
+            }
+          }
+        },
         "cards": {
           "type": "array", "maxItems": 200,
           "items": {

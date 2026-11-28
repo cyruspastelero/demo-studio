@@ -381,6 +381,13 @@
           },
           "description": "[x, y, w, h] in source px (the 1920x1080 take) around the UI that matters. Widened to the window's 1.95:1 shape. App body text should end up >= 18 px cap height: w <= 1560 x (cap px in the take) / 18."
         },
+        "wide": {
+          "anyOf": [
+            { "type": "boolean" },
+            { "type": "number", "minimum": 0.6, "maximum": 4 }
+          ],
+          "description": "How the scene opens when its crop is tight (under 85% of the take's width): on the whole page as recorded, held about 1.2 s, then eased into the crop (bar W9). Default true. A number sets the hold in seconds. false only for a part that continues the scene right before it in the same window, which already showed this page."
+        },
         "zooms": {
           "type": "array",
           "items": {

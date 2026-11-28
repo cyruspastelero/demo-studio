@@ -49,6 +49,7 @@ A finished cut opens directly on a title, with no black frame. It sits on a soft
 | W6 | Entry | The window rises from below frame (top edge at y≈1000) to y=100 over **0.70 s, ease-out cubic**. Measured top edge: 6.000→860, 6.200→377, 6.300→242, 6.400→160, 6.500→118, 6.600→102, 6.667→100. The previous card fades and blurs out over the same span. |
 | W7 | Continuity | Inside a sequence, clips **hard-cut inside a stationary window**. The frame never jumps or re-enters. A light-to-dark UI switch is a 3-frame cut with the same geometry. |
 | W8 | Exit to a title card | The window fades out in 4 frames (about 0.13 s), then the title's first word starts. There is no dip through an empty background between two window shots. |
+| W9 | Wide first | A scene with a tight crop (under 85% of the take's width) **opens on the whole page as recorded**, held about **1.2 s** once the window is at rest, so the viewer sees where they are. Then the content eases into the crop over 1.1 s (ease-in-out sine, like Z4) inside the stationary window, and stays there or cuts. A part that continues the scene right before it in the same window may open on its crop (`"wide": false`). A scene never opens straight on a tight crop. |
 
 ### 2.4 Framing changes (zoom)
 
@@ -229,6 +230,7 @@ Run these on any new render. Each line is pass/fail. Frame grabs: `ffmpeg -ss <t
 - [ ] Entry: window top edge goes from ≥ 860 to 100 within 0.7 s ±0.1, mostly in the first half (ease-out).
 - [ ] No frame between two window shots shows only the background (except a title card).
 - [ ] No uninterrupted window shot is longer than 8 s.
+- [ ] Every tightly cropped scene shows the whole page first and then pushes in, unless it continues the scene before it (`check-cut.py` W9, `plan-lint.py` W9).
 
 **Every zoom**
 - [ ] The whole window scales (its edges move); content does not zoom inside a fixed frame.

@@ -12,7 +12,7 @@
     { "card": "setup", "kind": "section", "title": "How does it get set up?", "accent": "set", "duration": 2.4 },
     { "scene": "02", "stem": "02-install", "take": 1, "speed": 1.5, "crop": [320, 120, 1280, 656] },
     { "scene": "03", "stem": "03-hero-moment", "take": 1, "speed": 1, "crop": [320, 120, 1280, 656],
-      "zooms": [{ "at": 1.0, "focus": [1340, 560], "dur": 3.0 }],
+      "zooms": [{ "at": 2.4, "focus": [1340, 560], "dur": 3.0 }],
       "highlights": [{ "rect": [1260, 540, 160, 40] }],
       "voiceover": "Then the one thing it does best, said in a single sentence." },
     { "card": "outro", "kind": "end", "title": "Product in one line.", "accent": "line.", "subtitle": "where-to-get-it.com", "duration": 7.9, "outro": 5.0,

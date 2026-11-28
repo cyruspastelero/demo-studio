@@ -50,6 +50,11 @@ engine bakes in every look value; your job is the per-scene fields below, then S
    | `callouts: [{at, dur, kind, text}]` | `statement` (at most 6 words) or `person` (`text` name, `role`, `avatar` image path) | C8: 3 to 5 s, one at a time; Z7: never during a zoom |
    | cards: `kind`, `accent` | `hero` (title + subtitle), `section` (one question title), `end` (last item: logo, title, tagline, sweep, outro) ; `accent` = the one key word | T9: exactly one accent word |
 
+   Wide first (W9): a scene with a tight crop opens on the whole page for about 1.2 s, then eases
+   into the crop. Start its first zoom after that: about 3 s into a scene that follows a card, 2.3 s
+   otherwise (earlier shortens the wide hold). Set `"wide": false` only on a part that continues the
+   scene right before it.
+
    Times in a scene are seconds after `trim` and `speed`. Crop width rule of thumb: `w <= 1560 x
    (cap height of body text in the take, px) / 18`. A first-scene pill at `at: 0.76` enters just
    after the window lands. Old fields still build (`zoom` becomes one 1.15x zoom, `caption` a pill)
@@ -112,6 +117,7 @@ the picture, and again after Step 3 on the narrated cut for the sound.
    | `C4` pill text not in the product colour | Set `brand.accent` from the product and rebuild |
    | `H8` the UI under the box moves / the box frames an empty area | The take scrolls or reflows under the box (it samples the raw take at the box's start, middle and end). Re-time `at`/`dur` to a still moment or re-measure `rect`; if the page must scroll there, re-record that scene with the target still while it is shown |
    | `P2` shot over 8 s | Add a zoom or cut the scene with `trim` |
+   | `W9` scene opens straight on a tight crop | Start its first zoom later or lengthen `trim`, so the whole page shows first; `"wide": false` only for a part that continues the scene before it |
    | `K1-K2` no cursor, a dot or a click circle in the footage | The take was recorded with another cursor; re-record with `PROJECT.cursor = 'hand'` (or `'arrow'` for developer tools) |
    | `X2` / `X3` | The last item must be a card (`kind: end`, `outro` > 0) |
 

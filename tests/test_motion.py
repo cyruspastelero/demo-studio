@@ -146,6 +146,33 @@ class BuildTimeProbe(Fixtures):
         self.assertTrue(any("sits over the next clip" in w for w in warnings), warnings)
 
 
+class CheckCutOpeningShots(unittest.TestCase):
+    """W9 in check-cut.py: a tight scene must open on the whole page unless it continues the one before."""
+
+    def rows(self, shots):
+        report = check_cut.Report()
+        check_cut.check_opening_shots(report, {"shots": shots})
+        return [(r["status"], r["item"]) for r in report.rows]
+
+    def shot(self, opens, tight=True, continues=False):
+        return {"scene": "01", "start": 2.0, "end": 6.0, "tight": tight, "opens": opens, "continues": continues}
+
+    def test_a_scene_that_pushes_in_from_the_whole_page_passes(self):
+        self.assertEqual(self.rows([self.shot("wide")]), [("PASS", "W9")])
+
+    def test_a_tight_scene_that_opens_on_its_crop_fails(self):
+        self.assertEqual(self.rows([self.shot("crop")]), [("FAIL", "W9")])
+
+    def test_a_continuation_or_a_loose_crop_may_open_on_its_crop(self):
+        self.assertEqual(self.rows([self.shot("crop", continues=True), self.shot("crop", tight=False)]),
+                         [("PASS", "W9")])
+
+    def test_an_old_plan_without_shots_is_a_look_line(self):
+        report = check_cut.Report()
+        check_cut.check_opening_shots(report, {})
+        self.assertEqual(report.rows[0]["status"], "LOOK")
+
+
 class BrandColours(unittest.TestCase):
     def test_checker_uses_the_cuts_brand_colours(self):
         plan = {"brand": {"accent": "#1E6FD9", "sweep": ["#0A84FF", "#30D158"]}}

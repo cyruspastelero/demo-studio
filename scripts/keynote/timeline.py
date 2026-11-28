@@ -3,13 +3,14 @@ highlight placed on the cut's clock. Problems that make a render impossible rais
 that only miss the quality bar become warnings (build-keynote.py --strict turns them into errors)."""
 from __future__ import annotations
 
+import dataclasses
 from pathlib import Path
 from typing import Callable
 
 from . import spec
 from .voice_sync import Measure, WordCues
 from .model import (Callout, Card, Highlight, Plan, PlanError, Run, Shot, Zoom, _card_from, _shot_from,
-                    source_to_rest)
+                    is_tight, source_to_rest, wide_rect)
 
 Probe = Callable[[Path], tuple[float, tuple[int, int]]]
 
@@ -35,6 +36,9 @@ def build_plan(cfg: dict, raw_dir: Path, probe: Probe, measure: Measure | None =
     if any(c.kind == "end" for c in cards[:-1]) or (cards and cards[-1].kind == "end" and items[-1] is not cards[-1]):
         raise PlanError("an end card (kind \"end\") must be the last item of the sequence")
     runs = _runs(items, shots, sequence, warn, cues)
+    shots = _open_wide(shots, runs, sequence, warn)
+    by_index = {s.index: s for s in shots}
+    items = [by_index.get(i.index, i) if isinstance(i, Shot) else i for i in items]
     zoom_spans = [(r.start / spec.FPS + z.at, r.start / spec.FPS + z.end) for r in runs for z in r.zooms]
     callouts = _callouts(sequence, shots, runs, zoom_spans, warn, cues)
     highlights = _highlights(sequence, shots, runs, warn, cues)
@@ -66,6 +70,45 @@ def _runs(items: list, shots: tuple[Shot, ...], sequence: list[dict], warn: list
                             fade_out=item is not None))
             current = []
     return tuple(runs)
+
+
+def _open_wide(shots: tuple[Shot, ...], runs: tuple[Run, ...], sequence: list[dict],
+               warn: list[str]) -> tuple[Shot, ...]:
+    """W9: a scene with a tight crop opens on the whole page, holds it WIDE_HOLD s once the window is
+    at rest, then eases into its crop. The push must land before the scene's first zoom (or a box
+    with a fixed `at`) and leave WIDE_AFTER s on the crop; when it cannot, the scene opens on its
+    crop with a warning. `"wide": false` opts a part out (it continues a part already shown wide);
+    `"wide": <seconds>` sets the hold."""
+    out = list(shots)
+    for run in runs:
+        for k, n in enumerate(run.shots):
+            shot = shots[n]
+            item = sequence[shot.index]
+            choice = item.get("wide", True)
+            if choice is False and k > 0:
+                out[n] = dataclasses.replace(shot, continues=True)
+            if choice is False or "crop" not in item or not is_tight(shot.crop, shot.source_size):
+                continue
+            seconds = shot.frames / spec.FPS
+            offset = (shot.start - run.start) / spec.FPS
+            lead = spec.ENTRY_SECONDS if k == 0 else 0.0
+            hold = spec.WIDE_HOLD if choice is True else float(choice)
+            starts = [z.at - offset for z in run.zooms if offset <= z.at < offset + seconds]
+            starts += [float(h["at"]) for h in item.get("highlights", [])
+                       if isinstance(h.get("at"), (int, float)) and not isinstance(h.get("at"), bool)]
+            limit = min([seconds - spec.WIDE_AFTER, *starts])
+            hold = min(hold, limit - spec.WIDE_MOVE_SECONDS - lead)
+            if hold < spec.WIDE_MIN_HOLD:
+                need = lead + spec.WIDE_MIN_HOLD + spec.WIDE_MOVE_SECONDS
+                reason = (f"its first zoom or box starts at {min(starts):.1f}s" if starts and min(starts) < seconds - spec.WIDE_AFTER
+                          else f"the scene is only {seconds:.1f}s")
+                warn.append(f"sequence[{shot.index}] (scene {shot.key}): opens straight on its tight crop, since {reason}. "
+                            f"Show the whole page first (W9): start the first zoom at {need:.1f}s or later, give the "
+                            f"scene at least {need + spec.WIDE_AFTER:.1f}s, or set \"wide\": false when the part "
+                            "before it already showed this page")
+                continue
+            out[n] = dataclasses.replace(shot, wide=wide_rect(shot.source_size), push_at=round(lead + hold, 3))
+    return tuple(out)
 
 
 def _zooms(item: dict, shot: Shot, run_start: int, warn: list[str], cues: WordCues) -> list[Zoom]:

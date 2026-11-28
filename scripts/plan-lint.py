@@ -10,6 +10,9 @@ Usage: plan-lint.py DEMO_DIR_OR_DEMO_JSON [--strict] [--json OUT.json]
       H264), times (10:30) and bare years (1900 to 2099) are not number claims.
   N2  monotony: three or more scenes in a row that each zoom within their first second, or whose
       first callout has the same kind and an explicit, identical `pos`. A card breaks a run.
+  W9  a scene that opens straight on a tight crop: `"wide": false` on a scene that does not follow
+      another scene in the same window, or a first zoom so early that the engine cannot show
+      the whole page first. "Tight" is a crop under 85% of a 1920 px take's width.
 Exit code 0 unless a line FAILs. Python standard library only; no footage needed.
 """
 from __future__ import annotations
@@ -26,6 +29,9 @@ import demolib as lib  # noqa: E402
 
 TOOL = "plan-lint"
 RUN_LENGTH = 3            # N2: this many scenes in a row is monotony
+TAKE_WIDTH = 1920         # W9: the take width the crops are measured in
+# W9: the engine's numbers (scripts/keynote/spec.py), copied so this lint stays standard-library only.
+WIDE_TIGHT, WIDE_MIN_HOLD, WIDE_MOVE, WINDOW_IN = 0.85, 0.6, 1.1, 0.7
 EARLY_ZOOM_SECONDS = 1.0  # N2: a zoom that starts this soon after the scene begins
 
 Finding = tuple[str, str]  # (check id, message)
@@ -184,8 +190,31 @@ def check_monotony(sequence: list[dict]) -> list[Finding]:
     return zooms + pills
 
 
+def check_opening(sequence: list[dict]) -> list[Finding]:
+    """W9: every scene with a tight crop shows the whole page before it pushes into the crop."""
+    findings = []
+    for index, item in enumerate(sequence):
+        crop = item.get("crop")
+        if "scene" not in item or not crop or crop[2] >= WIDE_TIGHT * TAKE_WIDTH:
+            continue
+        previous = sequence[index - 1] if index else {}
+        if item.get("wide") is False:
+            if "scene" not in previous:
+                findings.append(("W9", f"{label(item, index)}: \"wide\": false, but no scene comes right before it in "
+                                 "the same window, so it opens straight on a tight crop; drop `wide` so the whole page "
+                                 "shows first"))
+            continue
+        need = (WINDOW_IN if "scene" not in previous else 0.0) + WIDE_MIN_HOLD + WIDE_MOVE
+        starts = [float(z["at"]) for z in item.get("zooms", []) if isinstance(z.get("at"), (int, float))]
+        if starts and min(starts) < need:
+            findings.append(("W9", f"{label(item, index)}: the first zoom starts at {min(starts):g}s, before the whole "
+                             f"page can show and push in ({need:.1f}s); start it later, or set \"wide\": false if "
+                             "the scene before it already showed this page"))
+    return findings
+
+
 def lint(demo: dict) -> list[Finding]:
-    return check_numbers(demo["sequence"])[0] + check_monotony(demo["sequence"])
+    return check_numbers(demo["sequence"])[0] + check_monotony(demo["sequence"]) + check_opening(demo["sequence"])
 
 
 # ---------------------------------------------------------------- command line
@@ -214,9 +243,11 @@ def main() -> int:
     flagged = "FAIL" if args.strict else "LOOK"
     numbers, checked = check_numbers(demo["sequence"])
     monotony = check_monotony(demo["sequence"])
+    opening = check_opening(demo["sequence"])
     print(f"Plan lint for {path} ({len(demo['sequence'])} items). Bar: docs/quality-bar.md.")
     for check, group, ok_text in (("N1", numbers, f"{checked} on-screen number(s) with a voiceover are all said"),
-                                  ("N2", monotony, "no run of three scenes zooming at once or repeating a pill spot")):
+                                  ("N2", monotony, "no run of three scenes zooming at once or repeating a pill spot"),
+                                  ("W9", opening, "every tightly cropped scene shows the whole page first")):
         for _, text in group:
             add(flagged, check, text)
         if not group:
