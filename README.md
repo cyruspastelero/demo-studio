@@ -56,10 +56,10 @@ Real apps, finished by the plugin. Click a preview to watch it in 1080p with sou
 
 **Launch videos**, also made with demo-studio:
 
-| demo-studio launch ad (0:36) | demo-studio walkthrough (1:10) | Switchyard launch ad (0:36) |
+| demo-studio launch ad (0:36) | demo-studio walkthrough (1:30) | Switchyard launch ad (0:36) |
 | --- | --- | --- |
 | [![demo-studio launch ad](docs/img/sample-launch-ad.gif)](https://github.com/cyruspastelero/demo-studio/releases/download/samples/sample-launch-ad.mp4) | [![demo-studio walkthrough](docs/img/sample-launch-poster.jpg)](https://github.com/cyruspastelero/demo-studio/releases/download/samples/sample-launch.mp4) | [![Switchyard launch ad](docs/img/sample-daylight-ad.gif)](https://github.com/cyruspastelero/demo-studio/releases/download/samples/sample-daylight-ad.mp4) |
-| `airy` style. [Files](examples/launch-ad) | Narrated. [Files](examples/demo-studio-launch) | `daylight` style, for [Switchyard](https://github.com/cyruspastelero/switchyard). [Files](examples/switchyard-launch) |
+| Made with `demo-motion`. [An example storyboard](examples/launch-ad) | Narrated. [Files](examples/demo-studio-launch) | `daylight` style, for [Switchyard](https://github.com/cyruspastelero/switchyard). [Files](examples/switchyard-launch) |
 
 ## Quick start
 
