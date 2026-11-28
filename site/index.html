@@ -137,6 +137,40 @@ h1 { font: 500 46px/1.04 var(--sans); letter-spacing: -0.035em; color: var(--sno
 .frame { margin: 0; border-radius: 24px; overflow: hidden; background: #000; box-shadow: var(--inset), 0 30px 60px rgba(0, 0, 0, 0.35); }
 .frame video, .frame img { display: block; width: 100%; height: auto; }
 .frame video { aspect-ratio: 16 / 9; }
+/* Video player: the native controls, replaced by a glass bar in the page's own style once the script runs */
+.player { position: relative; }
+.player video { cursor: pointer; }
+.player .big { position: absolute; inset: 0; margin: auto; width: max-content; height: max-content; display: inline-flex; align-items: center; gap: 10px;
+  padding: 12px 22px 12px 16px; border: 0; border-radius: 9999px; cursor: pointer; background: var(--snow); color: #161616; font: 500 15px var(--sans);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45); transition: transform .25s cubic-bezier(.2, .7, .2, 1), background-color .25s, opacity .3s; }
+.player .big:hover { transform: scale(1.04); background: var(--bone); }
+.player .big span { color: #6b6b6b; font: 400 13px var(--mono); font-variant-numeric: tabular-nums; }
+.player .big svg { width: 18px; height: 18px; }
+.player.started .big { opacity: 0; pointer-events: none; }
+.player .bar { position: absolute; left: 16px; right: 16px; bottom: 16px; display: flex; align-items: center; gap: 6px; padding: 6px 10px 6px 6px;
+  border-radius: 9999px; background: rgba(0, 0, 0, 0.5); box-shadow: var(--inset); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  color: var(--bone); font: 400 12.5px var(--mono); font-variant-numeric: tabular-nums; opacity: 0; transform: translateY(6px); pointer-events: none;
+  transition: opacity .3s ease, transform .3s ease; }
+.player.started .bar { opacity: 1; transform: none; pointer-events: auto; }
+.player.started.idle .bar { opacity: 0; transform: translateY(6px); pointer-events: none; }
+.player.started.idle { cursor: none; }
+.player .bar button { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border: 0; border-radius: 9999px; background: transparent; color: var(--snow); cursor: pointer; transition: background-color .2s; }
+.player .bar button:hover { background: rgba(255, 255, 255, 0.12); }
+.player .bar svg { width: 16px; height: 16px; }
+.player .time { flex: none; padding: 0 6px; color: var(--ash); }
+.player .seek { flex: 1; min-width: 0; height: 34px; margin: 0; background: transparent; cursor: pointer; -webkit-appearance: none; appearance: none; --fill: 0%; }
+.player .seek::-webkit-slider-runnable-track { height: 3px; border-radius: 3px; background: linear-gradient(90deg, var(--snow) var(--fill), rgba(255, 255, 255, 0.22) var(--fill)); }
+.player .seek::-moz-range-track { height: 3px; border-radius: 3px; background: linear-gradient(90deg, var(--snow) var(--fill), rgba(255, 255, 255, 0.22) var(--fill)); }
+.player .seek::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; margin-top: -4.5px; border-radius: 50%; background: var(--snow); box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.14); }
+.player .seek::-moz-range-thumb { width: 12px; height: 12px; border: 0; border-radius: 50%; background: var(--snow); }
+.player .seek:focus-visible { outline: none; }
+.player .seek:focus-visible::-webkit-slider-thumb { outline: 2px solid var(--snow); outline-offset: 3px; }
+.player:fullscreen { border-radius: 0; display: grid; place-items: center; }
+.player:fullscreen video { width: 100%; height: 100%; aspect-ratio: auto; object-fit: contain; }
+@media (max-width: 640px) {
+  .player .bar { left: 8px; right: 8px; bottom: 8px; }
+  .player .time .total { display: none; }
+}
 .note { font-size: 13px; letter-spacing: 0.02em; color: var(--slate); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; margin-top: -16px; }
 .note a { color: var(--ash); }
 
@@ -217,6 +251,7 @@ footer { position: relative; overflow: hidden; container-type: inline-size; marg
   .dock { width: calc(100% - 32px); justify-content: space-between; }
 }
 @media (prefers-reduced-motion: reduce) {
+  .player .big, .player .bar { transition: none; }
   .sky { transition: none; }
   .stage img { transition: none; }
   .scene.seen h2 { animation: none; background-position: 0 0; }
@@ -262,7 +297,7 @@ footer { position: relative; overflow: hidden; container-type: inline-size; marg
         <p>Tell Claude Code, Codex, Cursor, Gemini CLI or Copilot what the demo should show. It writes the plan and shows it to you, then clicks through your product in Chrome, records each scene with secrets blurred, and cuts the video.</p>
       </header>
       <figure class="frame">
-        <video controls preload="none" playsinline poster="img/sample-showcase-poster.jpg" aria-label="Study app showcase, made by demo-studio">
+        <video controls preload="none" playsinline poster="img/sample-showcase-poster.jpg" data-length="1:18" aria-label="Study app showcase, made by demo-studio">
           <source src="media/sample-showcase.mp4" type="video/mp4">
         </video>
       </figure>
@@ -318,7 +353,7 @@ footer { position: relative; overflow: hidden; container-type: inline-size; marg
         <p>Sound effects and music are included. The effects are CC0 recordings from Kenney (clicks, scrolls, toggles, toasts and more), each placed on the frame its action happens. The nine music tracks cover launch ads and narration beds, free to use in the videos you make.</p>
       </header>
       <figure class="frame">
-        <video controls preload="none" playsinline poster="img/sample-launch-poster.jpg" aria-label="The narrated walkthrough of demo-studio, made with demo-studio">
+        <video controls preload="none" playsinline poster="img/sample-launch-poster.jpg" data-length="1:10" aria-label="The narrated walkthrough of demo-studio, made with demo-studio">
           <source src="media/sample-launch.mp4" type="video/mp4">
         </video>
       </figure>
@@ -446,6 +481,87 @@ tabs.forEach((tab, i) => {
     selectLook(next);
   });
 });
+
+// Video players: swap the native controls for a bar in the page's style. Without the script, the native controls stay.
+const icons = {
+  play: '<svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M4.5 2.6v10.8a.6.6 0 0 0 .9.5l8.6-5.4a.6.6 0 0 0 0-1L5.4 2.1a.6.6 0 0 0-.9.5z"/></svg>',
+  pause: '<svg viewBox="0 0 16 16" aria-hidden="true"><rect fill="currentColor" x="3.5" y="2.5" width="3" height="11" rx=".8"/><rect fill="currentColor" x="9.5" y="2.5" width="3" height="11" rx=".8"/></svg>',
+  sound: '<svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M2 6h2.5L8 3v10L4.5 10H2z"/><path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" d="M10.5 5.5a3.5 3.5 0 0 1 0 5M12.5 3.5a6.3 6.3 0 0 1 0 9"/></svg>',
+  muted: '<svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M2 6h2.5L8 3v10L4.5 10H2z"/><path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" d="M10.5 6l4 4M14.5 6l-4 4"/></svg>',
+  full: '<svg viewBox="0 0 16 16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" d="M2.5 6V2.5H6M10 2.5h3.5V6M13.5 10v3.5H10M6 13.5H2.5V10"/></svg>',
+};
+const clock = t => { t = Math.max(0, Math.floor(t || 0)); return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`; };
+for (const video of document.querySelectorAll('.frame video')) {
+  const box = video.closest('.frame');
+  const name = video.getAttribute('aria-label');
+  box.classList.add('player');
+  video.removeAttribute('controls');
+  box.insertAdjacentHTML('beforeend', `
+    <button type="button" class="big" aria-label="Play: ${name}">${icons.play}Play${video.dataset.length ? ` <span>${video.dataset.length}</span>` : ''}</button>
+    <div class="bar">
+      <button type="button" class="toggle" aria-label="Play">${icons.play}</button>
+      <span class="time"><span class="now">0:00</span><span class="total"> / ${video.dataset.length || '0:00'}</span></span>
+      <input class="seek" type="range" min="0" max="1000" value="0" step="1" aria-label="Seek: ${name}">
+      <button type="button" class="mute" aria-label="Mute">${icons.sound}</button>
+      <button type="button" class="fullscreen" aria-label="Full screen">${icons.full}</button>
+    </div>`);
+  const [big, toggle, seek, mute, full] = ['.big', '.toggle', '.seek', '.mute', '.fullscreen'].map(q => box.querySelector(q));
+  const now = box.querySelector('.now'), total = box.querySelector('.total');
+  const playPause = () => (video.paused || video.ended ? video.play() : video.pause());
+  let idleTimer;
+  const wake = () => {
+    box.classList.remove('idle');
+    clearTimeout(idleTimer);
+    if (!video.paused) idleTimer = setTimeout(() => box.classList.add('idle'), 2200);
+  };
+  big.addEventListener('click', () => { video.play(); toggle.focus({ preventScroll: true }); });
+  video.addEventListener('click', playPause);
+  toggle.addEventListener('click', playPause);
+  video.addEventListener('play', () => {
+    box.classList.add('started');
+    toggle.innerHTML = icons.pause; toggle.setAttribute('aria-label', 'Pause');
+    for (const other of document.querySelectorAll('.player video')) if (other !== video) other.pause();
+    wake();
+  });
+  video.addEventListener('pause', () => { toggle.innerHTML = icons.play; toggle.setAttribute('aria-label', 'Play'); wake(); });
+  video.addEventListener('loadedmetadata', () => { total.textContent = ` / ${clock(video.duration)}`; });
+  video.addEventListener('timeupdate', () => {
+    const share = video.duration ? video.currentTime / video.duration : 0;
+    now.textContent = clock(video.currentTime);
+    seek.value = Math.round(share * 1000);
+    seek.style.setProperty('--fill', `${share * 100}%`);
+    seek.setAttribute('aria-valuetext', `${clock(video.currentTime)} of ${clock(video.duration)}`);
+  });
+  seek.addEventListener('input', () => {
+    if (video.duration) video.currentTime = (seek.value / 1000) * video.duration;
+    seek.style.setProperty('--fill', `${seek.value / 10}%`);
+  });
+  mute.addEventListener('click', () => { video.muted = !video.muted; });
+  video.addEventListener('volumechange', () => {
+    mute.innerHTML = video.muted ? icons.muted : icons.sound;
+    mute.setAttribute('aria-label', video.muted ? 'Unmute' : 'Mute');
+  });
+  full.addEventListener('click', () => {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else if (box.requestFullscreen) box.requestFullscreen();
+    else if (video.webkitEnterFullscreen) video.webkitEnterFullscreen();
+  });
+  box.addEventListener('pointermove', wake);
+  box.addEventListener('focusin', wake);
+  box.addEventListener('keydown', event => {
+    if (event.target === seek && event.key.startsWith('Arrow')) return;
+    const keys = {
+      ' ': playPause, k: playPause, m: () => mute.click(), f: () => full.click(),
+      ArrowRight: () => { video.currentTime += 5; }, ArrowLeft: () => { video.currentTime -= 5; },
+    };
+    const run = keys[event.key];
+    if (!run || (event.key === ' ' && event.target.tagName === 'BUTTON')) return;
+    event.preventDefault();
+    run();
+    wake();
+  });
+  video.addEventListener('ended', () => { box.classList.remove('started', 'idle'); video.currentTime = 0; });
+}
 
 // The live editor is laid out at 1280 px and scaled to fit its frame.
 const editor = document.querySelector('.editor');
