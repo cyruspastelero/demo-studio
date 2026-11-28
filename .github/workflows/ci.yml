@@ -53,6 +53,7 @@ jobs:
           python3 -I tests/test_storyboard.py
           python3 -I tests/test_check_release.py
           python3 -I tests/test_check_cut.py
+          python3 -I tests/test_config_errors.py
       - name: Node unit tests (title card inputs, fonts, frame receiver, scene helpers)
         run: |
           node tests/test_card_safety.mjs

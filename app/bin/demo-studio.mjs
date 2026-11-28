@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Starts the local editor: node app/bin/demo-studio.mjs [demo-folder] [--port 4317] [--no-open] [--dev]
-import { spawn } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import { existsSync, readdirSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -59,6 +59,22 @@ async function ensureUi() {
   await vite.build({ root: APP_DIR, logLevel: 'warn' });
 }
 
+// A checkout behind origin/main rejects demo.json files written with newer fields, so say so up front.
+// Reads refs already fetched (no network); prints nothing outside a git checkout.
+function warnIfBehind() {
+  let behind = 0;
+  try {
+    behind = Number(execFileSync('git', ['-C', REPO, 'rev-list', '--count', 'HEAD..origin/main'],
+      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 5000 }).trim());
+  } catch {
+    return;
+  }
+  if (behind > 0) {
+    console.warn(`demo-studio: this copy is ${behind} commit${behind === 1 ? '' : 's'} behind origin/main, so `
+      + `demo.json files made with a newer version may fail to load. Update: cd "${REPO}" && git checkout main && git pull`);
+  }
+}
+
 function openBrowser(url) {
   const [cmd, args] = process.platform === 'darwin' ? ['open', [url]]
     : process.platform === 'win32' ? ['cmd', ['/c', 'start', '', url]] : ['xdg-open', [url]];
@@ -68,6 +84,7 @@ function openBrowser(url) {
 }
 
 const options = parseArgs(process.argv.slice(2));
+warnIfBehind();
 // npm run changes the working folder to the repo; INIT_CWD is where the command was typed.
 const cwd = process.env.INIT_CWD ?? process.cwd();
 const folder = options.folder ? resolve(cwd, options.folder) : null;

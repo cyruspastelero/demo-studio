@@ -4,6 +4,10 @@ Notable changes, newest first. Versions follow semver as described in CONTRIBUTI
 
 ## Unreleased
 
+- **Out-of-date installs say so**: when a `demo.json` or `handoff.json` has fields this copy does not
+  know, the error now names the installed version and, in a git checkout, how many commits it is behind
+  `origin/main`, with the fix (update, then restart the editor). Before, a file made with a newer
+  version looked broken.
 - **Looks refreshed**: the four built-in looks now draw titles in one colour (a card's `accent` is
   ignored unless a look sets `title.accent_word: true`, which the engine now honours). `house` moves
   to warm greys with an ember glow and an ember sweep, `midnight` to graphite with an ember glow and

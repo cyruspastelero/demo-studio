@@ -213,9 +213,33 @@ def load_config(path: Path, schema_name: str, tool: str) -> dict:
         sys.exit(f"{tool}: {path.name} is not valid JSON: {error}")
     errors = validate(data, schema_name)
     if errors:
-        sys.exit(f"{tool}: {path.name} does not match schemas/{schema_name}.schema.json:\n  "
-                 + "\n  ".join(errors))
+        message = (f"{tool}: {path.name} does not match schemas/{schema_name}.schema.json:\n  "
+                   + "\n  ".join(errors))
+        if any("unknown field" in e or "must be one of" in e for e in errors):
+            message += (f"\n\nIf {path.name} was written for a newer demo-studio, the unknown fields "
+                        f"and values above are new, not wrong. {install_status(PLUGIN_ROOT)}")
+        sys.exit(message)
     return data
+
+
+def install_status(root: Path) -> str:
+    """One line naming the installed demo-studio version and, in a git checkout, how far it is
+    behind origin/main (from refs already fetched; no network). Never raises."""
+    try:
+        version = json.loads((root / "package.json").read_text()).get("version", "unknown")
+    except (OSError, ValueError):
+        version = "unknown"
+    line = f"You have demo-studio {version}"
+    try:
+        behind = subprocess.run(["git", "-C", str(root), "rev-list", "--count", "HEAD..origin/main"],
+                                capture_output=True, text=True, timeout=5)
+        count = int(behind.stdout.strip()) if behind.returncode == 0 else 0
+    except (OSError, ValueError, subprocess.TimeoutExpired):
+        count = 0
+    if count:
+        return (f"{line}, {count} commits behind origin/main. Update it (in {root}: git checkout main && "
+                "git pull), then restart the editor.")
+    return f"{line}. If that is older than the version that wrote the file, update it and restart the editor."
 
 
 # ---------------------------------------------------------------- path confinement

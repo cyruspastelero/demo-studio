@@ -36,7 +36,7 @@ Chrome page in `scripts/keynote-page.mjs` + `keynote-render.mjs`. Every look val
 
 ```bash
 npm install && bash tests/smoke.sh   # pipeline on synthetic footage, ending in the quality-bar checklist
-python3 -I tests/test_check.py && python3 -I tests/test_narrate.py && python3 -I tests/test_keynote.py && python3 -I tests/test_text_overlays.py && python3 -I tests/test_motion.py && python3 -I tests/test_templates.py && python3 -I tests/test_security.py && python3 -I tests/test_video_gate.py && python3 -I tests/test_plan_lint.py && python3 -I tests/test_check_release.py
+python3 -I tests/test_check.py && python3 -I tests/test_narrate.py && python3 -I tests/test_keynote.py && python3 -I tests/test_text_overlays.py && python3 -I tests/test_motion.py && python3 -I tests/test_templates.py && python3 -I tests/test_security.py && python3 -I tests/test_video_gate.py && python3 -I tests/test_plan_lint.py && python3 -I tests/test_check_release.py && python3 -I tests/test_config_errors.py
 bash tests/smoke-templates.sh        # todo sample with and without "template": "house" (heavy: two builds)
 node tests/test_lib.mjs && node tests/test_card_safety.mjs && node tests/test_fonts.mjs && node tests/test_frame_receiver.mjs && node tests/test_security.mjs
 npm run test:motion                  # launch-ad engine: validator, beat maths, text fitting (no browser)
