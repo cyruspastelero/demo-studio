@@ -56,7 +56,7 @@ ZOOM_MAX = 1.15                                  # Z2
 ZOOM_MOVE_SECONDS = 1.10                         # Z4, ease-in-out sine both ways
 ZOOM_HOLD_DEFAULT = 3.0                          # Z5
 ZOOM_HOLD_RANGE = (2.4, 4.5)                     # Z5 / checklist
-ZOOM_EDGE = 40                                   # Z3, clear on every side
+ZOOM_EDGE = 40                                   # Z3, clear on every side (a look's zoom.edge may lower it)
 ZOOM_PAN_MAX = 70                                # Z3, centre moves at most this far toward the target
 ZOOM_EASE = (0.37, 0, 0.63, 1)                   # Z4, ease-in-out sine as cubic-bezier
 ZOOM_EVERY = None                                # template pacing.zoom_every: warn on a run this long with no zoom
@@ -157,4 +157,6 @@ FONTS = {  # brand.font -> bundled files in assets/fonts (SIL OFL 1.1)
     "inter": {"family": "Inter", "text": "InterVariable.woff2",
               "display": {400: "InterDisplay-Regular.woff2", 500: "InterDisplay-Medium.woff2"}},
     "geist": {"family": "Geist", "text": "GeistVariable.woff2", "display": {}},
+    "geist-mono": {"family": "Geist Mono", "text": "GeistMonoVariable.woff2", "display": {}},
+    "instrument-serif": {"family": "Instrument Serif", "text": "InstrumentSerif-Regular.woff2", "display": {}},  # 400 only
 }

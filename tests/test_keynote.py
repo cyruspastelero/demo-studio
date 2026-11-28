@@ -826,6 +826,12 @@ class LookColoursFollowTheProduct(unittest.TestCase):
         brand = load_brand(looks.brand_config(None, {"accent": "#2563EB"}))
         self.assertTrue(any(self.hue_is_blue(f) for f in brand.fields), brand.fields)
 
+    def test_a_flat_grey_look_gets_no_glow_from_the_accent(self):
+        flat = json.loads((REPO / "look-templates/mono/template.json").read_text())["look"]
+        brand = load_brand(looks.brand_config(flat, {"accent": "#2563EB"}))
+        self.assertEqual(list(brand.fields), [c.upper() for c in flat["brand"]["background"]["fields"]])
+        self.assertEqual(brand.sweep[0], "#2563EB")  # the sweep still follows the product
+
     def test_without_an_accent_the_look_keeps_its_own_colours(self):
         brand = load_brand(looks.brand_config(self.look, {}))
         self.assertEqual(list(brand.sweep), [c.upper() for c in self.look["brand"]["sweep"]])

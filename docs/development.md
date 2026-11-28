@@ -65,6 +65,9 @@ The workflow's build steps:
    build, edits stay in the tab and rendering explains that it needs the local studio.
 2. `bash scripts/build-site.sh _site <folder with sample-*.mp4>` puts the page, logo, fonts, posters,
    the house template frames and the editor (as `editor/`) together. The workflow downloads the
-   sample videos from the `samples` release, so they never go into git.
+   sample videos from the `samples` release, so they never go into git. That includes the four short
+   muted loops in "Pick a look" (`sample-look-<id>.mp4`, 1280x720, under 2 MB each); their posters
+   are `docs/img/sample-look-<id>-poster.jpg`. Upload a new clip with
+   `gh release upload samples sample-look-<id>.mp4 --clobber`.
 
 To preview locally, run both steps and serve `_site` with `python3 -m http.server`.

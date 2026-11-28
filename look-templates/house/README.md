@@ -17,6 +17,5 @@ Built-in look template `house`: the demo-studio default, the look every demo get
 `brand.accent` is left out on purpose: without it, highlight boxes and pills are neutral ink. Titles stay
 one colour (`title.accent_word: false`). A demo sets its product colour in demo.json `brand.accent`.
 
-Previews (`preview/01..06.png`): the todo sample in this look (title, window at rest, zoom with a
-highlight, pill, end card, outro on dark), rendered with `scripts/template-validate.py house
---save-previews`.
+Previews (`preview/01..06.png`): Arkitekto's analytics page (our own footage) in this look: title,
+wide page, the push into the rating with a box, pill, end card, the logo outro on dark.

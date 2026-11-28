@@ -1,7 +1,7 @@
 {
   "id": "midnight",
   "name": "Midnight",
-  "description": "Cinematic and dark: a bigger window on graphite with one low ember glow, large one-colour titles that blur in, a slow window entrance and a plain end card instead of the sweep.",
+  "description": "Cinematic and dark: the app nearly fills the frame with a thin graphite margin, slow push-in zooms that end full-bleed, big titles that blur in word by word, a long rise-in and a plain end card.",
   "best_for": [
     "dark ui",
     "developer tool",
@@ -35,23 +35,24 @@
     },
     "window": {
       "rect": [
-        180,
-        90,
-        1560,
-        800
+        64,
+        40,
+        1792,
+        919
       ],
-      "radius": 16,
-      "shadow": "0 40px 90px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.08)"
+      "radius": 10,
+      "shadow": "0 30px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.07)"
     },
     "zoom": {
-      "scale": 1.15,
-      "dur": 1.6,
+      "scale": 1.07,
+      "dur": 2.0,
       "ease": [
         0.25,
         0,
         0.2,
         1
-      ]
+      ],
+      "edge": 0
     },
     "highlight": {
       "stroke": 3,
@@ -65,19 +66,19 @@
       "halo_alpha": 0.1
     },
     "pill": {
-      "center_y": 968,
-      "height": 64,
+      "center_y": 1012,
+      "height": 56,
       "radius": 999,
-      "font_size": 30,
+      "font_size": 26,
       "kinds": [
         "statement",
         "person"
       ]
     },
     "title": {
-      "size": 156,
+      "size": 184,
       "weight": 600,
-      "tracking": -6,
+      "tracking": -7,
       "reveal": "word-blur",
       "accent_word": false
     },
@@ -87,7 +88,7 @@
     },
     "end": {
       "kind": "card",
-      "seconds": 6.0
+      "seconds": 5.0
     },
     "pacing": {
       "shot_max": 8.0

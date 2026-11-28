@@ -24,7 +24,7 @@ A folder named after its id:
   template.json      the look: schemas/template.schema.json
   README.md          what it is, how it was measured, what was filled by eye
   source.json        provenance of a copied look: file name, duration, sha256, size, date
-  preview/01.png..06.png   1280x720 frames of the todo sample drawn in this look
+  preview/01.png..06.png   1280x720 frames of real footage drawn in this look
 ```
 
 - **id**: 3 to 64 lowercase letters, digits and dashes (`^[a-z0-9][a-z0-9-]{2,63}$`). Copied looks
@@ -33,19 +33,19 @@ A folder named after its id:
   back to the house look. Colours are `#hex` only. There are no file paths in it, so a template
   cannot point at anything outside its folder.
 - **previews** are found by convention (`preview/01.png` title, `02` window at rest, `03` zoom with a
-  highlight, `04` pill, `05` end card, `06` outro on dark). They show the todo sample, never the
-  reference video.
+  highlight, `04` pill, `05` end card, `06` outro on dark). A copied look shows the todo sample, never
+  the reference video; the built-in looks show demo-studio's own footage (Arkitekto and the studio).
 
 The `look` groups:
 
 | Group | Fields | Drives |
 | --- | --- | --- |
-| `brand` | `font`, `accent`, `ink`, `secondary`, `background {base, fields[5]}`, `sweep[2]`, `dark`, `highlight` | Colours and type family, under demo.json's `brand` |
+| `brand` | `font` (`inter`, `geist`, `geist-mono`, `instrument-serif`), `accent`, `ink`, `secondary`, `background {base, fields[5]}`, `sweep[2]`, `dark`, `highlight` | Colours and type family, under demo.json's `brand` |
 | `window` | `rect [x, y, w, h]`, `radius`, `shadow` | The window at rest (W1, W3, W5); its aspect sets how crops are fitted |
-| `zoom` | `scale`, `dur`, `ease [x1, y1, x2, y2]` | Whole-window zoom (Z2, Z4) |
+| `zoom` | `scale`, `dur`, `ease [x1, y1, x2, y2]`, `edge` | Whole-window zoom (Z2, Z4); `dur` also paces the wide-first push into a crop (W9); `edge` is the px the zoomed window keeps clear (Z3, default 40, 0 = may fill the frame) |
 | `highlight` | `stroke`, `radius`, `pad [x, y]`, `delay`, `fill_alpha`, `halo_alpha` | Highlight boxes (H1 to H5) |
 | `pill` | `center_y`, `height`, `radius`, `font_size`, `kinds` | Callout pills (C1, C2, C5); a callout kind not in `kinds` is a plan warning |
-| `title` | `font`, `size`, `weight`, `tracking`, `reveal` (`word-blur`, `fade`, `none`), `accent_word` | Title cards (T2, T9, T10); section and end titles scale with `size` |
+| `title` | `font` (same choices; `instrument-serif` is 400 only), `size`, `weight`, `tracking`, `reveal` (`word-blur`, `fade`, `none`), `accent_word` | Title cards (T2, T9, T10); section and end titles scale with `size` |
 | `transitions` | `window_in` (seconds of the rise, 0 = in place), `cut` (`inside-window`, `fade`, `cut`) | W6; `cut` other than `inside-window` is recorded and warned about, not drawn yet |
 | `end` | `kind` (`sweep-logo`, `card`, `none`), `seconds` | The ending: sweep and logo outro, a plain end card, or nothing required |
 | `pacing` | `shot_max`, `zoom_every` | Plan warnings (P2) and a warning for runs that go too long without a zoom |
@@ -59,9 +59,9 @@ look is checked against its own numbers, not the house ones.
 | id | Look |
 | --- | --- |
 | `house` | The default: 1560x800 window with 22 px corners on soft drifting warm greys with a faint glow in the product's accent, 1.15x whole-window zooms over 1.1 s (ease-in-out sine), product-coloured highlight boxes, white pills under the window, one-colour Inter titles that blur in word by word, an ember sweep and logo outro, -14 LUFS |
-| `midnight` | Cinematic and dark: a bigger window on graphite with one low glow in the product's accent, large one-colour titles that blur in, a slow window entrance and a plain end card instead of the sweep. Tags: dark ui, developer tool, ai, premium, cinematic |
-| `paper` | Editorial and calm: a smaller window with wide margins and square print-like corners, the caption pill above it, quiet one-colour titles that simply appear and a soft paper field. Tags: light ui, friendly, consumer, education, creative, docs |
-| `mono` | Full screen and fast: the app is as large as the engine draws it, high in the frame, for detail-heavy products, small quick zooms, one-colour bold titles with no animation, greys only, and a short plain end card instead of the sweep. Tags: light ui, fintech, b2b, dashboard, dense ui, minimal |
+| `midnight` | Cinematic and dark: a near full-bleed window with a thin graphite margin, slow 2 s push-ins that end full-bleed (`zoom.edge: 0`), big Geist titles that blur in, a 1.2 s rise-in and a plain end card. Tags: dark ui, developer tool, ai, premium, cinematic |
+| `paper` | Editorial and calm: a small square-cornered window with wide paper margins, Instrument Serif titles that simply appear, the caption above the window, gentle zooms and a plain end card. Tags: light ui, friendly, consumer, education, creative, docs |
+| `mono` | Flat and technical: one even grey with no glow (a product accent never tints it), a square hairline window, Geist Mono titles and captions, square tags, 0.5 s zooms and pushes, titles that fade in and a short end card. Tags: light ui, fintech, b2b, dashboard, dense ui, minimal |
 
 ## Where templates live
 

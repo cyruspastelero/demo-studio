@@ -43,6 +43,10 @@ def _capture() -> dict:
 
 
 _HOUSE = _capture()
+_HOUSE_EDGE = spec.ZOOM_EDGE
+_HOUSE_PADS = (spec.CANVAS_PAD_SIDE, spec.CANVAS_PAD_TOP, spec.CANVAS_PAD_BOTTOM)
+GLOW_MIN_SATURATION = 12  # max-min channel spread below which a background field counts as grey
+LAYER_MAX = (1920, 1140)  # the largest layer keynote-render.mjs draws (its viewport)
 _HOUSE_TYPE = {"hero": dict(spec.HERO), "card": dict(spec.CARD_HEADING), "end": dict(spec.END_TITLE)}
 
 
@@ -73,7 +77,8 @@ def effective(template_look: dict | None) -> dict:
 def brand_config(template_look: dict | None, demo_brand: dict | None) -> dict:
     """The brand dict load_brand() gets: the template's brand under demo.json's own brand (demo wins).
     When the demo names its product colour (accent) but not its own sweep or background, the look's
-    sweep and its most colourful glow are recoloured from that accent, so no look forces its own hue."""
+    sweep and its most colourful glow are recoloured from that accent, so no look forces its own hue.
+    A look whose background is all grey keeps it flat: there is no glow to recolour."""
     demo = demo_brand or {}
     merged = deep_merge((template_look or {}).get("brand", {}), demo)
     accent = demo.get("accent")
@@ -87,6 +92,8 @@ def brand_config(template_look: dict | None, demo_brand: dict | None) -> dict:
     fields = merged["background"].get("fields")
     if "background" not in demo and fields:
         glow = max(range(len(fields)), key=lambda i: _saturation(fields[i]))
+        if _saturation(fields[glow]) < GLOW_MIN_SATURATION:  # a flat grey look has no glow to recolour
+            return merged
         tinted = list(fields)
         tinted[glow] = _mix(fields[glow][:7], accent, 0.45) + fields[glow][7:]
         merged["background"] = {**merged["background"], "fields": tinted}
@@ -116,6 +123,19 @@ def _scaled(kind: str, size: float, tracking: float) -> dict:
             "tracking": _num(round(house["tracking"] * t, 2))}
 
 
+def shadow_pads(rest: Rect) -> tuple[int, int, int]:
+    """The transparent margins (side, top, bottom) around the window in its layer, for the shadow.
+    The house margins, trimmed only when the window plus margins would not fit the renderer's layer,
+    so a near full-bleed window still draws; the trimmed part of the shadow lies off frame anyway."""
+    side, top, bottom = _HOUSE_PADS
+    side = min(side, int((LAYER_MAX[0] - rest.w) // 2))
+    spare = LAYER_MAX[1] - rest.h
+    if top + bottom > spare:
+        top = int(spare * top / (top + bottom))
+        bottom = int(spare - top)
+    return max(0, side), max(0, top), max(0, bottom)
+
+
 def apply(look: dict) -> None:
     """Swaps an effective look into spec for this process (build-keynote.py, check-cut.py and
     narrate.py are one-shot scripts, one look each). Brand colours are not here: they go through
@@ -127,7 +147,10 @@ def apply(look: dict) -> None:
     spec.WINDOW_ASPECT = rest.w / rest.h
     spec.WINDOW_RADIUS = window["radius"]
     spec.WINDOW_SHADOW = window["shadow"]
+    spec.CANVAS_PAD_SIDE, spec.CANVAS_PAD_TOP, spec.CANVAS_PAD_BOTTOM = shadow_pads(rest)
     spec.ZOOM_MAX, spec.ZOOM_MOVE_SECONDS, spec.ZOOM_EASE = zoom["scale"], zoom["dur"], tuple(zoom["ease"])
+    spec.ZOOM_EDGE = zoom.get("edge", _HOUSE_EDGE)
+    spec.WIDE_MOVE_SECONDS = zoom["dur"]  # W9: the push into a crop moves at the look's zoom pace
     spec.HIGHLIGHT_STROKE, spec.HIGHLIGHT_RADIUS = box["stroke"], box["radius"]
     spec.HIGHLIGHT_PAD_X, spec.HIGHLIGHT_PAD_Y = box["pad"]
     spec.HIGHLIGHT_DELAY = box["delay"]
@@ -159,22 +182,16 @@ def problems(look: dict) -> list[str]:
     x, y, w, h = look["window"]["rect"]
     if w < 400 or h < 200:
         out.append(f"window.rect {look['window']['rect']}: at least 400x200 px")
-    # The window layer is the window plus fixed shadow margins (spec.CANVAS_PAD_*), and the renderer
-    # draws layers of at most 1920x1140 (keynote-render.mjs).
-    max_w = 1920 - 2 * spec.CANVAS_PAD_SIDE
-    max_h = 1140 - spec.CANVAS_PAD_TOP - spec.CANVAS_PAD_BOTTOM
-    if w > max_w or h > max_h:
-        out.append(f"window.rect {look['window']['rect']}: at most {max_w}x{max_h} px (the window plus its shadow margins "
-                   f"must fit the renderer)")
+    # The shadow margins shrink to fit the renderer (shadow_pads), so any window inside the frame draws.
     if x + w > spec.FRAME_W or y + h > spec.FRAME_H:
         out.append(f"window.rect {look['window']['rect']}: must sit inside the 1920x1080 frame")
     x1, _, x2, _ = look["zoom"]["ease"]
     if not (0 <= x1 <= 1 and 0 <= x2 <= 1):
         out.append(f"zoom.ease {look['zoom']['ease']}: x1 and x2 must be within 0..1 (CSS cubic-bezier)")
-    scale = look["zoom"]["scale"]
-    if w * scale > spec.FRAME_W - 2 * spec.ZOOM_EDGE or h * scale > spec.FRAME_H - 2 * spec.ZOOM_EDGE:
+    scale, edge = look["zoom"]["scale"], look["zoom"].get("edge", _HOUSE_EDGE)
+    if w * scale > spec.FRAME_W - 2 * edge or h * scale > spec.FRAME_H - 2 * edge:
         out.append(f"zoom.scale {scale}: the zoomed window ({w * scale:.0f}x{h * scale:.0f}) must keep "
-                   f"{spec.ZOOM_EDGE} px clear of every edge")
+                   f"{edge} px clear of every edge (zoom.edge)")
     pill = look["pill"]
     if pill["center_y"] + pill["height"] / 2 > spec.FRAME_H:
         out.append(f"pill.center_y {pill['center_y']}: the pill runs off the bottom of the frame")

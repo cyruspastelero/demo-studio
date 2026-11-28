@@ -203,11 +203,35 @@ class Schema(TemplateCase):
         self.assertIn("inside the 1920x1080 frame", str(caught.exception))
 
 
-    def test_a_window_too_big_for_its_shadow_layer_is_refused_before_any_render(self):
-        write_template(self.root / "demos" / "_templates", "huge", {"window": {"rect": [120, 40, 1680, 920]}})
-        with self.assertRaises(templates.TemplateError) as caught:
-            templates.find("huge", self.root / "demos" / "acme", cwd=self.root)
-        self.assertIn("at most 1620x800", str(caught.exception))
+    def test_a_near_full_bleed_window_is_drawn_with_a_thinner_shadow_layer(self):
+        write_template(self.root / "demos" / "_templates", "huge", {"window": {"rect": [64, 40, 1792, 919]},
+                                                                    "zoom": {"scale": 1.07, "edge": 0}})
+        found = templates.find("huge", self.root / "demos" / "acme", cwd=self.root)
+        looks.apply(looks.effective(found.look))
+        self.assertEqual(spec.CANVAS_PAD_SIDE, 64)
+        width, height = canvas_size()
+        self.assertLessEqual((width, height), (1920, 1140))
+        self.assertLessEqual(height, 1140)
+        self.assertGreater(spec.CANVAS_PAD_BOTTOM, spec.CANVAS_PAD_TOP)  # the shadow falls below the window
+
+    def test_a_zoom_that_leaves_no_edge_is_refused_unless_the_look_asks_for_it(self):
+        look = {"window": {"rect": [64, 40, 1792, 919]}, "zoom": {"scale": 1.07}}
+        self.assertTrue(any("px clear" in p for p in looks.problems(looks.effective(look))))
+        look["zoom"]["edge"] = 0
+        self.assertEqual(looks.problems(looks.effective(look)), [])
+
+    def test_every_built_in_look_validates_and_can_be_drawn(self):
+        for template_id in ("house", "midnight", "paper", "mono"):
+            data = json.loads((REPO / "look-templates" / template_id / "template.json").read_text())
+            self.assertEqual(lib.validate(data, "template"), [], template_id)
+            self.assertEqual(looks.problems(looks.effective(data["look"])), [], template_id)
+
+    def test_the_bundled_title_fonts_have_their_files(self):
+        for font_id in ("geist-mono", "instrument-serif"):
+            self.assertIn(font_id, spec.FONTS)
+            self.assertTrue((REPO / "assets" / "fonts" / spec.FONTS[font_id]["text"]).is_file(), font_id)
+        look = {"brand": {"font": "geist-mono"}, "title": {"font": "instrument-serif"}}
+        self.assertEqual(lib.validate({"id": "abc", "name": "x", "look": look}, "template"), [])
 
 
 class Merge(TemplateCase):
@@ -252,12 +276,16 @@ class Merge(TemplateCase):
         self.assertAlmostEqual(spec.WINDOW_ASPECT, 1720 / 860)
         self.assertEqual((spec.ZOOM_MAX, spec.ZOOM_MOVE_SECONDS, spec.ENTRY_SECONDS), (1.1, 0.8, 0.5))
         self.assertEqual((spec.CARD_SECONDS["end"], spec.OUTRO_SECONDS), (4, 0.0))
-        self.assertEqual(canvas_size(), (1720 + 300, 860 + 340))
+        self.assertEqual(canvas_size(), (1920, 1140))  # shadow margins shrink so the layer fits the renderer
+        self.assertEqual(spec.CANVAS_PAD_SIDE, 100)
+        self.assertEqual(spec.WIDE_MOVE_SECONDS, 0.8)  # the wide-first push moves like a zoom
         zoom = Zoom(at=1.0, scale=1.1, focus=(960, 500), hold=3.0)
         self.assertAlmostEqual(zoom_progress(zoom, 1.4), 0.5, places=6)  # symmetric ease, half of 0.8 s
         looks.reset()
         self.assertEqual(spec.WINDOW_REST, spec.Rect(180, 100, 1560, 800))
         self.assertEqual((spec.ZOOM_MAX, spec.OUTRO_SECONDS, spec.CARD_SECONDS["end"]), (1.15, 5.0, 7.9))
+        self.assertEqual((spec.CANVAS_PAD_SIDE, spec.CANVAS_PAD_TOP, spec.CANVAS_PAD_BOTTOM), (150, 120, 220))
+        self.assertEqual((spec.WIDE_MOVE_SECONDS, spec.ZOOM_EDGE), (1.10, 40))
 
 
 TODO = REPO / "examples" / "todo-sample"

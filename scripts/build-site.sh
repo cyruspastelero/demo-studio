@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Assemble the GitHub Pages demo site into ./_site (or $1).
-# The sample videos are not in git: pass a folder holding sample-*.mp4 as $2,
+# The sample videos (the cuts and the sample-look-<id>.mp4 clips) are not in git: pass a folder holding sample-*.mp4 as $2,
 # or the Pages workflow downloads them from the "samples" release.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -23,7 +23,6 @@ mkdir -p "$OUT/logo" "$OUT/fonts" "$OUT/img" "$OUT/media"
 /bin/cp -f "$ROOT"/site/fonts/* "$ROOT/assets/fonts/GeistMonoVariable.woff2" "$ROOT/assets/fonts/GeistVariable.woff2" "$ROOT/assets/fonts/OFL-Geist.txt" "$OUT/fonts/"
 /bin/cp -f "$ROOT"/docs/img/sample-*-poster.jpg "$ROOT/docs/img/studio-1440.png" "$ROOT/docs/img/editor.gif" "$OUT/img/"
 mkdir -p "$OUT/img/house" && /bin/cp -f "$ROOT"/look-templates/house/preview/*.png "$OUT/img/house/"
-mkdir -p "$OUT/img/looks" && for l in house midnight paper mono; do /bin/cp -f "$ROOT/look-templates/$l/preview/01.png" "$OUT/img/looks/$l.png"; /bin/cp -f "$ROOT/look-templates/$l/preview/02.png" "$OUT/img/looks/$l-stage.png"; done
 /bin/cp -f "$ROOT/site/og-image.png" "$ROOT/site/robots.txt" "$ROOT/site/sitemap.xml" "$OUT/"
 mkdir -p "$OUT/img/motion" && for s in airy daylight nocturne showroom; do /bin/cp -f "$ROOT/motion-templates/$s/preview/02.jpg" "$OUT/img/motion/$s.jpg"; done
 if [ -f "$ROOT/app/out-static/index.html" ]; then

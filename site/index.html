@@ -183,9 +183,15 @@ h1 { font: 500 46px/1.04 var(--sans); letter-spacing: -0.035em; color: var(--sno
 .switch button { padding: 7px 16px; border: 0; border-radius: 9999px; background: transparent; color: rgba(255, 255, 255, 0.72); font: 400 14px var(--sans); letter-spacing: 0.02em; cursor: pointer; transition: background-color .25s, color .25s; }
 .switch button:hover { color: var(--snow); }
 .switch button[aria-selected="true"] { background: var(--snow); color: #161616; font-weight: 500; }
-.stage img { aspect-ratio: 16 / 9; transition: opacity .35s ease; }
-.stage img.fading { opacity: 0; }
-.look-text { font-size: 14px; color: var(--ash); }
+.look-panel { display: grid; gap: 16px; }
+.stage video { transition: opacity .35s ease; }
+.stage video.fading { opacity: 0; }
+.look-spec { margin: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.look-spec[hidden], .look-on[hidden] { display: none; }
+.look-spec div { padding: 18px 20px; border-radius: 20px; background: var(--glass); box-shadow: var(--inset); }
+.look-spec dt { font: 400 12px var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--slate); }
+.look-spec dd { margin: 6px 0 0; color: var(--bone); font-size: 15px; line-height: 1.45; }
+.look-on { margin: 10px 0 0; font-size: 13px; letter-spacing: 0.02em; color: var(--slate); }
 .facts { margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .facts div { padding: 24px 28px; border-radius: 24px; background: var(--glass); box-shadow: var(--inset); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
 .facts dt { font-weight: 500; color: var(--snow); }
@@ -245,6 +251,9 @@ footer { position: relative; overflow: hidden; container-type: inline-size; marg
 }
 @media (max-width: 640px) {
   .facts { grid-template-columns: 1fr; }
+  .look-spec { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .look-spec div { padding: 14px 16px; border-radius: 16px; }
+  .look-spec dd { font-size: 14px; }
   .switch { justify-self: stretch; justify-content: space-between; }
   .switch button { padding: 7px 10px; }
   .prompt pre { padding: 64px 20px 20px; }
@@ -253,7 +262,7 @@ footer { position: relative; overflow: hidden; container-type: inline-size; marg
 @media (prefers-reduced-motion: reduce) {
   .player .big, .player .bar { transition: none; }
   .sky { transition: none; }
-  .stage img { transition: none; }
+  .stage video { transition: none; }
   .scene.seen h2 { animation: none; background-position: 0 0; }
   html { scroll-snap-type: none; }
 }
@@ -317,19 +326,52 @@ footer { position: relative; overflow: hidden; container-type: inline-size; marg
     <section class="scene" id="looks" data-scene="3" aria-labelledby="looks-h">
       <header>
         <h2 id="looks-h">Pick a look, or copy one</h2>
-        <p>The window, zooms, titles, ending and loudness all come from one <code>template.json</code>. Four looks are built in. Point the agent at a video you like and it measures that look and saves it as a new template.</p>
+        <p>The window, zooms, titles, ending and loudness all come from one <code>template.json</code>. Four looks are built in, and each one moves its own way. Point the agent at a video you like and it measures that look and saves it as a new template.</p>
       </header>
       <div class="viewer">
         <div class="switch" role="tablist" aria-label="Built-in looks">
-          <button type="button" role="tab" id="look-house" aria-controls="look-stage" aria-selected="true" data-src="img/looks/house-stage.png" data-alt="The todo sample in the House look" data-text="A floating window on soft warm greys. The default.">House</button>
-          <button type="button" role="tab" id="look-midnight" aria-controls="look-stage" aria-selected="false" data-src="img/looks/midnight-stage.png" data-alt="The todo sample in the Midnight look" data-text="Graphite with an ember glow. Cinematic, for developer tools.">Midnight</button>
-          <button type="button" role="tab" id="look-paper" aria-controls="look-stage" aria-selected="false" data-src="img/looks/paper-stage.png" data-alt="The todo sample in the Paper look" data-text="Soft paper and square corners. Calm and editorial.">Paper</button>
-          <button type="button" role="tab" id="look-mono" aria-controls="look-stage" aria-selected="false" data-src="img/looks/mono-stage.png" data-alt="The todo sample in the Mono look" data-text="Plain greys, so your product brings the colour.">Mono</button>
+          <button type="button" role="tab" id="look-house" aria-controls="look-panel" aria-selected="true" data-look="house" data-video="media/sample-look-house.mp4" data-poster="img/sample-look-house-poster.jpg" data-label="The House look on Arkitekto's analytics page">House</button>
+          <button type="button" role="tab" id="look-midnight" aria-controls="look-panel" aria-selected="false" data-look="midnight" data-video="media/sample-look-midnight.mp4" data-poster="img/sample-look-midnight-poster.jpg" data-label="The Midnight look on the demo-studio editor">Midnight</button>
+          <button type="button" role="tab" id="look-paper" aria-controls="look-panel" aria-selected="false" data-look="paper" data-video="media/sample-look-paper.mp4" data-poster="img/sample-look-paper-poster.jpg" data-label="The Paper look on an Arkitekto story page">Paper</button>
+          <button type="button" role="tab" id="look-mono" aria-controls="look-panel" aria-selected="false" data-look="mono" data-video="media/sample-look-mono.mp4" data-poster="img/sample-look-mono-poster.jpg" data-label="The Mono look on demo-studio's render checks">Mono</button>
         </div>
-        <figure class="frame stage" id="look-stage" role="tabpanel" aria-labelledby="look-house">
-          <img src="img/looks/house-stage.png" alt="The todo sample in the House look" width="1280" height="720">
-        </figure>
-        <p class="look-text" aria-live="polite">A floating window on soft warm greys. The default.</p>
+        <div id="look-panel" role="tabpanel" aria-labelledby="look-house" class="look-panel">
+          <figure class="frame stage">
+            <video class="loop" muted loop playsinline preload="metadata" poster="img/sample-look-house-poster.jpg" aria-label="The House look on Arkitekto's analytics page" width="1280" height="720">
+              <source src="media/sample-look-house.mp4" type="video/mp4">
+            </video>
+          </figure>
+          <div class="look-text" aria-live="polite">
+          <dl class="look-spec" data-look="house">
+            <div><dt>Frame</dt><dd>A rounded window floating on warm grey.</dd></div>
+            <div><dt>Type</dt><dd>Inter titles that blur in word by word.</dd></div>
+            <div><dt>Motion</dt><dd>Zooms ease in over about a second.</dd></div>
+            <div><dt>Ending</dt><dd>A sweep in your colour, then your logo.</dd></div>
+          </dl>
+          <dl class="look-spec" data-look="midnight" hidden>
+            <div><dt>Frame</dt><dd>The app almost fills the screen, with a thin dark border.</dd></div>
+            <div><dt>Type</dt><dd>Big Geist titles that blur in.</dd></div>
+            <div><dt>Motion</dt><dd>Slow two-second push-ins that end full screen.</dd></div>
+            <div><dt>Ending</dt><dd>A plain end card.</dd></div>
+          </dl>
+          <dl class="look-spec" data-look="paper" hidden>
+            <div><dt>Frame</dt><dd>A small square window with wide margins, and the caption above it.</dd></div>
+            <div><dt>Type</dt><dd>Titles in Instrument Serif that are just there, no animation.</dd></div>
+            <div><dt>Motion</dt><dd>Gentle zooms and a soft rise in.</dd></div>
+            <div><dt>Ending</dt><dd>A plain end card.</dd></div>
+          </dl>
+          <dl class="look-spec" data-look="mono" hidden>
+            <div><dt>Frame</dt><dd>A square window with a thin outline on flat grey, no glow.</dd></div>
+            <div><dt>Type</dt><dd>Geist Mono for titles and captions.</dd></div>
+            <div><dt>Motion</dt><dd>Half-second zooms, and titles fade in.</dd></div>
+            <div><dt>Ending</dt><dd>A short end card.</dd></div>
+          </dl>
+          <p class="look-on" data-look="house">Shown on Arkitekto's analytics page.</p>
+          <p class="look-on" data-look="midnight" hidden>Shown on the demo-studio editor.</p>
+          <p class="look-on" data-look="paper" hidden>Shown on an Arkitekto story page.</p>
+          <p class="look-on" data-look="mono" hidden>Shown on demo-studio's render checks.</p>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -453,34 +495,44 @@ const watcher = new IntersectionObserver(entries => {
 }, { rootMargin: '-45% 0px -45% 0px' });
 document.querySelectorAll('.scene').forEach(s => watcher.observe(s));
 
-// Look switcher: tabs swap the picture with a short crossfade; arrow keys move between tabs.
+// Look switcher: tabs swap a muted looping clip of each look; arrow keys move between tabs.
+// With reduced motion the clip never plays: the poster stands in for it.
 const tabs = [...document.querySelectorAll('.switch [role="tab"]')];
-const stageImage = document.querySelector('#look-stage img');
-const lookText = document.querySelector('.look-text');
+const lookVideo = document.querySelector('#look-panel video');
+const calm = window.matchMedia('(prefers-reduced-motion: reduce)');
+function settle() {
+  if (calm.matches) { lookVideo.pause(); lookVideo.removeAttribute('autoplay'); }
+  else lookVideo.play().catch(() => {});
+}
 function selectLook(tab) {
   for (const t of tabs) { t.setAttribute('aria-selected', String(t === tab)); t.tabIndex = t === tab ? 0 : -1; }
-  document.getElementById('look-stage').setAttribute('aria-labelledby', tab.id);
-  lookText.textContent = tab.dataset.text;
-  const next = new Image();
-  next.src = tab.dataset.src;
-  stageImage.classList.add('fading');
-  next.decode().catch(() => {}).finally(() => {
-    stageImage.src = tab.dataset.src;
-    stageImage.alt = tab.dataset.alt;
-    stageImage.classList.remove('fading');
-  });
+  document.getElementById('look-panel').setAttribute('aria-labelledby', tab.id);
+  for (const el of document.querySelectorAll('.look-text [data-look]')) el.hidden = el.dataset.look !== tab.dataset.look;
+  lookVideo.classList.add('fading');
+  setTimeout(() => {
+    lookVideo.poster = tab.dataset.poster;
+    lookVideo.src = tab.dataset.video;
+    lookVideo.setAttribute('aria-label', tab.dataset.label);
+    lookVideo.load();
+    settle();
+    lookVideo.classList.remove('fading');
+  }, calm.matches ? 0 : 200);
 }
 tabs.forEach((tab, i) => {
   tab.tabIndex = i === 0 ? 0 : -1;
   tab.addEventListener('click', () => selectLook(tab));
   tab.addEventListener('keydown', event => {
     const step = { ArrowRight: 1, ArrowLeft: -1 }[event.key];
-    if (!step) return;
-    const next = tabs[(i + step + tabs.length) % tabs.length];
+    const jump = { Home: 0, End: tabs.length - 1 }[event.key];
+    if (!step && jump === undefined) return;
+    event.preventDefault();
+    const next = step ? tabs[(i + step + tabs.length) % tabs.length] : tabs[jump];
     next.focus();
     selectLook(next);
   });
 });
+settle();
+calm.addEventListener('change', settle);
 
 // Video players: swap the native controls for a bar in the page's style. Without the script, the native controls stay.
 const icons = {
@@ -491,7 +543,7 @@ const icons = {
   full: '<svg viewBox="0 0 16 16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" d="M2.5 6V2.5H6M10 2.5h3.5V6M13.5 10v3.5H10M6 13.5H2.5V10"/></svg>',
 };
 const clock = t => { t = Math.max(0, Math.floor(t || 0)); return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`; };
-for (const video of document.querySelectorAll('.frame video')) {
+for (const video of document.querySelectorAll('.frame video:not(.loop)')) {
   const box = video.closest('.frame');
   const name = video.getAttribute('aria-label');
   box.classList.add('player');
